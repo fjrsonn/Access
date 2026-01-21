@@ -1,6 +1,8 @@
 from groq import Groq
 import json
 import re
+import os
+from dotenv import load_dotenv
 from preprocessor import (
     extrair_status,
     separar_modelos,
@@ -10,13 +12,26 @@ from preprocessor import (
     remover_status
 )
 
-client = Groq(api_key="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")
+# =========================
+# Carregar variáveis do .env
+# =========================
+load_dotenv()
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+if not GROQ_API_KEY:
+    raise ValueError("Variável de ambiente GROQ_API_KEY não encontrada!")
 
+client = Groq(api_key=GROQ_API_KEY)
+
+# =========================
+# Arquivos
+# =========================
 ENTRADA = "dadosinit.json"
 SAIDA = "dadosend.json"
 PROMPT_PATH = "prompts/v4_producao_portaria.txt"
 
-
+# =========================
+# Funções utilitárias
+# =========================
 def carregar(path):
     try:
         with open(path, "r", encoding="utf-8") as f:
@@ -24,17 +39,17 @@ def carregar(path):
     except:
         return {"registros": []}
 
-
 def salvar(path, dados):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(dados, f, ensure_ascii=False, indent=4)
-
 
 def carregar_prompt():
     with open(PROMPT_PATH, "r", encoding="utf-8") as f:
         return f.read()
 
-
+# =========================
+# Função principal
+# =========================
 def processar():
     entrada = carregar(ENTRADA)
     saida = carregar(SAIDA)
@@ -103,6 +118,8 @@ def processar():
     salvar(ENTRADA, entrada)
     salvar(SAIDA, saida)
 
-
+# =========================
+# Execução
+# =========================
 if __name__ == "__main__":
     processar()

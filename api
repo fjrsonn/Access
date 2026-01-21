@@ -1,8 +1,8 @@
-API_KEY = "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"  # <-- coloque sua chave Groq aqui
+API_KEY = ""  # <-- coloque sua chave Groq aqui
 
 Inserimos as seguintes informacoes:
 
-JOAO OLIVEIRA BLOCO 4 APARTAMENTO 34 PLACA FJS0701 VIRTUS COR CHUMBO
+CIVC JORGE B10 AP34 TRT8951 VERMELHO VIS
 
 PRES MARIA APARECIDA BL5 AP5 FGT0102 POLO PRETO
 
@@ -14,18 +14,22 @@ M HENRIQUE ONIX A10 B2 PRETO FLR4556
 
 JAOA OLIEIRA B2 AP 22 FTH2202 JETA PRAT
 
+JOAO OLIVEIRA BLOCO 4 APARTAMENTO 34 PLACA FJS0701 VIRTUS COR CHUMBO
+
+
 E obtivemos as seguintes saidas:
 
-20/01/2026 12:29:16 | Joao Oliveira | BLOCO 4 AP 34 | PLACA FJS0701 | Virtus | Chumbo | DESCONHECIDO
-Analise: Joao aparece como VISITANTE mas nao foi especificado o seu status, o certo era aparecer DESCONHECIDO 
+20/01/2026 13:46:29 | Jorge - | BLOCO 10 AP 34 | PLACA TRT8951 | Civic | Vermelho | VISITANTE
+Analise: OK
 20/01/2026 12:29:47 | Maria Aparecida - | BLOCO 5 AP 5 | PLACA FGT0102 | Polo | Preto | PRESTADOR DE SERVIÇO
-Analise: OK 
+Analise: -? Porque apareceu um traço depois do nome Maria Aparecida, o certo era aparecer apenas Maria Aparecida. 
 20/01/2026 12:29:55 | Ana Julia | BLOCO 5 AP 5 | PLACA FGH0987 | Mobi | Prata | DESCONHECIDO
 Analise: OK
 20/01/2026 12:30:00 | Caio Sousa | BLOCO 10 AP 10 | PLACA ASD0129 | Corsa | Preto | VISITANTE
 Analise: OK
 20/01/2026 12:30:07 | M Henrique | BLOCO 2 AP 10 | PLACA FLR4556 | Onix | Preto | MORADOR
-Analise: O Henrique deveria ter o modelo do veiculo, mas nao apareceu nada, aparecendo o modelo do veiculo no seu nome Henrique Onix, o certo era aparecer apenas Henrique.
-20/01/2026 12:30:00 | Caio Sousa | BLOCO 10 AP 10 | PLACA ASD0129 | Corsa | Preto | VISITANTE
-Analise: Nome errado, o certo era JOAO OLIVEIRA.
-
+Analise: Apareceu o M Henrique, o certo era HENRIQUE.
+20/01/2026 12:57:10 | Jaoa Olieira | BLOCO 2 AP 22 | PLACA FTH2202 | Jetta | Prata | DESCONHECIDO
+Analise: Apareceu Jaoa Olieira, o certo era JOAO OLIVEIRA.
+20/01/2026 13:50:05 | Joao Oliveira | BLOCO 4 AP 34 | PLACA FJS0701 | Corsa | Chumbo | DESCONHECIDO
+Analise: O modelo do carro esta errado, apareceu Corsa, o certo era Virtus.
