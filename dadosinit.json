@@ -1,0 +1,46 @@
+{
+    "registros": [
+        {
+            "id": 1,
+            "texto": "CIVC JORGE B10 AP34 TRT8951 VERMELHO VIS",
+            "processado": true,
+            "data_hora": "20/01/2026 14:18:49"
+        },
+        {
+            "id": 2,
+            "texto": "PRES MARIA APARECIDA BL5 AP5 FGT0102 POLO PRETO",
+            "processado": true,
+            "data_hora": "20/01/2026 14:19:01"
+        },
+        {
+            "id": 3,
+            "texto": "BL5 AP5 ANA JULIA FIAT MOBI PRATA FGH0987",
+            "processado": true,
+            "data_hora": "20/01/2026 14:19:07"
+        },
+        {
+            "id": 4,
+            "texto": "VISIT CAIO SOUSA BL10 AP10 ASD0129 CORSA SEDAN PRETO",
+            "processado": true,
+            "data_hora": "20/01/2026 14:19:12"
+        },
+        {
+            "id": 5,
+            "texto": "M HENRIQUE ONIX A10 B2 PRETO FLR4556",
+            "processado": true,
+            "data_hora": "20/01/2026 14:19:17"
+        },
+        {
+            "id": 6,
+            "texto": "JAOA OLIEIRA B2 AP 22 FTH2202 JETA PRAT",
+            "processado": true,
+            "data_hora": "20/01/2026 14:19:22"
+        },
+        {
+            "id": 7,
+            "texto": "JOAO OLIVEIRA BLOCO 4 APARTAMENTO 34 PLACA FJS0701 VIRTUS COR CHUMBO",
+            "processado": true,
+            "data_hora": "20/01/2026 14:19:26"
+        }
+    ]
+}

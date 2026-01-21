@@ -1,0 +1,31 @@
+API_KEY = "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"  # <-- coloque sua chave Groq aqui
+
+Inserimos as seguintes informacoes:
+
+JOAO OLIVEIRA BLOCO 4 APARTAMENTO 34 PLACA FJS0701 VIRTUS COR CHUMBO
+
+PRES MARIA APARECIDA BL5 AP5 FGT0102 POLO PRETO
+
+BL5 AP5 ANA JULIA FIAT MOBI PRATA FGH0987 
+
+VISIT CAIO SOUSA BL10 AP10 ASD0129 CORSA SEDAN PRETO
+
+M HENRIQUE ONIX A10 B2 PRETO FLR4556
+
+JAOA OLIEIRA B2 AP 22 FTH2202 JETA PRAT
+
+E obtivemos as seguintes saidas:
+
+20/01/2026 12:29:16 | Joao Oliveira | BLOCO 4 AP 34 | PLACA FJS0701 | Virtus | Chumbo | DESCONHECIDO
+Analise: Joao aparece como VISITANTE mas nao foi especificado o seu status, o certo era aparecer DESCONHECIDO 
+20/01/2026 12:29:47 | Maria Aparecida - | BLOCO 5 AP 5 | PLACA FGT0102 | Polo | Preto | PRESTADOR DE SERVIÇO
+Analise: OK 
+20/01/2026 12:29:55 | Ana Julia | BLOCO 5 AP 5 | PLACA FGH0987 | Mobi | Prata | DESCONHECIDO
+Analise: OK
+20/01/2026 12:30:00 | Caio Sousa | BLOCO 10 AP 10 | PLACA ASD0129 | Corsa | Preto | VISITANTE
+Analise: OK
+20/01/2026 12:30:07 | M Henrique | BLOCO 2 AP 10 | PLACA FLR4556 | Onix | Preto | MORADOR
+Analise: O Henrique deveria ter o modelo do veiculo, mas nao apareceu nada, aparecendo o modelo do veiculo no seu nome Henrique Onix, o certo era aparecer apenas Henrique.
+20/01/2026 12:30:00 | Caio Sousa | BLOCO 10 AP 10 | PLACA ASD0129 | Corsa | Preto | VISITANTE
+Analise: Nome errado, o certo era JOAO OLIVEIRA.
+

@@ -1,0 +1,88 @@
+{
+    "registros": [
+        {
+            "NOME": "Jorge",
+            "SOBRENOME": "-",
+            "MODELO": "Civic",
+            "COR": "Vermelho",
+            "STATUS": "VISITANTE",
+            "BLOCO": "10",
+            "APARTAMENTO": "34",
+            "PLACA": "TRT8951",
+            "ID": 1,
+            "DATA_HORA": "20/01/2026 14:18:49"
+        },
+        {
+            "NOME": "Maria",
+            "SOBRENOME": "Aparecida",
+            "MODELO": "Polo",
+            "COR": "Preto",
+            "STATUS": "PRESTADOR DE SERVIÇO",
+            "BLOCO": "5",
+            "APARTAMENTO": "5",
+            "PLACA": "FGT0102",
+            "ID": 2,
+            "DATA_HORA": "20/01/2026 14:19:01"
+        },
+        {
+            "NOME": "Ana",
+            "SOBRENOME": "-",
+            "MODELO": "Mobi",
+            "COR": "Prata",
+            "STATUS": "DESCONHECIDO",
+            "BLOCO": "5",
+            "APARTAMENTO": "5",
+            "PLACA": "FGH0987",
+            "ID": 3,
+            "DATA_HORA": "20/01/2026 14:19:07"
+        },
+        {
+            "NOME": "Caio",
+            "SOBRENOME": "-",
+            "MODELO": "Corsa",
+            "COR": "Preto",
+            "STATUS": "VISITANTE",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "ASD0129",
+            "ID": 4,
+            "DATA_HORA": "20/01/2026 14:19:12"
+        },
+        {
+            "NOME": "Henrique",
+            "SOBRENOME": "-",
+            "MODELO": "Onix",
+            "COR": "Preto",
+            "STATUS": "MORADOR",
+            "BLOCO": "2",
+            "APARTAMENTO": "10",
+            "PLACA": "FLR4556",
+            "ID": 5,
+            "DATA_HORA": "20/01/2026 14:19:17"
+        },
+        {
+            "NOME": "Joao",
+            "SOBRENOME": "-",
+            "MODELO": "Jetta",
+            "COR": "Prata",
+            "STATUS": "DESCONHECIDO",
+            "BLOCO": "2",
+            "APARTAMENTO": "22",
+            "PLACA": "FTH2202",
+            "ID": 6,
+            "DATA_HORA": "20/01/2026 14:19:22"
+        },
+        {
+            "NOME": "Joao",
+            "SOBRENOME": "-",
+            "MODELO": "Corsa",
+            "COR": "Chumbo",
+            "STATUS": "DESCONHECIDO",
+            "BLOCO": "4",
+            "APARTAMENTO": "34",
+            "PLACA": "FJS0701",
+            "ID": 7,
+            "DATA_HORA": "20/01/2026 14:19:26"
+        }
+    ]
+}
