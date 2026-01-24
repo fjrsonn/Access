@@ -1,0 +1,1395 @@
+/Acess                       -> Pasta principal do programa onde se encontra todos os arquivos na raiz.  caminho: PS C:\Users\CONDOMINIO TIRADENTE\Access>
+ /__pycache__                -> Pasta do paycache                                                        caminho: PS C:\Users\CONDOMINIO TIRADENTE\Access\__pycache__>
+ /logs                       -> Pasta dos logs                                                           caminho: PS C:\Users\CONDOMINIO TIRADENTE\Access\logs>
+  - forense.log              -> Registros dos status das entradas e saidas dos dados.                    
+ /prompts                    -> pasta dos prompts para a ia                                              caminho: PS C:\Users\CONDOMINIO TIRADENTE\Access\prompts>
+  - v4_producao_portaria.txt -> Pre prompt para a ia ler 
+ -.env                       -> Chave api groq
+ -.gitignore                 -> .gitignore
+ -dadosend.json              -> Json gerado pela ia dados finais tratados.
+ -dadosinit.json             -> Json com os primeiro dados contendo as informacoes.
+ -ia.py                      -> Motor IA utiizando groq.
+ -interfaceone.py            -> Primeira interface gerada para a recepcao das informacoes/primeiros dados.
+ -interfacetwo.py            -> Segunda interface gerada para manipulacao e visualizacao dos dados tratados.
+ -logger.py                  -> Analise dos status de entrada e saida dos dados.
+ -main.py                    -> Start do programa.
+ -preprocessor.py            -> Gerador de prioridades e controlador de erros para a IA.
+ -tests.py                   -> Testes para erros, analises e desempenho.
+
+todos os arquvios estao na pasta raiz Acess: caminho: PS C:\Users\CONDOMINIO TIRADENTE\Access>
+
+ia.py:# ia.py — versão com caminhos absolutos e gravação atômica
+from groq import Groq
+import json
+import re
+import os
+import tempfile
+from dotenv import load_dotenv
+from preprocessor import (
+    extrair_status,
+    extrair_cor,
+    corrigir_nome,
+    remover_status,
+    extrair_tudo_consumo,
+    VEICULOS_MAP,
+)
+from logger import log_forense
+import time
+
+# =========================
+# ENV
+# =========================
+load_dotenv()
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+if not GROQ_API_KEY:
+    raise ValueError("Variável GROQ_API_KEY não encontrada")
+
+client = Groq(api_key=GROQ_API_KEY)
+
+# =========================
+# PATHS ABSOLUTOS
+# =========================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ENTRADA = os.path.join(BASE_DIR, "dadosinit.json")
+SAIDA = os.path.join(BASE_DIR, "dadosend.json")
+PROMPT_PATH = os.path.join(BASE_DIR, "prompts", "v4_producao_portaria.txt")
+LOCK_FILE = os.path.join(BASE_DIR, "process.lock")
+
+# =========================
+# UTIL IO (atômico)
+# =========================
+def carregar(path):
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"registros": []}
+    except Exception:
+        return {"registros": []}
+
+def salvar_atomico(path, dados):
+    # grava de forma atômica usando mkstemp + os.replace
+    dirn = os.path.dirname(path) or BASE_DIR
+    fd, tmp_path = tempfile.mkstemp(dir=dirn, prefix=".tmp_", suffix=".json")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(dados, f, ensure_ascii=False, indent=4)
+        os.replace(tmp_path, path)
+        print(f"[ia.py] Gravado arquivo: {path} (registros={len(dados.get('registros', []))})")
+    finally:
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
+
+def carregar_prompt():
+    try:
+        with open(PROMPT_PATH, "r", encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        return (
+            "Retorne SOMENTE este JSON:\n"
+            '{ "NOME": "", "SOBRENOME": "", "MODELO": "", "COR": "" }'
+        )
+
+def extrair_json_seguro(texto):
+    if not texto:
+        return None
+    texto_limpo = re.sub(r"```(?:json)?", "", texto)
+    blocos = re.findall(r"\{[\s\S]*?\}", texto_limpo)
+    if not blocos:
+        return None
+    for bloco in reversed(blocos):
+        try:
+            return json.loads(bloco)
+        except json.JSONDecodeError:
+            continue
+    return None
+
+# =========================
+# Lock simples (arquivo)
+# =========================
+def acquire_lock(timeout=10):
+    start = time.time()
+    while True:
+        try:
+            fd = os.open(LOCK_FILE, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.close(fd)
+            return True
+        except FileExistsError:
+            if (time.time() - start) > timeout:
+                return False
+            time.sleep(0.1)
+
+def release_lock():
+    try:
+        if os.path.exists(LOCK_FILE):
+            os.remove(LOCK_FILE)
+    except Exception:
+        pass
+
+# =========================
+# validação e processamento (mesma lógica)
+# =========================
+def validar_modelo_str(s: str):
+    if not s:
+        return None
+    s_norm = re.sub(r"[^\w\d\s]", " ", s).upper().strip()
+    if re.search(r"\b[A-Z]{3}\-?\d{4}\b", s_norm):
+        return None
+    if re.fullmatch(r"[A-Z]?\d{1,4}", s_norm.replace(" ", "")):
+        return None
+    for modelo_key, abrevs in VEICULOS_MAP.items():
+        if re.search(rf"\b{re.escape(modelo_key)}\b", s_norm):
+            return modelo_key
+        for ab in abrevs:
+            if re.search(rf"\b{re.escape(ab.upper())}\b", s_norm):
+                return modelo_key
+    return None
+
+def processar():
+    if not acquire_lock(timeout=5):
+        print("[ia.py] Outro processo em execução. Abortando.")
+        return
+
+    try:
+        entrada = carregar(ENTRADA)
+        saida = carregar(SAIDA)
+        prompt_base = carregar_prompt()
+
+        for r in entrada.get("registros", []):
+            if r.get("processado"):
+                continue
+
+            texto_original = r.get("texto", "")
+            pre = extrair_tudo_consumo(texto_original)
+            status = pre.get("STATUS", "DESCONHECIDO")
+            modelos_pre = pre.get("MODELOS", [])
+            endereco = {
+                "BLOCO": pre.get("BLOCO", ""),
+                "APARTAMENTO": pre.get("APARTAMENTO", ""),
+                "PLACA": pre.get("PLACA", ""),
+            }
+            cor_pre = pre.get("COR", "")
+            texto_limpo = pre.get("TEXTO_LIMPO") or pre.get("NOME_RAW") or remover_status(texto_original)
+
+            prompt = (
+                prompt_base
+                + "\n\nTexto:\n"
+                + texto_limpo
+                + "\n\nResponda SOMENTE com JSON válido seguindo o schema:\n"
+                '{ "NOME": "", "SOBRENOME": "", "MODELO": "", "COR": "" }'
+            )
+
+            dados_ia = None
+            conteudo = ""
+            try:
+                resposta = client.chat.completions.create(
+                    model="llama-3.1-8b-instant",
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0
+                )
+                conteudo = (
+                    resposta.choices[0].message.content
+                    if hasattr(resposta, "choices") and resposta.choices
+                    else str(resposta)
+                )
+                dados_ia = extrair_json_seguro(conteudo)
+            except Exception as e:
+                print(f"⚠️ Erro IA para registro {r.get('id')}: {e}")
+
+            dados = {"NOME": "", "SOBRENOME": "", "MODELO": "", "COR": ""}
+
+            cor_ia = ""
+            if dados_ia:
+                dados["NOME"] = dados_ia.get("NOME", "") or ""
+                dados["SOBRENOME"] = dados_ia.get("SOBRENOME", "") or ""
+                cor_ia = (dados_ia.get("COR") or "").strip()
+                modelo_from_ia = (dados_ia.get("MODELO") or "").strip()
+                modelo_validado = validar_modelo_str(modelo_from_ia)
+                if modelo_validado:
+                    dados["MODELO"] = modelo_validado
+            else:
+                nome_raw = pre.get("NOME_RAW", "")
+                if nome_raw:
+                    parts = nome_raw.split()
+                    if parts:
+                        dados["NOME"] = parts[0].title()
+                        dados["SOBRENOME"] = " ".join(parts[1:]).title() if len(parts) > 1 else "-"
+
+            if not dados.get("MODELO"):
+                if modelos_pre:
+                    dados["MODELO"] = modelos_pre[0].title()
+                else:
+                    dados["MODELO"] = ""
+
+            cor_final = cor_ia if cor_ia else (cor_pre or "")
+            dados["COR"] = cor_final
+
+            dados["PLACA"] = endereco.get("PLACA", "") or ""
+            dados["BLOCO"] = endereco.get("BLOCO", "") or ""
+            dados["APARTAMENTO"] = endereco.get("APARTAMENTO", "") or ""
+            dados["STATUS"] = status or "DESCONHECIDO"
+
+            nome_completo = corrigir_nome(dados.get("NOME", "") or "")
+            if nome_completo:
+                partes = nome_completo.split()
+                if len(partes) >= 2:
+                    dados["NOME"] = partes[0].title()
+                    dados["SOBRENOME"] = " ".join(partes[1:]).title()
+                else:
+                    dados["NOME"] = partes[0].title()
+                    dados["SOBRENOME"] = dados.get("SOBRENOME", "-") if dados.get("SOBRENOME") else "-"
+            else:
+                fallback_nome = pre.get("NOME_RAW", "")
+                if fallback_nome:
+                    p = fallback_nome.split()
+                    if len(p) >= 2:
+                        dados["NOME"] = p[0].title()
+                        dados["SOBRENOME"] = " ".join(p[1:]).title()
+                    else:
+                        dados["NOME"] = p[0].title()
+                        dados["SOBRENOME"] = "-"
+
+            modelo_val = dados.get("MODELO", "") or ""
+            if modelo_val:
+                cleaned = re.sub(r"\s+", "", modelo_val).upper()
+                if re.fullmatch(r"[A-Z]?\d{1,4}", cleaned) or re.search(r"[A-Z]{3}\d", cleaned):
+                    if modelos_pre:
+                        dados["MODELO"] = modelos_pre[0].title()
+                    else:
+                        dados["MODELO"] = "-"
+
+            for k in ["NOME", "SOBRENOME", "BLOCO", "APARTAMENTO", "PLACA", "MODELO", "COR", "STATUS"]:
+                v = dados.get(k)
+                if v is None or (isinstance(v, str) and v.strip() == ""):
+                    dados[k] = "-"
+
+            dados["ID"] = r.get("id")
+            dados["DATA_HORA"] = r.get("data_hora")
+
+            saida.setdefault("registros", []).append(dados)
+            r["processado"] = True
+
+            log_forense(r.get("id"), texto_original, dados.get("STATUS"), "ia.py")
+
+        salvar_atomico(ENTRADA, entrada)
+        salvar_atomico(SAIDA, saida)
+
+    finally:
+        release_lock()
+
+if __name__ == "__main__":
+    processar()
+
+interfaceone.py# interfaceone.py
+# Interface de entrada com autocomplete do DB (dadosend.json) + correção ortográfica SUFIXO (ghost text).
+# - A interface grava somente em dadosinit.json (bruto) e chama ia.processar() em background.
+# - Sugestões e correções vêm exclusivamente de dadosend.json (tratado pela IA).
+# - Candidate map é reconstruído quando dadosend.json muda; se o arquivo for removido, o cache é limpo.
+# - Correção aparece como sufixo em cinza, posicionada após o texto digitado (sem cobrir o que é digitado).
+# - Listbox com sugestões do DB fica abaixo; ao navegar na lista, a correção pausa.
+# - Tab aplica correção (sufixo) ou aceita item da lista / avança etapas.
+# - FUZZY_CUTOFF = 0.85 (mais certeiro).
+# Substitua seu interfaceone.py atual por este arquivo.
+
+import sys
+import tkinter as tk
+import tkinter.font as tkfont
+import json
+import threading
+import os
+import tempfile
+from datetime import datetime
+import difflib
+import re
+import unicodedata
+import time
+
+# tentativa de usar ia.processar em background (se existir)
+try:
+    from ia import processar  # noqa: F401
+    IA_AVAILABLE = True
+except Exception:
+    IA_AVAILABLE = False
+
+# opcional: preprocessor maps (enriquecimento)
+try:
+    from preprocessor import VEICULOS_MAP, COR_MAP, STATUS_MAP  # noqa: F401
+    PREPROCESSOR_AVAILABLE = True
+except Exception:
+    VEICULOS_MAP = {}
+    COR_MAP = {}
+    STATUS_MAP = {}
+    PREPROCESSOR_AVAILABLE = False
+
+ARQUIVO = "dadosinit.json"   # entrada do usuário (bruto)
+DB_FILE = "dadosend.json"    # banco tratado pela IA (fonte das sugestões)
+
+FUZZY_CUTOFF = 0.85  # aumento de precisão
+
+# -------------------------
+# Normalização / tokenização
+# -------------------------
+def normalize_str(s: str) -> str:
+    """Maiúsculas, NFKD, remove acentos, mantém alfanuméricos e espaços."""
+    if s is None:
+        return ""
+    s = str(s).strip().upper()
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    s = re.sub(r"[^A-Z0-9\s\-]", " ", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+def tokenize_keep_orig(text):
+    """Retorna tokens mantendo acentos (usado para preservar formas originais)."""
+    if not text:
+        return []
+    txt = str(text).strip()
+    return re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ0-9\-]+", txt)
+
+# -------------------------
+# IO atômico (salvar entrada)
+# -------------------------
+def carregar_entrada():
+    try:
+        with open(ARQUIVO, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"registros": []}
+    except Exception:
+        return {"registros": []}
+
+def salvar_atomico(path, dados):
+    dirn = os.path.dirname(path) or "."
+    fd, tmp_path = tempfile.mkstemp(dir=dirn, prefix=".tmp_", suffix=".json")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(dados, f, ensure_ascii=False, indent=4)
+        os.replace(tmp_path, path)
+    finally:
+        if os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except Exception:
+                pass
+
+# -------------------------
+# DB helpers (dadosend.json)
+# -------------------------
+def carregar_db_raw():
+    """Carrega raw do dadosend.json — [] se ausente/corrompido."""
+    try:
+        with open(DB_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data.get("registros", []) if isinstance(data, dict) else data
+    except Exception:
+        return []
+
+def nome_completo_de(reg):
+    n = reg.get("NOME", "-") or "-"
+    s = reg.get("SOBRENOME", "-") or "-"
+    full = f"{n} {s}".strip()
+    return full if full else "-"
+
+def resumo_registro(reg):
+    nome = nome_completo_de(reg)
+    bloco = reg.get("BLOCO", "-") or "-"
+    ap = reg.get("APARTAMENTO", "-") or "-"
+    placa = reg.get("PLACA", "-") or "-"
+    extra = []
+    if bloco and bloco != "-":
+        extra.append(f"BLOCO {bloco}")
+    if ap and ap != "-":
+        extra.append(f"AP {ap}")
+    if placa and placa != "-":
+        extra.append(f"PLACA {placa}")
+    return f"{nome} — {' '.join(extra)}" if extra else nome
+
+# -------------------------
+# CandidateMapCache: rebuild when dadosend.json changes; if missing -> empty (no suggestions)
+# -------------------------
+class CandidateMapCache:
+    def __init__(self, db_path):
+        self.db_path = db_path
+        self.mtime = 0
+        self.map = {}  # normalized_key -> [original_forms with accents]
+        self.exists_and_nonempty = False
+        self._build_if_needed()
+
+    def _db_mtime(self):
+        try:
+            return os.path.getmtime(self.db_path)
+        except Exception:
+            return 0
+
+    def _build_if_needed(self):
+        m = self._db_mtime()
+        # if file removed or mtime changed, rebuild/clear
+        if m == self.mtime and self.map:
+            return
+        self.mtime = m
+        self.map = {}
+        db = carregar_db_raw()
+        if not db:
+            self.exists_and_nonempty = False
+            return
+        self.exists_and_nonempty = True
+
+        def add(orig):
+            if not orig or not isinstance(orig, str):
+                return
+            for tok in tokenize_keep_orig(orig):
+                key = normalize_str(tok)
+                if len(key) < 2:
+                    continue
+                lst = self.map.setdefault(key, [])
+                if orig not in lst:
+                    lst.append(orig)
+
+        # add from db
+        for r in db:
+            for key in ("NOME", "SOBRENOME", "MODELO", "COR", "STATUS", "PLACA"):
+                v = r.get(key)
+                if v and isinstance(v, str):
+                    add(v)
+            add(resumo_registro(r))
+
+        # optionally add from preprocessor maps
+        try:
+            for k, arr in VEICULOS_MAP.items():
+                add(k)
+                for a in arr:
+                    add(a)
+        except Exception:
+            pass
+        try:
+            if isinstance(COR_MAP, dict):
+                for k in COR_MAP.keys():
+                    add(k)
+        except Exception:
+            pass
+        try:
+            if isinstance(STATUS_MAP, dict):
+                for k in STATUS_MAP.keys():
+                    add(k)
+                for arr in STATUS_MAP.values():
+                    for v in arr:
+                        add(v)
+        except Exception:
+            pass
+
+    def get_map(self):
+        self._build_if_needed()
+        return self.map
+
+    def db_has_entries(self):
+        self._build_if_needed()
+        return self.exists_and_nonempty
+
+CAND_CACHE = CandidateMapCache(DB_FILE)
+
+# -------------------------
+# Busca de sugestões (DB) e correção SUFIXO preservando acentos
+# -------------------------
+def buscar_sugestoes_prefixo(prefix):
+    """Retorna list[(display, record)] onde display normalizado começa com prefix (dadosend.json)."""
+    if not CAND_CACHE.db_has_entries():
+        return []
+    pref_norm = normalize_str(prefix)
+    if not pref_norm:
+        return []
+    db = carregar_db_raw()
+    matches = []
+    seen = set()
+    for reg in db:
+        disp = nome_completo_de(reg)
+        if normalize_str(disp).startswith(pref_norm):
+            if disp not in seen:
+                matches.append((disp, reg))
+                seen.add(disp)
+    return matches
+
+def buscar_sugestoes_fuzzy(prefix, max_results=8):
+    """Busca fuzzy entre nomes normalizados (dadosend.json)."""
+    if not CAND_CACHE.db_has_entries():
+        return []
+    pref_norm = normalize_str(prefix)
+    db = carregar_db_raw()
+    if not db:
+        return []
+    mapping = {}
+    norm_names = []
+    for r in db:
+        nm = nome_completo_de(r)
+        n_norm = normalize_str(nm)
+        if n_norm not in mapping:
+            mapping[n_norm] = r
+            norm_names.append(n_norm)
+    candidates = difflib.get_close_matches(pref_norm, norm_names, n=max_results, cutoff=FUZZY_CUTOFF)
+    results = []
+    for cand in candidates:
+        reg = mapping.get(cand)
+        if reg:
+            results.append((nome_completo_de(reg), reg))
+    return results
+
+def sugerir_correcao_suffix(full_text, candidate_map=None, max_results=4):
+    """
+    Sugere candidatos que começam com typed (normalizados) e retorna sufixos (com acentos)
+    para serem exibidos como ghost-text SUFIXO.
+    Se DB vazio -> retorna [].
+    """
+    if not CAND_CACHE.db_has_entries():
+        return []
+    if candidate_map is None:
+        candidate_map = CAND_CACHE.get_map()
+    if not candidate_map:
+        return []
+    typed_norm = normalize_str(full_text)
+    if not typed_norm:
+        return []
+    # find keys that start with typed_norm
+    keys = [k for k in candidate_map.keys() if k.startswith(typed_norm)]
+    results = []
+    for k in sorted(keys, key=lambda x: len(x)):
+        for orig in candidate_map.get(k, []):
+            # ensure orig normalized still startswith typed_norm
+            if normalize_str(orig).startswith(typed_norm):
+                # compute suffix position in original string
+                pos = 0
+                acc_norm = ""
+                for i, ch in enumerate(orig):
+                    acc_norm = normalize_str(orig[: i + 1])
+                    if acc_norm == typed_norm:
+                        pos = i + 1
+                        break
+                suffix = orig[pos:] if pos < len(orig) else ""
+                if suffix:
+                    if suffix not in results:
+                        results.append(suffix)
+                else:
+                    # if suffix empty but orig equals typed (rare), use empty
+                    pass
+            if len(results) >= max_results:
+                break
+        if len(results) >= max_results:
+            break
+    # fuzzy fallback on keys
+    if not results:
+        close_keys = difflib.get_close_matches(typed_norm, list(candidate_map.keys()), n=max_results, cutoff=FUZZY_CUTOFF)
+        for k in close_keys:
+            for orig in candidate_map.get(k, []):
+                # compute whole orig as suffix if not matching
+                suffix = orig
+                if suffix not in results:
+                    results.append(suffix)
+                if len(results) >= max_results:
+                    break
+            if len(results) >= max_results:
+                break
+    return results[:max_results]
+
+# -------------------------
+# UI: SuggestEntry
+# -------------------------
+class SuggestEntry(tk.Frame):
+    def __init__(self, master, **kwargs):
+        super().__init__(master)
+        self.entry_var = tk.StringVar()
+        self.entry = tk.Entry(self, textvariable=self.entry_var, width=80, font=("Segoe UI", 11))
+        self.entry.pack(side=tk.TOP, fill=tk.X)
+        self.entry.focus_set()
+
+        self.font = tkfont.Font(font=self.entry["font"])
+
+        # overlay label (ghost suffix) — positioned at end of typed text
+        entry_bg = self.entry.cget("bg")
+        # use same background so user perceives it as ghost text (no blocking box)
+        self.overlay = tk.Label(self, text="", anchor="w", font=self.entry["font"], fg="gray60", bg=entry_bg)
+        self.overlay.place(in_=self.entry, x=4, y=1)
+
+        # listbox for DB suggestions under entry
+        self.list_frame = tk.Frame(self)
+        self.scrollbar = tk.Scrollbar(self.list_frame, orient=tk.VERTICAL)
+        self.listbox = tk.Listbox(self.list_frame, width=100, height=6, yscrollcommand=self.scrollbar.set, activestyle='dotbox', exportselection=False)
+        self.scrollbar.config(command=self.listbox.yview)
+        self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.listbox_visible = False
+
+        # state
+        self.suggestions_db = []   # list of (display, record)
+        self.correction_suffix = ""  # current suffix ghost (string)
+        self.current_record = None
+        self.completion_steps = []
+        self.step_index = 0
+        self.overlay_paused = False  # when user navigates listbox, pause overlay until typing resumes
+
+        # binds
+        self.entry.bind("<KeyRelease>", self.on_keyrelease)
+        self.entry.bind("<Tab>", self.on_tab, add="+")
+        self.entry.bind("<Down>", self.on_down, add="+")
+        self.entry.bind("<Up>", self.on_up, add="+")
+        self.entry.bind("<Return>", self.on_return, add="+")
+        self.entry.bind("<Escape>", self.on_escape, add="+")
+        self.listbox.bind("<Double-Button-1>", self.on_listbox_activate)
+        self.listbox.bind("<Return>", self.on_listbox_activate)
+        self.listbox.bind("<FocusIn>", lambda e: self._pause_overlay(True))
+        self.listbox.bind("<FocusOut>", lambda e: self._pause_overlay(False))
+
+    # helper: get typed text and measure pixel width to position overlay
+    def _typed_and_x(self):
+        txt = self.entry_var.get().rstrip()
+        x = self.font.measure(txt)
+        return txt, x
+
+    def _pause_overlay(self, val: bool):
+        self.overlay_paused = val
+        if val:
+            self.overlay.config(text="")
+        else:
+            # will be updated on next key release
+            pass
+
+    def on_keyrelease(self, event):
+        key = event.keysym
+        # ignore navigation keys here
+        if key in ("Up", "Down", "Left", "Right", "Return", "Tab", "Escape"):
+            return
+
+        # rebuild candidate cache if DB changed
+        CAND_CACHE._build_if_needed()
+
+        typed = self.entry_var.get()
+        self.current_record = None
+        self.completion_steps = []
+        self.step_index = 0
+        self.correction_suffix = ""
+        # when user types, resume overlay
+        self._pause_overlay(False)
+
+        if not typed.strip():
+            self.hide_listbox()
+            self.overlay.config(text="")
+            return
+
+        # DB suggestions (prefix priority then fuzzy)
+        db_matches = buscar_sugestoes_prefixo(typed)
+        if not db_matches:
+            db_matches = buscar_sugestoes_fuzzy(typed)
+        self.suggestions_db = db_matches
+
+        # correction sufixes based on typed (from candidate_map)
+        suffixes = sugerir_correcao_suffix(typed, candidate_map=CAND_CACHE.get_map(), max_results=3)
+
+        if suffixes and not self.overlay_paused:
+            # pick best
+            suffix = suffixes[0]
+            # display suffix appended at the end of typed string
+            txt, x = self._typed_and_x()
+            # position overlay at end of typed text
+            self.overlay.place_configure(x=x + 6, y=1)
+            # the overlay shows only the suffix (preserves accent)
+            self.overlay.config(text=suffix)
+            self.correction_suffix = suffix
+        else:
+            self.overlay.config(text="")
+            self.correction_suffix = ""
+
+        # show DB list below (separate from overlay)
+        if self.suggestions_db:
+            self.show_listbox(self.suggestions_db)
+        else:
+            self.hide_listbox()
+
+    def on_tab(self, event):
+        """
+        Priority:
+         1) apply correction suffix if present (append suffix)
+         2) else if listbox visible accept selection
+         3) else if record selected with steps advance step
+        """
+        # 1) correction suffix
+        if self.correction_suffix and not self.overlay_paused:
+            typed = self.entry_var.get().rstrip()
+            new_text = (typed + self.correction_suffix).strip()
+            self.entry_var.set(new_text)
+            self.entry.icursor(tk.END)
+            self.overlay.config(text="")
+            self.correction_suffix = ""
+            return "break"
+
+        # 2) if listbox visible accept selection
+        if self.listbox_visible and self.listbox.size() > 0:
+            sel = self.listbox.curselection()
+            idx = sel[0] if sel else 0
+            self.select_db_suggestion(idx)
+            return "break"
+
+        # 3) advance step if available
+        if self.current_record and self.step_index < len(self.completion_steps):
+            next_token = self.completion_steps[self.step_index]
+            self.apply_step_token(next_token)
+            self.step_index += 1
+            return "break"
+
+        return None
+
+    def on_down(self, event):
+        if self.listbox_visible:
+            size = self.listbox.size()
+            if size == 0:
+                return "break"
+            cur = self.listbox.curselection()
+            idx = cur[0] if cur else -1
+            idx = (idx + 1) % size
+            self.listbox.selection_clear(0, tk.END)
+            self.listbox.selection_set(idx)
+            self.listbox.activate(idx)
+            # pause overlay while navigating
+            self._pause_overlay(True)
+            return "break"
+
+    def on_up(self, event):
+        if self.listbox_visible:
+            size = self.listbox.size()
+            if size == 0:
+                return "break"
+            cur = self.listbox.curselection()
+            idx = cur[0] if cur else 0
+            idx = (idx - 1) % size
+            self.listbox.selection_clear(0, tk.END)
+            self.listbox.selection_set(idx)
+            self.listbox.activate(idx)
+            self._pause_overlay(True)
+            return "break"
+
+    def on_return(self, event):
+        if self.listbox_visible:
+            sel = self.listbox.curselection()
+            idx = sel[0] if sel else 0
+            self.select_db_suggestion(idx)
+            return "break"
+        return None
+
+    def on_escape(self, event):
+        self.hide_listbox()
+        self.overlay.config(text="")
+        self.correction_suffix = ""
+
+    def on_listbox_activate(self, event):
+        sel = self.listbox.curselection()
+        if not sel:
+            return
+        idx = sel[0]
+        self.select_db_suggestion(idx)
+
+    # listbox UI
+    def show_listbox(self, db_matches):
+        self.listbox.delete(0, tk.END)
+        for disp, rec in db_matches:
+            display_text = resumo_registro(rec)
+            self.listbox.insert(tk.END, display_text)
+        if not self.listbox_visible:
+            self.list_frame.pack(side=tk.TOP, fill=tk.X, pady=(4, 0))
+            self.listbox_visible = True
+        if self.listbox.size() > 0:
+            self.listbox.selection_set(0)
+            self.listbox.activate(0)
+
+    def hide_listbox(self):
+        if self.listbox_visible:
+            self.list_frame.pack_forget()
+            self.listbox_visible = False
+        self.listbox.delete(0, tk.END)
+        # resume overlay after hiding
+        self._pause_overlay(False)
+
+    # select a DB suggestion: fill name and prepare steps
+    def select_db_suggestion(self, idx):
+        if idx < 0 or idx >= len(self.suggestions_db):
+            return
+        display, record = self.suggestions_db[idx]
+        nome_full = nome_completo_de(record)
+        self.entry_var.set(nome_full)
+        # prepare steps
+        steps = []
+        for key in ["BLOCO", "APARTAMENTO", "PLACA", "MODELO", "COR", "STATUS"]:
+            val = record.get(key, "") or ""
+            if val and val != "-":
+                if key == "BLOCO":
+                    steps.append(f"BLOCO {val}")
+                elif key == "APARTAMENTO":
+                    steps.append(f"AP {val}")
+                elif key == "PLACA":
+                    steps.append(f"PLACA {val}")
+                else:
+                    steps.append(f"{val}")
+        self.current_record = record
+        self.completion_steps = steps
+        self.step_index = 0
+        # overlay show next step at end
+        if steps:
+            typed, x = self._typed_and_x()
+            self.overlay.place_configure(x=x + 6, y=1)
+            self.overlay.config(text=steps[0])
+        else:
+            self.overlay.config(text="")
+        self.hide_listbox()
+
+    def apply_step_token(self, token):
+        current = self.entry_var.get().strip()
+        if current.upper().endswith(token.upper()):
+            return
+        new_text = f"{current} {token}".strip()
+        self.entry_var.set(new_text)
+        # update overlay to next step (if exists)
+        if self.step_index + 1 < len(self.completion_steps):
+            next_hint = self.completion_steps[self.step_index + 1]
+            x = self.font.measure(new_text)
+            self.overlay.place_configure(x=x + 6, y=1)
+            self.overlay.config(text=next_hint)
+        else:
+            self.overlay.config(text="")
+
+# -------------------------
+# salvar e chamar IA (mantido)
+# -------------------------
+def salvar_texto(event=None, entrada_widget=None, btn_widget=None):
+    texto = entrada_widget.get().strip()
+    if not texto:
+        return
+
+    dados = carregar_entrada()
+    novo_id = len(dados.get("registros", [])) + 1
+
+    dados.setdefault("registros", []).append({
+        "id": novo_id,
+        "texto": texto,
+        "processado": False,
+        "data_hora": datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    })
+
+    salvar_atomico(ARQUIVO, dados)
+
+    entrada_widget.delete(0, tk.END)
+    if btn_widget:
+        btn_widget.config(state=tk.DISABLED)
+        entrada_widget.after(500, lambda: btn_widget.config(state=tk.NORMAL))
+
+    # chama processar em thread (mantém lógica original)
+    if IA_AVAILABLE:
+        threading.Thread(target=processar, daemon=True).start()
+
+def abrir_dados():
+    try:
+        import subprocess
+        subprocess.Popen([sys.executable, os.path.join(os.getcwd(), "interfacetwo.py")])
+    except Exception as e:
+        print("Erro ao abrir interfacetwo.py:", e)
+
+def iniciar_interface_principal():
+    janela = tk.Tk()
+    janela.title("Controle de Acesso")
+
+    container = tk.Frame(janela)
+    container.pack(padx=10, pady=10)
+
+    suggest = SuggestEntry(container)
+    suggest.pack(fill=tk.X)
+
+    btn_frame = tk.Frame(janela)
+    btn_frame.pack(padx=10, pady=(8, 10))
+    btn_salvar = tk.Button(btn_frame, text="SALVAR", width=12, command=lambda: salvar_texto(entrada_widget=suggest.entry, btn_widget=btn_salvar))
+    btn_salvar.pack(side=tk.LEFT, padx=(0, 8))
+    btn_dados = tk.Button(btn_frame, text="DADOS", width=12, command=abrir_dados)
+    btn_dados.pack(side=tk.LEFT)
+
+    def global_ctrl_enter(event):
+        if suggest.listbox_visible:
+            sel = suggest.listbox.curselection()
+            if sel:
+                suggest.select_db_suggestion(sel[0])
+                return "break"
+        salvar_texto(entrada_widget=suggest.entry, btn_widget=btn_salvar)
+        return "break"
+
+    janela.bind("<Control-Return>", global_ctrl_enter)
+    janela.bind("<Escape>", lambda e: (suggest.hide_listbox(), suggest.overlay.config(text="")))
+
+    janela.mainloop()
+
+if __name__ == "__main__":
+    iniciar_interface_principal()
+
+interfacetwo.py:
+# interfacetwo.py — monitor com Forçar Recarregar e Limpar dados
+import tkinter as tk
+import json
+import os
+from pathlib import Path
+from tkinter import messagebox
+import shutil
+import time
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ARQUIVO = os.path.join(BASE_DIR, "dadosend.json")
+
+def carregar():
+    try:
+        with open(ARQUIVO, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            registros = data.get("registros", []) if isinstance(data, dict) else data
+            print(f"[interfacetwo] Lendo {ARQUIVO} -> {len(registros)} registros")
+            return registros
+    except FileNotFoundError:
+        print(f"[interfacetwo] Arquivo não encontrado: {ARQUIVO}")
+        return []
+    except json.JSONDecodeError:
+        print(f"[interfacetwo] JSON corrompido em: {ARQUIVO}")
+        return []
+    except Exception as e:
+        print(f"[interfacetwo] Erro lendo {ARQUIVO}: {e}")
+        return []
+
+def safe(v):
+    return v if v and v != "-" else "-"
+
+def atualizar(lista_widget, info_label):
+    lista_widget.delete(0, tk.END)
+    registros = carregar()
+    info_label.config(text=f"Arquivo: {ARQUIVO} — registros: {len(registros)}")
+    for r in registros:
+        linha = (
+            f'{safe(r.get("DATA_HORA"))} | '
+            f'{safe(r.get("NOME"))} {safe(r.get("SOBRENOME"))} | '
+            f'BLOCO {safe(r.get("BLOCO"))} AP {safe(r.get("APARTAMENTO"))} | '
+            f'PLACA {safe(r.get("PLACA"))} | '
+            f'{safe(r.get("MODELO"))} | '
+            f'{safe(r.get("COR"))} | '
+            f'{safe(r.get("STATUS"))}'
+        )
+        lista_widget.insert(tk.END, linha)
+    # atualiza a cada 2 segundos
+    lista_widget.after(2000, lambda: atualizar(lista_widget, info_label))
+
+def forcar_recarregar(lista_widget, info_label):
+    # simplesmente chama atualizar() — que re-lê do disco
+    atualizar(lista_widget, info_label)
+
+def limpar_dados(lista_widget, info_label):
+    if not os.path.exists(ARQUIVO):
+        messagebox.showinfo("Limpar dados", "Arquivo não existe.")
+        return
+    resp = messagebox.askyesno("Limpar dados", "Criar backup e limpar dadosend.json (registros serão removidos)?")
+    if not resp:
+        return
+    # backup
+    bak = os.path.join(BASE_DIR, f"dadosend_backup_{int(time.time())}.json")
+    try:
+        shutil.copy2(ARQUIVO, bak)
+    except Exception as e:
+        messagebox.showerror("Erro", f"Erro ao criar backup: {e}")
+        return
+    # gravar vazio
+    try:
+        with open(ARQUIVO, "w", encoding="utf-8") as f:
+            json.dump({"registros": []}, f, ensure_ascii=False, indent=4)
+    except Exception as e:
+        messagebox.showerror("Erro", f"Erro ao limpar arquivo: {e}")
+        return
+    messagebox.showinfo("Limpar dados", f"Backup salvo em:\n{bak}\nArquivo limpo.")
+    # recarregar view
+    atualizar(lista_widget, info_label)
+
+def iniciar_monitor():
+    janela = tk.Tk()
+    janela.title("Monitor de Acessos (FORÇAR RELOAD / LIMPAR)")
+
+    info_label = tk.Label(janela, text=f"Arquivo: {ARQUIVO}")
+    info_label.pack(padx=10, pady=(6,0), anchor="w")
+
+    lista = tk.Listbox(janela, width=200)
+    lista.pack(padx=10, pady=(2,6))
+
+    btn_frame = tk.Frame(janela)
+    btn_frame.pack(padx=10, pady=(0,10))
+    tk.Button(btn_frame, text="Forçar recarregar", command=lambda: forcar_recarregar(lista, info_label)).pack(side=tk.LEFT, padx=6)
+    tk.Button(btn_frame, text="Limpar (backup + vazio)", command=lambda: limpar_dados(lista, info_label)).pack(side=tk.LEFT, padx=6)
+
+    atualizar(lista, info_label)
+    janela.mainloop()
+
+if __name__ == "__main__":
+    iniciar_monitor()
+
+logger.py:
+from datetime import datetime
+from pathlib import Path
+
+LOG_DIR = Path("logs")
+LOG_DIR.mkdir(exist_ok=True)
+
+LOG_FILE = LOG_DIR / "forense.log"
+
+
+def log_forense(id_registro, texto, status, origem):
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
+        f.write(
+            f"[{datetime.now().strftime('%d/%m/%Y %H:%M:%S')}] "
+            f"ID:{id_registro} | "
+            f"STATUS:{status} | "
+            f"ORIGEM:{origem} | "
+            f"TEXTO:{texto}\n"
+        )
+
+main.py:
+# main.py
+from interfaceone import iniciar_interface_principal
+
+if __name__ == "__main__":
+    iniciar_interface_principal()
+
+preprocessor.py:
+# preprocessor.py
+# Preprocessor atualizado: extração por consumo com detecção de cores mais robusta
+import re
+import unicodedata
+from typing import Tuple, List, Dict
+
+# =========================
+# NORMALIZAÇÃO
+# =========================
+def normalizar(txt: str) -> str:
+    if not txt:
+        return ""
+    txt = txt.upper().strip()
+    txt = unicodedata.normalize("NFKD", txt)
+    return "".join(c for c in txt if not unicodedata.combining(c))
+
+# =========================
+# STATUS
+# =========================
+STATUS_MAP = {
+    "VISITANTE": ["VISITANTE", "VISIT", "VIS", "VST", "VISI", "VISI.?", "VISITANTE"],
+    "MORADOR": ["MORADOR", "MOR", "MORA", "M"],
+    "PRESTADOR DE SERVIÇO": ["PRESTADOR DE SERVIÇO", "PREST", "PRES", "SERV", "FUNC", "FORN", "TERC", "PREST"]
+}
+
+def extrair_status(texto: str) -> str:
+    t = normalizar(texto)
+    for status, termos in STATUS_MAP.items():
+        for termo in termos:
+            if re.search(rf"\b{re.escape(termo)}\b", t):
+                return status
+    return "DESCONHECIDO"
+
+def remover_status(texto: str) -> str:
+    t = texto
+    for termos in STATUS_MAP.values():
+        for termo in termos:
+            t = re.sub(rf"\b{re.escape(termo)}\b", "", t, flags=re.IGNORECASE)
+    t = re.sub(r"\s+", " ", t).strip()
+    return t
+
+def detectar_status(texto: str) -> Tuple[str, str]:
+    status = extrair_status(texto)
+    texto_sem = remover_status(texto)
+    return status, texto_sem
+
+# =========================
+# VEÍCULOS / MODELOS (adicionado MOTO)
+# =========================
+VEICULOS_MAP = {
+    "ONIX": ["ONIX","ONI","ONX","ONICS","ONIX LT","ONIX PLUS"],
+    "CORSA": ["CORSA","COR","CRSA","CORZA"],
+    "CRUZE": ["CRUZE","CRUZ","CRUS","CRZE"],
+    "CELTA": ["CELTA","CELT","CLTA"],
+    "PRISMA": ["PRISMA","PRISM","PRZMA"],
+    "SPIN": ["SPIN","SPN"],
+    "S10": ["S10","S-10","S 10"],
+    "CLASSIC": ["CLASSIC","CLASIC","CLSIC"],
+    "VIRTUS": ["VIRTUS","VIRT","VIRTS","VIR"],
+    "POLO": ["POLO","POL","PLO","POLL"],
+    "GOL": ["GOL","GOOL","GL"],
+    "JETTA": ["JETTA","JET","JETA","JTA"],
+    "SAVEIRO": ["SAVEIRO","SAVEIR","SAVERO"],
+    "VOYAGE": ["VOYAGE","VOIAGE","VYAGE"],
+    "FOX": ["FOX","FOXX"],
+    "UP": ["UP","UP!"],
+    "MOBI": ["MOBI","MOB","MBI","MOBBY"],
+    "UNO": ["UNO","UN","UUNO"],
+    "ARGO": ["ARGO","ARG","AROG"],
+    "PALIO": ["PALIO","PAL","PLIO"],
+    "SIENA": ["SIENA","SENA","SINA"],
+    "STRADA": ["STRADA","STRD","STRDA"],
+    "TORO": ["TORO","TOR","TRO"],
+    "CRONOS": ["CRONOS","CRONO","CRNS"],
+    "IDEA": ["IDEA","IDA"],
+    "HB20": ["HB20","HB 20","H B 20","HB2O","HB-20"],
+    "CRETA": ["CRETA","CRET","CRTA"],
+    "IX35": ["IX35","IX 35","I X 35"],
+    "KA": ["KA","KÁ","K","FORD KA"],
+    "FIESTA": ["FIESTA","FIEST","FSTA"],
+    "ECOSPORT": ["ECOSPORT","ECO","ECOSP","ECOS"],
+    "RANGER": ["RANGER","RANGR"],
+    "COROLLA": ["COROLLA","COROLA","CORLLA"],
+    "ETIOS": ["ETIOS","ETIO","ETIUS"],
+    "HILUX": ["HILUX","HILUXX","HLUX"],
+    "YARIS": ["YARIS","YRS","IARIS"],
+    "CIVIC": ["CIVIC","CIV","CIVIK","CIVC"],
+    "FIT": ["FIT","FITT"],
+    "HRV": ["HRV","H-RV","H R V"],
+    "CITY": ["CITY","CTY"],
+    "SANDERO": ["SANDERO","SAND","SNDR"],
+    "LOGAN": ["LOGAN","LOG","LAGN"],
+    "KWID": ["KWID","KWD","QUID"],
+    "DUSTER": ["DUSTER","DUST","DSTR"],
+    "MOTO": ["MOTO","MOT","MOTOR","MOTOCICLETA"]  # adicionado MOTO
+}
+
+# Precompila padrões para performance
+_MODEL_PATTERNS: List[Tuple[str, re.Pattern]] = []
+for modelo, abrevs in VEICULOS_MAP.items():
+    for ab in abrevs:
+        _MODEL_PATTERNS.append((modelo, re.compile(rf"\b{re.escape(ab)}\b", flags=re.IGNORECASE)))
+
+def separar_modelos(texto: str) -> Tuple[str, List[str]]:
+    t = texto
+    encontrados: List[str] = []
+    for modelo, pattern in _MODEL_PATTERNS:
+        m = pattern.search(t)
+        if m:
+            encontrados.append(modelo)
+            t = t[:m.start()] + " " + t[m.end():]
+            t = re.sub(r"\s+", " ", t).strip()
+    return t.strip(), encontrados
+
+# =========================
+# CORES (detecção robusta por token)
+# =========================
+# Mapeamento: chave curta -> forma canônica
+COR_MAP = {
+    "PRET": "PRETO",
+    "PRETO": "PRETO",
+    "PRAT": "PRATA",
+    "PRATA": "PRATA",
+    "BRANC": "BRANCO",
+    "BRANCO": "BRANCO",
+    "CHUMB": "CHUMBO",
+    "CHUMBO": "CHUMBO",
+    "CINZ": "CINZA",
+    "CINZA": "CINZA",
+    "VERMEL": "VERMELHO",
+    "VERMELHO": "VERMELHO",
+    "AZUL": "AZUL",
+    "VERDE": "VERDE",
+    "ROSA": "ROSA",
+    "AMAREL": "AMARELO"
+}
+
+def extrair_cor(texto: str) -> str:
+    """
+    Detecta a primeira palavra-token que corresponder a uma cor conhecida.
+    Faz correspondência por prefixo (para lidar com abreviações como PRAT, VERME...).
+    """
+    t = normalizar(texto)
+    # encontra palavras (tokens)
+    for m in re.finditer(r"\b[À-ŸA-Z0-9]+\b", t):
+        token = m.group(0)
+        # tenta casar com qualquer chave por prefixo
+        for bruto, normal in COR_MAP.items():
+            if token.startswith(bruto):
+                return normal.title()
+    return ""
+
+# =========================
+# NOME
+# =========================
+NOME_MAP = {
+    "JAOA": "JOAO",
+    "OLIEIRA": "OLIVEIRA",
+    "MARIA": "MARIA",
+    "APARECIDA": "APARECIDA",
+    "HENRIQUE": "HENRIQUE",
+    "CAIO": "CAIO",
+    "ANA": "ANA",
+    "JULIA": "JULIA",
+    "JORGE": "JORGE"
+}
+
+def construir_residuais() -> List[str]:
+    residuais = ["BLOCO","BL","B","APARTAMENTO","AP","A","PLACA","PL",
+                 "APTO","APART", "COR"]
+    for abrevs in VEICULOS_MAP.values():
+        residuais.extend([ab.upper() for ab in abrevs])
+    residuais.extend([c.upper() for c in COR_MAP.keys()])
+    for termos in STATUS_MAP.values():
+        residuais.extend([s.upper() for s in termos])
+    return sorted(set(residuais), key=lambda x: -len(x))
+
+RESIDUAIS = construir_residuais()
+
+def limpar_texto_nome(texto: str) -> str:
+    t = normalizar(texto)
+    for termo in RESIDUAIS:
+        t = re.sub(rf"\b{re.escape(termo)}\b", "", t, flags=re.IGNORECASE)
+    t = re.sub(r"\b([A-Z]{3}\-?\d{4}|[A-Z]{3}\d[A-Z]\d{2})\b", "", t)
+    t = re.sub(r"\b\d+\b", "", t)
+    t = re.sub(r"[^\w\s\-']", " ", t)
+    t = re.sub(r"\s+", " ", t).strip()
+    return t
+
+def corrigir_nome(texto: str) -> str:
+    if not texto:
+        return ""
+    t = limpar_texto_nome(texto)
+    if not t:
+        return ""
+    tokens = []
+    for n in t.split():
+        mapped = NOME_MAP.get(n.upper(), n)
+        tokens.append(mapped.capitalize())
+    return " ".join(tokens)
+
+# =========================
+# EXTRAÇÃO POR CONSUMO
+# =========================
+def _extract_and_remove_first(text: str, pattern: str, group: int = 0) -> Tuple[str, str]:
+    m = re.search(pattern, text, flags=re.IGNORECASE)
+    if not m:
+        return "", text
+    val = m.group(group) if group else m.group(0)
+    new_text = text[:m.start()] + " " + text[m.end():]
+    new_text = re.sub(r"\s+", " ", new_text).strip()
+    return val.strip(), new_text.strip()
+
+def extrair_tudo_consumo(texto: str) -> Dict[str, object]:
+    """
+    Extrai campos consumindo tokens na ordem:
+    1) PLACA, 2) BLOCO, 3) APARTAMENTO, 4) STATUS, 5) MODELO, 6) COR, 7) NOME
+    """
+    t = normalizar(texto)
+
+    # 1) PLACA
+    placa_pattern = r"([A-Z]{3}\-?\d{4}|[A-Z]{3}\d[A-Z]\d{2})"
+    placa, t = _extract_and_remove_first(t, placa_pattern, group=1)
+    if placa:
+        placa = placa.replace("-", "")
+
+    # 2) BLOCO
+    bloco_pattern = r"\b(?:BLOCO|BL|BLO|B)\s*[:\-]?\s*([A-Z0-9]+)\b"
+    bloco, t = _extract_and_remove_first(t, bloco_pattern, group=1)
+
+    # 3) APARTAMENTO
+    ap_pattern = r"\b(?:APARTAMENTO|APART|APTO|AP)\s*[:\-]?\s*([A-Z0-9]+)\b"
+    apartamento, t = _extract_and_remove_first(t, ap_pattern, group=1)
+
+    # 4) STATUS
+    status = extrair_status(t)
+    t = remover_status(t)
+
+    # 5) MODELO (consome tokens com separar_modelos)
+    texto_pos_modelo, modelos = separar_modelos(t)
+    t = texto_pos_modelo
+
+    # 6) COR (procura tokens e consome o primeiro que corresponda)
+    cor_encontrada = ""
+    # iterar pelas palavras com posição para remover apenas a ocorrência correta
+    for m in re.finditer(r"\b[À-ŸA-Z0-9]+\b", t):
+        token = m.group(0)
+        matched = False
+        for bruto, normal in COR_MAP.items():
+            if token.startswith(bruto):
+                cor_encontrada = normal
+                # remover apenas essa ocorrência explicitamente
+                t = t[:m.start()] + " " + t[m.end():]
+                t = re.sub(r"\s+", " ", t).strip()
+                matched = True
+                break
+        if matched:
+            break
+
+    if cor_encontrada:
+        cor_encontrada = cor_encontrada.title()
+
+    # 7) NOME: o que sobrou
+    nome_raw = corrigir_nome(t)
+
+    resultado = {
+        "STATUS": status or "DESCONHECIDO",
+        "BLOCO": bloco or "",
+        "APARTAMENTO": apartamento or "",
+        "PLACA": placa or "",
+        "MODELOS": modelos or [],
+        "COR": cor_encontrada or "",
+        "NOME_RAW": nome_raw or "",
+        "TEXTO_LIMPO": t or ""
+    }
+
+    # segurança: remover aparições da PLACA/AP do NOME_RAW se por acaso restaram
+    if resultado["NOME_RAW"]:
+        nr = resultado["NOME_RAW"]
+        if resultado["PLACA"] and resultado["PLACA"] in nr:
+            nr = nr.replace(resultado["PLACA"], "").strip()
+        if resultado["APARTAMENTO"] and resultado["APARTAMENTO"] in nr:
+            nr = nr.replace(resultado["APARTAMENTO"], "").strip()
+        resultado["NOME_RAW"] = nr
+
+    return resultado
+
+# compatibilidade antiga
+def extrair_tudo(texto: str) -> Dict[str, object]:
+    return extrair_tudo_consumo(texto)
+
+
+tests.py: 
+# tests.py
+# Testes rápidos para verificar a detecção de status (compatível com preprocessor.detectar_status)
+
+from preprocessor import detectar_status
+
+TESTES = {
+    "VIS JOAO BLOCO 4": "VISITANTE",
+    "JOAO BLOCO 4 AP 12": "DESCONHECIDO",  # não há palavra de status explícita -> DESCONHECIDO
+    "M JOAO AP 10": "MORADOR",
+    "PREST MARIA SERV LIMPEZA": "PRESTADOR DE SERVIÇO",
+    "JOAO OLIVEIRA": "DESCONHECIDO"
+}
+
+def executar():
+    for texto, esperado in TESTES.items():
+        status, _ = detectar_status(texto)
+        assert status == esperado, f"ERRO: {texto} -> {status} (esperado {esperado})"
+    print("✅ TODOS OS TESTES PASSARAM")
+
+if __name__ == "__main__":
+    executar()
+
+v4_producao_portaria.txt:
+Você é um sistema auxiliar de normalização textual.
+
+Sua função é APENAS:
+- Corrigir nomes próprios
+- Identificar modelo e cor do veículo
+- Corrigir erros ortográficos evidentes
+
+❌ Você NÃO decide status
+❌ Você NÃO decide entrada
+❌ Você NÃO decide identificação
+❌ MODELOS DE VEÍCULO NUNCA SÃO NOMES
+
+Retorne SOMENTE este JSON (sem texto extra):
+
+{
+  "NOME": "",
+  "SOBRENOME": "",
+  "MODELO": "",
+  "COR": ""
+}
+
+Seguindo toda essa estrutura e os codigs, gostaria de acrescentar uma funcao no interfaceone.py, na qual a ideia e facilitar a escrita do usuario, induzindo a mesno erros de escrita, como um corretor porem nao pode ser automatico, ele sera somente sugestivo, por exemplo o usuario escreveu J, entao aparecera os nomes com J porem esse correto ele trabalhara dando prioridade para o banco de dados que ja exite entao ele vai puxar no banco de dados os nome que la estivere com J, mas conforme o usuario for escrevendo Jai, e nao tiver nada no banco de dados entao ele busca as possiveis refeiricias para continua aquele nome Jaime por exemplo, como que vai acontecer essa sujestao, aparecera com uma tonalidade de cor mais clara as sujestoes do que a cor do texto que esta sendo escrito, entao caso o usuario entenda que aquela sugestao foi compativel com o que ele presicava entao ele pode com o tab completar o restante da palavra, e conforme ele for escrevendo vai sendo feita a busca no banco de dados, se ele escrever JOAO automaticamente de aparecer as proximas sujestoes do JOAO que esta no banco de dados, EXEMPLO: JOAO, AI APARECE O BLOCO SE ELE DE TAB ENTAO APARECE O AP, e assim sucetivamente ate a ultima informacao, caso tenha mais de um JOAO ali no banco de dados com as informacoes diferentes entao aparecera uma pequena lista abaixo to texto que o usuario esta escrevendo do qual ele pode navegar ou seleciona eles atraves das setas cima ou baixo, algo parecido como acontece no vscode.    
+

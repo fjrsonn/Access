@@ -1,27 +1,35 @@
+# preprocessor.py
+# Preprocessor atualizado: extração por consumo com detecção de cores, modelos e nomes.
+# Mantém compatibilidade com a interface esperada por ia.py
+
 import re
 import unicodedata
+from typing import Tuple, List, Dict
+
 
 # =========================
 # NORMALIZAÇÃO
 # =========================
-def normalizar(txt):
+def normalizar(txt: str) -> str:
     if not txt:
         return ""
-    txt = txt.upper().strip()
-    txt = unicodedata.normalize("NFKD", txt)
-    return "".join(c for c in txt if not unicodedata.combining(c))
+    txt = txt.strip()
+    # normalizar unicode e remover diacríticos para facilitar matching
+    nkfd = unicodedata.normalize("NFKD", txt)
+    txt_ascii = "".join(c for c in nkfd if not unicodedata.combining(c))
+    return txt_ascii.upper()
 
 
 # =========================
 # STATUS
 # =========================
 STATUS_MAP = {
-    "VISITANTE": ["VIS", "VISIT", "VISI", "VST", "V", "VISITANTE"],
-    "MORADOR": ["MOR", "MORA", "MORAD", "M", "MORADOR"],
-    "PRESTADOR DE SERVIÇO": ["PREST", "PRES", "SERV", "FUNC", "FORN", "TERC", "PR", "P", "PRESTADOR DE SERVIÇO"]
+    "VISITANTE": ["VISITANTE", "VISIT", "VIS", "VST", "VISI", "VI", "VISITANT", "VISITAN", "VISITA", "VISITNTE", "VISITTE", "VISITNE", "VISITANET", "VISITN", "VSTANTE", "VISITANTY"],
+    "MORADOR": ["MORADOR", "MOR", "MORA", "M", "MORADO", "MORAD", "MRADOR", "MOADOR", "MORADR", "MORADRO", "MORADORES", "MORADORA", "MOR", "MOR."],
+    "PRESTADOR DE SERVIÇO": ["PRESTADOR DE SERVIÇO", "PRESTADOR DE SERVICO", "PREST", "PRES", "SERV", "FUNC", "FORN", "TERC", "PRESTADOR", "SERVICO", "SERVIÇO", "PREST SERVICO", "PREST SERVIÇO", "P.S", "PS", "PRESTADR", "PRESTADO", "SERVIC", "SERVIÇ", "PRESTADRO", "PRESTADORES", "PRESTADORA", "FORNECEDOR", "FUNCIONARIO", "TERCEIRIZADO", "TERCEIRO"]
 }
 
-def extrair_status(texto):
+def extrair_status(texto: str) -> str:
     t = normalizar(texto)
     for status, termos in STATUS_MAP.items():
         for termo in termos:
@@ -29,41 +37,22 @@ def extrair_status(texto):
                 return status
     return "DESCONHECIDO"
 
-def remover_status(texto):
+def remover_status(texto: str) -> str:
     t = texto
     for termos in STATUS_MAP.values():
         for termo in termos:
             t = re.sub(rf"\b{re.escape(termo)}\b", "", t, flags=re.IGNORECASE)
-    return t.strip()
+    t = re.sub(r"\s+", " ", t).strip()
+    return t
+
+def detectar_status(texto: str) -> Tuple[str, str]:
+    status = extrair_status(texto)
+    texto_sem = remover_status(texto)
+    return status, texto_sem
 
 
 # =========================
-# ENDEREÇO / PLACA
-# =========================
-def extrair_endereco(texto):
-    t = normalizar(texto)
-
-    bloco = ""
-    ap = ""
-    placa = ""
-
-    m = re.search(r"\b(BLOCO|BL|B)\s*(\d+)\b", t)
-    if m:
-        bloco = m.group(2)
-
-    m = re.search(r"\b(APARTAMENTO|AP|A)\s*(\d+)\b", t)
-    if m:
-        ap = m.group(2)
-
-    m = re.search(r"\b[A-Z]{3}\d{4}\b", t)
-    if m:
-        placa = m.group(0)
-
-    return {"BLOCO": bloco, "APARTAMENTO": ap, "PLACA": placa}
-
-
-# =========================
-# VEÍCULOS
+# VEÍCULOS / MODELOS (adicionado MOTO e muitos aliases)
 # =========================
 VEICULOS_MAP = {
     "ONIX": ["ONIX","ONI","ONX","ONICS","ONIX LT","ONIX PLUS"],
@@ -74,6 +63,7 @@ VEICULOS_MAP = {
     "SPIN": ["SPIN","SPN"],
     "S10": ["S10","S-10","S 10"],
     "CLASSIC": ["CLASSIC","CLASIC","CLSIC"],
+    "NIVUS": ["NIVUS","NIV","NVS"],
     "VIRTUS": ["VIRTUS","VIRT","VIRTS","VIR"],
     "POLO": ["POLO","POL","PLO","POLL"],
     "GOL": ["GOL","GOOL","GL"],
@@ -110,45 +100,237 @@ VEICULOS_MAP = {
     "LOGAN": ["LOGAN","LOG","LAGN"],
     "KWID": ["KWID","KWD","QUID"],
     "DUSTER": ["DUSTER","DUST","DSTR"],
+    "MOTO": ["MOTO","MOT","MOTOR","MOTOCICLETA"],
+    "T-CROSS": ["T-CROSS", "TCROSS", "T CROSS", "T-CROS", "TCRUZ"],
+    "COMPASS": ["COMPASS", "COMPAS", "COMPASO"],
+    "RENEGADE": ["RENEGADE", "RENEGAD"],
+    "TRACKER": ["TRACKER", "TRAKER", "TRAQUER"],
+    "KICKS": ["KICKS", "KIKIS", "KIX"],
+    "FASTBACK": ["FASTBACK", "FASTBAK", "FESTBACK"],
+    "PULSE": ["PULSE", "PULSI", "PULZ"],
+    "COROLLA CROSS": ["COROLLA CROSS", "COROLLACROSS", "COROLLA"],
+    "TIGGO 5X": ["TIGGO 5X", "TIGGO5X", "TIGGO"],
+    "DOLPHIN": ["DOLPHIN"],
+    "SONG PLUS": ["SONG PLUS", "SONGPLUS", "SONG"],
+    "HAVAL H6": ["HAVAL H6", "HAVALH6", "HAVAL"],
+    "CG 160": ["CG 160", "CG160", "CG"],
+    "BIZ": ["BIZ", "BIS"],
+    "POP 110I": ["POP 110I", "POP110I", "POP"],
+    "NXR 160 BROS": ["NXR 160 BROS", "NXR160BROS", "NXR"],
+    "CB 300F TWISTER": ["CB 300F TWISTER", "CB300FTWISTER", "CB"],
+    "PCX 160": ["PCX 160", "PCX160", "PCX"],
+    "FAZER FZ25": ["FAZER FZ25", "FAZERFZ25", "FAZER"],
+    "CROSSER 150": ["CROSSER 150", "CROSSER150", "CROSSER"],
+    "FACTOR 150": ["FACTOR 150", "FACTOR150", "FACTOR"],
+    "LANDER 250": ["LANDER 250", "LANDER250", "LANDER"],
+    "SPORT 110I": ["SPORT 110I", "SPORT110I", "SPORT"],
+    "XY 125": ["XY 125", "XY125", "XY"],
+    "FIORINO": ["FIORINO", "FIORIN"],
+    "MASTER": ["MASTER", "MASTR"],
+    "DUCATO": ["DUCATO", "DUCATTO"],
+    "SPRINTER": ["SPRINTER", "SPRINT", "ESPRINTER"],
+    "DAILY": ["DAILY", "DAILI", "DAYLI"],
+    "HR": ["HR"],
+    "BONGO": ["BONGO", "BONGU"],
+    "EXPERT": ["EXPERT", "EXPER"],
+    "JUMPY": ["JUMPY", "JUMPI"],
+    "TRANSIT": ["TRANSIT", "TRANZIT"],
+    "DELIVERY": ["DELIVERY", "DELIVERI", "DELIVER"],
+    "ACCELO": ["ACCELO", "ACELO", "ACCELLO"],
+    "F-350": ["F-350", "F350"],
+    "F-4000": ["F-4000", "F4000"],
+    "TUCSON": ["TUCSON"],
+    "SANTA FE": ["SANTA FE", "SANTAFE", "SANTA", "SANTA FÉ"],
+    "AZERA": ["AZERA", "AZERRA"],
+    "ELANTRA": ["ELANTRA"],
+    "I30": ["I30"],
+    "KONA": ["KONA"],
+    "IONIQ": ["IONIQ"],
+    "CR-V": ["CR-V", "CRV", "C R V"],
+    "WR-V": ["WR-V", "WRV", "W R V"],
+    "ACCORD": ["ACCORD", "ACORD"],
+    "ZR-V": ["ZR-V", "ZRV", "Z R V"],
+    "TAOS": ["TAOS", "TAO"],
+    "TIGUAN": ["TIGUAN", "TIGUÃ"],
+    "AMAROK": ["AMAROK", "AMAROC"],
+    "PASSAT": ["PASSAT", "PASAT"],
+    "GOLF": ["GOLF"],
+    "SANTANA": ["SANTANA"],
+    "FUSCA": ["FUSCA", "FUSKA"],
+    "KOMBI": ["KOMBI", "COMBY", "COMBI"],
+    "MAREA": ["MAREA"],
+    "TEMPRA": ["TEMPRA"],
+    "STILO": ["STILO"],
+    "BRAVO": ["BRAVO"],
+    "LINEA": ["LINEA"],
+    "500": ["500", "CINQUECENTO", "FIAT 500"],
+    "TITANO": ["TITANO"],
+    "SCUDO": ["SCUDO"],
+    "MONTANA": ["MONTANA", "MONTANNA"],
+    "EQUINOX": ["EQUINOX"],
+    "TRAILBLAZER": ["TRAILBLAZER", "TRAILBLASER", "TRAIL"],
+    "SILVERADO": ["SILVERADO", "SILVERADDO"],
+    "ASTRA": ["ASTRA"],
+    "VECTRA": ["VECTRA", "VEKTRA"],
+    "MERIVA": ["MERIVA"],
+    "ZAFIRA": ["ZAFIRA"],
+    "CAPTIVA": ["CAPTIVA"],
+    "CAMARO": ["CAMARO", "CAMARRO"],
+    "TERRITORY": ["TERRITORY", "TERRITORI"],
+    "MAVERICK": ["MAVERICK", "MAVERIK"],
+    "BRONCO SPORT": ["BRONCO SPORT", "BRONCOSPORT", "BRONCO"],
+    "MUSTANG": ["MUSTANG", "MUSTANGUE"],
+    "FOCUS": ["FOCUS", "FOKUS"],
+    "FUSION": ["FUSION", "FUZION"],
+    "EDGE": ["EDGE"],
+    "F-150": ["F-150", "F150"],
+    "F-250": ["F-250", "F250"],
+    "OROCH": ["OROCH", "OROCK"],
+    "KARDIAN": ["KARDIAN"],
+    "KANGOO": ["KANGOO", "KANGU"],
+    "MEGANE": ["MEGANE"],
+    "SCENIC": ["SCENIC"],
+    "FLUENCE": ["FLUENCE", "FLUENCI"],
+    "CAPTUR": ["CAPTUR", "CAPTURE"],
+    "208": ["208"],
+    "2008": ["2008"],
+    "3008": ["3008"],
+    "5008": ["5008"],
+    "PARTNER": ["PARTNER", "PARTINER"],
+    "BOXER": ["BOXER", "BOKSER"],
+    "206": ["206"],
+    "207": ["207"],
+    "307": ["307"],
+    "308": ["308"],
+    "408": ["408"],
+    "320I": ["320I", "320"],
+    "X1": ["X1"],
+    "X3": ["X3"],
+    "X5": ["X5"],
+    "X6": ["X6"],
+    "M3": ["M3"],
+    "M5": ["M5"],
+    "Z4": ["Z4"],
+    "I3": ["I3"],
+    "IX": ["IX"],
+    "A3": ["A3"],
+    "A4": ["A4"],
+    "A5": ["A5"],
+    "Q3": ["Q3"],
+    "Q5": ["Q5"],
+    "Q7": ["Q7"],
+    "Q8": ["Q8"],
+    "E-TRON": ["E-TRON", "ETRON"],
+    "TT": ["TT"],
+    "R8": ["R8"],
+    "SEAL": ["SEAL", "SIAL"],
+    "YUAN PLUS": ["YUAN PLUS", "YUANPLUS", "YUAN"],
+    "TAN": ["TAN"],
+    "HAN": ["HAN"],
+    "KING": ["KING"],
+    "SHARK": ["SHARK"],
+    "MONSTER": ["MONSTER", "MONSTR"],
+    "PANIGALE": ["PANIGALE", "PANIGAL"],
+    "MULTISTRADA": ["MULTISTRADA"],
+    "SCRAMBLER": ["SCRAMBLER"],
+    "DIAVEL": ["DIAVEL"],
+    "TIGER 900": ["TIGER 900", "TIGER900", "TIGER"],
+    "TIGER 1200": ["TIGER 1200", "TIGER1200", "TIGER"],
+    "STREET TRIPLE": ["STREET TRIPLE", "STREETTRIPLE", "STREET"],
+    "SPEED TRIPLE": ["SPEED TRIPLE", "SPEEDTRIPLE", "SPEED"],
+    "BONNEVILLE": ["BONNEVILLE", "BONEVILLE"],
+    "TRIDENT 660": ["TRIDENT 660", "TRIDENT660", "TRIDENT"],
+    "SCRAMBLER 400X": ["SCRAMBLER 400X", "SCRAMBLER400X", "SCRAMBLER"],
+    "SPEED 400": ["SPEED 400", "SPEED400", "SPEED"],
+    "R 1250 GS": ["R 1250 GS", "R1250GS", "R", "GS 1250"],
+    "R 1300 GS": ["R 1300 GS", "R1300GS", "R", "GS 1300"],
+    "F 800 GS": ["F 800 GS", "F800GS", "F"],
+    "F 900 GS": ["F 900 GS", "F900GS", "F"],
+    "G 310 GS": ["G 310 GS", "G310GS", "G"],
+    "S 1000 RR": ["S 1000 RR", "S1000RR", "S", "S1000"],
+    "XRE 300": ["XRE 300", "XRE300", "XRE"],
+    "XRE 190": ["XRE 190", "XRE190", "XRE"],
+    "SAHARA 300": ["SAHARA 300", "SAHARA300", "SAHARA"],
+    "CB 500": ["CB 500", "CB500", "CB"],
+    "CB 650R": ["CB 650R", "CB650R", "CB"],
+    "NC 750X": ["NC 750X", "NC750X", "NC"],
+    "AFRICA TWIN": ["AFRICA TWIN", "AFRICATWIN", "AFRICA"],
+    "HORNET": ["HORNET", "ORNET"],
+    "MT-03": ["MT-03", "MT03", "MT 03"],
+    "MT-07": ["MT-07", "MT07", "MT 07"],
+    "MT-09": ["MT-09", "MT09", "MT 09"],
+    "R3": ["R3"],
+    "NMAX": ["NMAX", "N-MAX", "N MAX"],
+    "XMAX": ["XMAX", "X-MAX", "X MAX"],
+    "TENERE 700": ["TENERE 700", "TENERE700", "TENERE"],
+    "NINJA 400": ["NINJA 400", "NINJA400", "NINJA"],
+    "NINJA 650": ["NINJA 650", "NINJA650", "NINJA"],
+    "Z400": ["Z400"],
+    "Z900": ["Z900"],
+    "VERSYS 650": ["VERSYS 650", "VERSYS650", "VERSYS"],
+    "V-STROM": ["V-STROM", "VSTROM"],
+    "HAYABUSA": ["HAYABUSA", "HAIABUSA"],
+    "GSX-S": ["GSX-S", "GSXS"],
+    "FAT BOY": ["FAT BOY", "FATBOY", "FAT"],
+    "IRON 883": ["IRON 883", "IRON883", "IRON"],
+    "HERITAGE SOFTAL": ["HERITAGE SOFTAL", "HERITAGESOFTAL", "HERITAGE"],
+    "ROAD KING": ["ROAD KING", "ROADKING", "ROAD"]
 }
 
-def separar_modelos(texto):
-    t = normalizar(texto)
-    encontrados = []
+# Precompila padrões para performance
+_MODEL_PATTERNS: List[tuple] = []
+for modelo, abrevs in VEICULOS_MAP.items():
+    for ab in abrevs:
+        _MODEL_PATTERNS.append((modelo, re.compile(rf"\b{re.escape(ab)}\b", flags=re.IGNORECASE)))
 
-    for modelo, abrevs in VEICULOS_MAP.items():
-        for ab in abrevs:
-            if re.search(rf"\b{re.escape(ab)}\b", t):
-                encontrados.append(modelo)
-                t = re.sub(rf"\b{re.escape(ab)}\b", "", t)
-                break
-
+def separar_modelos(texto: str) -> Tuple[str, List[str]]:
+    t = texto
+    encontrados: List[str] = []
+    for modelo, pattern in _MODEL_PATTERNS:
+        m = pattern.search(t)
+        if m:
+            encontrados.append(modelo)
+            # remove apenas a ocorrência encontrada
+            t = t[:m.start()] + " " + t[m.end():]
+            t = re.sub(r"\s+", " ", t).strip()
     return t.strip(), encontrados
 
 
 # =========================
-# CORES
+# CORES (detecção robusta por token)
 # =========================
 COR_MAP = {
-    "PRET": "PRETO",
-    "PRETO": "PRETO",
-    "PRAT": "PRATA",
-    "PRATA": "PRATA",
-    "BRANC": "BRANCO",
-    "BRANCO": "BRANCO",
-    "CHUMB": "CHUMBO",
-    "CHUMBO": "CHUMBO",
-    "CINZ": "CINZA",
-    "CINZA": "CINZA",
-    "VERMEL": "VERMELHO",
-    "VERMELHO": "VERMELHO"
+    "BRANCO": ["BRANCO", "BRANCA", "BRANC", "BRANCO PEROLIZADO", "BRANCO METALICO", "BRANCO SOLIDO", "BRANCO TAFETA", "BRANCO ESTELAR"],
+    "PRETO": ["PRETO", "PRETA", "PRET", "PRETO METALICO", "PRETO PEROLIZADO", "PRETO FOSCO", "PRETO NINJA", "PRETO ECLIPSE"],
+    "PRATA": ["PRATA", "PRAT", "PRATEADO", "PRATEADA", "PRATA METALICO", "PRATA BARI", "PRATA SIRIUS"],
+    "CINZA": ["CINZA", "CINZ", "CINZA METALICO", "CINZA GRAFITE", "CINZA BARIUM", "CINZA MOONLIGHT", "CINZA PLATINUM"],
+    "VERMELHO": ["VERMELHO", "VERMELHA", "VERM", "VERMELHO METALICO", "VERMELHO PEROLIZADO", "VERMELHO FOGO", "VERMELHO TRIBAL"],
+    "AZUL": ["AZUL", "AZU", "AZUL METALICO", "AZUL PEROLIZADO", "AZUL MARINHO", "AZUL CELESTE", "AZUL COSMOS"],
+    "VERDE": ["VERDE", "VERD", "VERDE METALICO", "VERDE MUSGO", "VERDE FLORESTA", "VERDE MANTIQUEIRA"],
+    "AMARELO": ["AMARELO", "AMARELA", "AMAR", "AMARELO METALICO", "AMARELO CANARIO", "AMARELO SOLAR"],
+    "LARANJA": ["LARANJA", "LARANJ", "LARANJA METALICO", "LARANJA VIBRANTE", "LARANJA TERRA"],
+    "MARROM": ["MARROM", "MARRON", "MARROM METALICO", "MARROM TERRA", "MARROM CAFE"],
+    "BEGE": ["BEGE", "BEG", "BEGE METALICO", "BEGE AREIA", "BEGE CHAMPAGNE"],
+    "DOURADO": ["DOURADO", "DOURADA", "DOUR", "DOURADO METALICO"],
+    "VINHO": ["VINHO", "VINH", "BORDEAUX", "BORDO"],
+    "ROSA": ["ROSA", "PINK"],
+    "ROXO": ["ROXO", "ROXA", "VIOLETA"],
+    "FANTASIA": ["FANTASIA", "COLORIDO", "MULTICOR"]
 }
 
-def extrair_cor(texto):
+def extrair_cor(texto: str) -> str:
+    """
+    Detecta a primeira palavra-token que corresponda a uma cor conhecida.
+    Faz correspondência por prefixo (para lidar com abreviações).
+    Retorna o nome canônico (chave do COR_MAP) capitalizada.
+    """
     t = normalizar(texto)
-    for bruto, normal in COR_MAP.items():
-        if re.search(rf"\b{re.escape(bruto)}\b", t):
-            return normal.title()
+    for m in re.finditer(r"\b[À-ŸA-Z0-9]+\b", t):
+        token = m.group(0)
+        for bruto, aliases in COR_MAP.items():
+            # token.startswith works bem porque normalizar já removeu acentos e deixou uppercase
+            if token.startswith(bruto) or any(token.startswith(a) for a in aliases):
+                return bruto.title()
     return ""
 
 
@@ -156,37 +338,382 @@ def extrair_cor(texto):
 # NOME
 # =========================
 NOME_MAP = {
-    "JAOA": "JOAO",
-    "OLIEIRA": "OLIVEIRA",
-    "MARIA": "MARIA",
-    "APARECIDA": "APARECIDA",
-    "HENRIQUE": "HENRIQUE",
-    "CAIO": "CAIO",
-    "ANA": "ANA",
-    "JULIA": "JULIA",
-    "JORGE": "JORGE",
+    "JOSÉ": ["JOSE", "JOZE", "JOZEH", "JOSEH", "JSE", "JOE", "JOS"],
+    "JOÃO": ["JOAO", "JOAUM", "JOAM", "JAO", "JAA", "JOA"],
+    "MARIA": ["MARIA", "MARYA", "MARI", "MRIA", "MAIA", "MRA", "MAR"],
+    "ANTÔNIO": ["ANTONIO", "ANTUNIO", "ANTÔNIO", "ATONIO", "ANONIO", "ANTNIO", "ANTOIO", "ANTONO", "ANTONI"],
+    "FRANCISCO": ["FRANCISCO", "FRANCICO", "FRANSCISCO", "FANCISCO", "FRNCISCO", "FRAISCO", "FRANCSCO", "FRANCISC"],
+    "PEDRO": ["PEDRO", "PEDRU", "PDRO", "PERO", "PEDO", "PEDR"],
+    "LUIZ": ["LUIZ", "LUIS", "LIZ", "LUZ", "LUI"],
+    "LUCAS": ["LUCAS", "LUKAS", "LCAS", "LUAS", "LUCS", "LUC"],
+    "CARLOS": ["CARLOS", "KARLOS", "CALOS", "CAOS", "CARS", "CARL"],
+    "ANA": ["ANA", "ANNA", "NA", "AA", "AN"],
+    "PAULO": ["PAULO", "PAULU", "PULO", "PALO", "PAUO", "PAUL"],
+    "MARCOS": ["MARCOS", "MARKOS", "MRCOS", "MACOS", "MARCS", "MARCO"],
+    "RAFAEL": ["RAFAEL", "RAPHAEL", "RFAEL", "RAAEL", "RAFEL", "RAFAEL"],
+    "GABRIEL": ["GABRIEL", "GABRYEL", "GABRIEL", "GBRIEL", "GAREL", "GABREL", "GABRIL", "GABRIE"],
+    "HELENA": ["HELENA", "ELENA", "HLENA", "HEENA", "HELNA", "HELEA", "HELEN"],
+    "ALICE": ["ALICE", "ALYCE", "LICE", "AICE", "ALCE", "ALIE", "ALIC"],
+    "LAURA": ["LAURA", "LURA", "LARA", "LAUA", "LAUR"],
+    "VALENTINA": ["VALENTINA", "VALENTYNA", "ALENTINA", "VLENTINA", "VAENTINA", "VALNTINA", "VALETINA", "VALENINA", "VALENTNA", "VALENTIA", "VALENTIN"],
+    "ENZO": ["ENZO", "ENSO", "NZO", "EZO", "ENZ"],
+    "ARTHUR": ["ARTHUR", "ARTUR", "ARTHUR", "RTHUR", "ATHUR", "ARHR", "ARTUR"],
+    "FELIPE": ["FELIPE", "PHELIPE", "FELLIPE", "PHELLIPE", "FLIPE", "FEIPE", "FELPE", "FELIE", "FELIP"],
+    "GUILHERME": ["GUILHERME", "GUILERME", "UILHERME", "GILHERME", "GUHERME", "GUILRME", "GUILEME", "GUILHRE", "GUILHEM", "GUILHERM"],
+    "THIAGO": ["THIAGO", "TIAGO", "HIAGO", "TAGO", "THAO", "THIG", "THIAO"],
+    "MATHEUS": ["MATHEUS", "MATEUS", "MTHEUS", "MAHEUS", "MATEUS", "MATHUS", "MATHEU"],
+    "VITÓRIA": ["VITORIA", "VICTORIA", "VITORIA", "ITORIA", "VTORIA", "VIORIA", "VITRIA", "VITOIA", "VITORI"],
+    "JÚLIA": ["JULIA", "GIULIA", "JULYA", "JULA", "JUI", "JULI"],
+    "BEATRIZ": ["BEATRIZ", "BEATRIS", "EATRIZ", "BATRIZ", "BETRIZ", "BEAIRZ", "BEATRZ", "BEATRI"],
+    "LETICIA": ["LETICIA", "LETYCIA", "ETICIA", "LTICIA", "LEICIA", "LETICA", "LETIIA", "LETICI"],
+    "GUSTAVO": ["GUSTAVO", "USTAVO", "GSTAVO", "GUAVO", "GUSAVO", "GUSTVO", "GUSTAO", "GUSTAV"],
+    "MURILO": ["MURILO", "URILO", "MRILO", "MUILO", "MURLO", "MURIO", "MURIL"],
+    "CAIO": ["CAIO", "CIO", "CAO", "CAI"],
+    "BRUNO": ["BRUNO", "RUNO", "BUNO", "BRNO", "BRUO", "BRUN"],
+    "EDUARDO": ["EDUARDO", "DUARDO", "EUARDO", "EDARDO", "EDURDO", "EDUAO", "EDUARD"],
+    "RODRIGO": ["RODRIGO", "ODRIGO", "RDRIGO", "ROIGO", "RODRGO", "RODRI", "RODRIG"],
+    "DANIEL": ["DANIEL", "DNIEL", "DAIEL", "DANEL", "DANIL", "DANIE"],
+    "MARCELO": ["MARCELO", "ARCELO", "MRCELO", "MARELO", "MARCLO", "MARCEO", "MARCEL"],
+    "RICARDO": ["RICARDO", "ICARDO", "RCARDO", "RIARDO", "RICRDO", "RICAO", "RICARD"],
+    "FERNANDO": ["FERNANDO", "ERNANDO", "FRNANDO", "FENANDO", "FERANDO", "FERNNDO", "FERNADO", "FERNAN"],
+    "ALEXANDRE": ["ALEXANDRE", "LEXANDRE", "AEXANDRE", "ALXANDRE", "ALEANDRE", "ALEXNDRE", "ALEXADE", "ALEXANRE", "ALEXANDR"],
+    "ROBERTO": ["ROBERTO", "OBERTO", "RBERTO", "ROERTO", "ROBRTO", "ROBEO", "ROBERT"],
+    "CAMILA": ["CAMILA", "AMILA", "CMILA", "CAILA", "CAMLA", "CAMIA", "CAMIL"],
+    "AMANDA": ["AMANDA", "MANDA", "AANDA", "AMNDA", "AMADA", "AMAN"],
+    "JULIANA": ["JULIANA", "ULIANA", "JLIANA", "JUIANA", "JULANA", "JULINA", "JULIAA", "JULIAN"],
+    "LARISSA": ["LARISSA", "ARISSA", "LRISSA", "LAISSA", "LARSSA", "LARISA", "LARISS"],
+    "FERNANDA": ["FERNANDA", "ERNANDA", "FRNANDA", "FENANDA", "FERANDA", "FERNNDA", "FERNADA", "FERNANA", "FERNAND"],
+    "PATRÍCIA": ["PATRICIA", "ATRICIA", "PTRICIA", "PARICIA", "PATICIA", "PATRCIA", "PATRIIA", "PATRICA", "PATRICI"],
+    "ALINE": ["ALINE", "LINE", "AINE", "ALNE", "ALIE", "ALIN"],
+    "BRUNA": ["BRUNA", "RUNA", "BUNA", "BRNA", "BRUA", "BRUN"],
+    "VANESSA": ["VANESSA", "ANESSA", "VNESSA", "VAESSA", "VANSSA", "VANESA", "VANESS"],
+    "DANIELA": ["DANIELA", "ANIELA", "DNIELA", "DAIELA", "DANELA", "DANILA", "DANIEA", "DANIEL"],
+    "ISABELA": ["ISABELA", "SABELA", "IABELA", "ISBELA", "ISAELA", "ISABLA", "ISABEA", "ISABEL"],
+    "GIOVANNA": ["GIOVANNA", "IOVANNA", "GOVANNA", "GIVANNA", "GIOANNA", "GIOVNNA", "GIOVANA", "GIOVANN"],
+    "SABRÍNA": ["SABRINA", "ABRINA", "SBRINA", "SARINA", "SABINA", "SABRNA", "SABRIA", "SABRIN"],
+    "TATIANE": ["TATIANE", "ATIANE", "TTIANE", "TAIANE", "TATANE", "TATINE", "TATIAE", "TATIAN"],
+    "RENATA": ["RENATA", "ENATA", "RNATA", "REATA", "RENTA", "RENAA", "RENAT"],
+    "SILVA": ["SILVA", "SYLVA", "ILVA", "SLVA", "SIVA", "SILA", "SILV"],
+    "SANTOS": ["SANTOS", "ANTOS", "SNTOS", "SATOS", "SANOS", "SANTS", "SANTO"],
+    "OLIVEIRA": ["OLIVEIRA", "LIVEIRA", "OIVEIRA", "OLVEIRA", "OLIEIRA", "OLIVIRA", "OLIVERA", "OLIVEIA", "OLIVEIR"],
+    "SOUZA": ["SOUZA", "SOUSA", "OUZA", "SUZA", "SOZA", "SOUA", "SOUZ"],
+    "PEREIRA": ["PEREIRA", "EREIRA", "PREIRA", "PEEIRA", "PERIRA", "PERERA", "PEREIA", "PEREIR"],
+    "RODRIGUES": ["RODRIGUES", "RODRIGUEZ", "ODRIGUES", "RDRIGUES", "RORIGUES", "RODIGUES", "RODRGUES", "RODRIUES", "RODRIGES", "RODRIGUS", "RODRIGUE"],
+    "ALVES": ["ALVES", "ALVIS", "LVES", "AVES", "ALES", "ALVS", "ALVE"],
+    "NASCIMENTO": ["NASCIMENTO", "ASCIMENTO", "NSCIMENTO", "NACIMENTO", "NASIMENTO", "NASCMENTO", "NASCIENTO", "NASCIMNTO", "NASCIMETO", "NASCIMENO", "NASCIMENT"],
+    "LIMA": ["LIMA", "LYMA", "IMA", "LMA", "LIA", "LIM"],
+    "ARAÚJO": ["ARAUJO", "RAUJO", "AAUJO", "ARUJO", "ARAJO", "ARAUO", "ARAUJ"],
+    "FERREIRA": ["FERREIRA", "ERREIRA", "FRREIRA", "FEREIRA", "FERRIRA", "FERRERA", "FERREIA", "FERREIR"],
+    "RIBEIRO": ["RIBEIRO", "IBEIRO", "RBEIRO", "RIEIRO", "RIBIRO", "RIBERO", "RIBEIO", "RIBEIR"],
+    "GOMES": ["GOMES", "OMES", "GMES", "GOES", "GOMS", "GOME"],
+    "MARTINS": ["MARTINS", "ARTINS", "MRTINS", "MATINS", "MARINS", "MARTNS", "MARTIS", "MARTIN"],
+    "ROCHA": ["ROCHA", "OCHA", "RCHA", "ROHA", "ROCA", "ROCH"],
+    "CARVALHO": ["CARVALHO", "ARVALHO", "CRVALHO", "CAVALHO", "CARALHO", "CARVLHO", "CARVAHO", "CARVALO", "CARVALH"],
+    "BARBOSA": ["BARBOSA", "BARBOZA", "ARBOSA", "BRBOSA", "BABOSA", "BAROSA", "BARBSA", "BARBOA", "BARBOS"],
+    "CAVALCANTE": ["CAVALCANTE", "AVALCANTE", "CVALCANTE", "CAALCANTE", "CAVLCANTE", "CAVACANTE", "CAVALANTE", "CAVALCNTE", "CAVALCATE", "CAVALCANE", "CAVALCANT"],
+    "DIAS": ["DIAS", "IAS", "DAS", "DIS", "DIA"],
+    "MOREIRA": ["MOREIRA", "OREIRA", "MREIRA", "MOEIRA", "MORIRA", "MORERA", "MOREIA", "MOREIR"],
+    "TEIXEIRA": ["TEIXEIRA", "EIXEIRA", "TIXEIRA", "TEXEIRA", "TEIEIRA", "TEIXIRA", "TEIXERA", "TEIXEIA", "TEIXEIR"],
+    "VIEIRA": ["VIEIRA", "IEIRA", "VEIRA", "VIIRA", "VIERA", "VIEIA", "VIEIR"],
+    "CORREIA": ["CORREIA", "ORREIA", "CRREIA", "COREIA", "CORRIA", "CORREA", "CORREI"],
+    "MENDES": ["MENDES", "ENDES", "MNDES", "MEDES", "MENES", "MENDS", "MENDE"],
+    "FREITAS": ["FREITAS", "REITAS", "FEITAS", "FRITAS", "FRETAS", "FREIAS", "FREITS", "FREITA"],
+    "CARDOSO": ["CARDOSO", "ARDOSO", "CRDOSO", "CADOSO", "CAROSO", "CARDSO", "CARDOO", "CARDOS"],
+    "COSTA": ["COSTA", "OSTA", "CSTA", "COTA", "COSA", "COST"],
+    "MACHADO": ["MACHADO", "ACHADO", "MCHADO", "MAHADO", "MACADO", "MACHDO", "MACHAO", "MACHAD"],
+    "FERNANDES": ["FERNANDES", "ERNANDES", "FRNANDES", "FENANDES", "FERANDES", "FERNNDES", "FERNADES", "FERNANES", "FERNANDS", "FERNANDE"],
+    "LOPES": ["LOPES", "OPES", "LPES", "LOES", "LOPS", "LOPE"],
+    "BATISTA": ["BATISTA", "ATISTA", "BTISTA", "BAISTA", "BATSTA", "BATITA", "BATISA", "BATIST"],
+    "MARQUES": ["MARQUES", "ARQUES", "MRQUES", "MAQUES", "MARUES", "MARQES", "MARQUS", "MARQUE"],
+    "SANTANA": ["SANTANA", "ANTANA", "SNTANA", "SATANA", "SANANA", "SANTNA", "SANTAA", "SANTAN"],
+    "RAMOS": ["RAMOS", "AMOS", "RMOS", "RAOS", "RAMS", "RAMO"],
+    "SOARES": ["SOARES", "OARES", "SARES", "SORES", "SOAES", "SOARS", "SOARE"],
+    "MONTEIRO": ["MONTEIRO", "ONTEIRO", "MNTEIRO", "MOTEIRO", "MONEIRO", "MONTIRO", "MONTERO", "MONTEIO", "MONTEIR"],
+    "FARIAS": ["FARIAS", "ARIAS", "FRIAS", "FAIAS", "FARAS", "FARIS", "FARIA"],
+    "NEVES": ["NEVES", "EVES", "NVES", "NEES", "NEVS", "NEVE"],
+    "GUIMARÃES": ["GUIMARAES", "UIMARAES", "GIMARAES", "GUMARAES", "GUIARAES", "GUIMRAES", "GUIMAAES", "GUIMARES", "GUIMARAS", "GUIMARAE"],
+    "MOURA": ["MOURA", "OURA", "MURA", "MORA", "MOUA", "MOUR"],
+    "CORRÊA": ["CORREA", "ORREA", "CRREA", "COREA", "CORRA", "CORRE"],
+    "LUÍS": ["LUIS", "UIS", "LIS", "LUS", "LUI"],
+    "LUÍZA": ["LUIZA", "UIZA", "LIZA", "LUZA", "LUIA", "LUIZ"],
+    "CECÍLIA": ["CECILIA", "ECILIA", "CCILIA", "CEILIA", "CECLIA", "CECIIA", "CECILA", "CECILI"],
+    "ESTÊVÃO": ["ESTEVAO", "STEVAO", "ETEVAO", "ESEVAO", "ESTVAO", "ESTEAO", "ESTEVO", "ESTEVA"],
+    "RAÚL": ["RAUL", "AUL", "RUL", "RAL", "RAU"],
+    "JÉSSICA": ["JESSICA", "ESSICA", "JSSICA", "JESICA", "JESSCA", "JESSIA", "JESSIC"],
+    "LÍVIA": ["LIVIA", "IVIA", "LVIA", "LIIA", "LIVA", "LIVI"],
+    "MÁRCIO": ["MARCIO", "ARCIO", "MRCIO", "MACIO", "MARIO", "MARCO", "MARCI"],
+    "MÔNICA": ["MONICA", "ONICA", "MNICA", "MOICA", "MONCA", "MONIA", "MONIC"],
+    "ANDRÉ": ["ANDRE", "NDRE", "ADRE", "ANRE", "ANDE", "ANDR"],
+    "CÉLIA": ["CELIA", "ELIA", "CLIA", "CEIA", "CELA", "CELI"],
+    "FLÁVIA": ["FLAVIA", "LAVIA", "FAVIA", "FLVIA", "FLAIA", "FLAVA", "FLAVI"],
+    "INÁCIO": ["INACIO", "NACIO", "IACIO", "INCIO", "INAIO", "INACO", "INACI"],
+    "LÚCIA": ["LUCIA", "UCIA", "LCIA", "LUIA", "LUCA", "LUCI"],
+    "SÔNIA": ["SONIA", "ONIA", "SNIA", "SOIA", "SONA", "SONI"],
+    "TARCÍSIO": ["TARCISIO", "ARCISIO", "TRCISIO", "TACISIO", "TARISIO", "TARCSIO", "TARCIIO", "TARCISO", "TARCISI"],
+    "VALÉRIA": ["VALERIA", "ALERIA", "VLERIA", "VAERIA", "VALRIA", "VALEIA", "VALERA", "VALERI"],
+    "WÁGNER": ["WAGNER", "AGNER", "WGNER", "WANER", "WAGER", "WAGNR", "WAGNE"],
+    "ÂNGELA": ["ANGELA", "NGELA", "AGELA", "ANELA", "ANGLA", "ANGEA", "ANGEL"],
+    "CONCEIÇÃO": ["CONCEICAO", "ONCEICAO", "CNCEICAO", "COCEICAO", "CONEICAO", "CONCICAO", "CONCECAO", "CONCEIAO", "CONCEICO", "CONCEICA"],
+    "ASSUNÇÃO": ["ASSUNCAO", "SSUNCAO", "ASUNCAO", "ASSNCAO", "ASSUCAO", "ASSUNAO", "ASSUNCO", "ASSUNCA"],
+    "MÁRIO": ["MARIO", "ARIO", "MRIO", "MAIO", "MARO", "MARI"],
+    "SÉRGIO": ["SERGIO", "ERGIO", "SRGIO", "SEGIO", "SERIO", "SERGO", "SERGI"],
+    "CLÁUDIA": ["CLAUDIA", "LAUDIA", "CAUDIA", "CLUDIA", "CLADIA", "CLAUIA", "CLAUDA", "CLAUDI"],
+    "DÉBORA": ["DEBORA", "EBORA", "DBORA", "DEORA", "DEBRA", "DEBOA", "DEBOR"],
+    "GLÁUCIA": ["GLAUCIA", "LAUCIA", "GAUCIA", "GLUCIA", "GLACIA", "GLAUIA", "GLAUCA", "GLAUCI"],
+    "HÉLIO": ["HELIO", "ELIO", "HLIO", "HEIO", "HELO", "HELI"],
+    "ÍTALO": ["ITALO", "TALO", "IALO", "ITLO", "ITAO", "ITAL"],
+    "LÉO": ["LEO"],
+    "MÁRCIA": ["MARCIA", "ARCIA", "MRCIA", "MACIA", "MARIA", "MARCA", "MARCI"],
+    "NÍVEA": ["NIVEA", "IVEA", "NVEA", "NIEA", "NIVA", "NIVE"],
+    "OTÁVIO": ["OTAVIO", "TAVIO", "OAVIO", "OTVIO", "OTAIO", "OTAVO", "OTAVI"],
+    "RÉGIS": ["REGIS", "EGIS", "RGIS", "REIS", "REGS", "REGI"],
+    "SÍLVIA": ["SILVIA", "ILVIA", "SLVIA", "SIVIA", "SILIA", "SILVA", "SILVI"],
+    "THALÍA": ["THALIA", "HALIA", "TALIA", "THLIA", "THAIA", "THALA", "THALI"],
+    "ÚRSULA": ["URSULA", "RSULA", "USULA", "URULA", "URSLA", "URSUA", "URSUL"],
+    "VIVIÁN": ["VIVIAN", "IVIAN", "VVIAN", "VIIAN", "VIVAN", "VIVIN", "VIVIA"],
+    "YASMÍN": ["YASMIN", "ASMIN", "YSMIN", "YAMIN", "YASIN", "YASMN", "YASMI"],
+    "ZÉ": ["ZE"],
+    "ADRIÁNO": ["ADRIANO", "DRIANO", "ARIANO", "ADIANO", "ADRANO", "ADRINO", "ADRIAO", "ADRIAN"],
+    "ÁLVARO": ["ALVARO", "LVARO", "AVARO", "ALARO", "ALVRO", "ALVAO", "ALVAR"],
+    "BÁRBARA": ["BARBARA", "ARBARA", "BRBARA", "BABARA", "BARARA", "BARBRA", "BARBAA", "BARBAR"],
+    "CÁSSIO": ["CASSIO", "ASSIO", "CSSIO", "CASIO", "CASSO", "CASSI"],
+    "DÁRIO": ["DARIO", "ARIO", "DRIO", "DAIO", "DARO", "DARI"],
+    "ÉRICA": ["ERICA", "RICA", "EICA", "ERCA", "ERIA", "ERIC"],
+    "FÁBIO": ["FABIO", "ABIO", "FBIO", "FAIO", "FABO", "FABI"],
+    "GÉSSICA": ["GESSICA", "ESSICA", "GSSICA", "GESICA", "GESSCA", "GESSIA", "GESSIC"],
+    "ÍRIS": ["IRIS", "RIS", "IIS", "IRS", "IRI"],
+    "JOÁS": ["JOAS", "OAS", "JAS", "JOS", "JOA"],
+    "KÁTIA": ["KATIA", "ATIA", "KTIA", "KAIA", "KATA", "KATI"],
+    "LAÉRCIO": ["LAERCIO", "AERCIO", "LERCIO", "LARCIO", "LAECIO", "LAERIO", "LAERCO", "LAERCI"],
+    "MAGNÓLIA": ["MAGNOLIA", "AGNOLIA", "MGNOLIA", "MANOLIA", "MAGOLIA", "MAGNLIA", "MAGNOIA", "MAGNOLA", "MAGNOLI"],
+    "NÁDIA": ["NADIA", "ADIA", "NDIA", "NAIA", "NADA", "NADI"],
+    "OLÍVIA": ["OLIVIA", "LIVIA", "OIVIA", "OLVIA", "OLIIA", "OLIVA", "OLIVI"],
+    "QUITÉRIA": ["QUITERIA", "UITERIA", "QITERIA", "QUTERIA", "QUIERIA", "QUITRIA", "QUITEIA", "QUITERA", "QUITERI"],
+    "ROMÁRIO": ["ROMARIO", "OMARIO", "RMARIO", "ROARIO", "ROMRIO", "ROMAIO", "ROMARO", "ROMARI"],
+    "TÁRCIO": ["TARCIO", "ARCIO", "TRCIO", "TACIO", "TARIO", "TARCO", "TARCI"],
+    "UBIRATÃ": ["UBIRATA", "BIRATA", "UIRATA", "UBRATA", "UBIATA", "UBIRTA", "UBIRAA", "UBIRAT"],
+    "VITÓRIO": ["VITORIO", "ITORIO", "VTORIO", "VIORIO", "VITRIO", "VITOIO", "VITORO", "VITORI"],
+    "WALQUÍRIA": ["WALQUIRIA", "ALQUIRIA", "WLQUIRIA", "WAQUIRIA", "WALUIRIA", "WALQIRIA", "WALQURIA", "WALQUIIA", "WALQUIRA", "WALQUIRI"],
+    "YURÍ": ["YURI", "URI", "YRI", "YUI", "YUR"],
+    "ZULMÍRA": ["ZULMIRA", "ULMIRA", "ZLMIRA", "ZUMIRA", "ZULIRA", "ZULMRA", "ZULMIA", "ZULMIR"],
+    "ABRAÃO": ["ABRAAO", "BRAAO", "ARAAO", "ABAAO", "ABRAO", "ABRAA"],
+    "ADRIÃO": ["ADRIAO", "DRIAO", "ARIAO", "ADIAO", "ADRAO", "ADRIO", "ADRIA"],
+    "ASCENSÃO": ["ASCENSAO", "SCENSAO", "ACENSAO", "ASENSAO", "ASCNSAO", "ASCESAO", "ASCENAO", "ASCENSO", "ASCENSA"],
+    "ÁUREA": ["AUREA", "UREA", "AREA", "AUEA", "AURA", "AURE"],
+    "BONIFÁCIO": ["BONIFACIO", "ONIFACIO", "BNIFACIO", "BOIFACIO", "BONFACIO", "BONIACIO", "BONIFCIO", "BONIFAIO", "BONIFACO", "BONIFACI"],
+    "BRÁULIO": ["BRAULIO", "RAULIO", "BAULIO", "BRULIO", "BRALIO", "BRAUIO", "BRAULO", "BRAULI"],
+    "CÂNDIDO": ["CANDIDO", "ANDIDO", "CNDIDO", "CADIDO", "CANIDO", "CANDDO", "CANDIO", "CANDID"],
+    "CESÁRIO": ["CESARIO", "ESARIO", "CSARIO", "CEARIO", "CESRIO", "CESAIO", "CESARO", "CESARI"],
+    "CRISTÓVÃO": ["CRISTOVAO", "RISTOVAO", "CISTOVAO", "CRSTOVAO", "CRITOVAO", "CRISOVAO", "CRISTVAO", "CRISTOAO", "CRISTOVO", "CRISTOVA"],
+    "CUSTÓDIO": ["CUSTODIO", "USTODIO", "CSTODIO", "CUTODIO", "CUSODIO", "CUSTDIO", "CUSTOIO", "CUSTODO", "CUSTODI"],
+    "DARCÍ": ["DARCI", "ARCI", "DRCI", "DACI", "DARI", "DARC"],
+    "DÉCIO": ["DECIO", "ECIO", "DCIO", "DEIO", "DECO", "DECI"],
+    "DEMÉTRIO": ["DEMETRIO", "EMETRIO", "DMETRIO", "DEETRIO", "DEMTRIO", "DEMERIO", "DEMETIO", "DEMETRO", "DEMETRI"],
+    "DESIDÉRIO": ["DESIDERIO", "ESIDERIO", "DSIDERIO", "DEIDERIO", "DESDERIO", "DESIERIO", "DESIDRIO", "DESIDEIO", "DESIDERO", "DESIDERI"],
+    "DIONÍSIO": ["DIONISIO", "IONISIO", "DONISIO", "DINISIO", "DIOISIO", "DIONSIO", "DIONIIO", "DIONISO", "DIONISI"],
+    "EDÍLSON": ["EDILSON", "DILSON", "EILSON", "EDLSON", "EDISON", "EDILON", "EDILSN", "EDILSO"],
+    "EFIGÊNIA": ["EFIGENIA", "FIGENIA", "EIGENIA", "EFGENIA", "EFIENIA", "EFIGNIA", "EFIGEIA", "EFIGENA", "EFIGENI"],
+    "EMÍLIA": ["EMILIA", "MILIA", "EILIA", "EMLIA", "EMIIA", "EMILA", "EMILI"],
+    "ENÉAS": ["ENEAS", "NEAS", "EEAS", "ENAS", "ENES", "ENEA"],
+    "EUGÊNIO": ["EUGENIO", "UGENIO", "EGENIO", "EUENIO", "EUGNIO", "EUGEIO", "EUGENO", "EUGENI"],
+    "EULÁLIA": ["EULALIA", "ULALIA", "ELALIA", "EUALIA", "EULLIA", "EULAIA", "EULALA", "EULALI"],
+    "EUSTÁQUIO": ["EUSTAQUIO", "USTAQUIO", "ESTAQUIO", "EUTAQUIO", "EUSAQUIO", "EUSTQUIO", "EUSTAUIO", "EUSTAQIO", "EUSTAQUO", "EUSTAQUI"],
+    "FELÍCIO": ["FELICIO", "ELICIO", "FLICIO", "FEICIO", "FELCIO", "FELIIO", "FELICO", "FELICI"],
+    "GENÉSIO": ["GENESIO", "ENESIO", "GNESIO", "GEESIO", "GENSIO", "GENEIO", "GENESO", "GENESI"],
+    "GETÚLIO": ["GETULIO", "ETULIO", "GTULIO", "GEULIO", "GETLIO", "GETUIO", "GETULO", "GETULI"],
+    "GREGÓRIO": ["GREGORIO", "REGORIO", "GEGORIO", "GRGORIO", "GREORIO", "GREGRIO", "GREGOIO", "GREGORO", "GREGORI"],
+    "HELOÍSA": ["HELOISA", "ELOISA", "HLOISA", "HEOISA", "HELISA", "HELOSA", "HELOIA", "HELOIS"],
+    "HILÁRIO": ["HILARIO", "ILARIO", "HLARIO", "HIARIO", "HILRIO", "HILAIO", "HILARO", "HILARI"],
+    "HIPÓLITO": ["HIPOLITO", "IPOLITO", "HPOLITO", "HIOLITO", "HIPLITO", "HIPOITO", "HIPOLTO", "HIPOLIO", "HIPOLIT"],
+    "HONÓRIO": ["HONORIO", "ONORIO", "HNORIO", "HOORIO", "HONRIO", "HONOIO", "HONORO", "HONORI"],
+    "HORÁCIO": ["HORACIO", "ORACIO", "HRACIO", "HOACIO", "HORCIO", "HORAIO", "HORACO", "HORACI"],
+    "HORTÊNCIA": ["HORTENCIA", "ORTENCIA", "HRTENCIA", "HOTENCIA", "HORENCIA", "HORTNCIA", "HORTECIA", "HORTENIA", "HORTENCA", "HORTENCI"],
+    "ISAÍAS": ["ISAIAS", "SAIAS", "IAIAS", "ISIAS", "ISAAS", "ISAIS", "ISAIA"],
+    "JANAÍNA": ["JANAINA", "ANAINA", "JNAINA", "JAAINA", "JANINA", "JANANA", "JANAIA", "JANAIN"],
+    "JANUÁRIO": ["JANUARIO", "ANUARIO", "JNUARIO", "JAUARIO", "JANARIO", "JANURIO", "JANUAIO", "JANUARO", "JANUARI"],
+    "JERÔNIMO": ["JERONIMO", "ERONIMO", "JRONIMO", "JEONIMO", "JERNIMO", "JEROIMO", "JERONMO", "JERONIO", "JERONIM"],
+    "JESUÍNO": ["JESUINO", "ESUINO", "JSUINO", "JEUINO", "JESINO", "JESUNO", "JESUIO", "JESUIN"],
+    "JORDÃO": ["JORDAO", "ORDAO", "JRDAO", "JODAO", "JORAO", "JORDO", "JORDA"],
+    "JOSAFÁ": ["JOSAFA", "OSAFA", "JSAFA", "JOAFA", "JOSFA", "JOSAA", "JOSAF"],
+    "JOSUÉ": ["JOSUE", "OSUE", "JSUE", "JOUE", "JOSE", "JOSU"],
+    "LÁZARO": ["LAZARO", "AZARO", "LZARO", "LAARO", "LAZRO", "LAZAO", "LAZAR"],
+    "LÍDIA": ["LIDIA", "IDIA", "LDIA", "LIIA", "LIDA", "LIDI"],
+    "LÍGIA": ["LIGIA", "IGIA", "LGIA", "LIIA", "LIGA", "LIGI"],
+    "LÚCIO": ["LUCIO", "UCIO", "LCIO", "LUIO", "LUCO", "LUCI"],
+    "MAGALHÃES": ["MAGALHAES", "AGALHAES", "MGALHAES", "MAALHAES", "MAGLHAES", "MAGAHAES", "MAGALAES", "MAGALHES", "MAGALHAS", "MAGALHAE"],
+    "MOISÉS": ["MOISES", "OISES", "MISES", "MOSES", "MOIES", "MOISS", "MOISE"],
+    "NAZARÉ": ["NAZARE", "AZARE", "NZARE", "NAARE", "NAZRE", "NAZAE", "NAZAR"],
+    "NOÊMIA": ["NOEMIA", "OEMIA", "NEMIA", "NOMIA", "NOEIA", "NOEMA", "NOEMI"],
+    "OLÍMPIO": ["OLIMPIO", "LIMPIO", "OIMPIO", "OLMPIO", "OLIPIO", "OLIMIO", "OLIMPO", "OLIMPI"],
+    "PERPÉTUA": ["PERPETUA", "ERPETUA", "PRPETUA", "PEPETUA", "PERETUA", "PERPTUA", "PERPEUA", "PERPETA", "PERPETU"],
+    "PLÁCIDO": ["PLACIDO", "LACIDO", "PACIDO", "PLCIDO", "PLAIDO", "PLACDO", "PLACIO", "PLACID"],
+    "SALOMÃO": ["SALOMAO", "ALOMAO", "SLOMAO", "SAOMAO", "SALMAO", "SALOAO", "SALOMO", "SALOMA"],
+    "SEBASTIÃO": ["SEBASTIAO", "EBASTIAO", "SBASTIAO", "SEASTIAO", "SEBSTIAO", "SEBATIAO", "SEBASIAO", "SEBASTAO", "SEBASTIO", "SEBASTIA"],
+    "SIMÃO": ["SIMAO", "IMAO", "SMAO", "SIAO", "SIMO", "SIMA"],
+    "TAÍS": ["TAIS", "AIS", "TIS", "TAS", "TAI"],
+    "TEÓFILO": ["TEOFILO", "EOFILO", "TOFILO", "TEFILO", "TEOILO", "TEOFLO", "TEOFIO", "TEOFIL"],
+    "TOMÁS": ["TOMAS", "OMAS", "TMAS", "TOAS", "TOMS", "TOMA"],
+    "ZOÉ": ["ZOE"]
 }
 
-# Termos a remover do nome
-RESIDUAIS = (
-    ["BLOCO","BL","B","APARTAMENTO","AP","A","PLACA"] +
-    [ab.upper() for abrevs in VEICULOS_MAP.values() for ab in abrevs] +
-    [c.upper() for c in COR_MAP.keys()] +
-    [s.upper() for termos in STATUS_MAP.values() for s in termos]
-)
+def construir_residuais() -> List[str]:
+    residuais = ["BLOCO","BL","B","APARTAMENTO","AP","A","PLACA","PL",
+                 "APTO","APART", "COR"]
+    for abrevs in VEICULOS_MAP.values():
+        residuais.extend([ab.upper() for ab in abrevs])
+    residuais.extend([c.upper() for c in COR_MAP.keys()])
+    for termos in STATUS_MAP.values():
+        residuais.extend([s.upper() for s in termos])
+    return sorted(set(residuais), key=lambda x: -len(x))
 
-def limpar_texto_nome(texto):
+RESIDUAIS = construir_residuais()
+
+def limpar_texto_nome(texto: str) -> str:
     t = normalizar(texto)
     for termo in RESIDUAIS:
         t = re.sub(rf"\b{re.escape(termo)}\b", "", t, flags=re.IGNORECASE)
-    # remove números isolados
+    t = re.sub(r"\b([A-Z]{3}\-?\d{4}|[A-Z]{3}\d[A-Z]\d{2}|[A-Z]{2}\d{4,5})\b", "", t)
     t = re.sub(r"\b\d+\b", "", t)
-    t = re.sub(r"\s+", " ", t)
-    return t.strip()
+    t = re.sub(r"[^\w\s\-']", " ", t)
+    t = re.sub(r"\s+", " ", t).strip()
+    return t
 
-def corrigir_nome(texto):
+def corrigir_nome(texto: str) -> str:
     if not texto:
         return ""
     t = limpar_texto_nome(texto)
-    tokens = [NOME_MAP.get(n.upper(), n) for n in t.split()]
-    return " ".join(tokens).title() if tokens else "-"
+    if not t:
+        return ""
+    tokens = []
+    for n in t.split():
+        mapped = None
+        # tentar mapear via NOME_MAP (já em uppercase)
+        if n.upper() in NOME_MAP:
+            mapped = NOME_MAP[n.upper()][0]
+        else:
+            mapped = n
+        # capitalize do token (mantendo acentos removidos previamente)
+        tokens.append(mapped.capitalize())
+    return " ".join(tokens)
+
+
+# =========================
+# EXTRAÇÃO POR CONSUMO
+# =========================
+def _extract_and_remove_first(text: str, pattern: str, group: int = 0) -> Tuple[str, str]:
+    m = re.search(pattern, text, flags=re.IGNORECASE)
+    if not m:
+        return "", text
+    val = m.group(group) if group else m.group(0)
+    new_text = text[:m.start()] + " " + text[m.end():]
+    new_text = re.sub(r"\s+", " ", new_text).strip()
+    return val.strip(), new_text.strip()
+
+def _normalize_block_ap_token(token: str) -> str:
+    """Remove prefixes como BLOCO/BL/AP/APTO e retorna apenas o número quando existir.
+    Se não houver número (ex: bloco 'A'), retorna a parte residual em maiúsculas.
+    """
+    if not token:
+        return ""
+    t = token.strip()
+    # remover prefixos conhecidos
+    t = re.sub(r'^(?:BLOCO|BL|BLO|B)\s*[:\-]?\s*', '', t, flags=re.IGNORECASE)
+    t = re.sub(r'^(?:APARTAMENTO|APART|APTO|AP)\s*[:\-]?\s*', '', t, flags=re.IGNORECASE)
+    t = t.strip()
+    # se houver dígitos, retorna somente o primeiro grupo de dígitos (ex: '1A' -> '1')
+    m = re.search(r"(\d+)", t)
+    if m:
+        return m.group(1)
+    # caso não tenha dígitos (ex: bloco 'A'), retorna o token puro em maiúsculas
+    return t.upper()
+
+def extrair_tudo_consumo(texto: str) -> Dict[str, object]:
+    t = normalizar(texto)
+
+    # 1) PLACA (padrões comuns)
+    placa_pattern = r"\b([A-Z]{3}\-?\d{4}|[A-Z]{3}\d[A-Z]\d{2}|[A-Z]{2}\d{4,5})\b"
+    placa, t = _extract_and_remove_first(t, placa_pattern, group=1)
+    if placa:
+        placa = placa.replace("-", "")
+
+    # 2) BLOCO (captura token completo -> BL1 / BLOCO 1 / B 1)
+    bloco_pattern = r"\b((?:BLOCO|BL|BLO|B)\s*[:\-]?\s*[A-Z0-9]+)\b"
+    bloco_raw, t = _extract_and_remove_first(t, bloco_pattern, group=1)
+    # fallback: captura formatos colados tipo "BL1" ou "B1" sem palavra reservada
+    if not bloco_raw:
+        m = re.search(r"\b(?:BL|BLO|B)(\d+)\b", t, flags=re.IGNORECASE)
+        if m:
+            bloco_raw = m.group(0)
+            t = t[:m.start()] + " " + t[m.end():]
+            t = re.sub(r"\s+", " ", t).strip()
+
+    bloco = _normalize_block_ap_token(bloco_raw) if bloco_raw else ""
+
+    # 3) APARTAMENTO (captura token completo -> AP1 / APTO 1)
+    ap_pattern = r"\b((?:APARTAMENTO|APART|APTO|AP)\s*[:\-]?\s*[A-Z0-9]+)\b"
+    apartamento_raw, t = _extract_and_remove_first(t, ap_pattern, group=1)
+    # fallback: "AP1" colado
+    if not apartamento_raw:
+        m = re.search(r"\b(?:AP|APT|APTO)(\d+)\b", t, flags=re.IGNORECASE)
+        if m:
+            apartamento_raw = m.group(0)
+            t = t[:m.start()] + " " + t[m.end():]
+            t = re.sub(r"\s+", " ", t).strip()
+
+    apartamento = _normalize_block_ap_token(apartamento_raw) if apartamento_raw else ""
+
+    # 4) STATUS
+    status = extrair_status(t)
+    t = remover_status(t)
+
+    # 5) MODELO (consome tokens com separar_modelos)
+    texto_pos_modelo, modelos = separar_modelos(t)
+    t = texto_pos_modelo
+
+    # 6) COR (procura tokens e consome o primeiro que corresponda)
+    cor_encontrada = ""
+    for m in re.finditer(r"\b[À-ŸA-Z0-9]+\b", t):
+        token = m.group(0)
+        matched = False
+        for bruto, aliases in COR_MAP.items():
+            if token.startswith(bruto) or any(token.startswith(a) for a in aliases):
+                cor_encontrada = bruto
+                t = t[:m.start()] + " " + t[m.end():]
+                t = re.sub(r"\s+", " ", t).strip()
+                matched = True
+                break
+        if matched:
+            break
+
+    if cor_encontrada:
+        cor_encontrada = cor_encontrada.title()
+
+    # 7) NOME: o que sobrou
+    nome_raw = corrigir_nome(t)
+
+    resultado = {
+        "STATUS": status or "DESCONHECIDO",
+        "BLOCO": bloco or "",
+        "APARTAMENTO": apartamento or "",
+        "PLACA": placa or "",
+        "MODELOS": modelos or [],
+        "COR": cor_encontrada or "",
+        "NOME_RAW": nome_raw or "",
+        "TEXTO_LIMPO": t or ""
+    }
+
+    # segurança: remover aparições da PLACA/AP do NOME_RAW se por acaso restaram
+    if resultado["NOME_RAW"]:
+        nr = resultado["NOME_RAW"]
+        if resultado["PLACA"] and resultado["PLACA"] in nr:
+            nr = nr.replace(resultado["PLACA"], "").strip()
+        if resultado["APARTAMENTO"] and resultado["APARTAMENTO"] in nr:
+            nr = nr.replace(resultado["APARTAMENTO"], "").strip()
+        resultado["NOME_RAW"] = nr
+
+    return resultado
+
+
+# compatibilidade antiga
+def extrair_tudo(texto: str) -> Dict[str, object]:
+    return extrair_tudo_consumo(texto)

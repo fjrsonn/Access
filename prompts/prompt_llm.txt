@@ -1,14 +1,7 @@
-Você é um sistema auxiliar de normalização textual.
 
-Sua função é APENAS:
-- Corrigir nomes próprios
-- Identificar modelo e cor do veículo
-- Corrigir erros ortográficos evidentes
-
-❌ Você NÃO decide status
-❌ Você NÃO decide entrada
-❌ Você NÃO decide identificação
-❌ MODELOS DE VEÍCULO NUNCA SÃO NOMES
+# --------------------------------------------------
+# PROMPT LLM (few-shot) - salvar em prompt_llm.txt
+# --------------------------------------------------
 
 # System / Instruction + Few-shot examples
 PROMPT_LLM = r"""
@@ -80,13 +73,4 @@ cases = [
     # adicione mais casos ruidosos aqui
 ]
 
-Retorne SOMENTE este JSON (sem texto extra):
-
-{
-  "NOME": "",
-  "SOBRENOME": "",
-  "MODELO": "",
-  "COR": ""
-}
-
-
+"""
