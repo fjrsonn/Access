@@ -1,0 +1,1210 @@
+Gere os arquivos analises.py e avisos.py, para gerarem uma funcao de monitoramento/visualizacao de avisos, que gerencie o dadosend.json identificando padroes.
+Temos a seguinte estrutura no dadosend.json, com os seguintes dados ja tratados:
+
+{
+    "registros": [
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "PLACA": "FEU3C84",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "STATUS": "MORADOR",
+            "ID": 1,
+            "DATA_HORA": "25/01/2026 22:54:49"
+        },
+        {
+            "NOME": "REGIANE",
+            "SOBRENOME": "MENEZES",
+            "MODELO": "NIVUS",
+            "COR": "CINZA",
+            "PLACA": "FJS0701",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "STATUS": "VISITANTE",
+            "ID": 2,
+            "DATA_HORA": "25/01/2026 22:55:57"
+        }
+    ]
+}
+
+Entao ja levando em consideracao os dados ja existentes no dadosend.json, o usuario digita as informacoes: FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR, da save, cai no dadosinit.json, esses dados sao lidos pela ia.py, sao tratados seguindo o preprocessor.py e prompts, e o resultado e gerado um json estruturando as informacoes e aplicando dentro do dadosend.json, entao no banco de dadosend.json atualiza aparecera a seguinte estrutura:
+
+
+{
+    "registros": [
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "PLACA": "FEU3C84",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "STATUS": "MORADOR",
+            "ID": 1,
+            "DATA_HORA": "25/01/2026 22:54:49"
+        },
+        {
+            "NOME": "REGIANE",
+            "SOBRENOME": "MENEZES",
+            "MODELO": "NIVUS",
+            "COR": "CINZA",
+            "PLACA": "FJS0701",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "STATUS": "VISITANTE",
+            "ID": 2,
+            "DATA_HORA": "25/01/2026 22:55:57"
+        },
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "PLACA": "FEU3C84",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "STATUS": "MORADOR",
+            "ID": 3,
+            "DATA_HORA": "25/01/2026 23:27:47"
+        }
+    ]
+}
+
+Passamos a assumir essa estrutura a atual e atualizada.
+
+Apartir daqui se inicia o analises.py:
+Qual sera a funcao do avisos.py ele tera total acesso ao dadosend.json, a mecanica comeca toda vez que o usairo salvar uma informacao, e essa info cair dentro do dadosend.json, ele vai pegar e vai buscar os seguintes dados apos o save, la dentro do dadosend.json:
+As informacoes/dados serao as seguinte:
+
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "DATA_HORA": "25/01/2026 22:54:49"
+        }
+
+E vai buscar no dadosend.json se ha, mais de um registro com aquele nome/sobrenome ligado ao bloco/apartamento. No nosso exemplo existe, como mostrado na atual estrutura do dadosend.json.
+Pois a estrutura do dadosend.json ja se encontra com um registro do Flavio Junior ligado ao Bloco 10 Apartamento 10. 
+
+O analises.py vai pegar esses dados nome/sobrenome/bloco/apartamento, e vai reconhecer se sao iguais ou nao:
+
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "DATA_HORA": "25/01/2026 22:54:49"
+        }
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "DATA_HORA": "25/01/2026 23:27:47"
+        }
+
+Nesse caso sao iguais, se diferenciando apenas pelo horario do qual so servira para reconhecer qual veio primeiro.
+E ao analisar, foi o regitro: "DATA_HORA": "25/01/2026 22:54:49"
+
+Apos esses procedimento, E RECONHECIMENTO, ele entao, vai gerar um json dentro de um outro arquivo chamado de analises.json: onde ira armazenar esses dados dados.
+
+entao ele ira pegar TODOS os dados do registro:  "DATA_HORA": "25/01/2026 22:54:49" e do registro "DATA_HORA": "25/01/2026 23:27:47", e juntalos em uma unica estrutura dentro do analises.json:
+
+{
+    "registros": [
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "PLACA": "FEU3C84",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "STATUS": "MORADOR",
+            "ID": 1,
+            "DATA_HORA": "25/01/2026 22:54:49"
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "PLACA": "FEU3C84",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "STATUS": "MORADOR",
+            "ID": 3,
+            "DATA_HORA": "25/01/2026 23:27:47"
+        }
+    ]
+}
+
+Apos essa etapa o analises.py pegara essas informacoes e analisara um dado com o outro dentro da estrutura:
+
+DADOS DO PRIMEIRO REGISTRO DO FLAVIO BLOCO 10 APARTAMENTO 10
+"ID": 1,
+"NOME": "FLAVIO"
+COM O DADOS DO SEGUNDO REGISTRO REGISTRO DO FLAVIO BLOCO 10 APARTAMENTO 10
+"ID": 3,
+"NOME": "FLAVIO"
+
+Fara essa analises com TODOS os dados nome/sobrenome/bloco/apartamento/modelo/placa/cor/status
+
+E vai gera um novo arquivo json, chamado de avisos.json
+
+Onde sera armazenado os dados analisados 
+
+{
+    "registros": [
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "PLACA": "FEU3C84",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "STATUS": "MORADOR",
+            "ID": 1,
+            "DATA_HORA": "25/01/2026 22:54:49"
+            "SEM DIVERGENCIA NOME": "FLAVIO",
+            "SEM DIVERGENCIA SOBRENOME": "JUNIOR",
+            "SEM DIVERGENCIA MODELO": "JETTA",
+            "SEM DIVERGENCIA COR": "PRETO",
+            "SEM DIVERGENCIA PLACA": "FEU3C84",
+            "SEM DIVERGENCIA BLOCO": "10",
+            "SEM DIVERGENCIA APARTAMENTO": "10",
+            "SEM DIVERGENCIA STATUS": "MORADOR",
+            "ID": 3,
+            "DATA_HORA": "25/01/2026 23:27:47"
+        }
+    ]
+}
+
+Agora entra a vez do arquivo avisos.py:
+Determinara padroes:
+
+Padrao 1:
+Que entao analisara agora o arquvio avisos.json, e quando todos esses dados do segundo registro da comparacao nome/sobrenome/bloco/apartamento/placa/modelo/cor/status resultarem em SEM DIVERGENCIA ele ira gerar um texto exclusivo para esse padrao:
+
+MORADOR X , DO BLOCO X APARTAMENTO X, ACESSOU O CONDOMINIO PELA X VEZ, NA DATA X, HORARIO X
+seguindo nosso exemplo ficaria assim:
+
+MORADOR FLAVIO JUNIOR, DO BLOCO 10 APARTAMENTO 10, ACESSOU O CONDOMINO PELA SEGUNDA VEZ, NA DATA 25/01/2026, HORARIO AS 23:27:47!
+ - COM A SEGUINTE VISUALIZACAO NO CAMPO DE AVISOS, UM FUNDO AMARELO opacidade 70% E TEXTO NA COR PRETA.
+
+Padrao 2:
+
+Quando a analise resultar com apenas um dos ddos nome/sobrenome/bloco/apartamento/placa/modelo/cor/status se divergirem.
+O seguinte texto de aviso:
+
+MORADOR X, DO BLOCO X APARTAMENTO X, ACESSOU O CONDOMINO PELA SEGUNDA VEZ, NA DATA 25/01/2026, HORARIO AS 23:27:47, COM DADOS DIVERGENTES!
+seguindo nosso exemplo ficaria assim:
+
+MORADOR FLAVIO JUNIOR, DO BLOCO 10 APARTAMENTO 10, ACESSOU O CONDOMINO PELA SEGUNDA VEZ, NA DATA 25/01/2026, HORARIO AS 23:27:47, COM DADOS DIVERGENTES!
+ - COM A SEGUINTE VISUALIZACAO NO CAMPO DE AVISOS, UM FUNDO AMARELO opacidade 70% E TEXTO NA COR PRETA. 
+
+Padrao 3 - Quando a analise resultar com um dos dados placa/modelo/cor/ se divergirem.
+O seguinte texto de aviso:
+
+MORADOR X, DO BLOCO X APARTAMENTO X, ACESSOU O CONDOMINO PELA SEGUNDA VEZ, NA DATA 25/01/2026, HORARIO AS 23:27:47, COM VEICULO DIVERGENTE!
+seguindo nosso exemplo ficaria assim:
+MORADOR FLAVIO JUNIOR, DO BLOCO 10 APARTAMENTO 10, ACESSOU O CONDOMINO PELA SEGUNDA VEZ, NA DATA 25/01/2026, HORARIO AS 23:27:47, COM VEICULO DIVERGENTE!
+ - COM A SEGUINTE VISUALIZACAO NO CAMPO DE AVISOS, UM FUNDO VERMELHO opacidade 70% E TEXTO NA COR PRETA. 
+
+OBSERVACOES: ACIMA DA BARRA DE DIGITACAO NO MESMO TAMANHO QUE ELA, UM CAMPO DE AVISOS, ESSE CAMPO ELE NAO VAI TER CAIXA, OU BARRA SERA UM CAPO DISPONIVEL ONDE APARECERA AVISOS, AVISOS GERADOS PELO AVISOS.PY, SEMPRE QUE APARECER UM AVISO ESSE CAMPO MUDARA DE COR, DEPEDENDO DO AVISO, PARA AS CORES VERMELHA, VERDE, AMARELHO TODOS SMEPRE NA OPACIDADE 70%, ANTES DA FRASE DE AVISO, SEMPRE APARECERA O SIMBOLO DO AVISO AQUELE TRIANGULO COM O EXCLAMACA ! DENTRO DELE, E NA FRENTE DO SIMBOLO A FRASE OU O TEXTO DO AVISO, TUDO DENTRO DO CAMPO, O TAMNHO DO TEXTO SERA O MESMO TAMANHO DO TEXTO DA BARRA DE DIGITACAO, POIS O CAMPO TAMBEM SERA DO TAMNHO DA BARRA DE DIGITACAO POREM SEM CAIXA, E TERA UM X NO FINAL DO AVISO CASO O USAURIO QUEIRA FEICHALO. UM AVISO FICARA VISIVEL ATE QUE OUTRO O SUBSTITUA. GERE OS CODIGOS analises.py, e, avisos.py COMPLETOS para cumprirem a descricao SEGUINDO os db analises.json e avisos.json. 
+
+CORRECOES:
+
+1-
+A logica funcionou e os arquivos tambem perfeitamente, porem ha alguns detalhes a serem corrigidos no avisos.py e analises.py, quais sao sao esses detalhes:
+Primeiro detalhe a ser corrigido: 
+Analise do problema: Toda vez que aquela identidade cai em um padrao novo, o padrao anterio e substituido pelo padrao novo.
+Correcao: A ideia e que, caso a identidade caia nos 3 padroes entao ficara registrado e salvo os tres padroes, nada podera ser substituido, idependente de quantos padroes ele cair todos precisam ser salvos
+Exemplo: O morador Flavio Junior do bloco 10 apartamento 10 caiu no Padrao 2, quando ele cair no 3, Fica salvo o padrao 3 e o padrao 2, caso ele caia no padrao 2 novamente, entao fica salvo o padrao 2 o padrao 3 e o padrao 2 novamente, e assim sucetivamente mantendo o historico intacto.    
+
+2-
+Perfeito, primeiro detalhe foi corrigido, agora vamos para o segundo detalhe, que passa a ser um pouco mais complexo.
+Segundo detalhe a ser corrigido:
+Analise do problema: Quando a informacao cai em um dos padroes ela assume a identidade com o status MORADORA, mesmo a informacao/dados saindo do principal db dadosend.json com o status VISITANTE/PRESTADOR DE SERVICO.
+Correcao: A ideia e que, caso a informacao caia nos 3 padroes, ela deve assumir o status original do qual foi atribuido a ela la atras no primeiro db dadosend.json
+OBSERVACAO: A um detalhe importante o status verdadeiro passa a ser o do primeiro registro, os demais passam a ser o DIVERGENTE e etao a conflitar com o primeiro, resumindo essa parte o status do segundo na pode assumir como o principal.
+Exemplo: Entao temos o primeiro registro com o status VISITANTE, a identidade caiu no padrao 2, com o segundo registro com status MORADOR, a mensagem do aviso permanece a mesma porem ela deve comecar com VISITANTE, EXEMPLO: 
+      "mensagem": "VISITANTE Regiane Menezes, DO BLOCO 10 APARTAMENTO 10, ACESSOU O CONDOMINO PELA SEGUNDA VEZ, NA DATA 26/01/2026, HORARIO AS 05:04:49, COM DADOS DIVERGENTES!".
+O mesmo vale para os outros padores, e tambem para outro tipo de status como o DESCONHECIDO OU O PRESTADOR DE SERVICO.
+Corrija os codigos necessarios, e os gere completos deacordo com a descricao.
+
+3- 
+Nosso campo de visualizacao da represantacao da mensagem de aviso nao funciona. Com base no codigo do interfaceone.py, tinha especificado como aconteceria a visualizacao dos avisos, gerados pelo avisos.py, sabemos que e gerado um arquivo chamado avisos.json, cuja sua funcao hoje e armazenar os dados analisados do analise.json com um aviso especifico de acordo com o padrao identificado, os codigos funcionam perfeitamente.
+Analise do problema: O problema que encontramos e a visualizacao da representacao dessa mensagem tal qual e gerada no avisos.json, da qual nao aparece no campo de visualizacoes que especifiquei.  
+Exemplo da mensagem: "mensagem": "VISITANTE Regiane Menezes, DO BLOCO 10 APARTAMENTO 10, ACESSOU O CONDOMINIO PELA SEGUNDA VEZ, NA DATA 26/01/2026, HORARIO AS 05:29:00, COM DADOS DIVERGENTES!",
+Correcao: o campo "mensagem" do banco de dados avisos.json e gerado de acordo com o padrao identificado, como disse isso ja acontece perfeitamente no nosso codigo avisos.py, porem precisamos fazer com que esse texto da mensagem aparece em um campo de visualizacao, onde sera esse campo de visualizacao? explicarei a seguir:
+e agora que entra nosso codigo interfaceone.py, e la que aparecera o campo de visualizacao desses texto com os avisos, especificamente acima da barra de digitacao, esse campo tera o mesmo tamnho da barra, tanto largura quanto altura e o mesmo tamnaho de fonte, esse campo ele sera um campo vazio, ate que aparece um aviso, ai sim ele pacara a mostrar o texto de acordo com seu designer, como sera o designer:
+Dentro da logica dos padroes no avisos.py, foi especificado qual cor/nivel teria cada padrao, essas informacoes referenciam a cor que sera visivel no campo entao o campo que era vazio passa a ser visivel com o texto na cor preta e um fundo com cor, cor de acordo com o nivel do padrao, seguindo a opacidade em 70%, quais cores sao essa:
+ tipo = "PADRAO_3"; nivel="critical"; bg_color="#FF0000"; txt=_build_message_tipo3(primeiro, ultimo, entry)
+ tipo = "PADRAO_2"; nivel="warn"; bg_color="#FFFF00"; txt=_build_message_tipo2(primeiro, ultimo, entry)
+ tipo = "PADRAO_1"; nivel="info"; bg_color="#FFFF00"; txt=_build_message_tipo1(primeiro, ultimo, entry)
+Exemplo de como ficara a visualizacao: Quando o padrao for detectado seguindo toda a engenharia ja existente: acima da barra de digitacao aparecera o texto da mensagem do aviso seguindo o fundo com sua respctiva cor, todo o texto deve estar em maiuclo, e antecendo do texto e do simbolo: ⚠ AVISO: VISITANTE REGIANE MENEZES, DO BLOCO 10 APARTAMENTO 10, ACESSOU O CONDOMINIO PELA SEGUNDA VEZ, NA DATA 26/01/2026, HORARIO AS 05:29:00, COM DADOS DIVERGENTES! X, Devera ter um X para caso o usuario queira fechar o aviso. 
+E como acontecera a ordem dos avisos: Toda vez que um aviso novo aparecer, ele nao substiruira o anterior pra sempre, eles passaram a revisar o campo de visualizacao a cada 10 seg, caso haja um proximo aviso, caso nao haja ficara visivel ate que o usuario o feche ou apareca um novo aviso e assim revisando, com o proximo e o proximo idependente da quantidade de avisos, segue a explicao do proximo exemplo:
+Nesse exemplo vamos imaginar que foram identificados 4 padroes: 
+⚠ AVISO: VISITANTE REGIANE MENEZES, DO BLOCO 10 APARTAMENTO 10, ACESSOU O CONDOMINIO PELA SEGUNDA VEZ, NA DATA 26/01/2026, HORARIO AS 05:29:00, COM DADOS DIVERGENTES! <--- Primeiro padrao identificado aguarda 10segundos, some caso exista um proximo aviso.
+⚠ AVISO: MORADOR FLAVIO JUNIOR, DO BLOCO 10 APARTAMENTO 10, ACESSOU O CONDOMINIO PELA SEGUNDA VEZ, NA DATA 26/01/2026, HORARIO AS 05:30:01, COM DADOS DIVERGENTES!     <--- Segundo padrao identificado aguarda 10seg, some e passa o campo de visualizacao para o proximo aviso.
+⚠ AVISO: VISITANTE REGIANE MENEZES, DO BLOCO 10 APARTAMENTO 10, ACESSOU O CONDOMINIO PELA QUARTA VEZ, NA DATA 28/01/2026, HORARIO AS 08:06:39, COM VEICULO DIVERGENTE! <--- Terceiro padrao identificado aguarda 10seg, some e passa para o proximo aviso.
+⚠ AVISO: MORADOR FLAVIO JUNIOR, DO BLOCO 10 APARTAMENTO 10, ACESSOU O CONDOMINIO PELA TERCEIRA VEZ, NA DATA 28/01/2026, HORARIO AS 08:07:11, COM VEICULO DIVERGENTE!   <--- Quarto padrao identificado aguarda 10seg, e some e passam para o primeiro ou o proximo do loop, caso o usairo nao tenha fechado o primeiro volta proprimeiro, se nao volta pro proximo que o usaurio nao fechou e assim repetindo o loop.
+Gere somente os necessarios codigos completos e atualizados de acordo com o que foi descrevido. 
+
+4-
+Perfeito, agora precisamos resolver uma situacao, o codigo interfaceone.py esta muito grande, gostaria de compactar o maximo possivel do codigo, com a ideia de eliminar o maximo de linhas possiveis dele, preservando todo o codigo e suas funcoes.
+Junto com essa compactuacao, uma pequena correcao, agora o texto dos aviso devem seguir o mesmo tamanho da barra de digitacao, porem o texto todo nao cabe no tamnaho passando para a linha de baixo e entao nao sendo representado por completo dentro do campo de visao, quando a ideia e que ele seja totalmente visivel se adaptando ao campo de visao. Gere o interfaceone.py completo de acordo com a descricao.
+
+5-
+Perfeito o programa inteiro esta funcionando perfeitamente, da forma como o esperado, mas ha alguns detalhes a serem corrigidos, quando o usuario digita e salva as informacoes ela aparece dessa forma dentro do dadosinit.json: 
+        {
+            "id": 1,
+            "texto": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR",
+            "processado": true,
+            "data_hora": "28/01/2026 21:13:51",
+            "texto_original": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR"
+        }
+Quando a ideia era aparecer da seguinte forma:
+        {
+            "id": 1,
+            "texto": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR",
+            "processado": true,
+            "data_hora": "28/01/2026 21:13:51",
+        }
+O mesmo ocorre no dadosend.json, por algum motivo quando o usuario faz mais de uma entrada ele altera o primeiro/principal registro incluindo nos dados o campo texto:
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "PLACA": "FEU3C84",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "STATUS": "MORADOR",
+            "ID": 1,
+            "DATA_HORA": "28/01/2026 22:33:50",
+            "texto": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO VISIT"
+        }
+Qunado a ideia e permanecer: 
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "PLACA": "FEU3C84",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "STATUS": "MORADOR",
+            "ID": 1,
+            "DATA_HORA": "28/01/2026 22:33:50
+            "
+        }
+Gere somente os necessarios codigos completos e atualizados de acordo com o que foi descrevido. 
+
+
+6 -
+Estou enfrentando um problema dentro dos meus codigos, e nao sei exatamente onde e, esse problema e o seguinte quando eu digito as informacoes dentro da barra de digitacao atraves do interfaceone.py, e salvo essas iformacoes pelo botao salvar, elas deveriam serem salvas no dadosinit.json da seguinte maneira: .
+{
+    "registros": [
+        {
+            "id": 1,
+            "texto": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR",
+            "processado": true,
+            "data_hora": "24/01/2026 12:14:02"
+        }
+    ]
+}
+
+Seguindo o seguinte fluxo, quando dentro do init elas sao lidas pelo motor da ia, o ia.py, sua funcao e tratar essa informacao, porem antes precisa seguir as regras e prioridades dentro do preprocessor.py, entao depois desse procedimento a ia gera o json e armazena dentro do dadosend.json como deveria ocorrer no exemplo a seguir:
+{
+    "registros": [
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "PLACA": "FEU3C84",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "STATUS": "MORADOR",
+            "ID": 1,
+            "DATA_HORA": "25/01/2026 22:54:49"
+        }
+    ]
+}
+
+Porem quando o usaurio insere as informacoes: FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR . Os dbs ficam vazios sem registro: 
+{
+    "registros": []
+}
+
+Mas no interfacetwo.py, no painel de acessos fica visivel as seguintes informacoes: 
+28/01/2026 15:21:47 | FLAVIO JUNIOR | BLOCO 10 APARTAMENTO 10 | PLACA FEU3C84 | - | - | MORADOR
+28/01/2026 15:21:47 | FLAVIO JUNIOR | BLOCO 10 APARTAMENTO 10 | PLACA FEU3C84 | JETTA | PRETO | 
+
+Gere todos os codigos completos com a correcao, os que serao necessarios, para resolver o que foi descrito. os codigos precisam estar seaparados um por um e em formato de codigo, para copiar e colar.
+
+7 - 
+O programa esta funcionando perfeitamente como o esperado, porem a alguns detalhes a serem corrigidos:
+Analise do problema: Qunado o usaurio faz a entrada das informacoes atraves da digitacao pela barra de digitacao, ela regitra normalmente no dadosinit.json, os dados sao tratados da forma como o esperado tambem, porem o unico problema e que ele na hora de salvar esses dados dentro do dadoens.json, ele multiplica esses dados, como sera sexplicado no exemplo a seguir:
+Exemplo: 
+Usuario fez a entrada: FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR
+ - Da save, e entao e salvo dentro do dadosinit.json:
+    {
+    "registros": [
+        {
+            "id": 1,
+            "texto": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR",
+            "processado": true,
+            "data_hora": "30/01/2026 12:28:16",
+            "texto_original": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR"
+        }
+    ]
+}
+AGORA COM ESSA ULTIMA CORRECAO ELE PASSOU A REPRESENTAR AS INFORMACOES DENTRO DO DADOSINIT.JSON DESSA FORMA:
+
+{
+    "registros": [
+        {
+            "id": 1,
+            "texto": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR",
+            "processado": true,
+            "data_hora": "30/01/2026 12:50:15"
+        }
+    ]
+}
+ESTA CORRETO.
+
+POREM NO DADOSEND.JSON CONTINUA A REPLICAR OS DADOS COMO NO EXEMPLO ABAIXO 
+
+- A IA ler normalmente faz o tratamento e dentro do dadosend.json os dados aparecem dessa forma:
+
+{
+    "registros": [
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "30/01/2026 12:28:16",
+            "texto": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR",
+            "ID": 1
+        },
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "PLACA": "FEU3C84",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "STATUS": "MORADOR",
+            "ID": 1,
+            "DATA_HORA": "30/01/2026 12:28:16"
+        }
+    ]
+}
+
+Multiplicados, percebe-se que tambem estao com o mesmo ID, porem um aparece uma informacao a mais, "texto": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR", ja o outro nao.
+Qunado na verdade ele deveria representar dessa forma: 
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "PLACA": "FEU3C84",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "STATUS": "MORADOR",
+            "ID": 1,
+            "DATA_HORA": "30/01/2026 12:28:16"
+        }
+
+ANALISANDO A SITUACAO ATUAL E DA ULTIMA CORRECAO, CORRIGIMOS UM PROBLEMA, MAS AINDA PERMANECEU OUTRO, SERA QUE O PROBLEMA NAO PODE ESTAR EM OUTRO CODIGO, EM UM DOS 9 CODIGOS? 
+
+8 - 
+Solucionamos alguns problemas mas ocasionamos outros:
+Explicacao: Quando o usuairo faz a entrada: FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR, ela aparece da seguinte forma no dadosinit.json:
+    {
+      "id": 1,
+      "texto": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR",
+      "processado": false,
+      "data_hora": "30/01/2026 13:07:09"
+    }
+
+Ja no dadosend.json ele representa a saida dessa seguinte forma: 
+    {
+      "NOME": "FLAVIO",
+      "SOBRENOME": "JUNIOR",
+      "BLOCO": "10",
+      "APARTAMENTO": "10",
+      "PLACA": "FEU3C84",
+      "STATUS": "MORADOR",
+      "DATA_HORA": "30/01/2026 13:07:09",
+      "ID": 1,
+      "MODELO": "10",
+      "COR": "10"
+    }
+
+9 -
+Na saida o dadosend.jons tem o seguinte problema com os campos COR e MODELO, nao estao sendo salvos, ou sendo representados de forma errada, de acordo com o da entrada: FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR.
+O outro problema e que mesmo o usuairo fazendo a mesma entrada por exemplo: FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR duas vezes ou mais ele nao grava abaixo a nova. Quando foi pedido para ele nao repetir os mesmos dados na verdade eu me retratava para nao ser duplicado os mesmo dado com uma entrada, entao antes tinhamos um problema que o usaurio fazia a entrada UMA VEZ: FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR
+E na saida no dadosend.json aparecia o tratamento dessa entrada duas vezes como ja tinha mostrado, agora, nao temos mais o problema de duplicar os dados em um so tratamento, mas tambem nao conseguimos um nvo tratamento quando inseriomos os mesmo dados na entrada o que esta errado:
+Exemplo 
+
+Usuario faz a primeira entrada: FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR
+Salva dentro do dadosinit.json:
+{
+  "registros": [
+    {
+      "id": 1,
+      "texto": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR",
+      "processado": false,
+      "data_hora": "30/01/2026 13:21:43"
+    }
+   ]
+}
+
+Salva dentro do dadosend.json:
+{
+  "registros": [
+    {
+      "NOME": "FLAVIO",
+      "SOBRENOME": "JUNIOR",
+      "BLOCO": "10",
+      "APARTAMENTO": "10",
+      "PLACA": "FEU3C84",
+      "STATUS": "MORADOR",
+      "DATA_HORA": "30/01/2026 13:21:43",
+      "ID": 1
+    }
+  ]
+}
+OK ATE AQUI.
+
+Usuario faz a SEGUNDA entrada com os mesmo dados: FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR
+Salva dentro do dadosinit.json:
+{
+  "registros": [
+    {
+      "id": 1,
+      "texto": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR",
+      "processado": false,
+      "data_hora": "30/01/2026 13:21:43"
+    },
+    {
+      "id": 2,
+      "texto": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR",
+      "processado": false,
+      "data_hora": "30/01/2026 13:21:48"
+    }
+  ]
+}
+Percebse o horario e o ID diferentes.
+Onde esta o problema:
+Salva dentro do dadosend.json:
+{
+  "registros": [
+    {
+      "NOME": "FLAVIO",
+      "SOBRENOME": "JUNIOR",
+      "BLOCO": "10",
+      "APARTAMENTO": "10",
+      "PLACA": "FEU3C84",
+      "STATUS": "MORADOR",
+      "DATA_HORA": "30/01/2026 13:21:48",
+      "ID": 1
+    }
+  ]
+}
+QUANDO O CERTO SERIA SER GRAVADO DA SEGUINTE FORMA:
+
+{
+  "registros": [
+        {
+      "NOME": "FLAVIO",
+      "SOBRENOME": "JUNIOR",
+      "BLOCO": "10",
+      "APARTAMENTO": "10",
+      "PLACA": "FEU3C84",
+      "STATUS": "MORADOR",
+      "DATA_HORA": "30/01/2026 13:21:43",
+      "ID": 1
+    },
+    {
+      "NOME": "FLAVIO",
+      "SOBRENOME": "JUNIOR",
+      "BLOCO": "10",
+      "APARTAMENTO": "10",
+      "PLACA": "FEU3C84",
+      "STATUS": "MORADOR",
+      "DATA_HORA": "30/01/2026 13:21:48",
+      "ID": 1
+    }
+  ]
+}
+
+Os DOIS REGISTROS DEVEM SER SALVOS DENTRO DO DADOSEN.JSON  QUAL QUER OUTRA ENTRADA QUE O SUAIRO FIZER SEGUINDO A LOGICA.
+
+10 -
+Alguns problemas ainda continua, tambem agora temos outros, na nossa lista de sugestoes os dados aparecem da seguinte forma:
+Usuario faz a entrada: FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR 
+Assim sao as saidas erradas e depois a forma como deveriam aparecer:
+
+
+                     Nome                                    Detalhes
+Flavio Junior                                 10 10 FEU3C84
+
+Quando na verdade deveria aparecer:
+                     Nome                                    Detalhes
+FLAVIO JUNIOR                                BLOCO 10 APARTAMENTO 10 PLACA FEU3C84 VEICULO JETTA COR PRETO STATUS MORADOR
+
+Tambem tamos um problema novo no Monitor de Acessos:
+30/01/2026 13:37:11 | FLAVIO JUNIOR | BLOCO 10 APARTAMENTO 10 | PLACA FEU3C84 | - | - | MORADOR
+
+Quando na o certo  seria aparecer:
+30/01/2026 13:37:11 | FLAVIO JUNIOR | BLOCO 10 APARTAMENTO 10 | PLACA FEU3C84 | VEICULO JETTA | COR PRETO | STATUS MORADOR
+
+O problema das informacoes dos campo COR, MODELO, serem preenchidas e mostradas dentro do dadosend.json.
+Hoje elas aparecem dessa forma:
+{
+  "registros": [
+    {
+      "NOME": "FLAVIO",
+      "SOBRENOME": "JUNIOR",
+      "BLOCO": "10",
+      "APARTAMENTO": "10",
+      "PLACA": "FEU3C84",
+      "STATUS": "MORADOR",
+      "DATA_HORA": "30/01/2026 13:37:11",
+      "ID": 1
+    }
+  ]
+}
+Quando na verdade deveriam aparecer tambem os campos COR, MODELO:
+{
+  "registros": [
+    {
+        "NOME": "FLAVIO",
+        "SOBRENOME": "JUNIOR",
+        "MODELO": "JETTA",
+        "COR": "PRETO",
+        "PLACA": "FEU3C84",
+        "BLOCO": "10",
+        "APARTAMENTO": "10",
+        "STATUS": "MORADOR",
+        "ID": 1,
+        "DATA_HORA": "30/01/2026 13:37:11"
+    }
+  ]
+}
+
+11 - 
+Certo, os problemas foram corrgidos, porem a nossa lista de sugestoes que aparecia conforme o usaiuro escrevia, nao esta aparecendo mais.
+Usuario faz a entrada: FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR 
+Assim sao as saidas erradas e depois a forma como deveriam aparecer:
+
+
+                     Nome                                    Detalhes
+Flavio Junior                                 10 10 FEU3C84
+
+Quando na verdade deveria aparecer:
+                     Nome                                    Detalhes
+FLAVIO JUNIOR                                BLOCO 10 APARTAMENTO 10 PLACA FEU3C84 VEICULO JETTA COR PRETO STATUS MORADOR
+
+Todos os processo funcionam como o esperado, assim como os erros tambem foram solucionados. ah somente esse detalhe a ser corrigido.
+
+12 -
+Seguindo o seguinte fluxo, quando dentro do init elas sao lidas pelo motor da ia, o ia.py, sua funcao e tratar essa informacao, porem antes precisa seguir as regras e prioridades dentro do preprocessor.py, entao depois desse procedimento a ia gera o json e armazena dentro do dadosend.json como deveria ocorrer no exemplo a seguir:
+{
+    "registros": [
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "PLACA": "FEU3C84",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "STATUS": "MORADOR",
+            "ID": 1,
+            "DATA_HORA": "25/01/2026 22:54:49"
+        }
+    ]
+}
+
+Porem quando o usaurio insere as informacoes: FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR . Os dbs ficam vazios sem registro: 
+{
+    "registros": []
+}
+
+Mas no interfacetwo.py, no painel de acessos fica visivel as seguintes informacoes: 
+28/01/2026 15:21:47 | FLAVIO JUNIOR | BLOCO 10 APARTAMENTO 10 | PLACA FEU3C84 | - | - | MORADOR
+28/01/2026 15:21:47 | FLAVIO JUNIOR | BLOCO 10 APARTAMENTO 10 | PLACA FEU3C84 | JETTA | PRETO | 
+
+Gere todos os codigos completos com a correcao, os que serao necessarios, para resolver o que foi descrito. os codigos precisam estar seaparados um por um e em formato de codigo, para copiar e colar.
+
+13 - 
+Os codigos atuais funcionam pefeitamente, porem ah um detalhe a ser tratado, hoje quando o usuairo faz uma entrada:
+FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR
+
+E registrada no dadosinit.json: 
+{
+    "registros": [
+        {
+            "id": 1,
+            "texto": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR",
+            "processado": true,
+            "data_hora": "01/02/2026 14:19:33"
+        }
+    ]
+}
+
+Processada pela IA e gerando o json tratado para o dadosend.json:
+
+{
+    "registros": [
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "01/02/2026 14:19:33",
+            "_entrada_id": 1,
+            "ID": 1
+        }
+    ]
+}
+
+Ma quando o usuario INVERTE qualque ordem dos dados: 
+MORADOR FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO
+FLAVIO JUNIOR MORADOR BL10 AP10 FEU3C84 JETA PRETO
+OU qualquer outro tipo de combinacao possivel
+
+A saida e registrada normalmente como o esperado:
+
+{
+    "registros": [
+        {
+            "id": 1,
+            "texto": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR",
+            "processado": true,
+            "data_hora": "01/02/2026 14:19:33"
+        },
+        {
+            "id": 2,
+            "texto": "MORADOR FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO",
+            "processado": true,
+            "data_hora": "01/02/2026 14:21:47"
+        },
+        {
+            "id": 3,
+            "texto": "FLAVIO JUNIOR MORADOR BL10 AP10 FEU3C84 JETA PRETO",
+            "processado": true,
+            "data_hora": "01/02/2026 14:22:05"
+        }
+    ]
+}
+
+Porem as informacoes aparecem dessa forma dentro do dadosend.json:
+
+{
+    "registros": [
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "01/02/2026 14:19:33",
+            "_entrada_id": 1,
+            "ID": 1
+        },
+        {
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "FLAVIO",
+            "COR": "JUNIOR",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "01/02/2026 14:21:47",
+            "_entrada_id": 2,
+            "ID": 2,
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR"
+        },
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "MORADOR",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "01/02/2026 14:22:05",
+            "_entrada_id": 3,
+            "ID": 1
+        }
+    ]
+}
+
+O nosso atual problema e que quando nao seguimos o padrao exato da sequencia das informacoes elas acabam sendo processadas erradas dentro do dadosend.json:
+A ideia sempre foi que idependente da forma como o usuairo escreva as informacoes, ou seja ideendente da sequencia das informacoes os dados sejam identificado e reorganizados da forma como devem ser:
+Exemplo: 
+
+FLAVIO JUNIOR MORADOR BL10 AP10 FEU3C84 JETA PRETO
+MORADOR FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO
+JETA PRETO FEU3C84 MORADOR FLAVIO JUNIOR BL10 AP10
+FEU3C84 JETA FLAVIO MORADOR AP10 BL10 JUNIOR PRETO
+E todas as outra combinacoes existentes para a ordem dessas informacoes...
+
+ENTRADA registrada no dadosinit.json com os exemplos usados:
+
+
+
+{
+    "registros": [
+        {
+            "id": 1,
+            "texto": "FLAVIO JUNIOR MORADOR BL10 AP10 FEU3C84 JETA PRETO",
+            "processado": true,
+            "data_hora": "01/02/2026 14:19:33"
+        },
+        {
+            "id": 2,
+            "texto": "MORADOR FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO",
+            "processado": true,
+            "data_hora": "01/02/2026 14:21:47"
+        },
+        {
+            "id": 3,
+            "texto": "JETA PRETO FEU3C84 MORADOR FLAVIO JUNIOR BL10 AP10",
+            "processado": true,
+            "data_hora": "01/02/2026 14:22:05"
+        },
+        {
+            "id": 4,
+            "texto": "FEU3C84 JETA FLAVIO MORADOR AP10 BL10 JUNIOR PRETO",
+            "processado": true,
+            "data_hora": "01/02/2026 14:22:09"
+        }
+    ]
+}
+
+As informacoes devem ser processadas pela IA reorganizadas e corrigidas na ordem correta e armazenando o tratamento desses dados dentro do dadosen.json:
+
+ENTRADA salva com os dados trados no dadosend.json com os exemplos usados:
+
+{
+    "registros": [
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "01/02/2026 14:19:33",
+            "_entrada_id": 1,
+            "ID": 1
+        },
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "01/02/2026 14:21:47",
+            "_entrada_id": 2,
+            "ID": 2
+        },
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "01/02/2026 14:22:05",
+            "_entrada_id": 3,
+            "ID": 3
+        },
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "01/02/2026 14:22:09",
+            "_entrada_id": 4,
+            "ID": 4
+        }        
+    ]
+}
+
+Entao a ideia e que o usaurio nao tenha a obrigacao de colocar os dados na ordem quando for digitalos na barra de digitacao, mas os dads devera aparecer na ordem correta e cada um dentro do seus respectivo campo correto, dentro do dadosend.json
+Gere os codigos completo, responsaveis para correcao de acordo com a descricao.
+
+14 - O usuario digitou as seguinte informacoes: 
+primeira:
+FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR
+ - salvou
+segunda:
+MORADOR FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO
+ - salvou
+terceira:
+JETA PRETO FEU3C84 MORADOR FLAVIO JUNIOR BL10 AP10
+ - salvou
+quarta:
+FEU3C84 JETA FLAVIO MORADOR AP10 BL10 JUNIOR PRETO
+ - salvou
+
+Dentro do dadosinit.json:
+
+{
+    "registros": [
+        {
+            "id": 1,
+            "texto": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR",
+            "processado": true,
+            "data_hora": "01/02/2026 14:51:35"
+        },
+        {
+            "id": 2,
+            "texto": "FLAVIO JUNIOR MORADOR BL10 AP10 FEU3C84 JETA PRETO",
+            "processado": true,
+            "data_hora": "01/02/2026 14:51:56"
+        },
+        {
+            "id": 3,
+            "texto": "MORADOR FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO",
+            "processado": true,
+            "data_hora": "01/02/2026 14:52:21"
+        },
+        {
+            "id": 4,
+            "texto": "JETA PRETO FEU3C84 MORADOR FLAVIO JUNIOR BL10 AP10",
+            "processado": true,
+            "data_hora": "01/02/2026 14:52:27"
+        },
+        {
+            "id": 5,
+            "texto": "FEU3C84 JETA FLAVIO MORADOR AP10 BL10 JUNIOR PRETO",
+            "processado": true,
+            "data_hora": "01/02/2026 14:54:05"
+        }
+    ]
+}
+
+Foram processados um de cada vez pela IA e salvos dentro do dadosend.json da seguinte forma: 
+
+{
+    "registros": [
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "01/02/2026 14:51:35",
+            "_entrada_id": 1,
+            "ID": 1
+        },
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "MORADOR",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "01/02/2026 14:51:56",
+            "_entrada_id": 2,
+            "ID": 1
+        },
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "FLAVIO",
+            "COR": "JUNIOR",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "01/02/2026 14:52:21",
+            "_entrada_id": 3,
+            "ID": 1
+        },
+        {
+            "NOME": "JETA",
+            "SOBRENOME": "PRETO FEU3C84",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "01/02/2026 14:52:27",
+            "_entrada_id": 4,
+            "ID": 2
+        },
+        {
+            "NOME": "FEU3C84",
+            "SOBRENOME": "JETA FLAVIO",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "01/02/2026 14:52:35",
+            "_entrada_id": 5,
+            "ID": 3
+        },
+        {
+            "NOME": "FEU3C84",
+            "SOBRENOME": "JETA FLAVIO",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "01/02/2026 14:54:05",
+            "_entrada_id": 5,
+            "ID": 3
+        }
+    ]
+}
+
+O probelma que enfrentamos e que quando o usaurio faz a entrada das informacoes em diferentes ordens:
+
+FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR < Primeira entrada
+FLAVIO JUNIOR MORADOR BL10 AP10 FEU3C84 JETA PRETO < Segunda entrada
+MORADOR FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO < Tercira entrada
+JETA PRETO FEU3C84 MORADOR FLAVIO JUNIOR BL10 AP10 < Quarta entrada
+FEU3C84 JETA FLAVIO MORADOR AP10 BL10 JUNIOR PRETO < Quinta entrada
+
+Assim elas aparecem dentro do dadosinit.json:
+
+{
+    "registros": [
+        {
+            "id": 1,
+            "texto": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR",
+            "processado": true,
+            "data_hora": "02/02/2026 22:51:14"
+        },
+        {
+            "id": 2,
+            "texto": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR",
+            "processado": true,
+            "data_hora": "02/02/2026 22:51:25"
+        },
+        {
+            "id": 3,
+            "texto": "FLAVIO JUNIOR MORADOR BL10 AP10 FEU3C84 JETA PRETO",
+            "processado": true,
+            "data_hora": "02/02/2026 22:51:43"
+        },
+        {
+            "id": 4,
+            "texto": "MORADOR FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO",
+            "processado": true,
+            "data_hora": "02/02/2026 22:51:51"
+        },
+        {
+            "id": 5,
+            "texto": "JETA PRETO FEU3C84 MORADOR FLAVIO JUNIOR BL10 AP10",
+            "processado": true,
+            "data_hora": "02/02/2026 22:51:58"
+        },
+        {
+            "id": 6,
+            "texto": "FEU3C84 JETA FLAVIO MORADOR AP10 BL10 JUNIOR PRETO",
+            "processado": true,
+            "data_hora": "02/02/2026 22:52:07"
+        }
+    ]
+}
+
+Analisando a saida dessas entradas pelo ia.py, preprocessor e o prompt_llm.txt:
+
+Assim elas aparecem dentro do dadosend.json:
+
+{
+    "registros": [
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR JETA",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "02/02/2026 22:51:14",
+            "_entrada_id": 1,
+            "ID": 1
+        },
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR JETA",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "02/02/2026 22:51:25",
+            "_entrada_id": 2,
+            "ID": 1
+        },
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR JETA",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "02/02/2026 22:51:43",
+            "_entrada_id": 3,
+            "ID": 1
+        },
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR JETA",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "02/02/2026 22:51:51",
+            "_entrada_id": 4,
+            "ID": 1
+        },
+        {
+            "NOME": "JETA",
+            "SOBRENOME": "FLAVIO JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "02/02/2026 22:51:58",
+            "_entrada_id": 5,
+            "ID": 2
+        },
+        {
+            "NOME": "JETA",
+            "SOBRENOME": "FLAVIO JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "02/02/2026 22:52:07",
+            "_entrada_id": 6,
+            "ID": 2
+        }
+    ]
+}
+
+A uma pequena confusao entre os campos modelo que referese ao nome do veiculo, com os campos nome e sobrenome que se referem ao nome e sobrenome de pessoa. O resto dos campos estao sendo interpretados corretamente em diferentes ordens.
+A ideia e o proposito do programa alem de todas as funcoes ja existentes nele, e tambem dar a opcao ao usuario escrever essas informacoes em diferentes sequencias sem ter uma ordem fixa para digitalas, facilitando sua vida, porem sempre que forem gravadas dentro do dadosend.json, elas deve seguir o mesmo padrao que o do exemplo abaixo:
+
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "01/02/2026 14:51:35",
+            "_entrada_id": 1,
+            "ID": 1
+        }
+
+percebe-se que todos os campos estao preenchidos corretamentes com os devidos dados da informacao da entra. 
+
+prompt_llm.txt: 
+
+Você é o componente de NORMALIZAÇÃO deste sistema de controle de acesso. 
+Sua função: receber um texto livre (ordem arbitrária) e extrair/normalizar os campos abaixo, retornando SOMENTE um JSON válido sem comentários nem texto adicional.
+
+REQUISITOS GERAIS:
+- Receba um único texto (campo "Texto") com palavras em qualquer ordem.
+- Classifique cada token por significado (NOME, SOBRENOME, BLOCO, APARTAMENTO, PLACA, MODELO, COR, STATUS).
+- A ordem dos tokens NÃO deve afetar a extração.
+- Nunca coloque o MODELO no campo NOME/SOBRENOME.
+- Normalizar caixa alta para todos os campos de saída.
+- Use mapeamentos/sinônimos conhecidos para MODELO (ex.: "JETA" → "JETTA"). Se não houver mapeamento exato, retorne o texto limpo do candidato a modelo em maiúsculas.
+- Valores vazios ou desconhecidos devem ser "-" (hífen).
+- Retorne apenas campos listados no schema (veja abaixo).
+- Sempre retornar JSON com strings.
+
+SAÍDA (JSON):
+{
+  "NOME": "PRIMEIRO NOME EM MAIÚSCULAS ou '-'",
+  "SOBRENOME": "SOBRENOME EM MAIÚSCULAS ou '-'",
+  "BLOCO": "NÚMERO DO BLOCO sem prefixo ou '-'",
+  "APARTAMENTO": "NÚMERO DO APARTAMENTO sem prefixo ou '-'",
+  "PLACA": "PLACA EM CAIXA ALTA ou '-'",
+  "MODELO": "MODELO CANONICO EM CAIXA ALTA ou '-'",
+  "COR": "COR CANONICA EM MAIÚSCULAS ou '-'",
+  "STATUS": "MORADOR|VISITANTE|PRESTADOR|DESCONHECIDO",
+  "DATA_HORA": "-"
+}
+
+REGRAS DE CLASSIFICAÇÃO:
+- PLACA: reconheça formatos BR (ex: AAA0000) ou tokens alfanum 5-8 contendo dígito.
+- BLOCO/APARTAMENTO: reconheça BL10, AP10 — entregue apenas o número (ex: "10").
+- STATUS: detecte palavras de status (MORADOR, VISITANTE, PRESTADOR) e normalize.
+- MODELO: priorize modelo quando o token estiver próximo à PLACA ou a tokens de cor.
+- NOME/SOBRENOME: tokens alfabéticos não identificados como outros campos. O PRIMEIRO token pessoal deve ir para NOME e os seguintes para SOBRENOME. Ignore preposições (do, da, de).
+
+
+FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR
+REGIANE MENEZES BL10 AP10 FJS0701 NIVUS CINZA VISITANTE
+
+FLAVIO JUNIOR MORADOR BL10 AP10 FEU3C84 JETA PRETO
+MORADOR FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO
+JETA PRETO FEU3C84 MORADOR FLAVIO JUNIOR BL10 AP10
+FEU3C84 JETA FLAVIO MORADOR AP10 BL10 JUNIOR PRETO
+

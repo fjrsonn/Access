@@ -16,4 +16,3 @@ def log_forense(id_registro, texto, status, origem):
             f"ORIGEM:{origem} | "
             f"TEXTO:{texto}\n"
         )
-

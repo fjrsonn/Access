@@ -12,6 +12,7 @@ import tempfile
 from datetime import datetime
 import tkinter as tk
 from tkinter import messagebox
+import re
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ARQUIVO = os.path.join(BASE_DIR, "dadosend.json")
@@ -21,6 +22,45 @@ REFRESH_MS = 2000  # 2s
 # internal reference to Toplevel (quando embutido)
 _monitor_toplevel = None
 _monitor_after_id = None
+
+# ---------- inferência MODELO/COR (fallback a partir de 'texto') ----------
+_STATUS_WORDS = set(["MORADOR","MORADORES","VISITANTE","VISITA","VISIT","PRESTADOR","PRESTADORES","SERVICO","SERVIÇO","TECNICO","DESCONHECIDO","FUNCIONARIO","FUNCIONÁRIO"])
+
+def _tokens(text):
+    return re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ0-9\-]+", str(text or ""))
+
+def _infer_model_color_from_text(text: str):
+    if not text or not isinstance(text, str):
+        return ("", "")
+    toks = _tokens(text)
+    toks_up = [t.upper() for t in toks]
+    plate_idx = None
+    for i, t in enumerate(toks_up):
+        if re.match(r"^[A-Z]{3}\d{4}$", t):
+            plate_idx = i
+            break
+        if re.match(r"^[A-Z0-9]{5,8}$", t) and re.search(r"\d", t):
+            plate_idx = i
+            break
+    if plate_idx is None:
+        return ("", "")
+    following = []
+    for tok in toks_up[plate_idx+1:]:
+        if tok in _STATUS_WORDS:
+            break
+        following.append(tok)
+    modelo = ""
+    cor = ""
+    if following:
+        filtered = [t for t in following if not re.match(r"^BL\d+$", t) and not re.match(r"^AP\d+$", t)]
+        if filtered:
+            modelo = filtered[0].title()
+            if len(filtered) > 1:
+                for tok in filtered[1:4]:
+                    if re.search(r"[A-Za-z]", tok):
+                        cor = tok.title()
+                        break
+    return (modelo or "", cor or "")
 
 # ---------- safe IO ----------
 def _load_safe(path: str):
@@ -66,13 +106,28 @@ def safe(v):
     return v if v and v != "-" else "-"
 
 def format_line(r: dict) -> str:
+    """
+    Formata a linha exibida no monitor. Se MODELO/COR estiverem ausentes tenta inferir
+    a partir do campo 'texto' (heurística simples).
+    """
+    modelo = r.get("MODELO") or ""
+    cor = r.get("COR") or ""
+    if (not modelo or modelo == "-") or (not cor or cor == "-"):
+        # tentar inferir do campo texto
+        texto = r.get("texto") or r.get("texto_original") or ""
+        inf_mod, inf_cor = _infer_model_color_from_text(texto)
+        if not modelo and inf_mod:
+            modelo = inf_mod
+        if not cor and inf_cor:
+            cor = inf_cor
+
     return (
         f"{safe(r.get('DATA_HORA'))} | "
         f"{safe(r.get('NOME'))} {safe(r.get('SOBRENOME'))} | "
         f"BLOCO {safe(r.get('BLOCO'))} APARTAMENTO {safe(r.get('APARTAMENTO'))} | "
         f"PLACA {safe(r.get('PLACA'))} | "
-        f"{safe(r.get('MODELO'))} | "
-        f"{safe(r.get('COR'))} | "
+        f"{safe(modelo)} | "
+        f"{safe(cor)} | "
         f"{safe(r.get('STATUS'))}"
     )
 
