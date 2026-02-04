@@ -455,6 +455,15 @@ def _split_nome_raw(nome_raw: str):
     except Exception:
         return [p.upper() for p in parts]
 
+def _fill_nome_from_raw(dados: dict, nome_raw: str) -> None:
+    parts = _split_nome_raw(nome_raw)
+    if not parts:
+        return
+    if dados.get("NOME") in (None, "", "-"):
+        dados["NOME"] = parts[0]
+    if len(parts) > 1 and dados.get("SOBRENOME") in (None, "", "-"):
+        dados["SOBRENOME"] = " ".join(parts[1:])
+
 # =========================
 # PROCESSAMENTO PRINCIPAL
 # =========================
@@ -573,12 +582,7 @@ def processar():
 
             nome_raw = pre.get("NOME_RAW", "") or ""
             if nome_raw:
-                parts = _split_nome_raw(nome_raw)
-                if parts:
-                    if dados.get("NOME") in (None, "", "-"):
-                        dados["NOME"] = parts[0]
-                    if dados.get("SOBRENOME") in (None, "", "-"):
-                        dados["SOBRENOME"] = " ".join(parts[1:]) if len(parts) > 1 else "-"
+                _fill_nome_from_raw(dados, nome_raw)
 
             dados["PLACA"] = (endereco.get("PLACA", "") or "-").upper()
             dados["BLOCO"] = (endereco.get("BLOCO", "") or "-").upper()
@@ -623,10 +627,8 @@ def processar():
             except Exception as e:
                 print("[ia.py] Aviso: falha na validação final (não bloqueante):", e)
 
-            if nome_raw and dados.get("SOBRENOME") in (None, "", "-"):
-                parts = _split_nome_raw(nome_raw)
-                if len(parts) > 1:
-                    dados["SOBRENOME"] = " ".join(parts[1:])
+            if nome_raw:
+                _fill_nome_from_raw(dados, nome_raw)
 
             # Append or update SAIDA (merge por _entrada_id)
             try:
