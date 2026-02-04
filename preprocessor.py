@@ -276,6 +276,13 @@ def extrair_tudo_consumo(texto: str) -> Dict[str, Any]:
                 cand = _map_to_canonical_model(p)
                 if cand and cand not in modelos_mapped:
                     modelos_mapped.insert(0, cand)
+            # se o token anterior é cor, tente o anterior a ele (ex: JETA PRETO FEU3C84)
+            if p.upper() in _CORES_SET and plate_idx - 2 >= 0:
+                p_prev = toks_up[plate_idx - 2]
+                if p_prev.isalpha() and p_prev.upper() not in _STATUS_WORDS:
+                    cand = _map_to_canonical_model(p_prev)
+                    if cand and cand not in modelos_mapped:
+                        modelos_mapped.insert(0, cand)
         # check next token
         if plate_idx + 1 < len(toks_up):
             p2 = toks_up[plate_idx + 1]
@@ -283,6 +290,13 @@ def extrair_tudo_consumo(texto: str) -> Dict[str, Any]:
                 cand = _map_to_canonical_model(p2)
                 if cand and cand not in modelos_mapped:
                     modelos_mapped.append(cand)
+            # se o token seguinte é cor, tente o próximo a ele
+            if p2.upper() in _CORES_SET and plate_idx + 2 < len(toks_up):
+                p_next = toks_up[plate_idx + 2]
+                if p_next.isalpha() and p_next.upper() not in _STATUS_WORDS:
+                    cand = _map_to_canonical_model(p_next)
+                    if cand and cand not in modelos_mapped:
+                        modelos_mapped.append(cand)
 
     # dedupe modelos_mapped preserve order
     modelos_final = []
