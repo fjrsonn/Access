@@ -28,6 +28,7 @@ from preprocessor import (
     extrair_tudo_consumo,
     VEICULOS_MAP,
     remover_status,
+    normalize_name_tokens,
 )
 from logger import log_forense
 
@@ -564,6 +565,8 @@ def processar():
                 nome_raw = pre.get("NOME_RAW", "") or ""
                 if nome_raw:
                     parts = nome_raw.split()
+                    if normalize_name_tokens:
+                        parts = normalize_name_tokens(parts)
                     if parts:
                         dados["NOME"] = parts[0].upper()
                         dados["SOBRENOME"] = " ".join(parts[1:]).upper() if len(parts) > 1 else "-"

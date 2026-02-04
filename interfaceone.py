@@ -43,10 +43,11 @@ except Exception:
 
 # Import do parser robusto
 try:
-    from preprocessor import extrair_tudo_consumo
+    from preprocessor import extrair_tudo_consumo, normalize_name_tokens
 except Exception:
     # se faltar, manter compatibilidade — o código só chamará extrair_tudo_consumo quando disponível
     extrair_tudo_consumo = None
+    normalize_name_tokens = None
 
 # paths
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -1184,6 +1185,8 @@ def save_text(entry_widget=None, btn=None):
         sobrenome = ""
         if nome_raw:
             parts = nome_raw.split()
+            if normalize_name_tokens:
+                parts = normalize_name_tokens(parts)
             if parts:
                 nome = parts[0].title()
                 sobrenome = " ".join(parts[1:]).title() if len(parts) > 1 else ""
