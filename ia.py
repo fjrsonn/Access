@@ -28,6 +28,7 @@ from preprocessor import (
     extrair_tudo_consumo,
     VEICULOS_MAP,
     remover_status,
+    corrigir_token_nome,
 )
 from logger import log_forense
 
@@ -421,7 +422,8 @@ def post_validate_and_clean_record(rec: dict, modelos_hint: Iterable[str]=None, 
         # skip common prepositions
         if tu.upper() in ("DO","DA","DE","DOS","DAS","E","O","A","SR","SRA"):
             continue
-        cleaned.append(tu.title())
+        corrected = corrigir_token_nome(tu)
+        cleaned.append(corrected.title())
 
     # reconstruct nome / sobrenome
     if cleaned:
@@ -560,12 +562,13 @@ def processar():
             if cor_pre:
                 dados["COR"] = cor_pre.upper()
 
-            if dados.get("NOME") in (None, "", "-"):
-                nome_raw = pre.get("NOME_RAW", "") or ""
-                if nome_raw:
-                    parts = nome_raw.split()
-                    if parts:
+            nome_raw = pre.get("NOME_RAW", "") or ""
+            if nome_raw:
+                parts = nome_raw.split()
+                if parts:
+                    if dados.get("NOME") in (None, "", "-"):
                         dados["NOME"] = parts[0].upper()
+                    if dados.get("SOBRENOME") in (None, "", "-"):
                         dados["SOBRENOME"] = " ".join(parts[1:]).upper() if len(parts) > 1 else "-"
 
             dados["PLACA"] = (endereco.get("PLACA", "") or "-").upper()
