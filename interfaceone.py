@@ -43,10 +43,11 @@ except Exception:
 
 # Import do parser robusto
 try:
-    from preprocessor import extrair_tudo_consumo
+    from preprocessor import extrair_tudo_consumo, corrigir_token_nome
 except Exception:
     # se faltar, manter compatibilidade — o código só chamará extrair_tudo_consumo quando disponível
     extrair_tudo_consumo = None
+    corrigir_token_nome = None
 
 # paths
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -689,7 +690,8 @@ def post_validate_and_clean_record(rec: dict, modelos_hint: Iterable[str]=None, 
             continue
         if tu.upper() in ("DO","DA","DE","DOS","DAS","E","O","A","SR","SRA"):
             continue
-        cleaned.append(tu.title())
+        corrected = corrigir_token_nome(tu) if corrigir_token_nome else tu
+        cleaned.append(corrected.title())
 
     if cleaned:
         rec["NOME"] = cleaned[0].upper()
