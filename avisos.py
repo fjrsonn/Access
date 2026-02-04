@@ -7,7 +7,7 @@ import tempfile
 import re
 import shutil
 import unicodedata
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ANALISES = os.path.join(BASE_DIR, "analises.json")
@@ -101,11 +101,16 @@ def _next_aviso_id(existing_avisos: List[dict]) -> str:
                 pass
     return f"AVISO-{(maxn+1):06d}"
 
+def _registro_event_id(rec: Dict[str, Any]) -> Any:
+    if not isinstance(rec, dict):
+        return None
+    return rec.get("_entrada_id") or rec.get("ID") or rec.get("id")
+
 def _aviso_exists(existing_avisos: List[dict], identidade: str, ultimo_id: Any, tipo: str) -> bool:
     for a in existing_avisos:
         if ( (a.get("identidade") or "").upper() == (identidade or "").upper() ):
             last = a.get("ultimo_registro") or {}
-            if last and str(last.get("ID") or "") == str(ultimo_id or "") and (a.get("tipo") or "") == (tipo or ""):
+            if last and str(_registro_event_id(last) or "") == str(ultimo_id or "") and (a.get("tipo") or "") == (tipo or ""):
                 return True
     return False
 
@@ -195,37 +200,40 @@ def vehicles_considered_same(rec_a: dict, rec_b: dict, fuzzy_threshold: int = 85
 # -----------------------
 # Mensagens: usam o STATUS do PRIMEIRO registro como "status verdadeiro"
 # -----------------------
-def _build_message_tipo1(primeiro, ultimo, entry):
+def _build_message_tipo1(primeiro, ultimo, entry, access_count: Optional[int] = None):
     status_true = (primeiro.get("STATUS") or "").strip().upper() or "MORADOR"
     n = (primeiro.get("NOME","") or "").strip().title()
     s = (primeiro.get("SOBRENOME","") or "").strip().title()
     b = ultimo.get("BLOCO","") or primeiro.get("BLOCO","")
     a = ultimo.get("APARTAMENTO","") or primeiro.get("APARTAMENTO","")
-    vez = ordinal_pt_upper(len(entry.get("registros", []) or []))
+    count = access_count if access_count is not None else len(entry.get("registros", []) or [])
+    vez = ordinal_pt_upper(count)
     dt = _parse_datetime(ultimo.get("DATA_HORA") or ultimo.get("data_hora") or "")
     data_str = dt.strftime("%d/%m/%Y") if dt else (ultimo.get("DATA_HORA") or "")
     hora_str = dt.strftime("%H:%M:%S") if dt else ""
     return f"{status_true} {n} {s}, DO BLOCO {b} APARTAMENTO {a}, ACESSOU O CONDOMINIO PELA {vez} VEZ, NA DATA {data_str}, HORARIO AS {hora_str}!"
 
-def _build_message_tipo2(primeiro, ultimo, entry):
+def _build_message_tipo2(primeiro, ultimo, entry, access_count: Optional[int] = None):
     status_true = (primeiro.get("STATUS") or "").strip().upper() or "MORADOR"
     n = (primeiro.get("NOME","") or "").strip().title()
     s = (primeiro.get("SOBRENOME","") or "").strip().title()
     b = ultimo.get("BLOCO","") or primeiro.get("BLOCO","")
     a = ultimo.get("APARTAMENTO","") or primeiro.get("APARTAMENTO","")
-    vez = ordinal_pt_upper(len(entry.get("registros", []) or []))
+    count = access_count if access_count is not None else len(entry.get("registros", []) or [])
+    vez = ordinal_pt_upper(count)
     dt = _parse_datetime(ultimo.get("DATA_HORA") or ultimo.get("data_hora") or "")
     data_str = dt.strftime("%d/%m/%Y") if dt else (ultimo.get("DATA_HORA") or "")
     hora_str = dt.strftime("%H:%M:%S") if dt else ""
     return f"{status_true} {n} {s}, DO BLOCO {b} APARTAMENTO {a}, ACESSOU O CONDOMINIO PELA {vez} VEZ, NA DATA {data_str}, HORARIO AS {hora_str}, COM DADOS DIVERGENTES!"
 
-def _build_message_tipo3(primeiro, ultimo, entry):
+def _build_message_tipo3(primeiro, ultimo, entry, access_count: Optional[int] = None):
     status_true = (primeiro.get("STATUS") or "").strip().upper() or "MORADOR"
     n = (primeiro.get("NOME","") or "").strip().title()
     s = (primeiro.get("SOBRENOME","") or "").strip().title()
     b = ultimo.get("BLOCO","") or primeiro.get("BLOCO","")
     a = ultimo.get("APARTAMENTO","") or primeiro.get("APARTAMENTO","")
-    vez = ordinal_pt_upper(len(entry.get("registros", []) or []))
+    count = access_count if access_count is not None else len(entry.get("registros", []) or [])
+    vez = ordinal_pt_upper(count)
     dt = _parse_datetime(ultimo.get("DATA_HORA") or ultimo.get("data_hora") or "")
     data_str = dt.strftime("%d/%m/%Y") if dt else (ultimo.get("DATA_HORA") or "")
     hora_str = dt.strftime("%H:%M:%S") if dt else ""
@@ -242,84 +250,86 @@ def build_avisos(analises_path: str = ANALISES, out_path: str = AVISOS) -> Dict[
         if len(regs) < 2:
             continue
         primeiro = regs[0]
-        ultimo = regs[-1]
-        cmp_keys = ["NOME","SOBRENOME","BLOCO","APARTAMENTO","PLACA","MODELO","COR","STATUS"]
-        comp = _compare_fields(primeiro, ultimo, cmp_keys)
+        for idx in range(1, len(regs)):
+            ultimo = regs[idx]
+            access_count = idx + 1
+            cmp_keys = ["NOME","SOBRENOME","BLOCO","APARTAMENTO","PLACA","MODELO","COR","STATUS"]
+            comp = _compare_fields(primeiro, ultimo, cmp_keys)
 
-        # nova lógica: usa vehicles_considered_same para evitar falsos positivos
-        try:
-            # se há qualquer informação de veículo, verificar se são considerados *o mesmo veículo*
-            has_vehicle_info = bool((primeiro.get("PLACA") or "") or (ultimo.get("PLACA") or "") or (primeiro.get("MODELO") or "") or (ultimo.get("MODELO") or "") or (primeiro.get("COR") or "") or (ultimo.get("COR") or ""))
-            if has_vehicle_info:
-                same_vehicle = vehicles_considered_same(primeiro, ultimo)
-                vehicle_div = not same_vehicle
-            else:
-                vehicle_div = False
-        except Exception:
-            # fallback para comportamento antigo: checar diferenças em PLACA/MODELO/COR
+            # nova lógica: usa vehicles_considered_same para evitar falsos positivos
+            try:
+                # se há qualquer informação de veículo, verificar se são considerados *o mesmo veículo*
+                has_vehicle_info = bool((primeiro.get("PLACA") or "") or (ultimo.get("PLACA") or "") or (primeiro.get("MODELO") or "") or (ultimo.get("MODELO") or "") or (primeiro.get("COR") or "") or (ultimo.get("COR") or ""))
+                if has_vehicle_info:
+                    same_vehicle = vehicles_considered_same(primeiro, ultimo)
+                    vehicle_div = not same_vehicle
+                else:
+                    vehicle_div = False
+            except Exception:
+                # fallback para comportamento antigo: checar diferenças em PLACA/MODELO/COR
+                vehicle_keys = ["PLACA","MODELO","COR"]
+                vehicle_div = any(not comp[k][2] and (comp[k][0] or comp[k][1]) for k in vehicle_keys)
+
             vehicle_keys = ["PLACA","MODELO","COR"]
-            vehicle_div = any(not comp[k][2] and (comp[k][0] or comp[k][1]) for k in vehicle_keys)
+            non_vehicle_div = any(not comp[k][2] and (comp[k][0] or comp[k][1]) for k in cmp_keys if k not in vehicle_keys)
 
-        vehicle_keys = ["PLACA","MODELO","COR"]
-        non_vehicle_div = any(not comp[k][2] and (comp[k][0] or comp[k][1]) for k in cmp_keys if k not in vehicle_keys)
+            if vehicle_div:
+                tipo = "PADRAO_3"
+                nivel = "critical"
+                bg_color = "#FF0000"
+                txt = _build_message_tipo3(primeiro, ultimo, entry, access_count)
+            elif non_vehicle_div:
+                tipo = "PADRAO_2"
+                nivel = "warn"
+                bg_color = "#FFFF00"
+                txt = _build_message_tipo2(primeiro, ultimo, entry, access_count)
+            else:
+                tipo = "PADRAO_1"
+                nivel = "info"
+                bg_color = "#FFFF00"
+                txt = _build_message_tipo1(primeiro, ultimo, entry, access_count)
 
-        if vehicle_div:
-            tipo = "PADRAO_3"
-            nivel = "critical"
-            bg_color = "#FF0000"
-            txt = _build_message_tipo3(primeiro, ultimo, entry)
-        elif non_vehicle_div:
-            tipo = "PADRAO_2"
-            nivel = "warn"
-            bg_color = "#FFFF00"
-            txt = _build_message_tipo2(primeiro, ultimo, entry)
-        else:
-            tipo = "PADRAO_1"
-            nivel = "info"
-            bg_color = "#FFFF00"
-            txt = _build_message_tipo1(primeiro, ultimo, entry)
+            ultimo_id = _registro_event_id(ultimo)
+            identidade = entry.get("identidade") or ""
 
-        ultimo_id = ultimo.get("ID") or ultimo.get("id") or None
-        identidade = entry.get("identidade") or ""
+            # evita duplicar o MESMO evento (mesma identidade + mesmo ultimo_id + mesmo tipo)
+            if _aviso_exists(existing_list, identidade, ultimo_id, tipo):
+                continue
 
-        # evita duplicar o MESMO evento (mesma identidade + mesmo ultimo_id + mesmo tipo)
-        if _aviso_exists(existing_list, identidade, ultimo_id, tipo):
-            continue
-
-        id_aviso = _next_aviso_id(existing_list)
-        aviso = {
-            "id_aviso": id_aviso,
-            "identidade": identidade,
-            "tipo": tipo,
-            "nivel": nivel,
-            "mensagem": txt,
-            "ui": {
-                "background_color": bg_color,
-                "opacity": 0.7,
-                "text_color": "#000000",
-                "icone": "⚠",
-                "exibir_botao_fechar": True
-            },
-            "referencias": {
-                "primeiro_registro_id": primeiro.get("ID") or primeiro.get("id"),
-                "ultimo_registro_id": ultimo_id,
-                "quantidade_acessos": _count_accesses(regs)
-            },
-            "primeiro_registro": primeiro,
-            "ultimo_registro": ultimo,
-            "timestamps": {
-                "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                "exibido_em": None,
-                "fechado_em": None
-            },
-            "status": {
-                "ativo": True,
-                "fechado_pelo_usuario": False
+            id_aviso = _next_aviso_id(existing_list)
+            aviso = {
+                "id_aviso": id_aviso,
+                "identidade": identidade,
+                "tipo": tipo,
+                "nivel": nivel,
+                "mensagem": txt,
+                "ui": {
+                    "background_color": bg_color,
+                    "opacity": 0.7,
+                    "text_color": "#000000",
+                    "icone": "⚠",
+                    "exibir_botao_fechar": True
+                },
+                "referencias": {
+                    "primeiro_registro_id": _registro_event_id(primeiro),
+                    "ultimo_registro_id": ultimo_id,
+                    "quantidade_acessos": access_count
+                },
+                "primeiro_registro": primeiro,
+                "ultimo_registro": ultimo,
+                "timestamps": {
+                    "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                    "exibido_em": None,
+                    "fechado_em": None
+                },
+                "status": {
+                    "ativo": True,
+                    "fechado_pelo_usuario": False
+                }
             }
-        }
-        existing_list.append(aviso)
-        avisos["ultimo_aviso_ativo"] = id_aviso
-        created += 1
+            existing_list.append(aviso)
+            avisos["ultimo_aviso_ativo"] = id_aviso
+            created += 1
 
     avisos["registros"] = existing_list
     # sempre gravar (mesmo vazio)
@@ -347,71 +357,74 @@ def build_avisos_for_identity(identity_key: str, analises_path: str = ANALISES, 
         regs = entry.get("registros", []) or []
         if len(regs) < 2:
             continue
-        primeiro = regs[0]; ultimo = regs[-1]
-        cmp_keys = ["NOME","SOBRENOME","BLOCO","APARTAMENTO","PLACA","MODELO","COR","STATUS"]
-        comp = _compare_fields(primeiro, ultimo, cmp_keys)
+        primeiro = regs[0]
+        for idx in range(1, len(regs)):
+            ultimo = regs[idx]
+            access_count = idx + 1
+            cmp_keys = ["NOME","SOBRENOME","BLOCO","APARTAMENTO","PLACA","MODELO","COR","STATUS"]
+            comp = _compare_fields(primeiro, ultimo, cmp_keys)
 
-        try:
-            has_vehicle_info = bool((primeiro.get("PLACA") or "") or (ultimo.get("PLACA") or "") or (primeiro.get("MODELO") or "") or (ultimo.get("MODELO") or "") or (primeiro.get("COR") or "") or (ultimo.get("COR") or ""))
-            if has_vehicle_info:
-                same_vehicle = vehicles_considered_same(primeiro, ultimo)
-                vehicle_div = not same_vehicle
-            else:
-                vehicle_div = False
-        except Exception:
+            try:
+                has_vehicle_info = bool((primeiro.get("PLACA") or "") or (ultimo.get("PLACA") or "") or (primeiro.get("MODELO") or "") or (ultimo.get("MODELO") or "") or (primeiro.get("COR") or "") or (ultimo.get("COR") or ""))
+                if has_vehicle_info:
+                    same_vehicle = vehicles_considered_same(primeiro, ultimo)
+                    vehicle_div = not same_vehicle
+                else:
+                    vehicle_div = False
+            except Exception:
+                vehicle_keys = ["PLACA","MODELO","COR"]
+                vehicle_div = any(not comp[k][2] and (comp[k][0] or comp[k][1]) for k in vehicle_keys)
+
             vehicle_keys = ["PLACA","MODELO","COR"]
-            vehicle_div = any(not comp[k][2] and (comp[k][0] or comp[k][1]) for k in vehicle_keys)
+            non_vehicle_div = any(not comp[k][2] and (comp[k][0] or comp[k][1]) for k in cmp_keys if k not in vehicle_keys)
 
-        vehicle_keys = ["PLACA","MODELO","COR"]
-        non_vehicle_div = any(not comp[k][2] and (comp[k][0] or comp[k][1]) for k in cmp_keys if k not in vehicle_keys)
+            if vehicle_div:
+                tipo = "PADRAO_3"; nivel="critical"; bg_color="#FF0000"; txt=_build_message_tipo3(primeiro, ultimo, entry, access_count)
+            elif non_vehicle_div:
+                tipo = "PADRAO_2"; nivel="warn"; bg_color="#FFFF00"; txt=_build_message_tipo2(primeiro, ultimo, entry, access_count)
+            else:
+                tipo = "PADRAO_1"; nivel="info"; bg_color="#FFFF00"; txt=_build_message_tipo1(primeiro, ultimo, entry, access_count)
 
-        if vehicle_div:
-            tipo = "PADRAO_3"; nivel="critical"; bg_color="#FF0000"; txt=_build_message_tipo3(primeiro, ultimo, entry)
-        elif non_vehicle_div:
-            tipo = "PADRAO_2"; nivel="warn"; bg_color="#FFFF00"; txt=_build_message_tipo2(primeiro, ultimo, entry)
-        else:
-            tipo = "PADRAO_1"; nivel="info"; bg_color="#FFFF00"; txt=_build_message_tipo1(primeiro, ultimo, entry)
+            ultimo_id = _registro_event_id(ultimo)
+            identidade = entry.get("identidade") or ""
 
-        ultimo_id = ultimo.get("ID") or ultimo.get("id") or None
-        identidade = entry.get("identidade") or ""
+            if _aviso_exists(existing_list, identidade, ultimo_id, tipo):
+                continue
 
-        if _aviso_exists(existing_list, identidade, ultimo_id, tipo):
-            continue
-
-        id_aviso = _next_aviso_id(existing_list)
-        aviso = {
-            "id_aviso": id_aviso,
-            "identidade": identidade,
-            "tipo": tipo,
-            "nivel": nivel,
-            "mensagem": txt,
-            "ui": {
-                "background_color": bg_color,
-                "opacity": 0.7,
-                "text_color": "#000000",
-                "icone": "⚠",
-                "exibir_botao_fechar": True
-            },
-            "referencias": {
-                "primeiro_registro_id": primeiro.get("ID") or primeiro.get("id"),
-                "ultimo_registro_id": ultimo_id,
-                "quantidade_acessos": _count_accesses(regs)
-            },
-            "primeiro_registro": primeiro,
-            "ultimo_registro": ultimo,
-            "timestamps": {
-                "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                "exibido_em": None,
-                "fechado_em": None
-            },
-            "status": {
-                "ativo": True,
-                "fechado_pelo_usuario": False
+            id_aviso = _next_aviso_id(existing_list)
+            aviso = {
+                "id_aviso": id_aviso,
+                "identidade": identidade,
+                "tipo": tipo,
+                "nivel": nivel,
+                "mensagem": txt,
+                "ui": {
+                    "background_color": bg_color,
+                    "opacity": 0.7,
+                    "text_color": "#000000",
+                    "icone": "⚠",
+                    "exibir_botao_fechar": True
+                },
+                "referencias": {
+                    "primeiro_registro_id": _registro_event_id(primeiro),
+                    "ultimo_registro_id": ultimo_id,
+                    "quantidade_acessos": access_count
+                },
+                "primeiro_registro": primeiro,
+                "ultimo_registro": ultimo,
+                "timestamps": {
+                    "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                    "exibido_em": None,
+                    "fechado_em": None
+                },
+                "status": {
+                    "ativo": True,
+                    "fechado_pelo_usuario": False
+                }
             }
-        }
-        existing_list.append(aviso)
-        avisos["ultimo_aviso_ativo"] = id_aviso
-        created += 1
+            existing_list.append(aviso)
+            avisos["ultimo_aviso_ativo"] = id_aviso
+            created += 1
 
     avisos["registros"] = existing_list
     atomic_save(out_path, avisos)
