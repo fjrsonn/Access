@@ -8,6 +8,7 @@ from typing import Dict, Any, List, Tuple
 # mapa simples de modelos -> abreviações/comuns (aumente conforme necessário)
 VEICULOS_MAP = {
     "JETTA": ["JETTA", "JET"],
+    "POLO": ["POLO"],
     "ONIX": ["ONIX", "ÔNIX"],
     "GOLF": ["GOLF"],
     "CIVIC": ["CIVIC"],
@@ -44,6 +45,29 @@ _STATUS_WORDS = set()
 for k,v in _STATUS_MAP.items():
     for w in v:
         _STATUS_WORDS.add(w.upper())
+
+_NOMES = {
+    "JOSÉ": ["JOSE", "JOZE", "JOZEH", "JOSEH", "JSE", "JOE", "JOS"],
+    "JOÃO": ["JOAO", "JOAUM", "JOAM", "JAO", "JAA", "JOA"],
+    "MARIA": ["MARIA", "MARYA", "MARI", "MRIA", "MAIA", "MRA", "MAR"],
+    "ANTÔNIO": ["ANTONIO", "ANTUNIO", "ANTÔNIO", "ATONIO", "ANONIO", "ANTNIO", "ANTOIO", "ANTONO", "ANTONI"],
+    "FRANCISCO": ["FRANCISCO", "FRANCICO", "FRANSCISCO", "FANCISCO", "FRNCISCO", "FRAISCO", "FRANCSCO", "FRANCISC"],
+    "PEDRO": ["PEDRO", "PEDRU", "PDRO", "PERO", "PEDO", "PEDR"]
+}
+
+_NOMES_LOOKUP = {}
+for canon, variantes in _NOMES.items():
+    _NOMES_LOOKUP[canon.upper()] = canon.upper()
+    for variante in variantes:
+        _NOMES_LOOKUP[variante.upper()] = canon.upper()
+
+def _normalize_name_token(tok: str) -> str:
+    if not tok:
+        return ""
+    return _NOMES_LOOKUP.get(tok.upper(), tok.upper())
+
+def normalize_name_tokens(tokens: List[str]) -> List[str]:
+    return [_normalize_name_token(tok) for tok in (tokens or []) if tok]
 
 _plate_re_1 = re.compile(r"^[A-Z]{3}\d{4}$", re.IGNORECASE)
 _plate_re_2 = re.compile(r"^[A-Z0-9]{5,8}$", re.IGNORECASE)
@@ -276,6 +300,13 @@ def extrair_tudo_consumo(texto: str) -> Dict[str, Any]:
                 cand = _map_to_canonical_model(p)
                 if cand and cand not in modelos_mapped:
                     modelos_mapped.insert(0, cand)
+            # se o token anterior é cor, tente o anterior a ele (ex: JETA PRETO FEU3C84)
+            if p.upper() in _CORES_SET and plate_idx - 2 >= 0:
+                p_prev = toks_up[plate_idx - 2]
+                if p_prev.isalpha() and p_prev.upper() not in _STATUS_WORDS:
+                    cand = _map_to_canonical_model(p_prev)
+                    if cand and cand not in modelos_mapped:
+                        modelos_mapped.insert(0, cand)
         # check next token
         if plate_idx + 1 < len(toks_up):
             p2 = toks_up[plate_idx + 1]
@@ -283,6 +314,13 @@ def extrair_tudo_consumo(texto: str) -> Dict[str, Any]:
                 cand = _map_to_canonical_model(p2)
                 if cand and cand not in modelos_mapped:
                     modelos_mapped.append(cand)
+            # se o token seguinte é cor, tente o próximo a ele
+            if p2.upper() in _CORES_SET and plate_idx + 2 < len(toks_up):
+                p_next = toks_up[plate_idx + 2]
+                if p_next.isalpha() and p_next.upper() not in _STATUS_WORDS:
+                    cand = _map_to_canonical_model(p_next)
+                    if cand and cand not in modelos_mapped:
+                        modelos_mapped.append(cand)
 
     # dedupe modelos_mapped preserve order
     modelos_final = []
@@ -337,12 +375,12 @@ def extrair_tudo_consumo(texto: str) -> Dict[str, Any]:
         seq = [t for i,t in candidate_name_tokens]
         # filter out common prepositions/particles
         stopwords = set(["DO","DA","DE","DOS","DAS","E","O","A","SR","SRA"])
-        cleaned_seq = [t for t in seq if t.upper() not in stopwords]
+        cleaned_seq = [_normalize_name_token(t) for t in seq if t.upper() not in stopwords]
         if cleaned_seq:
             top = cleaned_seq[:3]
             name_raw = " ".join([x.title() for x in top])
         else:
-            name_raw = seq[0].title()
+            name_raw = _normalize_name_token(seq[0]).title()
     else:
         name_raw = ""
 
@@ -356,7 +394,7 @@ def extrair_tudo_consumo(texto: str) -> Dict[str, Any]:
         if first_struct_idx:
             cand = [toks[j] for j in range(0, first_struct_idx) if toks[j].isalpha()]
             if cand:
-                name_raw = " ".join([c.title() for c in cand[:3]])
+                name_raw = " ".join([_normalize_name_token(c).title() for c in cand[:3]])
 
     # TEXTO_LIMPO: original minus status word(s)
     texto_limpo = texto_sem_status.strip()
