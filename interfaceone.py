@@ -1187,6 +1187,8 @@ def save_text(entry_widget=None, btn=None):
         if nome_raw:
             parts = nome_raw.split()
             if parts:
+                if corrigir_token_nome:
+                    parts = [corrigir_token_nome(p) for p in parts]
                 nome = parts[0].title()
                 sobrenome = " ".join(parts[1:]).title() if len(parts) > 1 else ""
 
@@ -1222,6 +1224,14 @@ def save_text(entry_widget=None, btn=None):
             post_validate_and_clean_record(rec, modelos_hint=[rec.get("MODELO")] if rec.get("MODELO") and rec.get("MODELO") != "-" else [], cores_hint=[rec.get("COR")] if rec.get("COR") and rec.get("COR") != "-" else [])
         except Exception as e:
             print("Aviso: falha validação final otimista:", e)
+
+        if nome_raw and rec.get("SOBRENOME") in (None, "", "-"):
+            parts = nome_raw.split()
+            if parts:
+                if corrigir_token_nome:
+                    parts = [corrigir_token_nome(p) for p in parts]
+                if len(parts) > 1:
+                    rec["SOBRENOME"] = " ".join(parts[1:]).upper()
 
         # Append to dadosend.json (otimistic). append_record_to_db preserva _entrada_id.
         try:

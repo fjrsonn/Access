@@ -446,6 +446,24 @@ def post_validate_and_clean_record(rec: dict, modelos_hint: Iterable[str]=None, 
 
     return rec
 
+def _split_nome_raw(nome_raw: str):
+    parts = [p for p in str(nome_raw or "").split() if p]
+    if not parts:
+        return []
+    try:
+        return [corrigir_token_nome(p).upper() for p in parts]
+    except Exception:
+        return [p.upper() for p in parts]
+
+def _fill_nome_from_raw(dados: dict, nome_raw: str) -> None:
+    parts = _split_nome_raw(nome_raw)
+    if not parts:
+        return
+    if dados.get("NOME") in (None, "", "-"):
+        dados["NOME"] = parts[0]
+    if len(parts) > 1 and dados.get("SOBRENOME") in (None, "", "-"):
+        dados["SOBRENOME"] = " ".join(parts[1:])
+
 # =========================
 # PROCESSAMENTO PRINCIPAL
 # =========================
@@ -564,12 +582,7 @@ def processar():
 
             nome_raw = pre.get("NOME_RAW", "") or ""
             if nome_raw:
-                parts = nome_raw.split()
-                if parts:
-                    if dados.get("NOME") in (None, "", "-"):
-                        dados["NOME"] = parts[0].upper()
-                    if dados.get("SOBRENOME") in (None, "", "-"):
-                        dados["SOBRENOME"] = " ".join(parts[1:]).upper() if len(parts) > 1 else "-"
+                _fill_nome_from_raw(dados, nome_raw)
 
             dados["PLACA"] = (endereco.get("PLACA", "") or "-").upper()
             dados["BLOCO"] = (endereco.get("BLOCO", "") or "-").upper()
@@ -613,6 +626,9 @@ def processar():
                 )
             except Exception as e:
                 print("[ia.py] Aviso: falha na validação final (não bloqueante):", e)
+
+            if nome_raw:
+                _fill_nome_from_raw(dados, nome_raw)
 
             # Append or update SAIDA (merge por _entrada_id)
             try:
