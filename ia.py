@@ -28,6 +28,7 @@ from preprocessor import (
     extrair_tudo_consumo,
     VEICULOS_MAP,
     remover_status,
+    corrigir_token_nome,
 )
 from logger import log_forense
 
@@ -421,7 +422,8 @@ def post_validate_and_clean_record(rec: dict, modelos_hint: Iterable[str]=None, 
         # skip common prepositions
         if tu.upper() in ("DO","DA","DE","DOS","DAS","E","O","A","SR","SRA"):
             continue
-        cleaned.append(tu.title())
+        corrected = corrigir_token_nome(tu)
+        cleaned.append(corrected.title())
 
     # reconstruct nome / sobrenome
     if cleaned:
@@ -443,6 +445,15 @@ def post_validate_and_clean_record(rec: dict, modelos_hint: Iterable[str]=None, 
             rec[k] = v.upper()
 
     return rec
+
+def _split_nome_raw(nome_raw: str):
+    parts = [p for p in str(nome_raw or "").split() if p]
+    if not parts:
+        return []
+    try:
+        return [corrigir_token_nome(p).upper() for p in parts]
+    except Exception:
+        return [p.upper() for p in parts]
 
 # =========================
 # PROCESSAMENTO PRINCIPAL
@@ -560,13 +571,14 @@ def processar():
             if cor_pre:
                 dados["COR"] = cor_pre.upper()
 
-            if dados.get("NOME") in (None, "", "-"):
-                nome_raw = pre.get("NOME_RAW", "") or ""
-                if nome_raw:
-                    parts = nome_raw.split()
-                    if parts:
-                        dados["NOME"] = parts[0].upper()
-                        dados["SOBRENOME"] = " ".join(parts[1:]).upper() if len(parts) > 1 else "-"
+            nome_raw = pre.get("NOME_RAW", "") or ""
+            if nome_raw:
+                parts = _split_nome_raw(nome_raw)
+                if parts:
+                    if dados.get("NOME") in (None, "", "-"):
+                        dados["NOME"] = parts[0]
+                    if dados.get("SOBRENOME") in (None, "", "-"):
+                        dados["SOBRENOME"] = " ".join(parts[1:]) if len(parts) > 1 else "-"
 
             dados["PLACA"] = (endereco.get("PLACA", "") or "-").upper()
             dados["BLOCO"] = (endereco.get("BLOCO", "") or "-").upper()
@@ -610,6 +622,11 @@ def processar():
                 )
             except Exception as e:
                 print("[ia.py] Aviso: falha na validação final (não bloqueante):", e)
+
+            if nome_raw and dados.get("SOBRENOME") in (None, "", "-"):
+                parts = _split_nome_raw(nome_raw)
+                if len(parts) > 1:
+                    dados["SOBRENOME"] = " ".join(parts[1:])
 
             # Append or update SAIDA (merge por _entrada_id)
             try:

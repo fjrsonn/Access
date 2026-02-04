@@ -3,6 +3,7 @@
 # Exporta: extrair_tudo_consumo, VEICULOS_MAP, remover_status, detectar_status
 
 import re
+import unicodedata
 from typing import Dict, Any, List, Tuple
 
 # mapa simples de modelos -> abreviações/comuns (aumente conforme necessário)
@@ -481,6 +482,31 @@ _NOMES = {
     "TOMÁS": ["TOMAS", "OMAS", "TMAS", "TOAS", "TOMS", "TOMA"],
     "ZOÉ": ["ZOE"]
 }
+
+def _normalize_name_token(token: str) -> str:
+    if not token:
+        return ""
+    s = unicodedata.normalize("NFKD", str(token))
+    s = "".join(ch for ch in s if not unicodedata.combining(ch))
+    return re.sub(r"[^A-Za-z]+", "", s).upper().strip()
+
+_NOMES_LOOKUP = {}
+for canonical, variants in _NOMES.items():
+    all_variants = [canonical] + list(variants or [])
+    for variant in all_variants:
+        key = _normalize_name_token(variant)
+        if key:
+            _NOMES_LOOKUP.setdefault(key, canonical)
+
+def corrigir_token_nome(token: str) -> str:
+    """
+    Normaliza um token usando o dicionário _NOMES (válido para NOME e SOBRENOME).
+    Retorna o token canônico se houver match, caso contrário retorna o token original.
+    """
+    key = _normalize_name_token(token)
+    if not key:
+        return token
+    return _NOMES_LOOKUP.get(key, token)
 
 _plate_re_1 = re.compile(r"^[A-Z]{3}\d{4}$", re.IGNORECASE)
 _plate_re_2 = re.compile(r"^[A-Z0-9]{5,8}$", re.IGNORECASE)
