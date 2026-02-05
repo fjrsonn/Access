@@ -656,7 +656,10 @@ def respond_query(user_query: str, db_path: str = SAIDA, model: str = "llama-3.1
         db = agente.tag_records(agente.load_database_from_path(db_path), os.path.basename(db_path))
         sources = [os.path.basename(db_path)]
     else:
-        db, sources = agente.build_database(user_query, default_sources=("dadosend",))
+        db, sources = agente.build_database(
+            user_query,
+            default_sources=("analises", "avisos", "dadosend", "dadosinit"),
+        )
     try:
         db_json = json.dumps(db, ensure_ascii=False)
     except Exception:

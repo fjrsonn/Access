@@ -134,6 +134,9 @@ def fallback_search(user_query: str, records: List[dict]) -> str:
             st = "MORADOR"
         else:
             st = None
+
+        tokens = [t for t in re.findall(r"[a-z0-9]+", q) if len(t) > 1]
+
         for r in records:
             ok = True
             if block and str(r.get("BLOCO", "")).lower() != str(block).lower():
@@ -144,13 +147,31 @@ def fallback_search(user_query: str, records: List[dict]) -> str:
                     ok = False
             if st and (r.get("STATUS") or "").lower() != st.lower():
                 ok = False
+
+            if ok and tokens:
+                text = _normalize_text(" ".join(str(v) for v in r.values()))
+                if not all(tok in text for tok in tokens):
+                    ok = False
+
             if ok:
                 results.append(r)
+
+        if not results and tokens:
+            scored = []
+            for r in records:
+                text = _normalize_text(" ".join(str(v) for v in r.values()))
+                score = sum(1 for tok in tokens if tok in text)
+                if score:
+                    scored.append((score, r))
+            scored.sort(key=lambda x: x[0], reverse=True)
+            results = [r for _, r in scored[:200]]
+
         if not results:
             return (
-                "NENHUM REGISTRO ENCONTRADO COM OS FILTROS SIMPLES APLICADOS (FALLBACK). "
+                "NENHUM REGISTRO ENCONTRADO COM OS FILTROS APLICADOS (FALLBACK). "
                 "SE DESEJAR RESPOSTAS MAIS FLEXIVEIS, CONFIGURE GROQ_API_KEY PARA USAR A IA."
             ).upper()
+
         lines = []
         for rec in results[:200]:
             dh = rec.get("DATA_HORA", "-")
