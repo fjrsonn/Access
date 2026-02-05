@@ -10,7 +10,7 @@ import traceback
 import unicodedata
 from typing import Optional, Tuple, Any, Dict, Iterable
 from datetime import datetime
-from dotenv import load_dotenv
+import agente
 
 import agente
 
@@ -39,6 +39,22 @@ from logger import log_forense
 # =========================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_PATH = os.path.join(BASE_DIR, ".env")
+
+def load_dotenv(path: str) -> None:
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                key = key.strip()
+                value = value.strip().strip("\"'")
+                if key and key not in os.environ:
+                    os.environ[key] = value
+    except FileNotFoundError:
+        return
+
 load_dotenv(ENV_PATH)
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
