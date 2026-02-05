@@ -120,10 +120,33 @@ def _parse_datetime(ds: str):
     return None
 
 
+def _format_record_line(rec: dict) -> str:
+    dh = rec.get("DATA_HORA", "-")
+    nome = rec.get("NOME", "-")
+    sobrenome = rec.get("SOBRENOME", "-")
+    bloco = rec.get("BLOCO", "-")
+    ap = rec.get("APARTAMENTO", "-")
+    placa = rec.get("PLACA", "-")
+    status = rec.get("STATUS", "-")
+    origem = rec.get("_db", "-")
+    return (
+        f"{str(dh).upper()} | {str(nome).upper()} {str(sobrenome).upper()} | "
+        f"BLOCO {str(bloco).upper()} AP {str(ap).upper()} | "
+        f"PLACA {str(placa).upper()} | {str(status).upper()} | DB {str(origem).upper()}"
+    )
+
+
 def fallback_search(user_query: str, records: List[dict]) -> str:
     try:
         q = _normalize_text(user_query)
         results = []
+        is_count = any(term in q for term in ("quantos", "quantas", "quantidade", "total"))
+        wants_avisos = "aviso" in q or "avisos" in q
+        wants_analises = "analise" in q or "analises" in q
+        wants_dadosend = "dadosend" in q or "dados end" in q or "saida" in q or "final" in q
+        wants_dadosinit = "dadosinit" in q or "dados init" in q or "entrada" in q or "inicial" in q
+        wants_open = "aberto" in q or "abertos" in q
+
         m = re.search(r"\bbloco\s*(\d+)", q)
         block = m.group(1) if m else None
         m2 = re.search(r"(\d{1,2}/\d{1,2}(?:/\d{2,4})?)", q)
@@ -135,9 +158,61 @@ def fallback_search(user_query: str, records: List[dict]) -> str:
         else:
             st = None
 
-        tokens = [t for t in re.findall(r"[a-z0-9]+", q) if len(t) > 1]
+        stopwords = {
+            "quantos",
+            "quantas",
+            "quantidade",
+            "total",
+            "quais",
+            "qual",
+            "como",
+            "onde",
+            "temos",
+            "tem",
+            "ha",
+            "existe",
+            "existem",
+            "listar",
+            "liste",
+            "mostre",
+            "mostrar",
+            "por",
+            "de",
+            "do",
+            "da",
+            "dos",
+            "das",
+            "em",
+            "no",
+            "na",
+            "nos",
+            "nas",
+            "os",
+            "as",
+            "o",
+            "a",
+            "que",
+            "me",
+            "para",
+        }
+        tokens = [
+            t for t in re.findall(r"[a-z0-9]+", q) if len(t) > 1 and t not in stopwords
+        ]
 
-        for r in records:
+        filtered_records = records
+        if any((wants_avisos, wants_analises, wants_dadosend, wants_dadosinit)):
+            wanted = set()
+            if wants_avisos:
+                wanted.add("avisos")
+            if wants_analises:
+                wanted.add("analises")
+            if wants_dadosend:
+                wanted.add("dadosend")
+            if wants_dadosinit:
+                wanted.add("dadosinit")
+            filtered_records = [r for r in records if str(r.get("_db", "")).lower() in wanted]
+
+        for r in filtered_records:
             ok = True
             if block and str(r.get("BLOCO", "")).lower() != str(block).lower():
                 ok = False
@@ -146,6 +221,8 @@ def fallback_search(user_query: str, records: List[dict]) -> str:
                 if date_filter not in dh:
                     ok = False
             if st and (r.get("STATUS") or "").lower() != st.lower():
+                ok = False
+            if wants_open and (r.get("STATUS") or "").lower() not in ("aberto", "aberta", "open"):
                 ok = False
 
             if ok and tokens:
@@ -166,28 +243,31 @@ def fallback_search(user_query: str, records: List[dict]) -> str:
             scored.sort(key=lambda x: x[0], reverse=True)
             results = [r for _, r in scored[:200]]
 
+        if is_count:
+            count = len(results)
+            target = "REGISTROS"
+            if wants_avisos:
+                target = "AVISOS"
+            elif wants_analises:
+                target = "ANALISES"
+            elif wants_dadosend:
+                target = "REGISTROS (DADOSEND)"
+            elif wants_dadosinit:
+                target = "REGISTROS (DADOSINIT)"
+            summary = f"COMO SECRETARIA, INFORMO: TOTAL DE {target} = {count}."
+            if count == 0:
+                return summary.upper()
+            details = "\n".join(_format_record_line(rec) for rec in results[:200])
+            return f"{summary}\n\nDETALHES:\n{details}".upper()
+
         if not results:
             return (
-                "NENHUM REGISTRO ENCONTRADO COM OS FILTROS APLICADOS (FALLBACK). "
-                "SE DESEJAR RESPOSTAS MAIS FLEXIVEIS, CONFIGURE GROQ_API_KEY PARA USAR A IA."
+                "COMO SECRETARIA, NAO LOCALIZEI REGISTROS COM OS FILTROS APLICADOS. "
+                "SE PRECISAR, REFORMULE A PERGUNTA COM MAIS DETALHES."
             ).upper()
 
-        lines = []
-        for rec in results[:200]:
-            dh = rec.get("DATA_HORA", "-")
-            nome = rec.get("NOME", "-")
-            sobrenome = rec.get("SOBRENOME", "-")
-            bloco = rec.get("BLOCO", "-")
-            ap = rec.get("APARTAMENTO", "-")
-            placa = rec.get("PLACA", "-")
-            status = rec.get("STATUS", "-")
-            origem = rec.get("_db", "-")
-            lines.append(
-                f"{str(dh).upper()} | {str(nome).upper()} {str(sobrenome).upper()} | "
-                f"BLOCO {str(bloco).upper()} AP {str(ap).upper()} | "
-                f"PLACA {str(placa).upper()} | {str(status).upper()} | DB {str(origem).upper()}"
-            )
-        summary = f"RESULTADOS ({len(results)}):\n" + "\n".join(lines)
-        return summary
+        lines = [_format_record_line(rec) for rec in results[:200]]
+        summary = f"COMO SECRETARIA, ENCONTREI {len(results)} REGISTROS:\n" + "\n".join(lines)
+        return summary.upper()
     except Exception as e:
         return f"ERRO AO PROCESSAR CONSULTA (FALLBACK): {e}".upper()

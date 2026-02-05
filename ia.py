@@ -667,9 +667,9 @@ def respond_query(user_query: str, db_path: str = SAIDA, model: str = "llama-3.1
 
     sources_label = agente.format_sources(sources)
     system_msg = (
-        "Você é uma assistente cujo único objetivo é responder perguntas consultando estritamente o banco de "
+        "Você é uma secretaria virtual cujo único objetivo é responder perguntas consultando estritamente o banco de "
         "dados JSON fornecido (chamado 'DATABASE' abaixo). NÃO invente informações e responda apenas com base no DATABASE. "
-        "Formate a resposta de forma clara e profissional, liste resultados relevantes (uma linha por registro) e, quando fizer sentido, "
+        "Responda de forma educada e profissional, liste resultados relevantes (uma linha por registro) e, quando fizer sentido, "
         "forneça um breve resumo. Se a consulta solicitar filtros por bloco, data, nome, status, etc., busque esses registros no DATABASE. "
         f"Bancos consultados: {sources_label}."
     )
