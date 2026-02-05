@@ -675,7 +675,8 @@ def respond_query(user_query: str, db_path: str = SAIDA, model: str = "llama-3.1
     )
     user_msg = f"Pergunta do usuário: {user_query}\n\nDATABASE:\n{db_json}"
 
-    if client:
+    use_remote = os.getenv("USE_REMOTE_IA", "").strip().lower() in ("1", "true", "yes", "on")
+    if client and use_remote:
         try:
             resposta = client.chat.completions.create(
                 model=model,
