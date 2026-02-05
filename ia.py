@@ -12,6 +12,8 @@ from typing import Optional, Tuple, Any, Dict, Iterable
 from datetime import datetime
 from dotenv import load_dotenv
 
+import agente
+
 # fuzzy matching
 try:
     from rapidfuzz import process as rf_process, fuzz as rf_fuzz
@@ -650,17 +652,23 @@ def processar():
 # respond_query and IA utilities (mantidos)
 # =========================
 def respond_query(user_query: str, db_path: str = SAIDA, model: str = "llama-3.1-8b-instant", temperature: float = 0.0, timeout: int = 15) -> str:
-    db = carregar(db_path).get("registros", []) or []
+    if db_path and db_path != SAIDA:
+        db = agente.tag_records(agente.load_database_from_path(db_path), os.path.basename(db_path))
+        sources = [os.path.basename(db_path)]
+    else:
+        db, sources = agente.build_database(user_query, default_sources=("dadosend",))
     try:
         db_json = json.dumps(db, ensure_ascii=False)
     except Exception:
         db_json = str(db)[:20000]
 
+    sources_label = agente.format_sources(sources)
     system_msg = (
         "Você é uma assistente cujo único objetivo é responder perguntas consultando estritamente o banco de "
         "dados JSON fornecido (chamado 'DATABASE' abaixo). NÃO invente informações e responda apenas com base no DATABASE. "
         "Formate a resposta de forma clara e profissional, liste resultados relevantes (uma linha por registro) e, quando fizer sentido, "
-        "forneça um breve resumo. Se a consulta solicitar filtros por bloco, data, nome, status, etc., busque esses registros no DATABASE."
+        "forneça um breve resumo. Se a consulta solicitar filtros por bloco, data, nome, status, etc., busque esses registros no DATABASE. "
+        f"Bancos consultados: {sources_label}."
     )
     user_msg = f"Pergunta do usuário: {user_query}\n\nDATABASE:\n{db_json}"
 
@@ -687,50 +695,7 @@ def respond_query(user_query: str, db_path: str = SAIDA, model: str = "llama-3.1
             if "invalid_api_key" in err_msg or "401" in err_msg:
                 _disable_client_due_to_auth()
 
-    # fallback local:
-    try:
-        q = user_query.lower()
-        results = []
-        m = re.search(r"bloco\s*(\d+)", q)
-        block = m.group(1) if m else None
-        m2 = re.search(r"(\d{1,2}/\d{1,2}(?:/\d{2,4})?)", q)
-        date_filter = m2.group(1) if m2 else None
-        if "visit" in q or "visitante" in q:
-            st = "VISITANTE"
-        elif "morador" in q or "moradores" in q:
-            st = "MORADOR"
-        else:
-            st = None
-        for r in db:
-            ok = True
-            if block:
-                if str(r.get("BLOCO", "")).lower() != str(block).lower():
-                    ok = False
-            if date_filter:
-                dh = r.get("DATA_HORA", "") or ""
-                if date_filter not in dh:
-                    ok = False
-            if st:
-                if (r.get("STATUS") or "").lower() != st.lower():
-                    ok = False
-            if ok:
-                results.append(r)
-        if not results:
-            return "NENHUM REGISTRO ENCONTRADO COM OS FILTROS SIMPLES APLICADOS (FALLBACK). SE DESEJAR RESPOSTAS MAIS FLEXÍVEIS, CONFIGURE GROQ_API_KEY PARA USAR A IA.".upper()
-        lines = []
-        for rec in results[:200]:
-            dh = rec.get("DATA_HORA", "-")
-            nome = rec.get("NOME", "-")
-            sobrenome = rec.get("SOBRENOME", "-")
-            bloco = rec.get("BLOCO", "-")
-            ap = rec.get("APARTAMENTO", "-")
-            placa = rec.get("PLACA", "-")
-            status = rec.get("STATUS", "-")
-            lines.append(f"{str(dh).upper()} | {str(nome).upper()} {str(sobrenome).upper()} | BLOCO {str(bloco).upper()} AP {str(ap).upper()} | PLACA {str(placa).upper()} | {str(status).upper()}")
-        summary = f"RESULTADOS ({len(results)}):\n" + "\n".join(lines)
-        return summary
-    except Exception as e:
-        return f"ERRO AO PROCESSAR CONSULTA (FALLBACK): {e}".upper()
+    return agente.fallback_search(user_query, db)
 
 # =========================
 # MODO IA helpers (mantidos)
