@@ -718,6 +718,8 @@ def processar():
 # respond_query and IA utilities (mantidos)
 # =========================
 def respond_query(user_query: str, db_path: str = SAIDA, model: str = "llama-3.1-8b-instant", temperature: float = 0.0, timeout: int = 15) -> str:
+    if not _AGENT_PROMPT_ATIVO:
+        activate_agent_prompt()
     if db_path and db_path != SAIDA:
         db = agente.tag_records(agente.load_database_from_path(db_path), os.path.basename(db_path))
         sources = [os.path.basename(db_path)]
@@ -731,9 +733,8 @@ def respond_query(user_query: str, db_path: str = SAIDA, model: str = "llama-3.1
             "todos",
             default_sources=("analises", "avisos", "dadosend", "dadosinit"),
         )
-        if all_db:
-            db = all_db
-            sources = all_sources
+        db = all_db
+        sources = all_sources
     try:
         db_json = json.dumps(db, ensure_ascii=False)
     except Exception:
