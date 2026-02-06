@@ -1092,6 +1092,9 @@ class SuggestEntry(tk.Frame):
     def _enter_ia_mode(self):
         try:
             self.ia_mode=True; self.ia_waiting_for_query=False; self._hide_overlay(); self.hide_list()
+            if HAS_IA_MODULE and hasattr(ia_module, "activate_agent_prompt"):
+                try: ia_module.activate_agent_prompt()
+                except Exception as e: print("Falha ao ativar prompt do agente:", e)
             try: self.entry_var.set(""); self.entry.icursor(0)
             except: pass
             try: self.entry.configure(bg="black", fg="white", insertbackground="white")
@@ -1103,6 +1106,9 @@ class SuggestEntry(tk.Frame):
     def _exit_ia_mode(self):
         try:
             self.ia_mode=False; self.ia_waiting_for_query=False
+            if HAS_IA_MODULE and hasattr(ia_module, "deactivate_agent_prompt"):
+                try: ia_module.deactivate_agent_prompt()
+                except Exception as e: print("Falha ao desativar prompt do agente:", e)
             try: self.entry.configure(bg=self._orig_entry_bg, fg=self._orig_entry_fg, insertbackground=self._orig_insert_bg)
             except: pass
             try: self.entry_var.set(""); self.entry.icursor(0); self.entry.focus_set()
