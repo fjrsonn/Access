@@ -187,6 +187,7 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
     try:
         q = _normalize_text(user_query)
         results = []
+        partial_mode = False
         is_count = any(term in q for term in ("quantos", "quantas", "quantidade", "total"))
         asks_last = "ultima entrada" in q or "ultimo acesso" in q or "ultima passagem" in q
         asks_open = any(term in q for term in ("aberto", "abertos", "aberta", "abertas"))
@@ -277,10 +278,20 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
             for r in filtered_records:
                 text_tokens = set(_tokenize_words(" ".join(str(v) for v in r.values())))
                 score = sum(1 for tok in tokens if tok in text_tokens)
+                if (asks_apartment or asks_last) and name_hint_tokens:
+                    rec_name = _record_name_tokens(r)
+                    if rec_name:
+                        score += 2 * sum(1 for tok in name_hint_tokens if tok in rec_name)
                 if score:
                     scored.append((score, r))
             scored.sort(key=lambda x: x[0], reverse=True)
-            results = [r for _, r in scored[:200]]
+            if scored:
+                max_score = scored[0][0]
+                min_score = max(1, min(max_score, 2))
+                filtered_scored = [(s, r) for s, r in scored if s >= min_score]
+                if filtered_scored:
+                    partial_mode = True
+                    results = [r for _, r in filtered_scored[:50]]
 
         fontes = _fontes_texto(results, fallback_sources=list(consulted_sources) + [r.get("_db") for r in filtered_records[:200]])
 
@@ -367,6 +378,13 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
             )
 
         lines = "\n".join(_format_record_line(rec) for rec in results[:20])
+        if partial_mode:
+            return (
+                "Com base na interpretação da pergunta livre, identifiquei registros correlatos e potencialmente úteis para o seu pedido. "
+                "Caso deseje precisão unívoca, posso refinar imediatamente por nome completo, bloco, apartamento, data ou status.\n"
+                f"{lines}\n\n"
+                f"{fontes}"
+            )
         return (
             "Perfeitamente. A partir da análise consolidada dos bancos consultados, apresento abaixo o resultado detalhado da sua solicitação:\n"
             f"{lines}\n\n"
