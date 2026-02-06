@@ -109,12 +109,25 @@ def _apply_agent_prompt_template(response_text: str) -> str:
         return response_text
     if not _AGENT_PROMPT_ATIVO:
         return response_text
-    template = _AGENT_PROMPT_ATIVO
-    # Proteção: evita vazamento do texto instrucional completo do prompt ao usuário final.
-    if "REGRAS ABSOLUTAS" in template and "{RESPOSTA_BASE}" in template:
+
+    prompt_text = _AGENT_PROMPT_ATIVO
+    marker = "<<TEMPLATE_RESPOSTA>>"
+    if marker in prompt_text:
+        template = prompt_text.split(marker, 1)[1].strip()
+    else:
+        template = prompt_text.strip()
+
+    # Se o arquivo possuir instruções longas sem marcador/template utilizável,
+    # evita vazamento e mantém resposta base.
+    if len(template) > 1200 and "{RESPOSTA_BASE}" not in template:
         return response_text
+
     if "{RESPOSTA_BASE}" in template:
-        return template.replace("{RESPOSTA_BASE}", response_text)
+        return template.replace("{RESPOSTA_BASE}", response_text).strip()
+
+    # fallback seguro: usa o texto como prefixo curto e anexa resposta base
+    if len(template) <= 240:
+        return f"{template}\n\n{response_text}".strip()
     return response_text
 
 # =========================
