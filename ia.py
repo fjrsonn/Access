@@ -12,8 +12,6 @@ from typing import Optional, Tuple, Any, Dict, Iterable
 from datetime import datetime
 import agente
 
-import agente
-
 # fuzzy matching
 try:
     from rapidfuzz import process as rf_process, fuzz as rf_fuzz
@@ -715,7 +713,7 @@ def respond_query(user_query: str, db_path: str = SAIDA, model: str = "llama-3.1
             if "invalid_api_key" in err_msg or "401" in err_msg:
                 _disable_client_due_to_auth()
 
-    return agente.fallback_search(user_query, db)
+    return agente.fallback_search(user_query, db, consulted_sources=sources)
 
 # =========================
 # MODO IA helpers (mantidos)
@@ -755,7 +753,7 @@ def handle_input_text(text: str, *, respond_fn=respond_query) -> Tuple[bool, str
             return True, exit_ia_mode()
         try:
             resp = respond_fn(text)
-            return True, resp.upper() if isinstance(resp, str) else resp
+            return True, resp if isinstance(resp, str) else resp
         except Exception as e:
             print(f"[handle_input_text] Erro ao chamar IA: {e}")
             traceback.print_exc()

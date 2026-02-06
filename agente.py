@@ -77,9 +77,11 @@ def load_database(source_key: str) -> List[dict]:
     data = _read_json(meta["path"])
     return _coerce_registros(data)
 
+
 def load_database_from_path(path: str) -> List[dict]:
     data = _read_json(path)
     return _coerce_registros(data)
+
 
 def tag_records(records: Iterable[dict], source_label: str) -> List[dict]:
     tagged: List[dict] = []
@@ -120,6 +122,13 @@ def _parse_datetime(ds: str):
     return None
 
 
+def _source_file_name(source_key: str) -> str:
+    meta = DB_SOURCES.get(source_key)
+    if not meta:
+        return source_key
+    return os.path.basename(meta.get("path") or source_key)
+
+
 def _format_record_line(rec: dict) -> str:
     dh = rec.get("DATA_HORA", "-")
     nome = rec.get("NOME", "-")
@@ -130,27 +139,40 @@ def _format_record_line(rec: dict) -> str:
     status = rec.get("STATUS", "-")
     origem = rec.get("_db", "-")
     return (
-        f"{str(dh).upper()} | {str(nome).upper()} {str(sobrenome).upper()} | "
-        f"BLOCO {str(bloco).upper()} AP {str(ap).upper()} | "
-        f"PLACA {str(placa).upper()} | {str(status).upper()} | DB {str(origem).upper()}"
+        f"{dh} | {nome} {sobrenome} | BLOCO {bloco} AP {ap} | "
+        f"PLACA {placa} | STATUS {status} | FONTE {_source_file_name(str(origem).lower())}"
     )
 
 
-def fallback_search(user_query: str, records: List[dict]) -> str:
+def _fontes_texto(resultados: List[dict], fallback_sources: Iterable[str] = ()) -> str:
+    keys = {str(r.get("_db", "")).lower() for r in resultados if r.get("_db")}
+    keys.update(str(s).lower() for s in fallback_sources if s)
+    if not keys:
+        return "Fontes consultadas: nenhum banco identificado."
+    arquivos = sorted({_source_file_name(k) for k in keys})
+    return "Fontes consultadas: " + ", ".join(arquivos) + "."
+
+
+def fallback_search(user_query: str, records: List[dict], consulted_sources: Iterable[str] = ()) -> str:
     try:
         q = _normalize_text(user_query)
         results = []
         is_count = any(term in q for term in ("quantos", "quantas", "quantidade", "total"))
+        asks_last = "ultima entrada" in q or "ultimo acesso" in q or "ultima passagem" in q
+        asks_open = any(term in q for term in ("aberto", "abertos", "aberta", "abertas"))
+
         wants_avisos = "aviso" in q or "avisos" in q
         wants_analises = "analise" in q or "analises" in q
         wants_dadosend = "dadosend" in q or "dados end" in q or "saida" in q or "final" in q
         wants_dadosinit = "dadosinit" in q or "dados init" in q or "entrada" in q or "inicial" in q
-        wants_open = "aberto" in q or "abertos" in q
 
         m = re.search(r"\bbloco\s*(\d+)", q)
         block = m.group(1) if m else None
+        m_ap = re.search(r"\b(?:apartamento|ap)\s*(\d+)", q)
+        apartment = m_ap.group(1) if m_ap else None
         m2 = re.search(r"(\d{1,2}/\d{1,2}(?:/\d{2,4})?)", q)
         date_filter = m2.group(1) if m2 else None
+
         if "visit" in q or "visitante" in q:
             st = "VISITANTE"
         elif "morador" in q or "moradores" in q:
@@ -159,45 +181,13 @@ def fallback_search(user_query: str, records: List[dict]) -> str:
             st = None
 
         stopwords = {
-            "quantos",
-            "quantas",
-            "quantidade",
-            "total",
-            "quais",
-            "qual",
-            "como",
-            "onde",
-            "temos",
-            "tem",
-            "ha",
-            "existe",
-            "existem",
-            "listar",
-            "liste",
-            "mostre",
-            "mostrar",
-            "por",
-            "de",
-            "do",
-            "da",
-            "dos",
-            "das",
-            "em",
-            "no",
-            "na",
-            "nos",
-            "nas",
-            "os",
-            "as",
-            "o",
-            "a",
-            "que",
-            "me",
-            "para",
+            "quantos", "quantas", "quantidade", "total", "quais", "qual", "como", "onde", "temos", "tem",
+            "ha", "existe", "existem", "listar", "liste", "mostre", "mostrar", "por", "de", "do", "da",
+            "dos", "das", "em", "no", "na", "nos", "nas", "os", "as", "o", "a", "que", "me", "para",
+            "ultima", "ultimo", "entrada", "acesso", "passagem", "aberto", "abertos", "aberta", "abertas",
+            "avisos", "aviso", "analise", "analises", "bloco", "apartamento", "ap", "tem", "temos"
         }
-        tokens = [
-            t for t in re.findall(r"[a-z0-9]+", q) if len(t) > 1 and t not in stopwords
-        ]
+        tokens = [t for t in re.findall(r"[a-z0-9]+", q) if len(t) > 1 and t not in stopwords]
 
         filtered_records = records
         if any((wants_avisos, wants_analises, wants_dadosend, wants_dadosinit)):
@@ -214,15 +204,15 @@ def fallback_search(user_query: str, records: List[dict]) -> str:
 
         for r in filtered_records:
             ok = True
-            if block and str(r.get("BLOCO", "")).lower() != str(block).lower():
+            if block and str(r.get("BLOCO", "")).lower() != block.lower():
                 ok = False
-            if date_filter:
-                dh = r.get("DATA_HORA", "") or ""
-                if date_filter not in dh:
-                    ok = False
+            if apartment and str(r.get("APARTAMENTO", "")).lower() != apartment.lower():
+                ok = False
+            if date_filter and date_filter not in str(r.get("DATA_HORA", "") or ""):
+                ok = False
             if st and (r.get("STATUS") or "").lower() != st.lower():
                 ok = False
-            if wants_open and (r.get("STATUS") or "").lower() not in ("aberto", "aberta", "open"):
+            if asks_open and (r.get("STATUS") or "").lower() not in ("aberto", "aberta", "open"):
                 ok = False
 
             if ok and tokens:
@@ -235,7 +225,7 @@ def fallback_search(user_query: str, records: List[dict]) -> str:
 
         if not results and tokens:
             scored = []
-            for r in records:
+            for r in filtered_records:
                 text = _normalize_text(" ".join(str(v) for v in r.values()))
                 score = sum(1 for tok in tokens if tok in text)
                 if score:
@@ -243,31 +233,58 @@ def fallback_search(user_query: str, records: List[dict]) -> str:
             scored.sort(key=lambda x: x[0], reverse=True)
             results = [r for _, r in scored[:200]]
 
+        fontes = _fontes_texto(results, fallback_sources=list(consulted_sources) + [r.get("_db") for r in filtered_records[:200]])
+
+        if asks_last and results:
+            with_date = [r for r in results if _parse_datetime(str(r.get("DATA_HORA", "")))]
+            ranked = with_date if with_date else results
+            ranked.sort(key=lambda r: _parse_datetime(str(r.get("DATA_HORA", ""))) or datetime.min, reverse=True)
+            latest = ranked[0]
+
+            nome_consulta = [r for r in results if str(r.get("NOME", "")).strip()]
+            distintos = {(str(r.get("NOME", "")).strip(), str(r.get("SOBRENOME", "")).strip(), str(r.get("BLOCO", "")).strip(), str(r.get("APARTAMENTO", "")).strip()) for r in nome_consulta}
+            if len(distintos) > 1 and not block and not apartment:
+                opcoes = []
+                for n, s, b, a in list(distintos)[:5]:
+                    opcoes.append(f"- {n} {s} (bloco {b}, apartamento {a}).")
+                return (
+                    "Sua consulta retornou múltiplas possibilidades com nomes semelhantes. "
+                    "Para entregar a informação exata, preciso de um refinamento (por exemplo: bloco e apartamento).\n"
+                    + "\n".join(opcoes)
+                    + "\n"
+                    + fontes
+                )
+
+            return (
+                "Com prazer. Após analisar os registros disponíveis, identifiquei que a ocorrência mais recente é:\n"
+                f"{_format_record_line(latest)}\n"
+                f"{fontes}"
+            )
+
         if is_count:
-            count = len(results)
-            target = "REGISTROS"
+            target = "registros"
             if wants_avisos:
-                target = "AVISOS"
+                target = "avisos"
             elif wants_analises:
-                target = "ANALISES"
-            elif wants_dadosend:
-                target = "REGISTROS (DADOSEND)"
-            elif wants_dadosinit:
-                target = "REGISTROS (DADOSINIT)"
-            summary = f"COMO SECRETARIA, INFORMO: TOTAL DE {target} = {count}."
-            if count == 0:
-                return summary.upper()
+                target = "análises"
+            resumo = f"No momento, localizei {len(results)} {target} para os critérios informados."
+            if not results:
+                return resumo + "\n" + fontes
             details = "\n".join(_format_record_line(rec) for rec in results[:200])
-            return f"{summary}\n\nDETALHES:\n{details}".upper()
+            return f"{resumo}\n\nDetalhamento:\n{details}\n\n{fontes}"
 
         if not results:
             return (
-                "COMO SECRETARIA, NAO LOCALIZEI REGISTROS COM OS FILTROS APLICADOS. "
-                "SE PRECISAR, REFORMULE A PERGUNTA COM MAIS DETALHES."
-            ).upper()
+                "Realizei a consulta nos bancos disponíveis, porém não encontrei registros aderentes ao pedido. "
+                "Se desejar, posso refinar por nome completo, bloco, apartamento, data ou status.\n"
+                + fontes
+            )
 
-        lines = [_format_record_line(rec) for rec in results[:200]]
-        summary = f"COMO SECRETARIA, ENCONTREI {len(results)} REGISTROS:\n" + "\n".join(lines)
-        return summary.upper()
+        lines = "\n".join(_format_record_line(rec) for rec in results[:200])
+        return (
+            "Perfeitamente. Consolidei os dados solicitados e segue o resultado detalhado:\n"
+            f"{lines}\n\n"
+            f"{fontes}"
+        )
     except Exception as e:
-        return f"ERRO AO PROCESSAR CONSULTA (FALLBACK): {e}".upper()
+        return f"Erro ao processar consulta (fallback): {e}"
