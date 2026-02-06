@@ -76,7 +76,43 @@ if GROQ_API_KEY and Groq is not None:
 ENTRADA = os.path.join(BASE_DIR, "dadosinit.json")
 SAIDA = os.path.join(BASE_DIR, "dadosend.json")
 PROMPT_PATH = os.path.join(BASE_DIR, "prompts", "prompt_llm.txt")
+AGENT_PROMPT_PATH = os.path.join(BASE_DIR, "prompts", "prompt_agente.txt")
 LOCK_FILE = os.path.join(BASE_DIR, "process.lock")
+
+_AGENT_PROMPT_ATIVO = ""
+
+
+def _read_text_file(path: str) -> str:
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read().strip()
+    except Exception:
+        return ""
+
+
+def activate_agent_prompt() -> bool:
+    """Carrega prompt do agente apenas quando modo IA é ativado."""
+    global _AGENT_PROMPT_ATIVO
+    _AGENT_PROMPT_ATIVO = _read_text_file(AGENT_PROMPT_PATH)
+    return bool(_AGENT_PROMPT_ATIVO)
+
+
+def deactivate_agent_prompt() -> None:
+    """Limpa prompt do agente ao sair do modo IA para evitar conflitos."""
+    global _AGENT_PROMPT_ATIVO
+    _AGENT_PROMPT_ATIVO = ""
+
+
+def _apply_agent_prompt_template(response_text: str) -> str:
+    """Aplica template do prompt do agente sem alterar pipeline de tratamento."""
+    if not isinstance(response_text, str):
+        return response_text
+    if not _AGENT_PROMPT_ATIVO:
+        return response_text
+    template = _AGENT_PROMPT_ATIVO
+    if "{RESPOSTA_BASE}" in template:
+        return template.replace("{RESPOSTA_BASE}", response_text)
+    return response_text
 
 # =========================
 # Utilitários IO
@@ -705,7 +741,8 @@ def respond_query(user_query: str, db_path: str = SAIDA, model: str = "llama-3.1
                 if hasattr(resposta, "choices") and resposta.choices
                 else str(resposta)
             )
-            return content.upper() if isinstance(content, str) else content
+            content = content if isinstance(content, str) else content
+            return _apply_agent_prompt_template(content)
         except Exception as e:
             err_msg = str(e).lower()
             print(f"[ia.respond_query] Erro ao consultar LLM: {e}")
@@ -713,7 +750,8 @@ def respond_query(user_query: str, db_path: str = SAIDA, model: str = "llama-3.1
             if "invalid_api_key" in err_msg or "401" in err_msg:
                 _disable_client_due_to_auth()
 
-    return agente.fallback_search(user_query, db, consulted_sources=sources)
+    resp_local = agente.fallback_search(user_query, db, consulted_sources=sources)
+    return _apply_agent_prompt_template(resp_local)
 
 # =========================
 # MODO IA helpers (mantidos)
@@ -735,11 +773,13 @@ def is_exit_ia_command(text: str) -> bool:
 def enter_ia_mode() -> str:
     global IN_IA_MODE
     IN_IA_MODE = True
+    activate_agent_prompt()
     return "MODO IA ATIVADO — ESCREVA SUA PERGUNTA. PARA SAIR, DIGITE 'SAIR'.".upper()
 
 def exit_ia_mode() -> str:
     global IN_IA_MODE
     IN_IA_MODE = False
+    deactivate_agent_prompt()
     return "MODO IA DESATIVADO. VOCÊ PODE CONTINUAR DIGITANDO NORMALMENTE.".upper()
 
 def handle_input_text(text: str, *, respond_fn=respond_query) -> Tuple[bool, str]:
