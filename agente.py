@@ -144,6 +144,16 @@ def _format_record_line(rec: dict) -> str:
     )
 
 
+
+
+def _is_meaningful_record(rec: dict) -> bool:
+    keys = ("NOME", "SOBRENOME", "BLOCO", "APARTAMENTO", "PLACA", "STATUS", "DATA_HORA")
+    for k in keys:
+        v = str(rec.get(k, "") or "").strip()
+        if v and v != "-":
+            return True
+    return False
+
 def _fontes_texto(resultados: List[dict], fallback_sources: Iterable[str] = ()) -> str:
     keys = {str(r.get("_db", "")).lower() for r in resultados if r.get("_db")}
     keys.update(str(s).lower() for s in fallback_sources if s)
@@ -160,6 +170,7 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
         is_count = any(term in q for term in ("quantos", "quantas", "quantidade", "total"))
         asks_last = "ultima entrada" in q or "ultimo acesso" in q or "ultima passagem" in q
         asks_open = any(term in q for term in ("aberto", "abertos", "aberta", "abertas"))
+        asks_apartment = "apartamento" in q or re.search(r"\bap\b", q) is not None
 
         wants_avisos = "aviso" in q or "avisos" in q
         wants_analises = "analise" in q or "analises" in q
@@ -185,7 +196,8 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
             "ha", "existe", "existem", "listar", "liste", "mostre", "mostrar", "por", "de", "do", "da",
             "dos", "das", "em", "no", "na", "nos", "nas", "os", "as", "o", "a", "que", "me", "para",
             "ultima", "ultimo", "entrada", "acesso", "passagem", "aberto", "abertos", "aberta", "abertas",
-            "avisos", "aviso", "analise", "analises", "bloco", "apartamento", "ap", "tem", "temos"
+            "avisos", "aviso", "analise", "analises", "bloco", "apartamento", "ap", "tem", "temos",
+            "esta", "está"
         }
         tokens = [t for t in re.findall(r"[a-z0-9]+", q) if len(t) > 1 and t not in stopwords]
 
@@ -201,6 +213,8 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
             if wants_dadosinit:
                 wanted.add("dadosinit")
             filtered_records = [r for r in records if str(r.get("_db", "")).lower() in wanted]
+
+        filtered_records = [r for r in filtered_records if _is_meaningful_record(r)]
 
         for r in filtered_records:
             ok = True
@@ -234,6 +248,23 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
             results = [r for _, r in scored[:200]]
 
         fontes = _fontes_texto(results, fallback_sources=list(consulted_sources) + [r.get("_db") for r in filtered_records[:200]])
+
+        if asks_apartment and results:
+            with_date = [r for r in results if _parse_datetime(str(r.get("DATA_HORA", "")))]
+            ranked = with_date if with_date else results
+            ranked.sort(key=lambda r: _parse_datetime(str(r.get("DATA_HORA", ""))) or datetime.min, reverse=True)
+            alvo = ranked[0]
+
+            n = str(alvo.get("NOME", "-") or "-").strip()
+            sn = str(alvo.get("SOBRENOME", "-") or "-").strip()
+            b = str(alvo.get("BLOCO", "-") or "-").strip()
+            a = str(alvo.get("APARTAMENTO", "-") or "-").strip()
+            if a and a != "-":
+                return (
+                    f"Consultei os registros e o apartamento associado a {n} {sn} é o APARTAMENTO {a}, no BLOCO {b}.\n"
+                    f"Registro mais recente: {_format_record_line(alvo)}\n"
+                    f"{fontes}"
+                )
 
         if asks_last and results:
             with_date = [r for r in results if _parse_datetime(str(r.get("DATA_HORA", "")))]
@@ -280,7 +311,7 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
                 + fontes
             )
 
-        lines = "\n".join(_format_record_line(rec) for rec in results[:200])
+        lines = "\n".join(_format_record_line(rec) for rec in results[:20])
         return (
             "Perfeitamente. Consolidei os dados solicitados e segue o resultado detalhado:\n"
             f"{lines}\n\n"

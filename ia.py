@@ -110,6 +110,9 @@ def _apply_agent_prompt_template(response_text: str) -> str:
     if not _AGENT_PROMPT_ATIVO:
         return response_text
     template = _AGENT_PROMPT_ATIVO
+    # Proteção: evita vazamento do texto instrucional completo do prompt ao usuário final.
+    if "REGRAS ABSOLUTAS" in template and "{RESPOSTA_BASE}" in template:
+        return response_text
     if "{RESPOSTA_BASE}" in template:
         return template.replace("{RESPOSTA_BASE}", response_text)
     return response_text
