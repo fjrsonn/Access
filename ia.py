@@ -107,6 +107,8 @@ def _apply_agent_prompt_template(response_text: str) -> str:
     """Aplica template do prompt do agente sem alterar pipeline de tratamento."""
     if not isinstance(response_text, str):
         return response_text
+    if os.getenv("USE_AGENT_PROMPT", "").strip().lower() not in ("1", "true", "yes", "on"):
+        return response_text
     if not _AGENT_PROMPT_ATIVO:
         return response_text
 

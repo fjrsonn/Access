@@ -172,7 +172,20 @@ def _format_record_line(rec: dict) -> str:
 
 
 def _is_meaningful_record(rec: dict) -> bool:
-    keys = ("NOME", "SOBRENOME", "BLOCO", "APARTAMENTO", "PLACA", "STATUS", "DATA_HORA")
+    keys = (
+        "NOME",
+        "SOBRENOME",
+        "BLOCO",
+        "APARTAMENTO",
+        "PLACA",
+        "STATUS",
+        "DATA_HORA",
+        "TITULO",
+        "ASSUNTO",
+        "DESCRICAO",
+        "MENSAGEM",
+        "TEXTO",
+    )
     for k in keys:
         v = str(_field(rec, k, k.lower(), default="") or "").strip()
         if v and v != "-":
