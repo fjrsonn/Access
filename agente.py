@@ -163,6 +163,16 @@ def _fontes_texto(resultados: List[dict], fallback_sources: Iterable[str] = ()) 
     return "Fontes consultadas: " + ", ".join(arquivos) + "."
 
 
+def _person_signature(rec: dict):
+    return (
+        str(rec.get("NOME", "") or "").strip(),
+        str(rec.get("SOBRENOME", "") or "").strip(),
+        str(rec.get("BLOCO", "") or "").strip(),
+        str(rec.get("APARTAMENTO", "") or "").strip(),
+        str(rec.get("STATUS", "") or "").strip(),
+    )
+
+
 def fallback_search(user_query: str, records: List[dict], consulted_sources: Iterable[str] = ()) -> str:
     try:
         q = _normalize_text(user_query)
@@ -174,8 +184,8 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
 
         wants_avisos = "aviso" in q or "avisos" in q
         wants_analises = "analise" in q or "analises" in q
-        wants_dadosend = "dadosend" in q or "dados end" in q or "saida" in q or "final" in q
-        wants_dadosinit = "dadosinit" in q or "dados init" in q or "entrada" in q or "inicial" in q
+        wants_dadosend = "dadosend" in q or "dados end" in q or "banco final" in q
+        wants_dadosinit = "dadosinit" in q or "dados init" in q or "banco inicial" in q
 
         m = re.search(r"\bbloco\s*(\d+)", q)
         block = m.group(1) if m else None
@@ -197,7 +207,7 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
             "dos", "das", "em", "no", "na", "nos", "nas", "os", "as", "o", "a", "que", "me", "para",
             "ultima", "ultimo", "entrada", "acesso", "passagem", "aberto", "abertos", "aberta", "abertas",
             "avisos", "aviso", "analise", "analises", "bloco", "apartamento", "ap", "tem", "temos",
-            "esta", "está"
+            "esta", "está", "foi", "qual", "quero", "saber"
         }
         tokens = [t for t in re.findall(r"[a-z0-9]+", q) if len(t) > 1 and t not in stopwords]
 
@@ -260,9 +270,27 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
             b = str(alvo.get("BLOCO", "-") or "-").strip()
             a = str(alvo.get("APARTAMENTO", "-") or "-").strip()
             if a and a != "-":
+                opcoes = {
+                    _person_signature(r)
+                    for r in results
+                    if str(r.get("NOME", "")).strip().lower() == n.lower()
+                    and str(r.get("SOBRENOME", "")).strip().lower() == sn.lower()
+                }
+                if len(opcoes) > 1 and not block and not apartment:
+                    lista = []
+                    for pn, ps, pb, pa, pst in list(opcoes)[:5]:
+                        lista.append(f"• {pn} {ps} — bloco {pb}, apartamento {pa}, status {pst}.")
+                    return (
+                        "Após a conferência dos bancos de dados, identifiquei múltiplas ocorrências para a pessoa consultada. "
+                        "Para assegurar precisão absoluta, preciso de um refinamento adicional (por exemplo: bloco, apartamento ou data).\n"
+                        "Opções encontradas:\n"
+                        + "\n".join(lista)
+                        + "\n"
+                        + fontes
+                    )
                 return (
-                    f"Consultei os registros e o apartamento associado a {n} {sn} é o APARTAMENTO {a}, no BLOCO {b}.\n"
-                    f"Registro mais recente: {_format_record_line(alvo)}\n"
+                    f"Com certeza. Após uma análise minuciosa dos registros, verifiquei que {n} {sn} está associado ao apartamento {a}, no bloco {b}.\n"
+                    f"Como referência, o registro mais recente identificado foi: {_format_record_line(alvo)}\n"
                     f"{fontes}"
                 )
 
@@ -279,16 +307,18 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
                 for n, s, b, a in list(distintos)[:5]:
                     opcoes.append(f"- {n} {s} (bloco {b}, apartamento {a}).")
                 return (
-                    "Sua consulta retornou múltiplas possibilidades com nomes semelhantes. "
-                    "Para entregar a informação exata, preciso de um refinamento (por exemplo: bloco e apartamento).\n"
+                    "A sua consulta sobre a última entrada retornou múltiplos resultados para nomes semelhantes. "
+                    "Para que eu forneça a informação exata, peço, por gentileza, um refinamento com bloco, apartamento ou data aproximada.\n"
+                    "Possibilidades identificadas:\n"
                     + "\n".join(opcoes)
                     + "\n"
                     + fontes
                 )
 
             return (
-                "Com prazer. Após analisar os registros disponíveis, identifiquei que a ocorrência mais recente é:\n"
+                "Com certeza. Após uma verificação criteriosa dos bancos consultados, a ocorrência mais recente localizada é a seguinte:\n"
                 f"{_format_record_line(latest)}\n"
+                "Caso deseje, posso complementar a leitura com recorte por período, status ou unidade residencial.\n"
                 f"{fontes}"
             )
 
@@ -298,7 +328,7 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
                 target = "avisos"
             elif wants_analises:
                 target = "análises"
-            resumo = f"No momento, localizei {len(results)} {target} para os critérios informados."
+            resumo = f"Após a consolidação dos dados, localizei {len(results)} {target} para os critérios informados."
             if not results:
                 return resumo + "\n" + fontes
             details = "\n".join(_format_record_line(rec) for rec in results[:200])
@@ -306,15 +336,16 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
 
         if not results:
             return (
-                "Realizei a consulta nos bancos disponíveis, porém não encontrei registros aderentes ao pedido. "
-                "Se desejar, posso refinar por nome completo, bloco, apartamento, data ou status.\n"
+                "Realizei uma consulta abrangente nos bancos disponíveis, porém não localizei registros aderentes ao pedido informado. "
+                "Se desejar, posso refinar a busca com nome completo, bloco, apartamento, data/hora ou status para elevar a precisão.\n"
                 + fontes
             )
 
         lines = "\n".join(_format_record_line(rec) for rec in results[:20])
         return (
-            "Perfeitamente. Consolidei os dados solicitados e segue o resultado detalhado:\n"
+            "Perfeitamente. A partir da análise consolidada dos bancos consultados, apresento abaixo o resultado detalhado da sua solicitação:\n"
             f"{lines}\n\n"
+            "Se desejar, posso organizar os mesmos dados por ordem cronológica, por unidade residencial ou por tipo de ocorrência.\n"
             f"{fontes}"
         )
     except Exception as e:
