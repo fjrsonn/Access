@@ -173,6 +173,16 @@ def _person_signature(rec: dict):
     )
 
 
+def _tokenize_words(text: str) -> List[str]:
+    return re.findall(r"[a-z0-9]+", _normalize_text(text))
+
+
+def _record_name_tokens(rec: dict) -> set:
+    nome = str(rec.get("NOME", "") or "")
+    sobrenome = str(rec.get("SOBRENOME", "") or "")
+    return set(_tokenize_words(f"{nome} {sobrenome}"))
+
+
 def fallback_search(user_query: str, records: List[dict], consulted_sources: Iterable[str] = ()) -> str:
     try:
         q = _normalize_text(user_query)
@@ -180,7 +190,12 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
         is_count = any(term in q for term in ("quantos", "quantas", "quantidade", "total"))
         asks_last = "ultima entrada" in q or "ultimo acesso" in q or "ultima passagem" in q
         asks_open = any(term in q for term in ("aberto", "abertos", "aberta", "abertas"))
-        asks_apartment = "apartamento" in q or re.search(r"\bap\b", q) is not None
+        asks_apartment = (
+            "apartamento" in q
+            or "apartamneto" in q
+            or "apto" in q
+            or re.search(r"\bap\b", q) is not None
+        )
 
         wants_avisos = "aviso" in q or "avisos" in q
         wants_analises = "analise" in q or "analises" in q
@@ -207,9 +222,14 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
             "dos", "das", "em", "no", "na", "nos", "nas", "os", "as", "o", "a", "que", "me", "para",
             "ultima", "ultimo", "entrada", "acesso", "passagem", "aberto", "abertos", "aberta", "abertas",
             "avisos", "aviso", "analise", "analises", "bloco", "apartamento", "ap", "tem", "temos",
-            "esta", "está", "foi", "qual", "quero", "saber"
+            "esta", "está", "foi", "qual", "quero", "saber", "encontra", "encontra-se", "se"
         }
         tokens = [t for t in re.findall(r"[a-z0-9]+", q) if len(t) > 1 and t not in stopwords]
+        name_hint_tokens = [
+            t
+            for t in tokens
+            if t.isalpha() and t not in {"apartamento", "apartamneto", "apto", "bloco", "morador", "visitante"}
+        ]
 
         filtered_records = records
         if any((wants_avisos, wants_analises, wants_dadosend, wants_dadosinit)):
@@ -239,9 +259,14 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
             if asks_open and (r.get("STATUS") or "").lower() not in ("aberto", "aberta", "open"):
                 ok = False
 
+            if ok and (asks_apartment or asks_last) and name_hint_tokens:
+                rec_name = _record_name_tokens(r)
+                if rec_name and not any(tok in rec_name for tok in name_hint_tokens):
+                    ok = False
+
             if ok and tokens:
-                text = _normalize_text(" ".join(str(v) for v in r.values()))
-                if not all(tok in text for tok in tokens):
+                text_tokens = set(_tokenize_words(" ".join(str(v) for v in r.values())))
+                if not all(tok in text_tokens for tok in tokens):
                     ok = False
 
             if ok:
@@ -250,8 +275,8 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
         if not results and tokens:
             scored = []
             for r in filtered_records:
-                text = _normalize_text(" ".join(str(v) for v in r.values()))
-                score = sum(1 for tok in tokens if tok in text)
+                text_tokens = set(_tokenize_words(" ".join(str(v) for v in r.values())))
+                score = sum(1 for tok in tokens if tok in text_tokens)
                 if score:
                     scored.append((score, r))
             scored.sort(key=lambda x: x[0], reverse=True)
