@@ -753,7 +753,7 @@ def respond_query(user_query: str, db_path: str = SAIDA, model: str = "llama-3.1
     user_msg = f"Pergunta do usuário: {user_query}\n\nDATABASE:\n{db_json}"
 
     use_remote_flag = os.getenv("USE_REMOTE_IA", "").strip().lower() in ("1", "true", "yes", "on")
-    use_remote = (IN_IA_MODE and client is not None) or (use_remote_flag and client is not None)
+    use_remote = IN_IA_MODE and client is not None
     if use_remote:
         try:
             resposta = client.chat.completions.create(
@@ -777,12 +777,12 @@ def respond_query(user_query: str, db_path: str = SAIDA, model: str = "llama-3.1
             traceback.print_exc()
             if "invalid_api_key" in err_msg or "401" in err_msg:
                 _disable_client_due_to_auth()
-            if IN_IA_MODE and use_remote_flag:
+            if IN_IA_MODE:
                 return _apply_agent_prompt_template(
                     f"ERRO AO CONSULTAR IA REMOTA: {e}"
                 )
 
-    if not (IN_IA_MODE and use_remote_flag):
+    if not IN_IA_MODE:
         resp_local = agente.fallback_search(user_query, db, consulted_sources=sources)
         return _apply_agent_prompt_template(resp_local)
 
