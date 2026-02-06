@@ -1,0 +1,5 @@
+Atendimento da Secretaria Virtual
+
+{RESPOSTA_BASE}
+
+Se desejar, posso refinar a consulta com filtros adicionais (nome completo, bloco, apartamento, data e status).
