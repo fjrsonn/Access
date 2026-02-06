@@ -129,15 +129,40 @@ def _source_file_name(source_key: str) -> str:
     return os.path.basename(meta.get("path") or source_key)
 
 
+
+
+def _field(rec: dict, *names: str, default="-"):
+    if not isinstance(rec, dict):
+        return default
+    keys = {str(k).lower(): k for k in rec.keys()}
+    for name in names:
+        k = keys.get(str(name).lower())
+        if k is None:
+            continue
+        v = rec.get(k)
+        if v is None:
+            continue
+        vs = str(v).strip()
+        if vs:
+            return vs
+    return default
+
 def _format_record_line(rec: dict) -> str:
-    dh = rec.get("DATA_HORA", "-")
-    nome = rec.get("NOME", "-")
-    sobrenome = rec.get("SOBRENOME", "-")
-    bloco = rec.get("BLOCO", "-")
-    ap = rec.get("APARTAMENTO", "-")
-    placa = rec.get("PLACA", "-")
-    status = rec.get("STATUS", "-")
+    dh = _field(rec, "DATA_HORA", "data_hora", "datahora")
+    nome = _field(rec, "NOME", "nome")
+    sobrenome = _field(rec, "SOBRENOME", "sobrenome")
+    bloco = _field(rec, "BLOCO", "bloco")
+    ap = _field(rec, "APARTAMENTO", "apartamento", "ap")
+    placa = _field(rec, "PLACA", "placa")
+    status = _field(rec, "STATUS", "status")
+    titulo = _field(rec, "TITULO", "titulo", "assunto", default="-")
+    descricao = _field(rec, "DESCRICAO", "descricao", "mensagem", "texto", default="-")
     origem = rec.get("_db", "-")
+    if origem == "avisos" and titulo != "-":
+        return (
+            f"AVISO {titulo} | BLOCO {bloco} | STATUS {status} | DETALHE {descricao} | "
+            f"FONTE {_source_file_name(str(origem).lower())}"
+        )
     return (
         f"{dh} | {nome} {sobrenome} | BLOCO {bloco} AP {ap} | "
         f"PLACA {placa} | STATUS {status} | FONTE {_source_file_name(str(origem).lower())}"
@@ -149,7 +174,7 @@ def _format_record_line(rec: dict) -> str:
 def _is_meaningful_record(rec: dict) -> bool:
     keys = ("NOME", "SOBRENOME", "BLOCO", "APARTAMENTO", "PLACA", "STATUS", "DATA_HORA")
     for k in keys:
-        v = str(rec.get(k, "") or "").strip()
+        v = str(_field(rec, k, k.lower(), default="") or "").strip()
         if v and v != "-":
             return True
     return False
@@ -165,11 +190,11 @@ def _fontes_texto(resultados: List[dict], fallback_sources: Iterable[str] = ()) 
 
 def _person_signature(rec: dict):
     return (
-        str(rec.get("NOME", "") or "").strip(),
-        str(rec.get("SOBRENOME", "") or "").strip(),
-        str(rec.get("BLOCO", "") or "").strip(),
-        str(rec.get("APARTAMENTO", "") or "").strip(),
-        str(rec.get("STATUS", "") or "").strip(),
+        str(_field(rec, "NOME", "nome", default="") or "").strip(),
+        str(_field(rec, "SOBRENOME", "sobrenome", default="") or "").strip(),
+        str(_field(rec, "BLOCO", "bloco", default="") or "").strip(),
+        str(_field(rec, "APARTAMENTO", "apartamento", "ap", default="") or "").strip(),
+        str(_field(rec, "STATUS", "status", default="") or "").strip(),
     )
 
 
@@ -178,8 +203,8 @@ def _tokenize_words(text: str) -> List[str]:
 
 
 def _record_name_tokens(rec: dict) -> set:
-    nome = str(rec.get("NOME", "") or "")
-    sobrenome = str(rec.get("SOBRENOME", "") or "")
+    nome = str(_field(rec, "NOME", "nome", default="") or "")
+    sobrenome = str(_field(rec, "SOBRENOME", "sobrenome", default="") or "")
     return set(_tokenize_words(f"{nome} {sobrenome}"))
 
 
@@ -249,15 +274,15 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
 
         for r in filtered_records:
             ok = True
-            if block and str(r.get("BLOCO", "")).lower() != block.lower():
+            if block and str(_field(r, "BLOCO", "bloco", default="")).lower() != block.lower():
                 ok = False
-            if apartment and str(r.get("APARTAMENTO", "")).lower() != apartment.lower():
+            if apartment and str(_field(r, "APARTAMENTO", "apartamento", "ap", default="")).lower() != apartment.lower():
                 ok = False
-            if date_filter and date_filter not in str(r.get("DATA_HORA", "") or ""):
+            if date_filter and date_filter not in str(_field(r, "DATA_HORA", "data_hora", "datahora", default="") or ""):
                 ok = False
-            if st and (r.get("STATUS") or "").lower() != st.lower():
+            if st and (_field(r, "STATUS", "status", default="") or "").lower() != st.lower():
                 ok = False
-            if asks_open and (r.get("STATUS") or "").lower() not in ("aberto", "aberta", "open"):
+            if asks_open and (_field(r, "STATUS", "status", default="") or "").lower() not in ("aberto", "aberta", "open"):
                 ok = False
 
             if ok and (asks_apartment or asks_last) and name_hint_tokens:
@@ -301,16 +326,16 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
             ranked.sort(key=lambda r: _parse_datetime(str(r.get("DATA_HORA", ""))) or datetime.min, reverse=True)
             alvo = ranked[0]
 
-            n = str(alvo.get("NOME", "-") or "-").strip()
-            sn = str(alvo.get("SOBRENOME", "-") or "-").strip()
-            b = str(alvo.get("BLOCO", "-") or "-").strip()
-            a = str(alvo.get("APARTAMENTO", "-") or "-").strip()
+            n = str(_field(alvo, "NOME", "nome") or "-").strip()
+            sn = str(_field(alvo, "SOBRENOME", "sobrenome") or "-").strip()
+            b = str(_field(alvo, "BLOCO", "bloco") or "-").strip()
+            a = str(_field(alvo, "APARTAMENTO", "apartamento", "ap") or "-").strip()
             if a and a != "-":
                 opcoes = {
                     _person_signature(r)
                     for r in results
-                    if str(r.get("NOME", "")).strip().lower() == n.lower()
-                    and str(r.get("SOBRENOME", "")).strip().lower() == sn.lower()
+                    if str(_field(r, "NOME", "nome", default="")).strip().lower() == n.lower()
+                    and str(_field(r, "SOBRENOME", "sobrenome", default="")).strip().lower() == sn.lower()
                 }
                 if len(opcoes) > 1 and not block and not apartment:
                     lista = []
@@ -336,7 +361,7 @@ def fallback_search(user_query: str, records: List[dict], consulted_sources: Ite
             ranked.sort(key=lambda r: _parse_datetime(str(r.get("DATA_HORA", ""))) or datetime.min, reverse=True)
             latest = ranked[0]
 
-            nome_consulta = [r for r in results if str(r.get("NOME", "")).strip()]
+            nome_consulta = [r for r in results if str(_field(r, "NOME", "nome", default="")).strip()]
             distintos = {(str(r.get("NOME", "")).strip(), str(r.get("SOBRENOME", "")).strip(), str(r.get("BLOCO", "")).strip(), str(r.get("APARTAMENTO", "")).strip()) for r in nome_consulta}
             if len(distintos) > 1 and not block and not apartment:
                 opcoes = []

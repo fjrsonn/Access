@@ -726,6 +726,14 @@ def respond_query(user_query: str, db_path: str = SAIDA, model: str = "llama-3.1
             user_query,
             default_sources=("analises", "avisos", "dadosend", "dadosinit"),
         )
+        # garante contexto amplo: lê todos os bancos antes de responder perguntas livres
+        all_db, all_sources = agente.build_database(
+            "todos",
+            default_sources=("analises", "avisos", "dadosend", "dadosinit"),
+        )
+        if all_db:
+            db = all_db
+            sources = all_sources
     try:
         db_json = json.dumps(db, ensure_ascii=False)
     except Exception:
