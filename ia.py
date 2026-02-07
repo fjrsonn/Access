@@ -79,6 +79,7 @@ AGENT_PROMPT_PATH = os.path.join(BASE_DIR, "prompts", "prompt_agente.txt")
 LOCK_FILE = os.path.join(BASE_DIR, "process.lock")
 
 _AGENT_PROMPT_ATIVO = ""
+CHAT_MODE_ACTIVE = False
 
 
 def _read_text_file(path: str) -> str:
@@ -100,6 +101,15 @@ def deactivate_agent_prompt() -> None:
     """Limpa prompt do agente ao sair do modo IA para evitar conflitos."""
     global _AGENT_PROMPT_ATIVO
     _AGENT_PROMPT_ATIVO = ""
+
+
+def set_chat_mode(active: bool) -> None:
+    global CHAT_MODE_ACTIVE
+    CHAT_MODE_ACTIVE = bool(active)
+
+
+def is_chat_mode_active() -> bool:
+    return CHAT_MODE_ACTIVE
 
 
 def _apply_agent_prompt_template(response_text: str) -> str:
@@ -537,6 +547,9 @@ def _fill_nome_from_raw(dados: dict, nome_raw: str) -> None:
 # PROCESSAMENTO PRINCIPAL
 # =========================
 def processar():
+    if is_chat_mode_active():
+        print("[ia.py] Modo chat ativo. Processamento IA suspenso.")
+        return
     if not acquire_lock(timeout=5):
         print("[ia.py] Outro processo em execução. Abortando.")
         return
