@@ -38,21 +38,35 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_PATH = os.path.join(BASE_DIR, ".env")
 
 def load_dotenv(path: str) -> None:
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith("#") or "=" not in line:
-                    continue
-                key, value = line.split("=", 1)
-                key = key.strip()
-                value = value.strip().strip("\"'")
-                if key and key not in os.environ:
-                    os.environ[key] = value
-    except FileNotFoundError:
-        return
+    encodings = ("utf-8-sig", "utf-8", "cp1252")
+    for enc in encodings:
+        try:
+            with open(path, "r", encoding=enc) as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    key, value = line.split("=", 1)
+                    key = key.strip().lstrip("export ").strip()
+                    value = value.strip().strip("\"'")
+                    if key and key not in os.environ:
+                        os.environ[key] = value
+            return
+        except FileNotFoundError:
+            return
+        except UnicodeDecodeError:
+            continue
 
-load_dotenv(ENV_PATH)
+def load_dotenv_candidates() -> None:
+    candidates = []
+    cwd_env = os.path.join(os.getcwd(), ".env")
+    if cwd_env != ENV_PATH:
+        candidates.append(cwd_env)
+    candidates.append(ENV_PATH)
+    for path in candidates:
+        load_dotenv(path)
+
+load_dotenv_candidates()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 if GROQ_API_KEY:
@@ -79,6 +93,7 @@ AGENT_PROMPT_PATH = os.path.join(BASE_DIR, "prompts", "prompt_agente.txt")
 LOCK_FILE = os.path.join(BASE_DIR, "process.lock")
 
 _AGENT_PROMPT_ATIVO = ""
+CHAT_MODE_ACTIVE = False
 
 
 def _read_text_file(path: str) -> str:
@@ -100,6 +115,15 @@ def deactivate_agent_prompt() -> None:
     """Limpa prompt do agente ao sair do modo IA para evitar conflitos."""
     global _AGENT_PROMPT_ATIVO
     _AGENT_PROMPT_ATIVO = ""
+
+
+def set_chat_mode(active: bool) -> None:
+    global CHAT_MODE_ACTIVE
+    CHAT_MODE_ACTIVE = bool(active)
+
+
+def is_chat_mode_active() -> bool:
+    return CHAT_MODE_ACTIVE
 
 
 def _apply_agent_prompt_template(response_text: str) -> str:
@@ -537,6 +561,9 @@ def _fill_nome_from_raw(dados: dict, nome_raw: str) -> None:
 # PROCESSAMENTO PRINCIPAL
 # =========================
 def processar():
+    if is_chat_mode_active():
+        print("[ia.py] Modo chat ativo. Processamento IA suspenso.")
+        return
     if not acquire_lock(timeout=5):
         print("[ia.py] Outro processo em execução. Abortando.")
         return
