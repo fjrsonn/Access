@@ -720,46 +720,32 @@ def processar():
 # respond_query and IA utilities (mantidos)
 # =========================
 def respond_query(user_query: str, db_path: str = SAIDA, model: str = "llama-3.1-8b-instant", temperature: float = 0.0, timeout: int = 15) -> str:
-    if not _AGENT_PROMPT_ATIVO:
-        activate_agent_prompt()
     if db_path and db_path != SAIDA:
-        db = agente.tag_records(agente.load_database_from_path(db_path), os.path.basename(db_path))
-        sources = [os.path.basename(db_path)]
+        db_sources = {os.path.basename(db_path): carregar(db_path).get("registros", [])}
     else:
-        db, sources = agente.build_database(
-            user_query,
-            default_sources=("analises", "avisos", "dadosend", "dadosinit"),
-        )
-        # garante contexto amplo: lê todos os bancos antes de responder perguntas livres
-        all_db, all_sources = agente.build_database(
-            "todos",
-            default_sources=("analises", "avisos", "dadosend", "dadosinit"),
-        )
-        db = all_db
-        sources = all_sources
+        db_sources = {
+            "dadosinit.json": carregar(ENTRADA).get("registros", []),
+            "dadosend.json": carregar(SAIDA).get("registros", []),
+            "analises.json": carregar(os.path.join(BASE_DIR, "analises.json")).get("registros", []),
+            "avisos.json": carregar(os.path.join(BASE_DIR, "avisos.json")).get("registros", []),
+        }
+
     try:
-        db_json = json.dumps(db, ensure_ascii=False)
+        db_json = json.dumps(db_sources, ensure_ascii=False)
     except Exception:
-        db_json = str(db)[:20000]
+        db_json = str(db_sources)[:20000]
 
-    sources_label = agente.format_sources(sources)
-    system_msg = (
-        "Você é uma secretaria virtual cujo único objetivo é responder perguntas consultando estritamente o banco de "
-        "dados JSON fornecido (chamado 'DATABASE' abaixo). NÃO invente informações e responda apenas com base no DATABASE. "
-        "Responda de forma educada e profissional, liste resultados relevantes (uma linha por registro) e, quando fizer sentido, "
-        "forneça um breve resumo. Se a consulta solicitar filtros por bloco, data, nome, status, etc., busque esses registros no DATABASE. "
-        f"Bancos consultados: {sources_label}."
+    user_msg = (
+        f"{db_json}\n\n"
+        f"Pergunta do usuário: {user_query}\n"
+        "Responda livremente usando apenas os dados acima."
     )
-    user_msg = f"Pergunta do usuário: {user_query}\n\nDATABASE:\n{db_json}"
 
-    use_remote_flag = os.getenv("USE_REMOTE_IA", "").strip().lower() in ("1", "true", "yes", "on")
-    use_remote = IN_IA_MODE and client is not None
-    if use_remote:
+    if IN_IA_MODE and client is not None:
         try:
             resposta = client.chat.completions.create(
                 model=model,
                 messages=[
-                    {"role": "system", "content": system_msg},
                     {"role": "user", "content": user_msg},
                 ],
                 temperature=temperature,
@@ -769,27 +755,16 @@ def respond_query(user_query: str, db_path: str = SAIDA, model: str = "llama-3.1
                 if hasattr(resposta, "choices") and resposta.choices
                 else str(resposta)
             )
-            content = content if isinstance(content, str) else content
-            return _apply_agent_prompt_template(content)
+            return content if isinstance(content, str) else content
         except Exception as e:
             err_msg = str(e).lower()
             print(f"[ia.respond_query] Erro ao consultar LLM: {e}")
             traceback.print_exc()
             if "invalid_api_key" in err_msg or "401" in err_msg:
                 _disable_client_due_to_auth()
-            if IN_IA_MODE:
-                return _apply_agent_prompt_template(
-                    f"ERRO AO CONSULTAR IA REMOTA: {e}"
-                )
+            return f"ERRO AO CONSULTAR IA REMOTA: {e}"
 
-    if not IN_IA_MODE:
-        resp_local = agente.fallback_search(user_query, db, consulted_sources=sources)
-        return _apply_agent_prompt_template(resp_local)
-
-    return _apply_agent_prompt_template(
-        "IA REMOTA NAO ESTA DISPONIVEL NO MOMENTO. "
-        "VERIFIQUE A CHAVE E A CONECTIVIDADE PARA CONTINUAR."
-    )
+    return "IA REMOTA NAO ESTA DISPONIVEL NO MOMENTO. VERIFIQUE A CHAVE E A CONECTIVIDADE PARA CONTINUAR."
 
 # =========================
 # MODO IA helpers (mantidos)
