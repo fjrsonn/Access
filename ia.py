@@ -38,21 +38,35 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_PATH = os.path.join(BASE_DIR, ".env")
 
 def load_dotenv(path: str) -> None:
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith("#") or "=" not in line:
-                    continue
-                key, value = line.split("=", 1)
-                key = key.strip()
-                value = value.strip().strip("\"'")
-                if key and key not in os.environ:
-                    os.environ[key] = value
-    except FileNotFoundError:
-        return
+    encodings = ("utf-8-sig", "utf-8", "cp1252")
+    for enc in encodings:
+        try:
+            with open(path, "r", encoding=enc) as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith("#") or "=" not in line:
+                        continue
+                    key, value = line.split("=", 1)
+                    key = key.strip().lstrip("export ").strip()
+                    value = value.strip().strip("\"'")
+                    if key and key not in os.environ:
+                        os.environ[key] = value
+            return
+        except FileNotFoundError:
+            return
+        except UnicodeDecodeError:
+            continue
 
-load_dotenv(ENV_PATH)
+def load_dotenv_candidates() -> None:
+    candidates = []
+    cwd_env = os.path.join(os.getcwd(), ".env")
+    if cwd_env != ENV_PATH:
+        candidates.append(cwd_env)
+    candidates.append(ENV_PATH)
+    for path in candidates:
+        load_dotenv(path)
+
+load_dotenv_candidates()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 if GROQ_API_KEY:
