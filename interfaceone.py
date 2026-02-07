@@ -41,6 +41,13 @@ except Exception:
     ia_module = None
     HAS_IA_MODULE = False
 
+try:
+    import chat as chat_module
+    HAS_CHAT_MODULE = True
+except Exception:
+    chat_module = None
+    HAS_CHAT_MODULE = False
+
 # Import do parser robusto
 try:
     from preprocessor import extrair_tudo_consumo, corrigir_token_nome
@@ -908,7 +915,10 @@ class SuggestEntry(tk.Frame):
     def on_tree_return(self, event): return self.on_return(event)
 
     def _send_query_to_ia_thread(self, query_text: str):
-        if HAS_IA_MODULE and hasattr(ia_module, "respond_query"):
+        if HAS_CHAT_MODULE and hasattr(chat_module, "respond_chat"):
+            try: resp = chat_module.respond_chat(query_text)
+            except Exception as e: resp = f"Erro ao consultar IA: {e}"
+        elif HAS_IA_MODULE and hasattr(ia_module, "respond_query"):
             try: resp = ia_module.respond_query(query_text)
             except Exception as e: resp = f"Erro ao consultar IA: {e}"
         else:
@@ -1092,7 +1102,10 @@ class SuggestEntry(tk.Frame):
     def _enter_ia_mode(self):
         try:
             self.ia_mode=True; self.ia_waiting_for_query=False; self._hide_overlay(); self.hide_list()
-            if HAS_IA_MODULE and hasattr(ia_module, "activate_agent_prompt"):
+            if HAS_CHAT_MODULE and hasattr(chat_module, "activate_chat_mode"):
+                try: chat_module.activate_chat_mode()
+                except Exception as e: print("Falha ao ativar modo chat:", e)
+            elif HAS_IA_MODULE and hasattr(ia_module, "activate_agent_prompt"):
                 try: ia_module.activate_agent_prompt()
                 except Exception as e: print("Falha ao ativar prompt do agente:", e)
             try: self.entry_var.set(""); self.entry.icursor(0)
@@ -1106,7 +1119,10 @@ class SuggestEntry(tk.Frame):
     def _exit_ia_mode(self):
         try:
             self.ia_mode=False; self.ia_waiting_for_query=False
-            if HAS_IA_MODULE and hasattr(ia_module, "deactivate_agent_prompt"):
+            if HAS_CHAT_MODULE and hasattr(chat_module, "deactivate_chat_mode"):
+                try: chat_module.deactivate_chat_mode()
+                except Exception as e: print("Falha ao desativar modo chat:", e)
+            elif HAS_IA_MODULE and hasattr(ia_module, "deactivate_agent_prompt"):
                 try: ia_module.deactivate_agent_prompt()
                 except Exception as e: print("Falha ao desativar prompt do agente:", e)
             try: self.entry.configure(bg=self._orig_entry_bg, fg=self._orig_entry_fg, insertbackground=self._orig_insert_bg)
@@ -1170,7 +1186,10 @@ def save_text(entry_widget=None, btn=None):
     # disparar processamento IA em background (se módulo ia disponível)
     if HAS_IA_MODULE and hasattr(ia_module, "processar"):
         try:
-            threading.Thread(target=ia_module.processar, daemon=True).start()
+            if hasattr(ia_module, "is_chat_mode_active") and ia_module.is_chat_mode_active():
+                pass
+            else:
+                threading.Thread(target=ia_module.processar, daemon=True).start()
         except Exception as e:
             print("Falha ao iniciar processamento IA em background:", e)
 
