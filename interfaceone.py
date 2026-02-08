@@ -64,11 +64,12 @@ SUGG_PATH = os.path.join(DATA_DIR, "suggestions.txt")
 DB_FILE = os.path.join(BASE, "dadosend.json")
 IN_FILE = os.path.join(BASE, "dadosinit.json")
 AVISOS_FILE = os.path.join(BASE, "avisos.json")
+ANALISES_FILE = os.path.join(BASE, "analises.json")
 _DB_LOCKFILE = DB_FILE + ".lock"
 DB_PANEL_COMMANDS = {
     "/dadosinit.json": IN_FILE,
     "/dadosend.json": DB_FILE,
-    "/analises.json": os.path.join(BASE, "analises.json"),
+    "/analises.json": ANALISES_FILE,
     "/avisos.json": AVISOS_FILE,
 }
 _warning_bar = None
@@ -527,6 +528,82 @@ def _compute_access_flags(fields: dict) -> dict:
 def _missing_fields_from_record(fields: dict) -> List[str]:
     labels = ["NOME","SOBRENOME","PLACA","MODELO","COR","STATUS"]
     return [label for label in labels if _field_missing(fields.get(label))]
+
+def _identity_from_record(rec: dict) -> str:
+    def _v(k):
+        return (rec.get(k, "") or "").strip().upper()
+    nome = _v("NOME")
+    sobrenome = _v("SOBRENOME")
+    bloco = _v("BLOCO")
+    ap = _v("APARTAMENTO")
+    return f"{nome}|{sobrenome}|{bloco}|{ap}"
+
+def _get_last_record_identity(dadosend_path: str) -> str:
+    try:
+        data = _read_json(dadosend_path)
+    except Exception:
+        return ""
+    if isinstance(data, dict) and "registros" in data:
+        regs = data.get("registros") or []
+    elif isinstance(data, list):
+        regs = data
+    else:
+        regs = []
+    if not regs:
+        return ""
+    try:
+        regs_with_id = [r for r in regs if isinstance(r.get("ID"), int)]
+        if regs_with_id:
+            last = max(regs_with_id, key=lambda r: int(r.get("ID") or 0))
+            return _identity_from_record(last)
+    except Exception:
+        pass
+    def _dt_key(rec):
+        s = rec.get("DATA_HORA") or rec.get("data_hora") or ""
+        return parse_datetime(s)
+    try:
+        regs_with_dt = [(r, _dt_key(r)) for r in regs]
+        regs_with_dt = [t for t in regs_with_dt if t[1] is not None]
+        if regs_with_dt:
+            last = max(regs_with_dt, key=lambda t: t[1])[0]
+            return _identity_from_record(last)
+    except Exception:
+        pass
+    try:
+        return _identity_from_record(regs[-1])
+    except Exception:
+        return ""
+
+def _start_analises_watcher(poll_interval: float = 1.0):
+    def _watch():
+        import analises
+        import avisos
+        last_mtime = None
+        while True:
+            try:
+                if os.path.exists(DB_FILE):
+                    mtime = os.path.getmtime(DB_FILE)
+                    if last_mtime is None:
+                        last_mtime = mtime
+                    elif mtime != last_mtime:
+                        last_mtime = mtime
+                        ident = _get_last_record_identity(DB_FILE)
+                        if ident:
+                            try:
+                                analises.build_analises_for_identity(ident, DB_FILE, ANALISES_FILE)
+                            except Exception:
+                                analises.build_analises(DB_FILE, ANALISES_FILE)
+                            try:
+                                avisos.build_avisos_for_identity(ident, ANALISES_FILE, AVISOS_FILE)
+                            except Exception:
+                                avisos.build_avisos(ANALISES_FILE, AVISOS_FILE)
+                        else:
+                            analises.build_analises(DB_FILE, ANALISES_FILE)
+                            avisos.build_avisos(ANALISES_FILE, AVISOS_FILE)
+            except Exception:
+                pass
+            time.sleep(poll_interval)
+    threading.Thread(target=_watch, daemon=True).start()
 
 # ---------- append (revisado) ----------
 def _next_db_id(regs):
@@ -1820,6 +1897,7 @@ def start_ui():
         print("Tkinter não disponível. Não é possível iniciar interface gráfica.")
         return
     global _warning_bar
+    _start_analises_watcher()
     root = tk.Tk(); root.title("Controle de Acesso")
     container = tk.Frame(root); container.pack(padx=10, pady=10, fill=tk.X)
 
