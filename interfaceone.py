@@ -65,6 +65,12 @@ DB_FILE = os.path.join(BASE, "dadosend.json")
 IN_FILE = os.path.join(BASE, "dadosinit.json")
 AVISOS_FILE = os.path.join(BASE, "avisos.json")
 _DB_LOCKFILE = DB_FILE + ".lock"
+DB_PANEL_COMMANDS = {
+    "/dadosinit.json": IN_FILE,
+    "/dadosend.json": DB_FILE,
+    "/analises.json": os.path.join(BASE, "analises.json"),
+    "/avisos.json": AVISOS_FILE,
+}
 
 # ---------- util ----------
 def _norm(s: str, keep_dash=False) -> str:
@@ -741,6 +747,7 @@ class SuggestEntry(tk.Frame):
         self.ia_mode=False; self.ia_waiting_for_query=False; self.list_visible=False; self.suggestions=[]; self.correction=""; self.curr=None
         self.steps=[]; self.step_idx=0; self._has_user_navigated=False; self._just_accepted=False
         self._stop_monitor=False; self._alert_cycle_idx=0; self._alert_cycle_ts=0.0
+        self._db_panel_windows = {}
 
         self.entry.bind("<KeyRelease>", self.on_key)
         self.entry.bind("<Tab>", self.on_tab, add="+")
@@ -886,6 +893,13 @@ class SuggestEntry(tk.Frame):
                 self._hide_overlay(); self.hide_list(); return "break"
         if self.ia_mode:
             if self.ia_waiting_for_query: return "break"
+            command = text.lower()
+            if command in DB_PANEL_COMMANDS:
+                try:
+                    self.entry_var.set(""); self.entry.icursor(0)
+                except: pass
+                self._open_db_panel(DB_PANEL_COMMANDS[command], command)
+                return "break"
             if text.lower() in ("sair","exit","fim","close","voltar"):
                 try: self._exit_ia_mode()
                 except: pass
@@ -959,6 +973,187 @@ class SuggestEntry(tk.Frame):
             while w.master is not None: w = w.master
             return w
         except: return None
+
+    def _open_db_panel(self, db_path: str, command: str):
+        root = self._root_for_ui()
+        if root is None:
+            print("Janela principal não encontrada para abrir painel DB.")
+            return
+
+        existing = self._db_panel_windows.get(db_path)
+        if existing is not None:
+            try:
+                if existing.winfo_exists():
+                    existing.lift()
+                    existing.focus_force()
+                    return
+            except Exception:
+                pass
+
+        def read_db_contents():
+            try:
+                with open(db_path, "r", encoding="utf-8") as f:
+                    raw = f.read()
+            except Exception:
+                raw = ""
+            try:
+                parsed = json.loads(raw) if raw.strip() else {"registros": []}
+            except Exception:
+                parsed = {"registros": []}
+            if isinstance(parsed, list):
+                parsed = {"registros": parsed}
+            if not isinstance(parsed, dict):
+                parsed = {"registros": []}
+            return parsed
+
+        original_data = read_db_contents()
+        structure_keys = set(original_data.keys())
+        original_text = json.dumps(original_data, ensure_ascii=False, indent=2)
+
+        top = tk.Toplevel(root)
+        top.title(f"Painel DB {command}")
+        top.geometry("900x600")
+        self._db_panel_windows[db_path] = top
+
+        def on_close():
+            try:
+                if db_path in self._db_panel_windows:
+                    self._db_panel_windows.pop(db_path, None)
+            except Exception:
+                pass
+            try:
+                top.destroy()
+            except Exception:
+                pass
+
+        top.protocol("WM_DELETE_WINDOW", on_close)
+
+        top_banner = tk.Label(top, text="", bg="#4CAF50", fg="black")
+        bottom_banner = tk.Label(top, text="", bg="#F44336", fg="black")
+
+        def hide_banners():
+            try:
+                if top_banner.winfo_ismapped():
+                    top_banner.pack_forget()
+            except Exception:
+                pass
+            try:
+                if bottom_banner.winfo_ismapped():
+                    bottom_banner.pack_forget()
+            except Exception:
+                pass
+
+        def show_success(msg: str):
+            hide_banners()
+            try:
+                top_banner.config(text=msg)
+                top_banner.pack(fill=tk.X, side=tk.TOP)
+                top.after(4000, hide_banners)
+            except Exception:
+                pass
+
+        def show_failure(msg: str):
+            hide_banners()
+            try:
+                bottom_banner.config(text=msg)
+                bottom_banner.pack(fill=tk.X, side=tk.BOTTOM)
+                top.after(4000, hide_banners)
+            except Exception:
+                pass
+
+        text_area = scrolledtext.ScrolledText(
+            top,
+            wrap=tk.WORD,
+            bg="black",
+            fg="white",
+            insertbackground="white",
+        )
+        text_area.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
+        text_area.insert(tk.END, original_text)
+
+        def validate_structure(data: dict) -> bool:
+            if not isinstance(data, dict):
+                return False
+            if set(data.keys()) != structure_keys:
+                return False
+            if "registros" not in data or not isinstance(data.get("registros"), list):
+                return False
+            return True
+
+        def parse_current_text():
+            content = text_area.get("1.0", tk.END).strip()
+            if not content:
+                return None
+            try:
+                parsed = json.loads(content)
+            except Exception:
+                return None
+            if isinstance(parsed, list):
+                return None
+            return parsed
+
+        def save_changes():
+            nonlocal original_data, original_text, structure_keys
+            parsed = parse_current_text()
+            if parsed is None or not validate_structure(parsed):
+                show_failure("Falha ao salvar alteracoes!")
+                return
+            try:
+                atomic_save(db_path, parsed)
+            except Exception:
+                show_failure("Falha ao salvar alteracoes!")
+                return
+            original_data = parsed
+            structure_keys = set(parsed.keys())
+            original_text = json.dumps(parsed, ensure_ascii=False, indent=2)
+            show_success("Alteracoes salvas com sucesso!")
+
+        def reset_changes():
+            current = text_area.get("1.0", tk.END).strip()
+            if current == original_text.strip():
+                show_failure("Falha ao resertar: nao a dados a serem resertados!")
+                return
+            text_area.delete("1.0", tk.END)
+            text_area.insert(tk.END, original_text)
+            show_success("Dados resertados com sucesso!")
+
+        def backup_changes():
+            nonlocal original_data, original_text
+            parsed = parse_current_text()
+            if parsed is None or not validate_structure(parsed):
+                show_failure("Backup falhou!")
+                return
+            registros = parsed.get("registros") or []
+            if len(registros) == 0:
+                show_failure("Backup falhou!")
+                return
+            new_data = {key: ( [] if key == "registros" else original_data.get(key)) for key in structure_keys}
+            try:
+                atomic_save(db_path, new_data)
+            except Exception:
+                show_failure("Backup falhou!")
+                return
+            original_data = new_data
+            original_text = json.dumps(new_data, ensure_ascii=False, indent=2)
+            text_area.delete("1.0", tk.END)
+            text_area.insert(tk.END, original_text)
+            show_success("Bakup efetuado!")
+
+        btn_frame = tk.Frame(top)
+        btn_frame.pack(fill=tk.X, pady=(0, 8))
+        btn_frame.columnconfigure(0, weight=1)
+        btn_frame.columnconfigure(1, weight=0)
+        btn_frame.columnconfigure(2, weight=0)
+        btn_frame.columnconfigure(3, weight=0)
+        btn_frame.columnconfigure(4, weight=1)
+
+        btn_save = tk.Button(btn_frame, text="Save", command=save_changes)
+        btn_reset = tk.Button(btn_frame, text="Reset", command=reset_changes)
+        btn_backup = tk.Button(btn_frame, text="Backup", command=backup_changes)
+
+        btn_save.grid(row=0, column=1, padx=6)
+        btn_reset.grid(row=0, column=2, padx=6)
+        btn_backup.grid(row=0, column=3, padx=6)
 
     def on_escape(self, event):
         if self.ia_mode:
