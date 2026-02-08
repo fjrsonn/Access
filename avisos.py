@@ -197,6 +197,35 @@ def vehicles_considered_same(rec_a: dict, rec_b: dict, fuzzy_threshold: int = 85
     colors_ok = _colors_similar(c1, c2)
     return models_ok and colors_ok
 
+def _flag_true(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    return str(value).strip().upper() in ("SIM", "TRUE", "1", "YES")
+
+def _build_message_morador_sem_tag(rec: dict) -> str:
+    n = (rec.get("NOME","") or "").strip().title()
+    s = (rec.get("SOBRENOME","") or "").strip().title()
+    b = (rec.get("BLOCO","") or "").strip()
+    a = (rec.get("APARTAMENTO","") or "").strip()
+    placa = (rec.get("PLACA","") or "").strip().upper()
+    modelo = (rec.get("MODELO","") or "").strip().upper()
+    cor = (rec.get("COR","") or "").strip().upper()
+    parts = []
+    if placa and placa != "-":
+        parts.append(f"PLACA {placa}")
+    if modelo and modelo != "-":
+        parts.append(modelo)
+    if cor and cor != "-":
+        parts.append(cor)
+    veiculo_desc = " ".join(parts).strip()
+    if veiculo_desc:
+        return f"MORADOR {n} {s}, DO BLOCO {b} APARTAMENTO {a}, ESTA SEM TAG NO VEICULO {veiculo_desc}!"
+    return f"MORADOR {n} {s}, DO BLOCO {b} APARTAMENTO {a}, ESTA SEM TAG NO VEICULO!"
+
 # -----------------------
 # Mensagens: usam o STATUS do PRIMEIRO registro como "status verdadeiro"
 # -----------------------
@@ -247,6 +276,47 @@ def build_avisos(analises_path: str = ANALISES, out_path: str = AVISOS) -> Dict[
     created = 0
     for entry in analises.get("registros", []) or []:
         regs = entry.get("registros", []) or []
+        identidade = entry.get("identidade") or ""
+        for rec in regs:
+            if _flag_true(rec.get("MORADOR SEM TAG")):
+                tipo = "MORADOR_SEM_TAG"
+                nivel = "warn"
+                bg_color = "#FF0000"
+                txt = _build_message_morador_sem_tag(rec)
+                ultimo_id = _registro_event_id(rec)
+                if _aviso_exists(existing_list, identidade, ultimo_id, tipo):
+                    continue
+                id_aviso = _next_aviso_id(existing_list)
+                aviso = {
+                    "id_aviso": id_aviso,
+                    "identidade": identidade,
+                    "tipo": tipo,
+                    "nivel": nivel,
+                    "mensagem": txt,
+                    "ui": {
+                        "background_color": bg_color,
+                        "opacity": 0.7,
+                        "text_color": "#000000",
+                        "icone": "⚠",
+                        "exibir_botao_fechar": True
+                    },
+                    "referencias": {
+                        "ultimo_registro_id": ultimo_id,
+                    },
+                    "ultimo_registro": rec,
+                    "timestamps": {
+                        "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                        "exibido_em": None,
+                        "fechado_em": None
+                    },
+                    "status": {
+                        "ativo": True,
+                        "fechado_pelo_usuario": False
+                    }
+                }
+                existing_list.append(aviso)
+                avisos["ultimo_aviso_ativo"] = id_aviso
+                created += 1
         if len(regs) < 2:
             continue
         primeiro = regs[0]
@@ -290,8 +360,6 @@ def build_avisos(analises_path: str = ANALISES, out_path: str = AVISOS) -> Dict[
                 txt = _build_message_tipo1(primeiro, ultimo, entry, access_count)
 
             ultimo_id = _registro_event_id(ultimo)
-            identidade = entry.get("identidade") or ""
-
             # evita duplicar o MESMO evento (mesma identidade + mesmo ultimo_id + mesmo tipo)
             if _aviso_exists(existing_list, identidade, ultimo_id, tipo):
                 continue
@@ -355,6 +423,47 @@ def build_avisos_for_identity(identity_key: str, analises_path: str = ANALISES, 
     created = 0
     for entry in candidates:
         regs = entry.get("registros", []) or []
+        identidade = entry.get("identidade") or ""
+        for rec in regs:
+            if _flag_true(rec.get("MORADOR SEM TAG")):
+                tipo = "MORADOR_SEM_TAG"
+                nivel = "warn"
+                bg_color = "#FF0000"
+                txt = _build_message_morador_sem_tag(rec)
+                ultimo_id = _registro_event_id(rec)
+                if _aviso_exists(existing_list, identidade, ultimo_id, tipo):
+                    continue
+                id_aviso = _next_aviso_id(existing_list)
+                aviso = {
+                    "id_aviso": id_aviso,
+                    "identidade": identidade,
+                    "tipo": tipo,
+                    "nivel": nivel,
+                    "mensagem": txt,
+                    "ui": {
+                        "background_color": bg_color,
+                        "opacity": 0.7,
+                        "text_color": "#000000",
+                        "icone": "⚠",
+                        "exibir_botao_fechar": True
+                    },
+                    "referencias": {
+                        "ultimo_registro_id": ultimo_id,
+                    },
+                    "ultimo_registro": rec,
+                    "timestamps": {
+                        "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                        "exibido_em": None,
+                        "fechado_em": None
+                    },
+                    "status": {
+                        "ativo": True,
+                        "fechado_pelo_usuario": False
+                    }
+                }
+                existing_list.append(aviso)
+                avisos["ultimo_aviso_ativo"] = id_aviso
+                created += 1
         if len(regs) < 2:
             continue
         primeiro = regs[0]
@@ -386,8 +495,6 @@ def build_avisos_for_identity(identity_key: str, analises_path: str = ANALISES, 
                 tipo = "PADRAO_1"; nivel="info"; bg_color="#FFFF00"; txt=_build_message_tipo1(primeiro, ultimo, entry, access_count)
 
             ultimo_id = _registro_event_id(ultimo)
-            identidade = entry.get("identidade") or ""
-
             if _aviso_exists(existing_list, identidade, ultimo_id, tipo):
                 continue
 
