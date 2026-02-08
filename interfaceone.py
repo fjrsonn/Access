@@ -71,6 +71,7 @@ DB_PANEL_COMMANDS = {
     "/analises.json": os.path.join(BASE, "analises.json"),
     "/avisos.json": AVISOS_FILE,
 }
+_warning_bar = None
 
 # ---------- util ----------
 def _norm(s: str, keep_dash=False) -> str:
@@ -499,6 +500,33 @@ def build_db_record_from_parsed(parsed: dict, raw_text: str = "") -> dict:
         if rec[k] == "" or rec[k] is None:
             if k not in ("DATA_HORA",): rec.pop(k, None)
     return rec
+
+def _normalize_field_value(value):
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value.strip().upper()
+    return str(value).strip().upper()
+
+def _field_missing(value) -> bool:
+    v = _normalize_field_value(value)
+    return v in ("", "-")
+
+def _has_vehicle_info(fields: dict) -> bool:
+    return any(not _field_missing(fields.get(k)) for k in ("PLACA","MODELO","COR"))
+
+def _compute_access_flags(fields: dict) -> dict:
+    flags = {}
+    if not _has_vehicle_info(fields):
+        flags["ENTROU A PÉ"] = "SIM"
+    status = _normalize_field_value(fields.get("STATUS"))
+    if status == "MORADOR" and _has_vehicle_info(fields):
+        flags["MORADOR SEM TAG"] = "SIM"
+    return flags
+
+def _missing_fields_from_record(fields: dict) -> List[str]:
+    labels = ["NOME","SOBRENOME","PLACA","MODELO","COR","STATUS"]
+    return [label for label in labels if _field_missing(fields.get(label))]
 
 # ---------- append (revisado) ----------
 def _next_db_id(regs):
@@ -1343,62 +1371,16 @@ def save_text(entry_widget=None, btn=None):
     if entry_widget is None: return
     txt = entry_widget.get().strip()
     if not txt: return
-    try:
-        existing = _read_json(IN_FILE)
-        if isinstance(existing, dict) and "registros" in existing:
-            regs = existing.get("registros") or []
-        elif isinstance(existing, list):
-            regs = existing
-        else:
-            regs = []
-    except:
-        regs = []
-
-    # compute next id robustly
-    nid = _compute_next_in_id(regs)
-
-    now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    new_rec = {
-        "id": nid,
-        "texto": txt,
-        "processado": False,
-        "data_hora": now_str
-    }
-    regs.append(new_rec)
-
-    try:
-        atomic_save(IN_FILE, {"registros": regs})
-    except Exception as e:
-        print("Erro save (IN_FILE):", e)
-    try: entry_widget.delete(0, "end")
-    except: pass
-    if btn:
-        try: btn.config(state="disabled"); entry_widget.after(500, lambda: btn.config(state="normal"))
-        except: pass
-    try: threading.Thread(target=sync_suggestions, kwargs={"force": True}, daemon=True).start()
-    except: pass
-
-    # disparar processamento IA em background (se módulo ia disponível)
-    if HAS_IA_MODULE and hasattr(ia_module, "processar"):
-        try:
-            if hasattr(ia_module, "is_chat_mode_active") and ia_module.is_chat_mode_active():
-                pass
-            else:
-                threading.Thread(target=ia_module.processar, daemon=True).start()
-        except Exception as e:
-            print("Falha ao iniciar processamento IA em background:", e)
-
-    # ----------------------
-    # OTIMISTIC APPEND (melhorado): usa preprocessor.extrair_tudo_consumo se disponível
-    # e inclui _entrada_id no registro para que IA.processar faça merge em vez de duplicar.
-    # ----------------------
     parsed = None
     if extrair_tudo_consumo:
         try:
             parsed = extrair_tudo_consumo(txt)
-        except Exception as e:
+        except Exception:
             parsed = None
 
+    now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    rec = None
+    fields_for_flags = {}
     if parsed:
         # parsed contém keys: STATUS, BLOCO, APARTAMENTO, PLACA, MODELOS (list), COR, NOME_RAW, TEXTO_LIMPO
         nome_raw = parsed.get("NOME_RAW", "") or ""
@@ -1432,12 +1414,12 @@ def save_text(entry_widget=None, btn=None):
             "COR": (str(cor_candidate) or "").upper() if cor_candidate else None,
             "STATUS": (status_candidate or "").upper() or "-",
             "DATA_HORA": now_str,
-            "_entrada_id": nid
         }
         # Remove None values so append_record_to_db will not insert empty keys
         for k in list(rec.keys()):
             if rec[k] is None:
                 rec.pop(k, None)
+        fields_for_flags = dict(rec)
 
         # última validação antes de persistir (defensiva)
         try:
@@ -1452,7 +1434,87 @@ def save_text(entry_widget=None, btn=None):
                     parts = [corrigir_token_nome(p) for p in parts]
                 if len(parts) > 1:
                     rec["SOBRENOME"] = " ".join(parts[1:]).upper()
+    else:
+        try:
+            parsed2 = parse_input_to_fields(txt)
+        except Exception:
+            parsed2 = {}
+        if parsed2:
+            fields_for_flags = {
+                "NOME": (parsed2.get("NOME") or "").upper(),
+                "SOBRENOME": (parsed2.get("SOBRENOME") or "").upper(),
+                "BLOCO": (parsed2.get("BLOCO") or "").strip(),
+                "APARTAMENTO": (parsed2.get("APARTAMENTO") or "").strip(),
+                "PLACA": (parsed2.get("PLACA") or "").upper(),
+                "MODELO": (parsed2.get("MODELO") or "").upper(),
+                "COR": (parsed2.get("COR") or "").upper(),
+                "STATUS": (parsed2.get("STATUS") or "").upper(),
+            }
 
+    access_flags = _compute_access_flags(fields_for_flags) if fields_for_flags else {}
+    missing_fields = _missing_fields_from_record(fields_for_flags) if fields_for_flags else []
+
+    try:
+        existing = _read_json(IN_FILE)
+        if isinstance(existing, dict) and "registros" in existing:
+            regs = existing.get("registros") or []
+        elif isinstance(existing, list):
+            regs = existing
+        else:
+            regs = []
+    except:
+        regs = []
+
+    # compute next id robustly
+    nid = _compute_next_in_id(regs)
+
+    new_rec = {
+        "id": nid,
+        "texto": txt,
+        "processado": False,
+        "data_hora": now_str
+    }
+    if access_flags:
+        new_rec.update(access_flags)
+    regs.append(new_rec)
+
+    try:
+        atomic_save(IN_FILE, {"registros": regs})
+    except Exception as e:
+        print("Erro save (IN_FILE):", e)
+    try: entry_widget.delete(0, "end")
+    except: pass
+    if btn:
+        try: btn.config(state="disabled"); entry_widget.after(500, lambda: btn.config(state="normal"))
+        except: pass
+    try: threading.Thread(target=sync_suggestions, kwargs={"force": True}, daemon=True).start()
+    except: pass
+
+    if missing_fields and _warning_bar:
+        try:
+            msgs = [f"AVISO: SALVO SEM O DADO {field}!" for field in missing_fields]
+            _warning_bar.show_messages(msgs)
+        except Exception:
+            pass
+
+    # disparar processamento IA em background (se módulo ia disponível)
+    if HAS_IA_MODULE and hasattr(ia_module, "processar"):
+        try:
+            if hasattr(ia_module, "is_chat_mode_active") and ia_module.is_chat_mode_active():
+                pass
+            else:
+                threading.Thread(target=ia_module.processar, daemon=True).start()
+        except Exception as e:
+            print("Falha ao iniciar processamento IA em background:", e)
+
+    # ----------------------
+    # OTIMISTIC APPEND (melhorado): usa preprocessor.extrair_tudo_consumo se disponível
+    # e inclui _entrada_id no registro para que IA.processar faça merge em vez de duplicar.
+    # ----------------------
+    if rec:
+        rec["_entrada_id"] = nid
+        if access_flags:
+            rec.update(access_flags)
         # Append to dadosend.json (otimistic). append_record_to_db preserva _entrada_id.
         try:
             ok = append_record_to_db(rec)
@@ -1469,6 +1531,8 @@ def save_text(entry_widget=None, btn=None):
                 rec = build_db_record_from_parsed(parsed2, raw_text=txt)
                 # attach entrada id
                 rec["_entrada_id"] = nid
+                if access_flags:
+                    rec.update(access_flags)
                 try:
                     post_validate_and_clean_record(rec, modelos_hint=[rec.get("MODELO")] if rec.get("MODELO") and rec.get("MODELO") != "-" else [], cores_hint=[rec.get("COR")] if rec.get("COR") and rec.get("COR") != "-" else [])
                 except Exception as e:
@@ -1506,6 +1570,7 @@ class AvisoBar(tk.Frame):
     CYCLE_INTERVAL_MS = 10_000
     def __init__(self, master, entry_widget: tk.Entry):
         super().__init__(master)
+        self.entry_widget = entry_widget
         try:
             self.font = tkfont.Font(font=self.entry_widget["font"])
         except Exception:
@@ -1676,17 +1741,91 @@ class AvisoBar(tk.Frame):
         except Exception as e:
             print("Erro ao fechar aviso:", e)
 
+class WarningBar(tk.Frame):
+    DISPLAY_MS = 3000
+    def __init__(self, master, entry_widget: tk.Entry, aviso_bar: AvisoBar = None):
+        super().__init__(master)
+        self.entry_widget = entry_widget
+        self.aviso_bar = aviso_bar
+        try:
+            self.font = tkfont.Font(font=self.entry_widget["font"])
+        except Exception:
+            self.font = tkfont.Font(family="Segoe UI", size=11)
+        self.config(bg="#FF0000")
+        self.msg_var = tk.StringVar()
+        self.lbl = tk.Label(self, textvariable=self.msg_var, anchor="w", font=self.font, bd=0, bg="#FF0000", fg="#000000")
+        self.lbl.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=(2,2))
+        self._visible = False
+        self._queue = []
+        self._after_id = None
+        try:
+            self.pack_forget()
+        except Exception:
+            pass
+
+    def show_messages(self, messages: List[str]):
+        self._queue = [m for m in messages if m]
+        if not self._queue:
+            self._hide()
+            return
+        self._show_next()
+
+    def _show_next(self):
+        if not self._queue:
+            self._hide()
+            return
+        msg = self._queue.pop(0)
+        self.msg_var.set(msg)
+        try:
+            parent_frame = getattr(self.entry_widget, "master", None)
+            container = getattr(parent_frame, "master", None) or parent_frame
+            if self.aviso_bar and getattr(self.aviso_bar, "_visible", False):
+                try:
+                    self.pack(in_=container, after=self.aviso_bar, fill=tk.X, pady=(0,4))
+                except Exception:
+                    self.pack(in_=container, before=parent_frame, fill=tk.X, pady=(0,4))
+            else:
+                self.pack(in_=container, before=parent_frame, fill=tk.X, pady=(0,4))
+        except Exception:
+            try:
+                self.pack(fill=tk.X, pady=(0,4))
+            except Exception:
+                pass
+        self._visible = True
+        try:
+            if self._after_id:
+                try: self.after_cancel(self._after_id)
+                except Exception: pass
+            self._after_id = self.after(self.DISPLAY_MS, self._show_next)
+        except Exception:
+            self._after_id = None
+
+    def _hide(self):
+        if self._visible:
+            try:
+                self.pack_forget()
+            except Exception:
+                pass
+        self._visible = False
+        self.msg_var.set("")
+        if self._after_id:
+            try: self.after_cancel(self._after_id)
+            except Exception: pass
+            self._after_id = None
+
 # ---------------- UI bootstrap ----------------
 
 def start_ui():
     if tk is None:
         print("Tkinter não disponível. Não é possível iniciar interface gráfica.")
         return
+    global _warning_bar
     root = tk.Tk(); root.title("Controle de Acesso")
     container = tk.Frame(root); container.pack(padx=10, pady=10, fill=tk.X)
 
     s = SuggestEntry(container)
     aviso_bar = AvisoBar(container, s.entry)
+    _warning_bar = WarningBar(container, s.entry, aviso_bar=aviso_bar)
     s.pack(fill=tk.X)
 
     btn_frame = tk.Frame(root); btn_frame.pack(padx=10, pady=(8,10))
