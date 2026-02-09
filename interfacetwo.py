@@ -574,6 +574,13 @@ def _restore_hover_if_needed(text_widget, hover_tag):
     if not line:
         return
     try:
+        line_text = text_widget.get(f"{line}.0", f"{line}.end")
+    except Exception:
+        line_text = ""
+    if not line_text.strip():
+        _hover_state[text_widget] = None
+        return
+    try:
         x_root = text_widget.winfo_pointerx()
         y_root = text_widget.winfo_pointery()
         widget_at_pointer = text_widget.winfo_containing(x_root, y_root)
@@ -594,6 +601,13 @@ def _bind_hover_highlight(text_widget):
         except Exception:
             return
         line = index.split(".")[0]
+        try:
+            line_text = text_widget.get(f"{line}.0", f"{line}.end")
+        except Exception:
+            line_text = ""
+        if not line_text.strip():
+            _clear_hover_line(text_widget, hover_tag)
+            return
         if _hover_state.get(text_widget) == line:
             return
         _clear_hover_line(text_widget, hover_tag)
