@@ -131,6 +131,26 @@ _ENCOMENDA_LOJA_PATTERNS = {
     "GROWTH",
 }
 
+def _match_encomenda_store_token(tokens_up):
+    if rf_process is None or rf_fuzz is None:
+        return False
+    candidates = list(_ENCOMENDA_LOJA_TOKENS) + [p.replace(" ", "") for p in _ENCOMENDA_LOJA_PATTERNS]
+    for tok in tokens_up:
+        if not tok or tok.isdigit():
+            continue
+        best = rf_process.extractOne(tok, candidates, scorer=rf_fuzz.WRatio)
+        if best and best[1] >= 88:
+            return True
+    return False
+
+def _has_encomenda_identificacao(tokens_up):
+    for tok in tokens_up:
+        if re.match(r"^\d{5,}[A-Z]{0,3}$", tok):
+            return True
+        if re.match(r"^[A-Z]{0,3}\d{5,}$", tok):
+            return True
+    return False
+
 def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
     if not text:
         return False
@@ -147,6 +167,10 @@ def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
     for pattern in _ENCOMENDA_LOJA_PATTERNS:
         if pattern.replace(" ", "") in normalized.replace(" ", ""):
             return True
+    if _match_encomenda_store_token(toks_up):
+        return True
+    if _has_encomenda_identificacao(toks_up) and any(t in ("BL", "B", "BLOCO", "AP", "A", "APT", "APARTAMENTO") for t in toks_up):
+        return True
     return False
 
 def _save_encomenda_init(txt: str, now_str: str) -> None:
