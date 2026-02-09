@@ -372,8 +372,9 @@ def _populate_text(text_widget, info_label):
     for r in filtrados:
         start = text_widget.index(tk.END)
         linha = formatter(r)
-        text_widget.insert(tk.END, linha + "\n\n")
+        text_widget.insert(tk.END, linha)
         end = text_widget.index(tk.END)
+        text_widget.insert(tk.END, "\n\n")
         record_ranges.append((start, end, r))
         if formatter == format_encomenda_entry:
             status = (r.get("STATUS_ENCOMENDA") or "").strip().upper()
