@@ -275,10 +275,6 @@ def _set_fullscreen(window):
         window.state("zoomed")
     except Exception:
         pass
-    try:
-        window.attributes("-fullscreen", True)
-    except Exception:
-        pass
 
 def _apply_dark_theme(widget):
     try:
@@ -286,18 +282,28 @@ def _apply_dark_theme(widget):
     except Exception:
         pass
 
-def _build_monitor_ui(container):
-    _apply_dark_theme(container)
-    style = ttk.Style(container)
+def _apply_light_theme(widget):
     try:
-        style.theme_use("default")
+        widget.configure(bg="white")
     except Exception:
         pass
-    style.configure("Dark.TNotebook", background="black", borderwidth=0)
-    style.configure("Dark.TNotebook.Tab", background="black", foreground="white")
-    style.map("Dark.TNotebook.Tab", background=[("selected", "black")], foreground=[("selected", "white")])
 
-    info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg="black", fg="white")
+def _build_monitor_ui(container):
+    _apply_light_theme(container)
+    style = ttk.Style(container)
+    try:
+        style.theme_use("clam")
+    except Exception:
+        pass
+    style.configure("Dark.TNotebook", background="white", borderwidth=0)
+    style.configure("Dark.TNotebook.Tab", background="black", foreground="white", padding=(16, 6))
+    style.map(
+        "Dark.TNotebook.Tab",
+        background=[("selected", "black"), ("active", "#222222")],
+        foreground=[("selected", "white"), ("active", "white")],
+    )
+
+    info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg="white", fg="black")
     info_label.pack(padx=10, pady=(6, 0), anchor="w")
 
     notebook = ttk.Notebook(container, style="Dark.TNotebook")
@@ -324,25 +330,25 @@ def _build_monitor_ui(container):
     text_widget.pack(padx=10, pady=(8, 8), fill=tk.BOTH, expand=True)
     text_widget.config(state="disabled")
 
-    btn_frame = tk.Frame(container, bg="black")
+    btn_frame = tk.Frame(container, bg="white")
     btn_frame.pack(padx=10, pady=(0, 10))
     tk.Button(
         btn_frame,
         text="Load",
         command=lambda: forcar_recarregar(text_widget, info_label),
-        bg="black",
-        fg="white",
-        activebackground="gray20",
-        activeforeground="white",
+        bg="white",
+        fg="black",
+        activebackground="#e6e6e6",
+        activeforeground="black",
     ).pack(side=tk.LEFT, padx=6)
     tk.Button(
         btn_frame,
         text="Beckup",
         command=lambda: limpar_dados(text_widget, info_label),
-        bg="black",
-        fg="white",
-        activebackground="gray20",
-        activeforeground="white",
+        bg="white",
+        fg="black",
+        activebackground="#e6e6e6",
+        activeforeground="black",
     ).pack(side=tk.LEFT, padx=6)
 
     return text_widget, info_label
