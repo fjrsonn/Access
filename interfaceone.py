@@ -145,6 +145,8 @@ def _match_encomenda_store_token(tokens_up):
 
 def _has_encomenda_identificacao(tokens_up):
     for tok in tokens_up:
+        if re.match(r"^[A-Z]{3}\d{4}$", tok) or re.match(r"^[A-Z]{3}\d[A-Z]\d{2}$", tok):
+            continue
         if re.match(r"^\d{5,}[A-Z]{0,3}$", tok):
             return True
         if re.match(r"^[A-Z]{0,3}\d{5,}$", tok):

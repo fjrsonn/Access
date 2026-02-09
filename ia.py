@@ -474,6 +474,8 @@ def _parse_bloco_ap_tokens(tokens_up):
 
 def _extract_identificacao(tokens_up):
     for tok in reversed(tokens_up):
+        if re.match(r"^[A-Z]{3}\d{4}$", tok) or re.match(r"^[A-Z]{3}\d[A-Z]\d{2}$", tok):
+            continue
         if re.match(r"^\d{5,}$", tok):
             return tok
         m = re.search(r"(\d{5,})", tok)
