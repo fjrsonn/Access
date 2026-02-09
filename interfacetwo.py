@@ -17,6 +17,7 @@ import hashlib
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ARQUIVO = os.path.join(BASE_DIR, "dadosend.json")
+ENCOMENDAS_ARQUIVO = os.path.join(BASE_DIR, "encomendasend.json")
 LOCK_FILE = os.path.join(BASE_DIR, "monitor.lock")
 REFRESH_MS = 2000  # 2s
 
@@ -24,6 +25,7 @@ REFRESH_MS = 2000  # 2s
 _monitor_toplevel = None
 _monitor_after_id = None
 _filter_state = {}
+_monitor_sources = {}
 
 # ---------- inferência MODELO/COR (fallback a partir de 'texto') ----------
 _STATUS_WORDS = set(["MORADOR","MORADORES","VISITANTE","VISITA","VISIT","PRESTADOR","PRESTADORES","SERVICO","SERVIÇO","TECNICO","DESCONHECIDO","FUNCIONARIO","FUNCIONÁRIO"])
@@ -217,6 +219,54 @@ def format_creative_entry(r: dict) -> str:
         cor=cor_fmt or "-",
     )
 
+def _record_hash_key_encomenda(r: dict) -> str:
+    raw = "|".join([
+        str(r.get("DATA_HORA", "")),
+        str(r.get("NOME", "")),
+        str(r.get("SOBRENOME", "")),
+        str(r.get("BLOCO", "")),
+        str(r.get("APARTAMENTO", "")),
+        str(r.get("TIPO", "")),
+        str(r.get("LOJA", "")),
+        str(r.get("IDENTIFICACAO", "")),
+    ])
+    return hashlib.md5(raw.encode("utf-8")).hexdigest()
+
+def format_encomenda_entry(r: dict) -> str:
+    data_hora = safe(r.get("DATA_HORA"))
+    data, hora = _split_date_time(data_hora)
+    nome = _title_name(r.get("NOME", ""), r.get("SOBRENOME", ""))
+    bloco = safe(r.get("BLOCO"))
+    ap = safe(r.get("APARTAMENTO"))
+    tipo = safe(r.get("TIPO")).lower()
+    loja = safe(r.get("LOJA")).title()
+    identificacao = safe(r.get("IDENTIFICACAO"))
+
+    templates = [
+        "Às {hora} do dia {data}, chegou uma {tipo} da {loja} destinada a {nome}, moradora do bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Foi registrada às {hora} de {data} a chegada de uma {tipo} da {loja} para {nome}, do bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "No dia {data}, às {hora}, uma entrega da {loja} foi recebida para {nome}, residente no bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Encomenda da {loja} entregue às {hora} em {data} para {nome}, bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Às {hora} do dia {data}, foi entregue uma {tipo} da {loja} para {nome}, localizada no bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Registro de entrega: {tipo} da {loja} destinada a {nome}, bloco {bloco}, apartamento {ap}, recebida às {hora} de {data}, identificação {identificacao}.",
+        "Em {data}, às {hora}, uma {tipo} da {loja} chegou para {nome}, moradora do bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Às {hora} do dia {data} houve a entrega de uma {tipo} da {loja} para {nome}, bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Entrega realizada às {hora} em {data}: {tipo} da {loja} para {nome}, residente no bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Uma {tipo} da {loja} foi registrada às {hora} de {data} para {nome}, do bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+    ]
+    key = _record_hash_key_encomenda(r)
+    idx = int(key[:2], 16) % len(templates)
+    return templates[idx].format(
+        hora=hora or "-",
+        data=data or "-",
+        tipo=tipo or "encomenda",
+        loja=loja or "-",
+        nome=nome,
+        bloco=bloco,
+        ap=ap,
+        identificacao=identificacao,
+    )
+
 # ---------- UI helpers (embutido) ----------
 def _normalize_date_value(value: str):
     if not value:
@@ -299,16 +349,19 @@ def _apply_filters(registros, filters):
     return filtrados
 
 def _populate_text(text_widget, info_label):
-    registros = _load_safe(ARQUIVO)
+    source = _monitor_sources.get(text_widget, {})
+    arquivo = source.get("path", ARQUIVO)
+    formatter = source.get("formatter", format_creative_entry)
+    registros = _load_safe(arquivo)
     filters = _filter_state.get(text_widget, {})
     filtrados = _apply_filters(registros, filters)
     info_label.config(
-        text=f"Arquivo: {ARQUIVO} — registros: {len(filtrados)} (de {len(registros)})"
+        text=f"Arquivo: {arquivo} — registros: {len(filtrados)} (de {len(registros)})"
     )
     text_widget.config(state="normal")
     text_widget.delete("1.0", tk.END)
     for r in filtrados:
-        linha = format_creative_entry(r)
+        linha = formatter(r)
         text_widget.insert(tk.END, linha + "\n\n")
     text_widget.config(state="disabled")
 
@@ -518,7 +571,13 @@ def _build_monitor_ui(container):
     notebook.add(observacoes_frame, text="OBSERVACOES")
 
     text_widgets = []
-    for frame in (controle_frame, encomendas_frame, orientacoes_frame, observacoes_frame):
+    tab_configs = [
+        (controle_frame, ARQUIVO, format_creative_entry),
+        (encomendas_frame, ENCOMENDAS_ARQUIVO, format_encomenda_entry),
+        (orientacoes_frame, ARQUIVO, format_creative_entry),
+        (observacoes_frame, ARQUIVO, format_creative_entry),
+    ]
+    for frame, arquivo, formatter in tab_configs:
         text_widget = tk.Text(
             frame,
             wrap="word",
@@ -531,6 +590,7 @@ def _build_monitor_ui(container):
         text_widget.pack(padx=10, pady=(0, 8), fill=tk.BOTH, expand=True)
         text_widget.config(state="disabled")
         text_widgets.append(text_widget)
+        _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter}
 
     btn_frame = tk.Frame(container, bg="white")
     btn_frame.pack(padx=10, pady=(0, 10))

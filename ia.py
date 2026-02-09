@@ -88,6 +88,8 @@ if GROQ_API_KEY and Groq is not None:
 
 ENTRADA = os.path.join(BASE_DIR, "dadosinit.json")
 SAIDA = os.path.join(BASE_DIR, "dadosend.json")
+ENCOMENDAS_ENTRADA = os.path.join(BASE_DIR, "encomendasinit.json")
+ENCOMENDAS_SAIDA = os.path.join(BASE_DIR, "encomendasend.json")
 PROMPT_PATH = os.path.join(BASE_DIR, "prompts", "prompt_llm.txt")
 AGENT_PROMPT_PATH = os.path.join(BASE_DIR, "prompts", "prompt_agente.txt")
 LOCK_FILE = os.path.join(BASE_DIR, "process.lock")
@@ -318,6 +320,169 @@ def append_or_update_saida(dados: dict, entrada_id=None):
         regs.append(rec)
         _save_saida(regs)
         return True
+
+_ENCOMENDA_TIPO_MAP = {
+    "ENCOMENDA": "ENCOMENDA",
+    "PACOTE": "PACOTE",
+    "PCT": "PACOTE",
+    "CAIXA": "CAIXA",
+    "CARTA": "CARTA",
+    "ENTREGA": "ENTREGA",
+}
+_ENCOMENDA_LOJA_MAP = {
+    "SHOPEE": "SHOPEE",
+    "MERCADO": "MERCADO LIVRE",
+    "MERCADOLIVRE": "MERCADO LIVRE",
+    "ML": "MERCADO LIVRE",
+    "AMAZON": "AMAZON",
+    "MAGAZINE": "MAGAZINE LUIZA",
+    "MAGALU": "MAGAZINE LUIZA",
+    "ALIEXPRESS": "ALIEXPRESS",
+    "SHEIN": "SHEIN",
+    "CORREIOS": "CORREIOS",
+}
+
+def _encomenda_tokens(texto: str):
+    return re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ0-9\-]+", str(texto or ""))
+
+def _parse_bloco_ap_tokens(tokens_up):
+    bloco = ""
+    ap = ""
+    for i, tok in enumerate(tokens_up):
+        if tok in ("BLOCO", "BL") and i + 1 < len(tokens_up) and tokens_up[i + 1].isdigit():
+            bloco = tokens_up[i + 1]
+            break
+        if re.match(r"^BL\d+$", tok):
+            bloco = tok.replace("BL", "")
+            break
+    for i, tok in enumerate(tokens_up):
+        if tok in ("AP", "APT", "APARTAMENTO") and i + 1 < len(tokens_up) and tokens_up[i + 1].isdigit():
+            ap = tokens_up[i + 1]
+            break
+        if re.match(r"^AP\d+$", tok):
+            ap = tok.replace("AP", "")
+            break
+    return bloco, ap
+
+def _extract_identificacao(tokens_up):
+    for tok in reversed(tokens_up):
+        if re.match(r"^\d{5,}$", tok):
+            return tok
+        m = re.search(r"(\d{5,})", tok)
+        if m:
+            return m.group(1)
+    return ""
+
+def _parse_encomenda_text(texto: str) -> dict:
+    toks = _encomenda_tokens(texto)
+    toks_up = [t.upper() for t in toks]
+    bloco, ap = _parse_bloco_ap_tokens(toks_up)
+    identificacao = _extract_identificacao(toks_up)
+
+    tipo = ""
+    loja = ""
+    for tok in toks_up:
+        if not tipo and tok in _ENCOMENDA_TIPO_MAP:
+            tipo = _ENCOMENDA_TIPO_MAP[tok]
+        if not loja and tok in _ENCOMENDA_LOJA_MAP:
+            loja = _ENCOMENDA_LOJA_MAP[tok]
+    if not tipo:
+        tipo = "ENCOMENDA" if loja or identificacao else ""
+
+    ignore_tokens = set(_ENCOMENDA_TIPO_MAP.keys()) | set(_ENCOMENDA_LOJA_MAP.keys())
+    ignore_tokens.update({"BLOCO", "BL", "AP", "APT", "APARTAMENTO"})
+    ignore_tokens.update({f"BL{bloco}" for bloco in ([bloco] if bloco else [])})
+    ignore_tokens.update({f"AP{ap}" for ap in ([ap] if ap else [])})
+
+    nome_parts = []
+    for tok in toks:
+        tok_up = tok.upper()
+        if tok_up in ignore_tokens:
+            continue
+        if tok_up.isdigit():
+            continue
+        if identificacao and tok_up == identificacao:
+            continue
+        if re.match(r"^(BL|AP)\d+$", tok_up):
+            continue
+        if re.match(r"^\d{5,}$", tok_up):
+            continue
+        nome_parts.append(tok)
+
+    if nome_parts and corrigir_token_nome:
+        try:
+            nome_parts = [corrigir_token_nome(p) for p in nome_parts]
+        except Exception:
+            pass
+
+    nome = nome_parts[0].upper() if nome_parts else "-"
+    sobrenome = " ".join(nome_parts[1:]).upper() if len(nome_parts) > 1 else "-"
+
+    return {
+        "NOME": nome or "-",
+        "SOBRENOME": sobrenome or "-",
+        "BLOCO": bloco or "-",
+        "APARTAMENTO": ap or "-",
+        "TIPO": tipo or "-",
+        "LOJA": loja or "-",
+        "IDENTIFICACAO": identificacao or "-",
+    }
+
+def _load_encomendas_saida():
+    d = carregar(ENCOMENDAS_SAIDA) or {"registros": []}
+    regs = d.get("registros", []) or []
+    if not isinstance(regs, list):
+        regs = list(regs)
+    return regs
+
+def _save_encomendas_saida(regs):
+    try:
+        salvar_atomico(ENCOMENDAS_SAIDA, {"registros": regs})
+        return True
+    except Exception:
+        try:
+            with open(ENCOMENDAS_SAIDA, "w", encoding="utf-8") as f:
+                json.dump({"registros": regs}, f, ensure_ascii=False, indent=4)
+            return True
+        except Exception:
+            return False
+
+def _next_encomenda_id(regs):
+    maxid = 0
+    for r in regs:
+        try:
+            v = int(r.get("ID") or r.get("id") or 0)
+            if v > maxid:
+                maxid = v
+        except Exception:
+            pass
+    return maxid + 1
+
+def append_or_update_encomendas(dados: dict, entrada_id=None):
+    regs = _load_encomendas_saida()
+    found = _find_by_entrada_id(regs, entrada_id)
+    if found:
+        for k in ("NOME","SOBRENOME","BLOCO","APARTAMENTO","TIPO","LOJA","IDENTIFICACAO"):
+            incoming = dados.get(k)
+            if incoming and incoming != "-" and (not found.get(k) or found.get(k) in ("", "-")):
+                found[k] = incoming
+        if not found.get("DATA_HORA") and dados.get("DATA_HORA"):
+            found["DATA_HORA"] = dados.get("DATA_HORA")
+        if not found.get("ID"):
+            found["ID"] = _next_encomenda_id(regs)
+        _save_encomendas_saida(regs)
+        return True
+    rec = dict(dados)
+    rec.pop("texto", None)
+    rec.pop("texto_original", None)
+    rec["_entrada_id"] = entrada_id
+    if not rec.get("ID"):
+        rec["ID"] = _next_encomenda_id(regs)
+    if not rec.get("DATA_HORA"):
+        rec["DATA_HORA"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    regs.append(rec)
+    _save_encomendas_saida(regs)
+    return True
 
 def parse_dt(s):
     if not s: return None
@@ -738,6 +903,44 @@ def processar():
                 traceback.print_exc()
 
             log_forense(r.get("id"), texto_original, dados.get("STATUS"), "ia.py")
+
+        encomendas = carregar(ENCOMENDAS_ENTRADA)
+        for r in encomendas.get("registros", []):
+            if r.get("processado"):
+                continue
+
+            texto_original = r.get("texto", "") or r.get("texto_original", "") or ""
+            dados = _parse_encomenda_text(texto_original)
+            for k in ("NOME", "SOBRENOME", "BLOCO", "APARTAMENTO", "TIPO", "LOJA", "IDENTIFICACAO"):
+                v = dados.get(k)
+                if v is None or (isinstance(v, str) and v.strip() == ""):
+                    dados[k] = "-"
+                elif isinstance(v, str):
+                    dados[k] = v.upper()
+
+            entrada_id = r.get("id") or r.get("ID")
+            if entrada_id is not None:
+                dados["_entrada_id"] = entrada_id
+
+            dh = r.get("DATA_HORA") or r.get("data_hora")
+            if isinstance(dh, str) and dh.strip():
+                dados["DATA_HORA"] = dh.strip()
+            else:
+                dados["DATA_HORA"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
+            r["processado"] = True
+            try:
+                salvar_atomico(ENCOMENDAS_ENTRADA, encomendas)
+            except Exception as e:
+                print("[ia.py] Falha ao salvar ENCOMENDAS_ENTRADA:", e)
+
+            try:
+                ok = append_or_update_encomendas(dados, entrada_id=entrada_id)
+                if not ok:
+                    print("[ia.py] Falha ao anexar/atualizar encomenda em ENCOMENDAS_SAIDA")
+            except Exception as e:
+                print("[ia.py] Erro ao anexar/atualizar encomenda:", e)
+                traceback.print_exc()
 
     finally:
         release_lock()
