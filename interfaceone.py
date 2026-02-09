@@ -79,22 +79,56 @@ _warning_bar = None
 _ENCOMENDA_TIPO_TOKENS = {
     "ENCOMENDA",
     "PACOTE",
+    "PAC",
     "PCT",
+    "CAIXA",
+    "CIXA",
+    "CX",
+    "ENVELOPE",
+    "ENV",
+    "SACOLA",
+    "SACO",
     "CAIXA",
     "CARTA",
     "ENTREGA",
 }
 _ENCOMENDA_LOJA_TOKENS = {
     "SHOPEE",
+    "SHOPE",
     "MERCADO",
     "MERCADOLIVRE",
     "ML",
     "AMAZON",
+    "TIKTOK",
+    "TKTK",
+    "JNT",
+    "J&T",
+    "J&TEXPRESS",
+    "JNTEXPRESS",
     "MAGAZINE",
     "MAGALU",
     "ALIEXPRESS",
+    "ALIE",
     "SHEIN",
     "CORREIOS",
+    "SEDEX",
+    "RIACHUELO",
+    "GROWTH",
+    "GRONWTH",
+}
+_ENCOMENDA_LOJA_PATTERNS = {
+    "MERCADO LIVRE",
+    "J T EXPRESS",
+    "JNT EXPRESS",
+    "J T",
+    "MAGAZINE LUIZA",
+    "TIKTOK",
+    "ALIEXPRESS",
+    "SHOPEE",
+    "CORREIOS",
+    "SEDEX",
+    "RIACHUELO",
+    "GROWTH",
 }
 
 def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
@@ -102,6 +136,7 @@ def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
         return False
     toks = tokens(text)
     toks_up = [t.upper() for t in toks]
+    normalized = _norm(text)
     if parsed:
         if parsed.get("PLACA") or parsed.get("MODELOS"):
             return False
@@ -109,6 +144,9 @@ def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
         return True
     if any(t in _ENCOMENDA_LOJA_TOKENS for t in toks_up):
         return True
+    for pattern in _ENCOMENDA_LOJA_PATTERNS:
+        if pattern.replace(" ", "") in normalized.replace(" ", ""):
+            return True
     return False
 
 def _save_encomenda_init(txt: str, now_str: str) -> None:

@@ -324,43 +324,151 @@ def append_or_update_saida(dados: dict, entrada_id=None):
 _ENCOMENDA_TIPO_MAP = {
     "ENCOMENDA": "ENCOMENDA",
     "PACOTE": "PACOTE",
+    "PAC": "PACOTE",
     "PCT": "PACOTE",
     "CAIXA": "CAIXA",
+    "CIXA": "CAIXA",
+    "CX": "CAIXA",
     "CARTA": "CARTA",
+    "ENVELOPE": "ENVELOPE",
+    "ENV": "ENVELOPE",
+    "SACOLA": "SACOLA",
+    "SACO": "SACOLA",
     "ENTREGA": "ENTREGA",
 }
 _ENCOMENDA_LOJA_MAP = {
     "SHOPEE": "SHOPEE",
+    "SHOPE": "SHOPEE",
+    "SHOPPE": "SHOPEE",
     "MERCADO": "MERCADO LIVRE",
     "MERCADOLIVRE": "MERCADO LIVRE",
+    "MERCADO LIVRE": "MERCADO LIVRE",
     "ML": "MERCADO LIVRE",
     "AMAZON": "AMAZON",
+    "TIKTOK": "TIKTOK",
+    "TIKTOKSHOP": "TIKTOK",
+    "TKTK": "TIKTOK",
+    "J&T": "J&T EXPRESS",
+    "J& T": "J&T EXPRESS",
+    "JNT": "J&T EXPRESS",
+    "JNTEXPRESS": "J&T EXPRESS",
+    "J&TEXPRESS": "J&T EXPRESS",
+    "J&T EXPRESS": "J&T EXPRESS",
     "MAGAZINE": "MAGAZINE LUIZA",
     "MAGALU": "MAGAZINE LUIZA",
+    "MAGAZINELUIZA": "MAGAZINE LUIZA",
+    "LUIZA": "MAGAZINE LUIZA",
     "ALIEXPRESS": "ALIEXPRESS",
+    "ALIE": "ALIEXPRESS",
     "SHEIN": "SHEIN",
     "CORREIOS": "CORREIOS",
+    "SEDEX": "CORREIOS",
+    "RIACHUELO": "RIACHUELO",
+    "GROWTH": "GROWTH",
+    "GRONWTH": "GROWTH",
 }
 
 def _encomenda_tokens(texto: str):
     return re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ0-9\-]+", str(texto or ""))
 
+def _build_loja_ignore_tokens():
+    tokens_set = set()
+    for key, value in _ENCOMENDA_LOJA_MAP.items():
+        for part in re.findall(r"[A-Za-z0-9]+", str(key).upper()):
+            tokens_set.add(part)
+        for part in re.findall(r"[A-Za-z0-9]+", str(value).upper()):
+            tokens_set.add(part)
+    return tokens_set
+
+_ENCOMENDA_LOJA_IGNORE_TOKENS = _build_loja_ignore_tokens()
+
+_ENCOMENDA_NOME_CORRECOES = {
+    "JOAO": "JOÃO",
+    "JOSE": "JOSÉ",
+    "MARIA": "MARIA",
+    "ANA": "ANA",
+    "LUIZ": "LUIZ",
+    "LUIZA": "LUÍZA",
+    "PAULO": "PAULO",
+    "FERNANDO": "FERNANDO",
+    "GABRIEL": "GABRIEL",
+    "RAFAEL": "RAFAEL",
+    "RAFAELA": "RAFAELA",
+    "MARCIO": "MÁRCIO",
+    "MARCIA": "MÁRCIA",
+    "SIMONE": "SIMONE",
+    "ANDRE": "ANDRÉ",
+    "ANDREA": "ANDRÉA",
+    "THIAGO": "THIAGO",
+    "VICTOR": "VICTOR",
+    "VICTORIA": "VICTÓRIA",
+}
+
+def _normalize_encomenda_text(texto: str) -> str:
+    base = unicodedata.normalize("NFKD", str(texto or ""))
+    base = "".join(ch for ch in base if not unicodedata.combining(ch))
+    base = re.sub(r"[^A-Za-z0-9]+", " ", base).upper()
+    return re.sub(r"\s+", " ", base).strip()
+
+def _match_encomenda_store(texto: str, tokens_up):
+    normalized = _normalize_encomenda_text(texto)
+    for key, value in _ENCOMENDA_LOJA_MAP.items():
+        key_norm = _normalize_encomenda_text(key)
+        if key_norm and key_norm in normalized:
+            return value
+    for tok in tokens_up:
+        if tok in _ENCOMENDA_LOJA_MAP:
+            return _ENCOMENDA_LOJA_MAP[tok]
+    if rf_process and rf_fuzz:
+        candidates = list(_ENCOMENDA_LOJA_MAP.keys())
+        for tok in tokens_up:
+            best = rf_process.extractOne(tok, candidates, scorer=rf_fuzz.WRatio)
+            if best and best[1] >= 88:
+                return _ENCOMENDA_LOJA_MAP.get(best[0], "")
+    return ""
+
+def _match_encomenda_tipo(tokens_up):
+    for tok in tokens_up:
+        if tok in _ENCOMENDA_TIPO_MAP:
+            return _ENCOMENDA_TIPO_MAP[tok]
+    if rf_process and rf_fuzz:
+        candidates = list(_ENCOMENDA_TIPO_MAP.keys())
+        for tok in tokens_up:
+            best = rf_process.extractOne(tok, candidates, scorer=rf_fuzz.WRatio)
+            if best and best[1] >= 88:
+                return _ENCOMENDA_TIPO_MAP.get(best[0], "")
+    return ""
+
+def _fix_nome_token(token: str) -> str:
+    if not token:
+        return token
+    token_up = token.upper()
+    if token_up in _ENCOMENDA_NOME_CORRECOES:
+        return _ENCOMENDA_NOME_CORRECOES[token_up]
+    return token
+
 def _parse_bloco_ap_tokens(tokens_up):
     bloco = ""
     ap = ""
     for i, tok in enumerate(tokens_up):
-        if tok in ("BLOCO", "BL") and i + 1 < len(tokens_up) and tokens_up[i + 1].isdigit():
+        if tok in ("BLOCO", "BL", "B") and i + 1 < len(tokens_up) and tokens_up[i + 1].isdigit():
             bloco = tokens_up[i + 1]
             break
         if re.match(r"^BL\d+$", tok):
             bloco = tok.replace("BL", "")
             break
+        if re.match(r"^B\d+$", tok):
+            bloco = tok.replace("B", "")
+            break
     for i, tok in enumerate(tokens_up):
-        if tok in ("AP", "APT", "APARTAMENTO") and i + 1 < len(tokens_up) and tokens_up[i + 1].isdigit():
+        if tok in ("AP", "APT", "APARTAMENTO", "A") and i + 1 < len(tokens_up) and tokens_up[i + 1].isdigit():
             ap = tokens_up[i + 1]
             break
         if re.match(r"^AP\d+$", tok):
             ap = tok.replace("AP", "")
+            break
+        if re.match(r"^A\d+$", tok):
+            ap = tok.replace("A", "")
             break
     return bloco, ap
 
@@ -379,17 +487,13 @@ def _parse_encomenda_text(texto: str) -> dict:
     bloco, ap = _parse_bloco_ap_tokens(toks_up)
     identificacao = _extract_identificacao(toks_up)
 
-    tipo = ""
-    loja = ""
-    for tok in toks_up:
-        if not tipo and tok in _ENCOMENDA_TIPO_MAP:
-            tipo = _ENCOMENDA_TIPO_MAP[tok]
-        if not loja and tok in _ENCOMENDA_LOJA_MAP:
-            loja = _ENCOMENDA_LOJA_MAP[tok]
+    tipo = _match_encomenda_tipo(toks_up)
+    loja = _match_encomenda_store(texto, toks_up)
     if not tipo:
         tipo = "ENCOMENDA" if loja or identificacao else ""
 
     ignore_tokens = set(_ENCOMENDA_TIPO_MAP.keys()) | set(_ENCOMENDA_LOJA_MAP.keys())
+    ignore_tokens.update(_ENCOMENDA_LOJA_IGNORE_TOKENS)
     ignore_tokens.update({"BLOCO", "BL", "AP", "APT", "APARTAMENTO"})
     ignore_tokens.update({f"BL{bloco}" for bloco in ([bloco] if bloco else [])})
     ignore_tokens.update({f"AP{ap}" for ap in ([ap] if ap else [])})
@@ -414,6 +518,7 @@ def _parse_encomenda_text(texto: str) -> dict:
             nome_parts = [corrigir_token_nome(p) for p in nome_parts]
         except Exception:
             pass
+    nome_parts = [_fix_nome_token(p) for p in nome_parts]
 
     nome = nome_parts[0].upper() if nome_parts else "-"
     sobrenome = " ".join(nome_parts[1:]).upper() if len(nome_parts) > 1 else "-"
