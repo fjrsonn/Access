@@ -26,6 +26,7 @@ _monitor_toplevel = None
 _monitor_after_id = None
 _filter_state = {}
 _monitor_sources = {}
+_hover_state = {}
 
 # ---------- inferência MODELO/COR (fallback a partir de 'texto') ----------
 _STATUS_WORDS = set(["MORADOR","MORADORES","VISITANTE","VISITA","VISIT","PRESTADOR","PRESTADORES","SERVICO","SERVIÇO","TECNICO","DESCONHECIDO","FUNCIONARIO","FUNCIONÁRIO"])
@@ -364,6 +365,7 @@ def _populate_text(text_widget, info_label):
         linha = formatter(r)
         text_widget.insert(tk.END, linha + "\n\n")
     text_widget.config(state="disabled")
+    _restore_hover_if_needed(text_widget, "hover_line")
 
 def _schedule_update(text_widgets, info_label):
     global _monitor_after_id
@@ -521,24 +523,51 @@ def _build_filter_bar(parent, text_widget, info_label):
     update_entry_state()
     _filter_state[text_widget] = _default_filters()
 
+def _apply_hover_line(text_widget, line, hover_tag):
+    if not line:
+        return
+    start = f"{line}.0"
+    end = f"{line}.0 lineend+1c"
+    try:
+        text_widget.config(state="normal")
+        text_widget.tag_add(hover_tag, start, end)
+        text_widget.config(state="disabled")
+    except Exception:
+        try:
+            text_widget.tag_add(hover_tag, start, end)
+        except Exception:
+            pass
+
+def _clear_hover_line(text_widget, hover_tag):
+    try:
+        text_widget.config(state="normal")
+        text_widget.tag_remove(hover_tag, "1.0", tk.END)
+        text_widget.config(state="disabled")
+    except Exception:
+        try:
+            text_widget.tag_remove(hover_tag, "1.0", tk.END)
+        except Exception:
+            pass
+    _hover_state[text_widget] = None
+
+def _restore_hover_if_needed(text_widget, hover_tag):
+    line = _hover_state.get(text_widget)
+    if not line:
+        return
+    try:
+        x_root = text_widget.winfo_pointerx()
+        y_root = text_widget.winfo_pointery()
+        widget_at_pointer = text_widget.winfo_containing(x_root, y_root)
+        if widget_at_pointer is not text_widget:
+            return
+    except Exception:
+        return
+    _apply_hover_line(text_widget, line, hover_tag)
+
 def _bind_hover_highlight(text_widget):
     hover_tag = "hover_line"
     text_widget.tag_configure(hover_tag, background="white", foreground="black")
-    last_line = {"index": None}
-
-    def clear_hover():
-        if last_line["index"] is None:
-            return
-        try:
-            text_widget.config(state="normal")
-            text_widget.tag_remove(hover_tag, "1.0", tk.END)
-            text_widget.config(state="disabled")
-        except Exception:
-            try:
-                text_widget.tag_remove(hover_tag, "1.0", tk.END)
-            except Exception:
-                pass
-        last_line["index"] = None
+    _hover_state[text_widget] = None
 
     def on_motion(event):
         try:
@@ -546,24 +575,14 @@ def _bind_hover_highlight(text_widget):
         except Exception:
             return
         line = index.split(".")[0]
-        if last_line["index"] == line:
+        if _hover_state.get(text_widget) == line:
             return
-        clear_hover()
-        start = f"{line}.0"
-        end = f"{line}.0 lineend+1c"
-        try:
-            text_widget.config(state="normal")
-            text_widget.tag_add(hover_tag, start, end)
-            text_widget.config(state="disabled")
-        except Exception:
-            try:
-                text_widget.tag_add(hover_tag, start, end)
-            except Exception:
-                pass
-        last_line["index"] = line
+        _clear_hover_line(text_widget, hover_tag)
+        _apply_hover_line(text_widget, line, hover_tag)
+        _hover_state[text_widget] = line
 
     text_widget.bind("<Motion>", on_motion)
-    text_widget.bind("<Leave>", lambda _event: clear_hover())
+    text_widget.bind("<Leave>", lambda _event: _clear_hover_line(text_widget, hover_tag))
 
 def _set_fullscreen(window):
     try:
