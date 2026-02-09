@@ -17,12 +17,16 @@ import hashlib
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ARQUIVO = os.path.join(BASE_DIR, "dadosend.json")
+ENCOMENDAS_ARQUIVO = os.path.join(BASE_DIR, "encomendasend.json")
 LOCK_FILE = os.path.join(BASE_DIR, "monitor.lock")
 REFRESH_MS = 2000  # 2s
 
 # internal reference to Toplevel (quando embutido)
 _monitor_toplevel = None
 _monitor_after_id = None
+_filter_state = {}
+_monitor_sources = {}
+_hover_state = {}
 
 # ---------- inferência MODELO/COR (fallback a partir de 'texto') ----------
 _STATUS_WORDS = set(["MORADOR","MORADORES","VISITANTE","VISITA","VISIT","PRESTADOR","PRESTADORES","SERVICO","SERVIÇO","TECNICO","DESCONHECIDO","FUNCIONARIO","FUNCIONÁRIO"])
@@ -216,39 +220,179 @@ def format_creative_entry(r: dict) -> str:
         cor=cor_fmt or "-",
     )
 
+def _record_hash_key_encomenda(r: dict) -> str:
+    raw = "|".join([
+        str(r.get("DATA_HORA", "")),
+        str(r.get("NOME", "")),
+        str(r.get("SOBRENOME", "")),
+        str(r.get("BLOCO", "")),
+        str(r.get("APARTAMENTO", "")),
+        str(r.get("TIPO", "")),
+        str(r.get("LOJA", "")),
+        str(r.get("IDENTIFICACAO", "")),
+    ])
+    return hashlib.md5(raw.encode("utf-8")).hexdigest()
+
+def format_encomenda_entry(r: dict) -> str:
+    data_hora = safe(r.get("DATA_HORA"))
+    data, hora = _split_date_time(data_hora)
+    nome = _title_name(r.get("NOME", ""), r.get("SOBRENOME", ""))
+    bloco = safe(r.get("BLOCO"))
+    ap = safe(r.get("APARTAMENTO"))
+    tipo = safe(r.get("TIPO")).lower()
+    loja = safe(r.get("LOJA")).title()
+    identificacao = safe(r.get("IDENTIFICACAO"))
+
+    templates = [
+        "Às {hora} do dia {data}, chegou uma {tipo} da {loja} destinada a {nome}, moradora do bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Foi registrada às {hora} de {data} a chegada de uma {tipo} da {loja} para {nome}, do bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "No dia {data}, às {hora}, uma entrega da {loja} foi recebida para {nome}, residente no bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Encomenda da {loja} entregue às {hora} em {data} para {nome}, bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Às {hora} do dia {data}, foi entregue uma {tipo} da {loja} para {nome}, localizada no bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Registro de entrega: {tipo} da {loja} destinada a {nome}, bloco {bloco}, apartamento {ap}, recebida às {hora} de {data}, identificação {identificacao}.",
+        "Em {data}, às {hora}, uma {tipo} da {loja} chegou para {nome}, moradora do bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Às {hora} do dia {data} houve a entrega de uma {tipo} da {loja} para {nome}, bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Entrega realizada às {hora} em {data}: {tipo} da {loja} para {nome}, residente no bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Uma {tipo} da {loja} foi registrada às {hora} de {data} para {nome}, do bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+    ]
+    key = _record_hash_key_encomenda(r)
+    idx = int(key[:2], 16) % len(templates)
+    return templates[idx].format(
+        hora=hora or "-",
+        data=data or "-",
+        tipo=tipo or "encomenda",
+        loja=loja or "-",
+        nome=nome,
+        bloco=bloco,
+        ap=ap,
+        identificacao=identificacao,
+    )
+
 # ---------- UI helpers (embutido) ----------
+def _normalize_date_value(value: str):
+    if not value:
+        return None
+    for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y"):
+        try:
+            return datetime.strptime(value, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+def _normalize_time_value(value: str):
+    if not value:
+        return None
+    for fmt in ("%H:%M:%S", "%H:%M"):
+        try:
+            return datetime.strptime(value, fmt).time()
+        except ValueError:
+            continue
+    return None
+
+def _parse_data_hora(value: str):
+    if not value:
+        return None
+    for fmt in ("%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+        try:
+            return datetime.strptime(value, fmt)
+        except ValueError:
+            continue
+    return None
+
+def _record_matches_query(record: dict, query: str) -> bool:
+    if not query:
+        return True
+    needle = query.strip().lower()
+    if not needle:
+        return True
+    haystack_parts = []
+    for key, value in record.items():
+        if value is None:
+            continue
+        haystack_parts.append(str(value))
+    haystack = " ".join(haystack_parts).lower()
+    return needle in haystack
+
+def _apply_filters(registros, filters):
+    if not filters:
+        return registros
+    order = filters.get("order", "Recentes")
+    date_mode = filters.get("date_mode", "Recentes")
+    date_value = filters.get("date_value", "")
+    time_mode = filters.get("time_mode", "Recentes")
+    time_value = filters.get("time_value", "")
+    query = filters.get("query", "")
+
+    normalized_date = _normalize_date_value(date_value) if date_mode == "Especifica" else None
+    normalized_time = _normalize_time_value(time_value) if time_mode == "Especifica" else None
+
+    filtrados = []
+    for r in registros:
+        data_hora = r.get("DATA_HORA", "")
+        data_str, hora_str = _split_date_time(data_hora)
+        record_date = _normalize_date_value(data_str)
+        record_time = _normalize_time_value(hora_str)
+
+        if normalized_date and record_date != normalized_date:
+            continue
+        if normalized_time and record_time != normalized_time:
+            continue
+        if not _record_matches_query(r, query):
+            continue
+        filtrados.append(r)
+
+    def sort_key(record):
+        parsed = _parse_data_hora(record.get("DATA_HORA", ""))
+        return parsed or datetime.min
+
+    reverse = True if order == "Recentes" else False
+    filtrados.sort(key=sort_key, reverse=reverse)
+    return filtrados
+
 def _populate_text(text_widget, info_label):
-    registros = _load_safe(ARQUIVO)
-    info_label.config(text=f"Arquivo: {ARQUIVO} — registros: {len(registros)}")
+    source = _monitor_sources.get(text_widget, {})
+    arquivo = source.get("path", ARQUIVO)
+    formatter = source.get("formatter", format_creative_entry)
+    registros = _load_safe(arquivo)
+    filters = _filter_state.get(text_widget, {})
+    filtrados = _apply_filters(registros, filters)
+    info_label.config(
+        text=f"Arquivo: {arquivo} — registros: {len(filtrados)} (de {len(registros)})"
+    )
     text_widget.config(state="normal")
     text_widget.delete("1.0", tk.END)
-    for r in registros:
-        linha = format_creative_entry(r)
+    for r in filtrados:
+        linha = formatter(r)
         text_widget.insert(tk.END, linha + "\n\n")
     text_widget.config(state="disabled")
+    _restore_hover_if_needed(text_widget, "hover_line")
 
-def _schedule_update(text_widget, info_label):
+def _schedule_update(text_widgets, info_label):
     global _monitor_after_id
-    _populate_text(text_widget, info_label)
+    for tw in text_widgets:
+        _populate_text(tw, info_label)
     # schedule next update
     try:
-        _monitor_after_id = text_widget.after(REFRESH_MS, lambda: _schedule_update(text_widget, info_label))
+        _monitor_after_id = text_widgets[0].after(
+            REFRESH_MS, lambda: _schedule_update(text_widgets, info_label)
+        )
     except Exception:
         _monitor_after_id = None
 
-def _cancel_scheduled(text_widget):
+def _cancel_scheduled(text_widgets):
     global _monitor_after_id
     try:
-        if _monitor_after_id and text_widget:
-            text_widget.after_cancel(_monitor_after_id)
+        if _monitor_after_id and text_widgets:
+            text_widgets[0].after_cancel(_monitor_after_id)
     except Exception:
         pass
     _monitor_after_id = None
 
-def forcar_recarregar(text_widget, info_label):
-    _populate_text(text_widget, info_label)
+def forcar_recarregar(text_widgets, info_label):
+    for tw in text_widgets:
+        _populate_text(tw, info_label)
 
-def limpar_dados(text_widget, info_label):
+def limpar_dados(text_widgets, info_label):
     if not os.path.exists(ARQUIVO):
         messagebox.showinfo("Limpar dados", "Arquivo não existe.")
         return
@@ -268,7 +412,177 @@ def limpar_dados(text_widget, info_label):
         messagebox.showerror("Erro", f"Erro ao limpar arquivo: {e}")
         return
     messagebox.showinfo("Limpar dados", f"Backup salvo em:\n{bak}\nArquivo limpo.")
-    _populate_text(text_widget, info_label)
+    for tw in text_widgets:
+        _populate_text(tw, info_label)
+
+def _default_filters():
+    return {
+        "order": "Recentes",
+        "date_mode": "Recentes",
+        "date_value": "",
+        "time_mode": "Recentes",
+        "time_value": "",
+        "query": "",
+    }
+
+def _build_filter_bar(parent, text_widget, info_label):
+    bar = tk.Frame(parent, bg="#111111", highlightbackground="#222222", highlightthickness=1)
+    bar.pack(fill=tk.X, padx=10, pady=(10, 6))
+
+    order_var = tk.StringVar(value="Recentes")
+    date_mode_var = tk.StringVar(value="Recentes")
+    time_mode_var = tk.StringVar(value="Recentes")
+    query_var = tk.StringVar(value="")
+
+    date_entry = tk.Entry(bar, bg="#1c1c1c", fg="white", insertbackground="white", relief="flat", width=12)
+    time_entry = tk.Entry(bar, bg="#1c1c1c", fg="white", insertbackground="white", relief="flat", width=10)
+    query_entry = tk.Entry(bar, textvariable=query_var, bg="#1c1c1c", fg="white", insertbackground="white", relief="flat", width=18)
+
+    def update_entry_state():
+        date_state = "normal" if date_mode_var.get() == "Especifica" else "disabled"
+        time_state = "normal" if time_mode_var.get() == "Especifica" else "disabled"
+        date_entry.configure(state=date_state)
+        time_entry.configure(state=time_state)
+
+    def apply_filters():
+        _filter_state[text_widget] = {
+            "order": order_var.get(),
+            "date_mode": date_mode_var.get(),
+            "date_value": date_entry.get().strip(),
+            "time_mode": time_mode_var.get(),
+            "time_value": time_entry.get().strip(),
+            "query": query_entry.get().strip(),
+        }
+        _populate_text(text_widget, info_label)
+
+    def clear_filters():
+        order_var.set("Recentes")
+        date_mode_var.set("Recentes")
+        time_mode_var.set("Recentes")
+        query_var.set("")
+        date_entry.delete(0, tk.END)
+        time_entry.delete(0, tk.END)
+        update_entry_state()
+        _filter_state[text_widget] = _default_filters()
+        _populate_text(text_widget, info_label)
+
+    tk.Label(bar, text="Ordem", bg="#111111", fg="white").grid(row=0, column=0, padx=(10, 6), pady=8, sticky="w")
+    ttk.Combobox(bar, textvariable=order_var, values=["Recentes", "Ultimas"], width=10, state="readonly").grid(
+        row=0, column=1, padx=(0, 12), pady=8, sticky="w"
+    )
+
+    tk.Label(bar, text="Data", bg="#111111", fg="white").grid(row=0, column=2, padx=(0, 6), pady=8, sticky="w")
+    ttk.Combobox(
+        bar,
+        textvariable=date_mode_var,
+        values=["Recentes", "Especifica"],
+        width=10,
+        state="readonly",
+    ).grid(row=0, column=3, padx=(0, 6), pady=8, sticky="w")
+    date_entry.grid(row=0, column=4, padx=(0, 12), pady=8, sticky="w")
+
+    tk.Label(bar, text="Hora", bg="#111111", fg="white").grid(row=0, column=5, padx=(0, 6), pady=8, sticky="w")
+    ttk.Combobox(
+        bar,
+        textvariable=time_mode_var,
+        values=["Recentes", "Especifica"],
+        width=10,
+        state="readonly",
+    ).grid(row=0, column=6, padx=(0, 6), pady=8, sticky="w")
+    time_entry.grid(row=0, column=7, padx=(0, 12), pady=8, sticky="w")
+
+    tk.Label(bar, text="Consultar", bg="#111111", fg="white").grid(row=0, column=8, padx=(0, 6), pady=8, sticky="w")
+    query_entry.grid(row=0, column=9, padx=(0, 12), pady=8, sticky="w")
+
+    tk.Button(
+        bar,
+        text="Aplicar",
+        command=apply_filters,
+        bg="#1f6feb",
+        fg="white",
+        activebackground="#215db0",
+        activeforeground="white",
+        relief="flat",
+        padx=12,
+    ).grid(row=0, column=10, padx=(0, 6), pady=8)
+    tk.Button(
+        bar,
+        text="Limpar",
+        command=clear_filters,
+        bg="#2a2a2a",
+        fg="white",
+        activebackground="#3a3a3a",
+        activeforeground="white",
+        relief="flat",
+        padx=12,
+    ).grid(row=0, column=11, padx=(0, 10), pady=8)
+
+    bar.grid_columnconfigure(12, weight=1)
+    date_mode_var.trace_add("write", lambda *_: update_entry_state())
+    time_mode_var.trace_add("write", lambda *_: update_entry_state())
+    update_entry_state()
+    _filter_state[text_widget] = _default_filters()
+
+def _apply_hover_line(text_widget, line, hover_tag):
+    if not line:
+        return
+    start = f"{line}.0"
+    end = f"{line}.0 lineend+1c"
+    try:
+        text_widget.config(state="normal")
+        text_widget.tag_add(hover_tag, start, end)
+        text_widget.config(state="disabled")
+    except Exception:
+        try:
+            text_widget.tag_add(hover_tag, start, end)
+        except Exception:
+            pass
+
+def _clear_hover_line(text_widget, hover_tag):
+    try:
+        text_widget.config(state="normal")
+        text_widget.tag_remove(hover_tag, "1.0", tk.END)
+        text_widget.config(state="disabled")
+    except Exception:
+        try:
+            text_widget.tag_remove(hover_tag, "1.0", tk.END)
+        except Exception:
+            pass
+    _hover_state[text_widget] = None
+
+def _restore_hover_if_needed(text_widget, hover_tag):
+    line = _hover_state.get(text_widget)
+    if not line:
+        return
+    try:
+        x_root = text_widget.winfo_pointerx()
+        y_root = text_widget.winfo_pointery()
+        widget_at_pointer = text_widget.winfo_containing(x_root, y_root)
+        if widget_at_pointer is not text_widget:
+            return
+    except Exception:
+        return
+    _apply_hover_line(text_widget, line, hover_tag)
+
+def _bind_hover_highlight(text_widget):
+    hover_tag = "hover_line"
+    text_widget.tag_configure(hover_tag, background="white", foreground="black")
+    _hover_state[text_widget] = None
+
+    def on_motion(event):
+        try:
+            index = text_widget.index(f"@{event.x},{event.y}")
+        except Exception:
+            return
+        line = index.split(".")[0]
+        if _hover_state.get(text_widget) == line:
+            return
+        _clear_hover_line(text_widget, hover_tag)
+        _apply_hover_line(text_widget, line, hover_tag)
+        _hover_state[text_widget] = line
+
+    text_widget.bind("<Motion>", on_motion)
+    text_widget.bind("<Leave>", lambda _event: _clear_hover_line(text_widget, hover_tag))
 
 def _set_fullscreen(window):
     try:
@@ -319,23 +633,35 @@ def _build_monitor_ui(container):
     notebook.add(orientacoes_frame, text="ORIENTACOES")
     notebook.add(observacoes_frame, text="OBSERVACOES")
 
-    text_widget = tk.Text(
-        controle_frame,
-        wrap="word",
-        bg="black",
-        fg="white",
-        insertbackground="white",
-        relief="flat",
-    )
-    text_widget.pack(padx=10, pady=(8, 8), fill=tk.BOTH, expand=True)
-    text_widget.config(state="disabled")
+    text_widgets = []
+    tab_configs = [
+        (controle_frame, ARQUIVO, format_creative_entry),
+        (encomendas_frame, ENCOMENDAS_ARQUIVO, format_encomenda_entry),
+        (orientacoes_frame, ARQUIVO, format_creative_entry),
+        (observacoes_frame, ARQUIVO, format_creative_entry),
+    ]
+    for frame, arquivo, formatter in tab_configs:
+        text_widget = tk.Text(
+            frame,
+            wrap="word",
+            bg="black",
+            fg="white",
+            insertbackground="white",
+            relief="flat",
+        )
+        _build_filter_bar(frame, text_widget, info_label)
+        text_widget.pack(padx=10, pady=(0, 8), fill=tk.BOTH, expand=True)
+        text_widget.config(state="disabled")
+        _bind_hover_highlight(text_widget)
+        text_widgets.append(text_widget)
+        _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter}
 
     btn_frame = tk.Frame(container, bg="white")
     btn_frame.pack(padx=10, pady=(0, 10))
     tk.Button(
         btn_frame,
         text="Load",
-        command=lambda: forcar_recarregar(text_widget, info_label),
+        command=lambda: forcar_recarregar(text_widgets, info_label),
         bg="white",
         fg="black",
         activebackground="#e6e6e6",
@@ -344,14 +670,14 @@ def _build_monitor_ui(container):
     tk.Button(
         btn_frame,
         text="Beckup",
-        command=lambda: limpar_dados(text_widget, info_label),
+        command=lambda: limpar_dados(text_widgets, info_label),
         bg="white",
         fg="black",
         activebackground="#e6e6e6",
         activeforeground="black",
     ).pack(side=tk.LEFT, padx=6)
 
-    return text_widget, info_label
+    return text_widgets, info_label
 
 # ---------- embutir como Toplevel ----------
 def create_monitor_toplevel(master):
@@ -375,14 +701,14 @@ def create_monitor_toplevel(master):
     _monitor_toplevel = top
 
     _set_fullscreen(top)
-    text_widget, info_label = _build_monitor_ui(top)
+    text_widgets, info_label = _build_monitor_ui(top)
 
     # Atualizar via after
-    _schedule_update(text_widget, info_label)
+    _schedule_update(text_widgets, info_label)
 
     def on_close():
         # cancela after e destrói
-        _cancel_scheduled(text_widget)
+        _cancel_scheduled(text_widgets)
         try:
             top.destroy()
         except Exception:
@@ -410,13 +736,13 @@ def iniciar_monitor_standalone():
     root = tk.Tk()
     root.title("Monitor de Acessos (standalone)")
 
-    text_widget, info_label = _build_monitor_ui(root)
+    text_widgets, info_label = _build_monitor_ui(root)
 
     # atualiza via after
-    _schedule_update(text_widget, info_label)
+    _schedule_update(text_widgets, info_label)
 
     def on_close_standalone():
-        _cancel_scheduled(text_widget)
+        _cancel_scheduled(text_widgets)
         try:
             if os.path.exists(LOCK_FILE):
                 os.remove(LOCK_FILE)
