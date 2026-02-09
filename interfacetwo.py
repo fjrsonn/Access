@@ -636,6 +636,19 @@ def _update_encomenda_status(record, status):
         if r.get("_entrada_id") and record.get("_entrada_id") and str(r.get("_entrada_id")) == str(record.get("_entrada_id")):
             match = r
             break
+    if match is None and record:
+        try:
+            target_key = _record_hash_key_encomenda(record)
+        except Exception:
+            target_key = None
+        if target_key:
+            for r in registros:
+                try:
+                    if _record_hash_key_encomenda(r) == target_key:
+                        match = r
+                        break
+                except Exception:
+                    continue
     if match is None:
         return False
     now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
