@@ -27,6 +27,8 @@ _monitor_after_id = None
 _filter_state = {}
 _monitor_sources = {}
 _hover_state = {}
+_encomenda_display_map = {}
+_encomenda_action_ui = {}
 
 # ---------- inferência MODELO/COR (fallback a partir de 'texto') ----------
 _STATUS_WORDS = set(["MORADOR","MORADORES","VISITANTE","VISITA","VISIT","PRESTADOR","PRESTADORES","SERVICO","SERVIÇO","TECNICO","DESCONHECIDO","FUNCIONARIO","FUNCIONÁRIO"])
@@ -255,9 +257,11 @@ def format_encomenda_entry(r: dict) -> str:
         "Entrega realizada às {hora} em {data}: {tipo} da {loja} para {nome}, residente no bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
         "Uma {tipo} da {loja} foi registrada às {hora} de {data} para {nome}, do bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
     ]
+    status = safe(r.get("STATUS_ENCOMENDA"))
+    status_dh = safe(r.get("STATUS_DATA_HORA"))
     key = _record_hash_key_encomenda(r)
     idx = int(key[:2], 16) % len(templates)
-    return templates[idx].format(
+    base_text = templates[idx].format(
         hora=hora or "-",
         data=data or "-",
         tipo=tipo or "encomenda",
@@ -267,6 +271,9 @@ def format_encomenda_entry(r: dict) -> str:
         ap=ap,
         identificacao=identificacao,
     )
+    if status not in ("-", ""):
+        return f"{base_text} — {status} {status_dh}"
+    return base_text
 
 # ---------- UI helpers (embutido) ----------
 def _normalize_date_value(value: str):
@@ -361,10 +368,22 @@ def _populate_text(text_widget, info_label):
     )
     text_widget.config(state="normal")
     text_widget.delete("1.0", tk.END)
+    record_ranges = []
     for r in filtrados:
+        start = text_widget.index(tk.END)
         linha = formatter(r)
         text_widget.insert(tk.END, linha + "\n\n")
+        end = text_widget.index(tk.END)
+        record_ranges.append((start, end, r))
+        if formatter == format_encomenda_entry:
+            status = (r.get("STATUS_ENCOMENDA") or "").strip().upper()
+            if status == "AVISADO":
+                text_widget.tag_add("status_avisado", start, end)
+            elif status == "SEM CONTATO":
+                text_widget.tag_add("status_sem_contato", start, end)
     text_widget.config(state="disabled")
+    if formatter == format_encomenda_entry:
+        _encomenda_display_map[text_widget] = record_ranges
     _restore_hover_if_needed(text_widget, "hover_line")
 
 def _schedule_update(text_widgets, info_label):
@@ -584,6 +603,97 @@ def _bind_hover_highlight(text_widget):
     text_widget.bind("<Motion>", on_motion)
     text_widget.bind("<Leave>", lambda _event: _clear_hover_line(text_widget, hover_tag))
 
+def _find_encomenda_record_at_index(text_widget, index):
+    ranges = _encomenda_display_map.get(text_widget, [])
+    if not ranges:
+        return None
+    for start, end, record in ranges:
+        if text_widget.compare(index, ">=", start) and text_widget.compare(index, "<", end):
+            return record
+    return None
+
+def _update_encomenda_status(record, status):
+    registros = _load_safe(ENCOMENDAS_ARQUIVO)
+    match = None
+    for r in registros:
+        if r.get("ID") and record.get("ID") and str(r.get("ID")) == str(record.get("ID")):
+            match = r
+            break
+        if r.get("_entrada_id") and record.get("_entrada_id") and str(r.get("_entrada_id")) == str(record.get("_entrada_id")):
+            match = r
+            break
+    if match is None:
+        return False
+    now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    match["STATUS_ENCOMENDA"] = status
+    match["STATUS_DATA_HORA"] = now_str
+    try:
+        _atomic_write(ENCOMENDAS_ARQUIVO, {"registros": registros})
+        return True
+    except Exception:
+        return False
+
+def _build_encomenda_actions(frame, text_widget, info_label):
+    action_frame = tk.Frame(frame, bg="white")
+    action_frame.pack_forget()
+
+    current = {"record": None}
+
+    def hide_actions():
+        action_frame.pack_forget()
+        current["record"] = None
+
+    def show_actions():
+        if action_frame.winfo_ismapped():
+            return
+        action_frame.pack(fill=tk.X, padx=10, pady=(0, 8))
+
+    def apply_status(status):
+        record = current.get("record")
+        if not record:
+            return
+        if _update_encomenda_status(record, status):
+            _populate_text(text_widget, info_label)
+        hide_actions()
+
+    def on_click(event):
+        try:
+            index = text_widget.index(f"@{event.x},{event.y}")
+        except Exception:
+            return
+        record = _find_encomenda_record_at_index(text_widget, index)
+        if not record:
+            hide_actions()
+            return
+        current["record"] = record
+        show_actions()
+
+    tk.Button(
+        action_frame,
+        text="AVISADO",
+        command=lambda: apply_status("AVISADO"),
+        bg="white",
+        fg="black",
+        activebackground="#e6e6e6",
+        activeforeground="black",
+        relief="flat",
+        padx=18,
+    ).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+    tk.Button(
+        action_frame,
+        text="SEM CONTATO",
+        command=lambda: apply_status("SEM CONTATO"),
+        bg="white",
+        fg="black",
+        activebackground="#e6e6e6",
+        activeforeground="black",
+        relief="flat",
+        padx=18,
+    ).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+
+    text_widget.bind("<Button-1>", on_click)
+    _encomenda_action_ui[text_widget] = {"frame": action_frame, "hide": hide_actions}
+
 def _set_fullscreen(window):
     try:
         window.state("zoomed")
@@ -616,6 +726,7 @@ def _build_monitor_ui(container):
         background=[("selected", "black"), ("active", "#222222")],
         foreground=[("selected", "white"), ("active", "white")],
     )
+    style.configure("Encomenda.Text", background="black", foreground="white")
 
     info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg="white", fg="black")
     info_label.pack(padx=10, pady=(6, 0), anchor="w")
@@ -649,10 +760,15 @@ def _build_monitor_ui(container):
             insertbackground="white",
             relief="flat",
         )
+        if formatter == format_encomenda_entry:
+            text_widget.tag_configure("status_avisado", foreground="#2ecc71")
+            text_widget.tag_configure("status_sem_contato", foreground="#ff5c5c")
         _build_filter_bar(frame, text_widget, info_label)
         text_widget.pack(padx=10, pady=(0, 8), fill=tk.BOTH, expand=True)
         text_widget.config(state="disabled")
         _bind_hover_highlight(text_widget)
+        if formatter == format_encomenda_entry:
+            _build_encomenda_actions(frame, text_widget, info_label)
         text_widgets.append(text_widget)
         _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter}
 
