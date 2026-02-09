@@ -521,6 +521,50 @@ def _build_filter_bar(parent, text_widget, info_label):
     update_entry_state()
     _filter_state[text_widget] = _default_filters()
 
+def _bind_hover_highlight(text_widget):
+    hover_tag = "hover_line"
+    text_widget.tag_configure(hover_tag, background="white", foreground="black")
+    last_line = {"index": None}
+
+    def clear_hover():
+        if last_line["index"] is None:
+            return
+        try:
+            text_widget.config(state="normal")
+            text_widget.tag_remove(hover_tag, "1.0", tk.END)
+            text_widget.config(state="disabled")
+        except Exception:
+            try:
+                text_widget.tag_remove(hover_tag, "1.0", tk.END)
+            except Exception:
+                pass
+        last_line["index"] = None
+
+    def on_motion(event):
+        try:
+            index = text_widget.index(f"@{event.x},{event.y}")
+        except Exception:
+            return
+        line = index.split(".")[0]
+        if last_line["index"] == line:
+            return
+        clear_hover()
+        start = f"{line}.0"
+        end = f"{line}.0 lineend+1c"
+        try:
+            text_widget.config(state="normal")
+            text_widget.tag_add(hover_tag, start, end)
+            text_widget.config(state="disabled")
+        except Exception:
+            try:
+                text_widget.tag_add(hover_tag, start, end)
+            except Exception:
+                pass
+        last_line["index"] = line
+
+    text_widget.bind("<Motion>", on_motion)
+    text_widget.bind("<Leave>", lambda _event: clear_hover())
+
 def _set_fullscreen(window):
     try:
         window.state("zoomed")
@@ -589,6 +633,7 @@ def _build_monitor_ui(container):
         _build_filter_bar(frame, text_widget, info_label)
         text_widget.pack(padx=10, pady=(0, 8), fill=tk.BOTH, expand=True)
         text_widget.config(state="disabled")
+        _bind_hover_highlight(text_widget)
         text_widgets.append(text_widget)
         _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter}
 
