@@ -63,6 +63,8 @@ os.makedirs(DATA_DIR, exist_ok=True)
 SUGG_PATH = os.path.join(DATA_DIR, "suggestions.txt")
 DB_FILE = os.path.join(BASE, "dadosend.json")
 IN_FILE = os.path.join(BASE, "dadosinit.json")
+ENCOMENDAS_IN_FILE = os.path.join(BASE, "encomendasinit.json")
+ENCOMENDAS_DB_FILE = os.path.join(BASE, "encomendasend.json")
 AVISOS_FILE = os.path.join(BASE, "avisos.json")
 ANALISES_FILE = os.path.join(BASE, "analises.json")
 _DB_LOCKFILE = DB_FILE + ".lock"
@@ -73,6 +75,104 @@ DB_PANEL_COMMANDS = {
     "/avisos.json": AVISOS_FILE,
 }
 _warning_bar = None
+
+_ENCOMENDA_TIPO_TOKENS = {
+    "ENCOMENDA",
+    "PACOTE",
+    "PAC",
+    "PCT",
+    "CAIXA",
+    "CIXA",
+    "CX",
+    "ENVELOPE",
+    "ENV",
+    "SACOLA",
+    "SACO",
+    "CAIXA",
+    "CARTA",
+    "ENTREGA",
+}
+_ENCOMENDA_LOJA_TOKENS = {
+    "SHOPEE",
+    "SHOPE",
+    "MERCADO",
+    "MERCADOLIVRE",
+    "ML",
+    "AMAZON",
+    "TIKTOK",
+    "TKTK",
+    "JNT",
+    "J&T",
+    "J&TEXPRESS",
+    "JNTEXPRESS",
+    "MAGAZINE",
+    "MAGALU",
+    "ALIEXPRESS",
+    "ALIE",
+    "SHEIN",
+    "CORREIOS",
+    "SEDEX",
+    "RIACHUELO",
+    "GROWTH",
+    "GRONWTH",
+}
+_ENCOMENDA_LOJA_PATTERNS = {
+    "MERCADO LIVRE",
+    "J T EXPRESS",
+    "JNT EXPRESS",
+    "J T",
+    "MAGAZINE LUIZA",
+    "TIKTOK",
+    "ALIEXPRESS",
+    "SHOPEE",
+    "CORREIOS",
+    "SEDEX",
+    "RIACHUELO",
+    "GROWTH",
+}
+
+def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
+    if not text:
+        return False
+    toks = tokens(text)
+    toks_up = [t.upper() for t in toks]
+    normalized = _norm(text)
+    if parsed:
+        if parsed.get("PLACA") or parsed.get("MODELOS"):
+            return False
+    if any(t in _ENCOMENDA_TIPO_TOKENS for t in toks_up):
+        return True
+    if any(t in _ENCOMENDA_LOJA_TOKENS for t in toks_up):
+        return True
+    for pattern in _ENCOMENDA_LOJA_PATTERNS:
+        if pattern.replace(" ", "") in normalized.replace(" ", ""):
+            return True
+    return False
+
+def _save_encomenda_init(txt: str, now_str: str) -> None:
+    try:
+        existing = _read_json(ENCOMENDAS_IN_FILE)
+        if isinstance(existing, dict) and "registros" in existing:
+            regs = existing.get("registros") or []
+        elif isinstance(existing, list):
+            regs = existing
+        else:
+            regs = []
+    except Exception:
+        regs = []
+
+    nid = _compute_next_in_id(regs)
+    new_rec = {
+        "id": nid,
+        "texto": txt,
+        "processado": False,
+        "data_hora": now_str,
+    }
+    regs.append(new_rec)
+    try:
+        atomic_save(ENCOMENDAS_IN_FILE, {"registros": regs})
+    except Exception as e:
+        print("Erro save (ENCOMENDAS_IN_FILE):", e)
 
 # ---------- util ----------
 def _norm(s: str, keep_dash=False) -> str:
@@ -1456,6 +1556,20 @@ def save_text(entry_widget=None, btn=None):
             parsed = None
 
     now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    if _is_encomenda_text(txt, parsed):
+        _save_encomenda_init(txt, now_str)
+        try: entry_widget.delete(0, "end")
+        except: pass
+        if btn:
+            try: btn.config(state="disabled"); entry_widget.after(500, lambda: btn.config(state="normal"))
+            except: pass
+        if HAS_IA_MODULE and hasattr(ia_module, "processar"):
+            try:
+                if not (hasattr(ia_module, "is_chat_mode_active") and ia_module.is_chat_mode_active()):
+                    threading.Thread(target=ia_module.processar, daemon=True).start()
+            except Exception as e:
+                print("Falha ao iniciar processamento IA para encomendas:", e)
+        return
     rec = None
     fields_for_flags = {}
     if parsed:
