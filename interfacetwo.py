@@ -373,7 +373,10 @@ def _populate_text(text_widget, info_label):
         start = text_widget.index(tk.END)
         linha = formatter(r)
         text_widget.insert(tk.END, linha)
-        end = text_widget.index(tk.END)
+        try:
+            end = text_widget.index(f"{start}+{len(linha)}c")
+        except Exception:
+            end = text_widget.index(tk.END)
         text_widget.insert(tk.END, "\n\n")
         record_ranges.append((start, end, r))
         if formatter == format_encomenda_entry:
