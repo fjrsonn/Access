@@ -18,6 +18,8 @@ import hashlib
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ARQUIVO = os.path.join(BASE_DIR, "dadosend.json")
 ENCOMENDAS_ARQUIVO = os.path.join(BASE_DIR, "encomendasend.json")
+ANALISES_ARQUIVO = os.path.join(BASE_DIR, "analises.json")
+AVISOS_ARQUIVO = os.path.join(BASE_DIR, "avisos.json")
 LOCK_FILE = os.path.join(BASE_DIR, "monitor.lock")
 REFRESH_MS = 2000  # 2s
 
@@ -789,6 +791,22 @@ def _update_encomenda_status(record, status):
     match["STATUS_DATA_HORA"] = now_str
     try:
         _atomic_write(ENCOMENDAS_ARQUIVO, {"registros": registros})
+
+        # Recalcula análises/avisos para refletir imediatamente mudança de status (AVISADO <-> SEM CONTATO).
+        try:
+            import analises as analises_mod
+            import avisos as avisos_mod
+            analises_mod.build_analises(ARQUIVO, ANALISES_ARQUIVO)
+            avisos_mod.build_avisos(ANALISES_ARQUIVO, AVISOS_ARQUIVO)
+        except Exception:
+            pass
+
+        if (status or "").strip().upper() == "AVISADO":
+            try:
+                import avisos as avisos_mod
+                avisos_mod.close_encomenda_avisos_by_record(match, AVISOS_ARQUIVO)
+            except Exception:
+                pass
         return True
     except Exception:
         return False
