@@ -372,8 +372,12 @@ def _populate_text(text_widget, info_label):
     for r in filtrados:
         start = text_widget.index(tk.END)
         linha = formatter(r)
-        text_widget.insert(tk.END, linha + "\n\n")
-        end = text_widget.index(tk.END)
+        text_widget.insert(tk.END, linha)
+        try:
+            end = text_widget.index(f"{start}+{len(linha)}c")
+        except Exception:
+            end = text_widget.index(tk.END)
+        text_widget.insert(tk.END, "\n\n")
         record_ranges.append((start, end, r))
         if formatter == format_encomenda_entry:
             status = (r.get("STATUS_ENCOMENDA") or "").strip().upper()
@@ -622,7 +626,7 @@ def _find_encomenda_record_at_index(text_widget, index):
     if not ranges:
         return None
     for start, end, record in ranges:
-        if text_widget.compare(index, ">=", start) and text_widget.compare(index, "<", end):
+        if text_widget.compare(index, ">=", start) and text_widget.compare(index, "<=", end):
             return record
     return None
 
@@ -636,6 +640,19 @@ def _update_encomenda_status(record, status):
         if r.get("_entrada_id") and record.get("_entrada_id") and str(r.get("_entrada_id")) == str(record.get("_entrada_id")):
             match = r
             break
+    if match is None and record:
+        try:
+            target_key = _record_hash_key_encomenda(record)
+        except Exception:
+            target_key = None
+        if target_key:
+            for r in registros:
+                try:
+                    if _record_hash_key_encomenda(r) == target_key:
+                        match = r
+                        break
+                except Exception:
+                    continue
     if match is None:
         return False
     now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
