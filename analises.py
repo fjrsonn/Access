@@ -10,6 +10,7 @@ from typing import List, Dict, Any
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DADOSEND = os.path.join(BASE_DIR, "dadosend.json")
+ENCOMENDASEND = os.path.join(BASE_DIR, "encomendasend.json")
 ANALISES = os.path.join(BASE_DIR, "analises.json")
 
 DATE_FORMATS = ("%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M")
@@ -76,6 +77,63 @@ def _identity_key(rec: dict) -> str:
     ap = (rec.get("APARTAMENTO","") or "").strip().upper()
     return f"{nome}|{sobrenome}|{bloco}|{ap}"
 
+def _encomenda_bloco_ap_key(rec: dict) -> str:
+    bloco = (rec.get("BLOCO","") or "").strip().upper()
+    ap = (rec.get("APARTAMENTO","") or "").strip().upper()
+    return f"{bloco}|{ap}"
+
+def load_encomendas(path: str = ENCOMENDASEND) -> List[dict]:
+    d = _read_json(path)
+    if not d:
+        return []
+    if isinstance(d, dict) and "registros" in d:
+        regs = d.get("registros") or []
+    elif isinstance(d, list):
+        regs = d
+    else:
+        regs = []
+    if not isinstance(regs, list):
+        regs = list(regs)
+    return regs
+
+def _build_encomendas_analises(encomendas_path: str = ENCOMENDASEND, min_group_size: int = 2) -> List[Dict[str, Any]]:
+    regs = load_encomendas(encomendas_path)
+    groups = {}
+    for r in regs:
+        key = _encomenda_bloco_ap_key(r)
+        bloco, ap = key.split("|", 1)
+        if not bloco or not ap:
+            continue
+        groups.setdefault(key, []).append(r)
+
+    out = []
+    for key, items in groups.items():
+        pendentes = []
+        for rec in items:
+            status = (rec.get("STATUS_ENCOMENDA") or "").strip().upper()
+            if status == "AVISADO":
+                continue
+            pendentes.append(rec)
+
+        if len(pendentes) < min_group_size:
+            continue
+
+        def _dt_or_min(rec):
+            dt = _parse_datetime(rec.get("DATA_HORA") or rec.get("data_hora") or "")
+            return dt or datetime.min
+
+        pendentes_sorted = sorted(pendentes, key=_dt_or_min)
+        bloco, ap = key.split("|", 1)
+        out.append({
+            "identidade": f"ENCOMENDA|{bloco}|{ap}",
+            "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+            "bloco": bloco,
+            "apartamento": ap,
+            "quantidade": len(pendentes_sorted),
+            "registros": pendentes_sorted,
+        })
+    return out
+
 def load_dadosend(path: str = DADOSEND) -> List[dict]:
     d = _read_json(path)
     if not d:
@@ -104,7 +162,7 @@ def build_analises(dadosend_path: str = DADOSEND, out_path: str = ANALISES, min_
         key = _identity_key(r)
         groups.setdefault(key, []).append(r)
 
-    out = {"registros": []}
+    out = {"registros": [], "encomendas_multiplas_bloco_apartamento": []}
     for key, items in groups.items():
         if len(items) < min_group_size:
             continue
@@ -128,6 +186,8 @@ def build_analises(dadosend_path: str = DADOSEND, out_path: str = ANALISES, min_
         }
         out["registros"].append(out_entry)
 
+    out["encomendas_multiplas_bloco_apartamento"] = _build_encomendas_analises(ENCOMENDASEND, min_group_size)
+
     try:
         atomic_save(out_path, out)
         print(f"[analises] Gravado {out_path} com {len(out.get('registros', []))} grupos.")
@@ -145,10 +205,11 @@ def build_analises_for_identity(identity_key: str, dadosend_path: str = DADOSEND
     regs = load_dadosend(dadosend_path)
     ident = (identity_key or "").strip().upper()
     items = [r for r in regs if _identity_key(r) == ident]
-    existing = _read_json(out_path) or {"registros": []}
+    existing = _read_json(out_path) or {"registros": [], "encomendas_multiplas_bloco_apartamento": []}
     others = [e for e in existing.get("registros", []) if (e.get("identidade","") or "").upper() != ident]
     if not items:
         existing["registros"] = others
+        existing["encomendas_multiplas_bloco_apartamento"] = _build_encomendas_analises(ENCOMENDASEND, 2)
         atomic_save(out_path, existing)
         return existing
     def _dt_or_min(rec):
@@ -166,6 +227,7 @@ def build_analises_for_identity(identity_key: str, dadosend_path: str = DADOSEND
     }
     others.append(new_entry)
     existing["registros"] = others
+    existing["encomendas_multiplas_bloco_apartamento"] = _build_encomendas_analises(ENCOMENDASEND, 2)
     atomic_save(out_path, existing)
     return existing
 

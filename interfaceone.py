@@ -704,28 +704,47 @@ def _start_analises_watcher(poll_interval: float = 1.0):
     def _watch():
         import analises
         import avisos
-        last_mtime = None
+        last_mtime_db = None
+        last_mtime_encomendas = None
         while True:
             try:
+                db_changed = False
+                encomendas_changed = False
+
                 if os.path.exists(DB_FILE):
-                    mtime = os.path.getmtime(DB_FILE)
-                    if last_mtime is None:
-                        last_mtime = mtime
-                    elif mtime != last_mtime:
-                        last_mtime = mtime
-                        ident = _get_last_record_identity(DB_FILE)
-                        if ident:
-                            try:
-                                analises.build_analises_for_identity(ident, DB_FILE, ANALISES_FILE)
-                            except Exception:
-                                analises.build_analises(DB_FILE, ANALISES_FILE)
-                            try:
-                                avisos.build_avisos_for_identity(ident, ANALISES_FILE, AVISOS_FILE)
-                            except Exception:
-                                avisos.build_avisos(ANALISES_FILE, AVISOS_FILE)
-                        else:
+                    mtime_db = os.path.getmtime(DB_FILE)
+                    if last_mtime_db is None:
+                        last_mtime_db = mtime_db
+                    elif mtime_db != last_mtime_db:
+                        last_mtime_db = mtime_db
+                        db_changed = True
+
+                if os.path.exists(ENCOMENDAS_DB_FILE):
+                    mtime_encomendas = os.path.getmtime(ENCOMENDAS_DB_FILE)
+                    if last_mtime_encomendas is None:
+                        last_mtime_encomendas = mtime_encomendas
+                    elif mtime_encomendas != last_mtime_encomendas:
+                        last_mtime_encomendas = mtime_encomendas
+                        encomendas_changed = True
+
+                if db_changed:
+                    ident = _get_last_record_identity(DB_FILE)
+                    if ident:
+                        try:
+                            analises.build_analises_for_identity(ident, DB_FILE, ANALISES_FILE)
+                        except Exception:
                             analises.build_analises(DB_FILE, ANALISES_FILE)
+                        try:
+                            avisos.build_avisos_for_identity(ident, ANALISES_FILE, AVISOS_FILE)
+                        except Exception:
                             avisos.build_avisos(ANALISES_FILE, AVISOS_FILE)
+                    else:
+                        analises.build_analises(DB_FILE, ANALISES_FILE)
+                        avisos.build_avisos(ANALISES_FILE, AVISOS_FILE)
+
+                if encomendas_changed and not db_changed:
+                    analises.build_analises(DB_FILE, ANALISES_FILE)
+                    avisos.build_avisos(ANALISES_FILE, AVISOS_FILE)
             except Exception:
                 pass
             time.sleep(poll_interval)
