@@ -638,20 +638,12 @@ def _bind_hover_highlight(text_widget):
 def _find_encomenda_record_at_index(text_widget, index):
     try:
         line = index.split(".", 1)[0]
-    except Exception:
-        line = None
-    if line:
-        line_map = _encomenda_line_map.get(text_widget, {})
-        if line_map:
-            try:
-                line_text = text_widget.get(f"{line}.0", f"{line}.end")
-            except Exception:
-                line_text = ""
-            if line_text.strip():
-                rec = line_map.get(line)
-                if rec is not None:
-                    return rec
+        line_text = text_widget.get(f"{line}.0", f"{line}.end")
+        if not line_text.strip():
             return None
+    except Exception:
+        pass
+
     tag_map = _encomenda_tag_map.get(text_widget, {})
     if tag_map:
         try:
@@ -660,10 +652,27 @@ def _find_encomenda_record_at_index(text_widget, index):
                     return tag_map[tag]
         except Exception:
             pass
+
     ranges = _encomenda_display_map.get(text_widget, [])
+    if not ranges:
+        return None
+
+    try:
+        line_no = int(line)
+    except Exception:
+        line_no = None
+
     for start, end, record in ranges:
         if text_widget.compare(index, ">=", start) and text_widget.compare(index, "<=", end):
             return record
+        if line_no is not None:
+            try:
+                s_line = int(str(start).split(".", 1)[0])
+                e_line = int(str(end).split(".", 1)[0])
+            except Exception:
+                continue
+            if s_line <= line_no <= e_line:
+                return record
     return None
 
 def _update_encomenda_status(record, status):
