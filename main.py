@@ -4,7 +4,8 @@ main.py
 Inicializa o sistema:
  - garante pré-estruturas (analises.json, avisos.json)
  - dispara análise/avisos no startup
- - roda um watcher que observa alterações em dadosend.json e atualiza analises/avisos por identidade
+ - roda um watcher que observa alterações em dadosend.json e encomendasend.json
+ - atualiza analises/avisos por identidade e por encomendas
  - inicia a UI via interfaceone.iniciar_interface_principal()
 """
 import os
@@ -17,11 +18,12 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 DADOSEND = os.path.join(BASE, "dadosend.json")
 ANALISES_JSON = os.path.join(BASE, "analises.json")
 AVISOS_JSON = os.path.join(BASE, "avisos.json")
+ENCOMENDASEND = os.path.join(BASE, "encomendasend.json")
 
 POLL_INTERVAL = 1.0  # segundos entre verificações de mtime
 
 # Estruturas pré-definidas (conformes com o que geramos anteriormente)
-_ANALISES_TEMPLATE = {"registros": []}
+_ANALISES_TEMPLATE = {"registros": [], "encomendas_multiplas_bloco_apartamento": []}
 _AVISOS_TEMPLATE = {"registros": [], "ultimo_aviso_ativo": None}
 
 def ensure_file(path, template):
@@ -109,52 +111,72 @@ def _get_last_record_identity(dadosend_path):
         return None
 
 def watcher_thread(dadosend_path, analises_mod, avisos_mod, poll=POLL_INTERVAL):
-    """Monitora mtime de dadosend.json e atualiza analises/avisos incrementalmente."""
-    print("[main] Watcher iniciado para", dadosend_path)
-    last_mtime = None
+    """Monitora mtime de dadosend.json e encomendasend.json e atualiza analises/avisos."""
+    print("[main] Watcher iniciado para", dadosend_path, "e", ENCOMENDASEND)
+    last_mtime_dadosend = None
+    last_mtime_encomendas = None
     while True:
         try:
+            dados_changed = False
+            encomendas_changed = False
+
             if os.path.exists(dadosend_path):
-                m = os.path.getmtime(dadosend_path)
-                if last_mtime is None:
-                    last_mtime = m
-                elif m != last_mtime:
-                    last_mtime = m
-                    print("[main] Alteração detectada em dadosend.json — iniciando análise incremental...")
-                    # tenta extrair identidade do último registro salvo
-                    ident = _get_last_record_identity(dadosend_path)
-                    if ident:
-                        try:
-                            # reconstrói somente a identidade alterada (mais rápido)
-                            analises_mod.build_analises_for_identity(ident, dadosend_path, ANALISES_JSON)
-                        except Exception:
-                            print("[main] erro build_analises_for_identity:", traceback.format_exc())
-                            try:
-                                analises_mod.build_analises(dadosend_path, ANALISES_JSON)
-                            except Exception:
-                                print("[main] erro build_analises (fallback):", traceback.format_exc())
-                        try:
-                            avisos_mod.build_avisos_for_identity(ident, ANALISES_JSON, AVISOS_JSON)
-                        except Exception:
-                            print("[main] erro build_avisos_for_identity:", traceback.format_exc())
-                            try:
-                                avisos_mod.build_avisos(ANALISES_JSON, AVISOS_JSON)
-                            except Exception:
-                                print("[main] erro build_avisos (fallback):", traceback.format_exc())
-                    else:
-                        # se não conseguimos identificar, recalcula tudo
-                        print("[main] não foi possível identificar registro — recalculando tudo")
+                m_dados = os.path.getmtime(dadosend_path)
+                if last_mtime_dadosend is None:
+                    last_mtime_dadosend = m_dados
+                elif m_dados != last_mtime_dadosend:
+                    last_mtime_dadosend = m_dados
+                    dados_changed = True
+
+            if os.path.exists(ENCOMENDASEND):
+                m_encomendas = os.path.getmtime(ENCOMENDASEND)
+                if last_mtime_encomendas is None:
+                    last_mtime_encomendas = m_encomendas
+                elif m_encomendas != last_mtime_encomendas:
+                    last_mtime_encomendas = m_encomendas
+                    encomendas_changed = True
+
+            if dados_changed:
+                print("[main] Alteração detectada em dadosend.json — iniciando análise incremental...")
+                ident = _get_last_record_identity(dadosend_path)
+                if ident:
+                    try:
+                        analises_mod.build_analises_for_identity(ident, dadosend_path, ANALISES_JSON)
+                    except Exception:
+                        print("[main] erro build_analises_for_identity:", traceback.format_exc())
                         try:
                             analises_mod.build_analises(dadosend_path, ANALISES_JSON)
                         except Exception:
-                            print("[main] erro build_analises:", traceback.format_exc())
+                            print("[main] erro build_analises (fallback):", traceback.format_exc())
+                    try:
+                        avisos_mod.build_avisos_for_identity(ident, ANALISES_JSON, AVISOS_JSON)
+                    except Exception:
+                        print("[main] erro build_avisos_for_identity:", traceback.format_exc())
                         try:
                             avisos_mod.build_avisos(ANALISES_JSON, AVISOS_JSON)
                         except Exception:
-                            print("[main] erro build_avisos:", traceback.format_exc())
-            else:
-                # nenhum arquivo ainda — dorme e aguarda criação
-                pass
+                            print("[main] erro build_avisos (fallback):", traceback.format_exc())
+                else:
+                    print("[main] não foi possível identificar registro — recalculando tudo")
+                    try:
+                        analises_mod.build_analises(dadosend_path, ANALISES_JSON)
+                    except Exception:
+                        print("[main] erro build_analises:", traceback.format_exc())
+                    try:
+                        avisos_mod.build_avisos(ANALISES_JSON, AVISOS_JSON)
+                    except Exception:
+                        print("[main] erro build_avisos:", traceback.format_exc())
+
+            if encomendas_changed and not dados_changed:
+                print("[main] Alteração detectada em encomendasend.json — recalculando análises/avisos...")
+                try:
+                    analises_mod.build_analises(dadosend_path, ANALISES_JSON)
+                except Exception:
+                    print("[main] erro build_analises (encomendas):", traceback.format_exc())
+                try:
+                    avisos_mod.build_avisos(ANALISES_JSON, AVISOS_JSON)
+                except Exception:
+                    print("[main] erro build_avisos (encomendas):", traceback.format_exc())
         except Exception:
             print("[main] watcher erro:", traceback.format_exc())
         time.sleep(poll)
