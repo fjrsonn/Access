@@ -28,6 +28,7 @@ _filter_state = {}
 _monitor_sources = {}
 _hover_state = {}
 _encomenda_display_map = {}
+_encomenda_tag_map = {}
 _encomenda_action_ui = {}
 
 # ---------- inferência MODELO/COR (fallback a partir de 'texto') ----------
@@ -369,13 +370,21 @@ def _populate_text(text_widget, info_label):
     text_widget.config(state="normal")
     text_widget.delete("1.0", tk.END)
     record_ranges = []
-    for r in filtrados:
+    record_tag_map = {}
+    for idx, r in enumerate(filtrados):
         start = text_widget.index(tk.END)
         linha = formatter(r)
-        text_widget.insert(tk.END, linha + "\n\n")
-        end = text_widget.index(tk.END)
+        text_widget.insert(tk.END, linha)
+        try:
+            end = text_widget.index(f"{start}+{len(linha)}c")
+        except Exception:
+            end = text_widget.index(tk.END)
+        text_widget.insert(tk.END, "\n\n")
         record_ranges.append((start, end, r))
         if formatter == format_encomenda_entry:
+            rec_tag = f"encomenda_record_{idx}"
+            text_widget.tag_add(rec_tag, start, end)
+            record_tag_map[rec_tag] = r
             status = (r.get("STATUS_ENCOMENDA") or "").strip().upper()
             if status == "AVISADO":
                 text_widget.tag_add("status_avisado", start, end)
@@ -384,6 +393,7 @@ def _populate_text(text_widget, info_label):
     text_widget.config(state="disabled")
     if formatter == format_encomenda_entry:
         _encomenda_display_map[text_widget] = record_ranges
+        _encomenda_tag_map[text_widget] = record_tag_map
     _restore_hover_if_needed(text_widget, "hover_line")
 
 def _schedule_update(text_widgets, info_label):
@@ -618,9 +628,15 @@ def _bind_hover_highlight(text_widget):
     text_widget.bind("<Leave>", lambda _event: _clear_hover_line(text_widget, hover_tag))
 
 def _find_encomenda_record_at_index(text_widget, index):
+    tag_map = _encomenda_tag_map.get(text_widget, {})
+    if tag_map:
+        try:
+            for tag in text_widget.tag_names(index):
+                if tag.startswith("encomenda_record_") and tag in tag_map:
+                    return tag_map[tag]
+        except Exception:
+            pass
     ranges = _encomenda_display_map.get(text_widget, [])
-    if not ranges:
-        return None
     for start, end, record in ranges:
         if text_widget.compare(index, ">=", start) and text_widget.compare(index, "<", end):
             return record
@@ -636,6 +652,19 @@ def _update_encomenda_status(record, status):
         if r.get("_entrada_id") and record.get("_entrada_id") and str(r.get("_entrada_id")) == str(record.get("_entrada_id")):
             match = r
             break
+    if match is None and record:
+        try:
+            target_key = _record_hash_key_encomenda(record)
+        except Exception:
+            target_key = None
+        if target_key:
+            for r in registros:
+                try:
+                    if _record_hash_key_encomenda(r) == target_key:
+                        match = r
+                        break
+                except Exception:
+                    continue
     if match is None:
         return False
     now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
