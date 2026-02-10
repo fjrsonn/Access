@@ -4,8 +4,8 @@ from datetime import datetime
 import json
 import os
 import tempfile
+import time
 import re
-import shutil
 from typing import List, Dict, Any
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -31,22 +31,28 @@ def atomic_save(path: str, obj: Any):
 def _read_json(path: str):
     if not os.path.exists(path):
         return None
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except json.JSONDecodeError:
-        # backup corrupted file and return None
+
+    # Em ambientes com múltiplas threads/processos, pode haver leitura no meio da escrita.
+    # Fazemos retries curtos antes de concluir corrupção para evitar falso positivo.
+    last_raw = ""
+    for attempt in range(5):
         try:
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            bak = f"{path}.corrupted.{ts}.bak"
-            shutil.copy2(path, bak)
-            print(f"[analises] JSON corrompido em {path} — backup salvo em {bak}")
-        except Exception:
-            pass
-        return None
-    except Exception as e:
-        print(f"[analises] Erro ao ler {path}: {e}")
-        return None
+            with open(path, "r", encoding="utf-8") as f:
+                raw = f.read()
+            if not raw or not raw.strip():
+                return None
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            last_raw = raw if 'raw' in locals() else ""
+            if attempt < 4:
+                time.sleep(0.05)
+                continue
+            print(f"[analises] JSON inválido em {path}; usando fallback sem criar .corrupted")
+            return None
+        except Exception as e:
+            print(f"[analises] Erro ao ler {path}: {e}")
+            return None
+    return None
 
 def _parse_datetime(s: str):
     if not s:

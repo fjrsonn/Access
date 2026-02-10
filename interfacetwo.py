@@ -7,7 +7,6 @@ Monitor de dados:
 
 import os
 import json
-import shutil
 import tempfile
 from datetime import datetime
 import tkinter as tk
@@ -86,12 +85,7 @@ def _load_safe(path: str):
                 return data
             return data.get("registros", []) if isinstance(data, dict) else []
     except json.JSONDecodeError:
-        try:
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            corrupted = f"{path}.corrupted.{ts}.bak"
-            shutil.copy2(path, corrupted)
-        except Exception:
-            pass
+        print(f"[interfacetwo] JSON inválido em {path}; usando fallback sem criar .corrupted")
         return []
     except Exception:
         return []
