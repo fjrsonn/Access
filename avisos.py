@@ -4,6 +4,7 @@ from datetime import datetime
 import json
 import os
 import tempfile
+import time
 import re
 import shutil
 import unicodedata
@@ -20,11 +21,29 @@ def atomic_save(path: str, obj: Any):
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(obj, f, ensure_ascii=False, indent=2)
-        os.replace(tmp, path)
+            f.flush()
+            try:
+                os.fsync(f.fileno())
+            except Exception:
+                pass
+
+        last_err = None
+        for _ in range(6):
+            try:
+                os.replace(tmp, path)
+                last_err = None
+                break
+            except PermissionError as e:
+                last_err = e
+                time.sleep(0.05)
+        if last_err:
+            raise last_err
     finally:
         if os.path.exists(tmp):
-            try: os.remove(tmp)
-            except: pass
+            try:
+                os.remove(tmp)
+            except Exception:
+                pass
 
 def _read_json(path: str):
     if not os.path.exists(path):
@@ -113,6 +132,30 @@ def _aviso_exists(existing_avisos: List[dict], identidade: str, ultimo_id: Any, 
             if last and str(_registro_event_id(last) or "") == str(ultimo_id or "") and (a.get("tipo") or "") == (tipo or ""):
                 return True
     return False
+
+def _find_matching_aviso(existing_avisos: List[dict], identidade: str, ultimo_id: Any, tipo: str) -> Optional[dict]:
+    for a in existing_avisos:
+        if ((a.get("identidade") or "").upper() != (identidade or "").upper()):
+            continue
+        if (a.get("tipo") or "") != (tipo or ""):
+            continue
+        last = a.get("ultimo_registro") or {}
+        if str(_registro_event_id(last) or "") == str(ultimo_id or ""):
+            return a
+    return None
+
+
+def _reactivate_existing_aviso(existing_avisos: List[dict], identidade: str, ultimo_id: Any, tipo: str) -> bool:
+    aviso = _find_matching_aviso(existing_avisos, identidade, ultimo_id, tipo)
+    if not aviso:
+        return False
+    st = aviso.setdefault("status", {})
+    st["ativo"] = True
+    st["fechado_pelo_usuario"] = False
+    ts = aviso.setdefault("timestamps", {})
+    ts["fechado_em"] = None
+    return True
+
 
 # -----------------------
 # Helpers de normalização / comparação de veículo
@@ -492,7 +535,7 @@ def build_avisos(analises_path: str = ANALISES, out_path: str = AVISOS) -> Dict[
                 bg_color = "#FF0000"
                 txt = _build_message_morador_sem_tag(rec)
                 ultimo_id = _registro_event_id(rec)
-                if _aviso_exists(existing_list, identidade, ultimo_id, tipo):
+                if _reactivate_existing_aviso(existing_list, identidade, ultimo_id, tipo):
                     continue
                 id_aviso = _next_aviso_id(existing_list)
                 aviso = {
@@ -569,7 +612,7 @@ def build_avisos(analises_path: str = ANALISES, out_path: str = AVISOS) -> Dict[
 
             ultimo_id = _registro_event_id(ultimo)
             # evita duplicar o MESMO evento (mesma identidade + mesmo ultimo_id + mesmo tipo)
-            if _aviso_exists(existing_list, identidade, ultimo_id, tipo):
+            if _reactivate_existing_aviso(existing_list, identidade, ultimo_id, tipo):
                 continue
 
             id_aviso = _next_aviso_id(existing_list)
