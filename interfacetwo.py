@@ -662,7 +662,7 @@ def _find_encomenda_record_at_index(text_widget, index):
             pass
     ranges = _encomenda_display_map.get(text_widget, [])
     for start, end, record in ranges:
-        if text_widget.compare(index, ">=", start) and text_widget.compare(index, "<", end):
+        if text_widget.compare(index, ">=", start) and text_widget.compare(index, "<=", end):
             return record
     return None
 
