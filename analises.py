@@ -96,7 +96,7 @@ def load_encomendas(path: str = ENCOMENDASEND) -> List[dict]:
         regs = list(regs)
     return regs
 
-def _build_encomendas_analises(encomendas_path: str = ENCOMENDASEND, min_group_size: int = 2) -> List[Dict[str, Any]]:
+def _build_encomendas_analises(encomendas_path: str = ENCOMENDASEND, min_group_size: int = 1) -> List[Dict[str, Any]]:
     regs = load_encomendas(encomendas_path)
     groups = {}
     for r in regs:
@@ -203,7 +203,7 @@ def build_analises(dadosend_path: str = DADOSEND, out_path: str = ANALISES, min_
         }
         out["registros"].append(out_entry)
 
-    out["encomendas_multiplas_bloco_apartamento"] = _build_encomendas_analises(ENCOMENDASEND, min_group_size)
+    out["encomendas_multiplas_bloco_apartamento"] = _build_encomendas_analises(ENCOMENDASEND, 1)
 
     try:
         atomic_save(out_path, out)
@@ -226,7 +226,7 @@ def build_analises_for_identity(identity_key: str, dadosend_path: str = DADOSEND
     others = [e for e in existing.get("registros", []) if (e.get("identidade","") or "").upper() != ident]
     if not items:
         existing["registros"] = others
-        existing["encomendas_multiplas_bloco_apartamento"] = _build_encomendas_analises(ENCOMENDASEND, 2)
+        existing["encomendas_multiplas_bloco_apartamento"] = _build_encomendas_analises(ENCOMENDASEND, 1)
         atomic_save(out_path, existing)
         return existing
     def _dt_or_min(rec):
@@ -244,7 +244,7 @@ def build_analises_for_identity(identity_key: str, dadosend_path: str = DADOSEND
     }
     others.append(new_entry)
     existing["registros"] = others
-    existing["encomendas_multiplas_bloco_apartamento"] = _build_encomendas_analises(ENCOMENDASEND, 2)
+    existing["encomendas_multiplas_bloco_apartamento"] = _build_encomendas_analises(ENCOMENDASEND, 1)
     atomic_save(out_path, existing)
     return existing
 

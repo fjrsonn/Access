@@ -267,26 +267,14 @@ def _build_message_encomendas_multiplas(entry: dict) -> str:
         f"DATA E HORA {data_registro_txt}!"
     )
 
-def _aviso_encomenda_exists(existing_avisos: List[dict], bloco: str, apartamento: str, quantidade: int, ultimo_id: Any, tipo: str, origem_status: str = "") -> bool:
-    for a in existing_avisos:
+def _find_encomenda_aviso_index(existing_avisos: List[dict], identidade: str, tipo: str) -> int:
+    for idx in range(len(existing_avisos) - 1, -1, -1):
+        a = existing_avisos[idx]
         if (a.get("tipo") or "") != (tipo or ""):
             continue
-
-        # Se o aviso já foi fechado/inativado, ele NÃO bloqueia reabertura.
-        st = a.get("status") or {}
-        ativo = st.get("ativo", True)
-        fechado = st.get("fechado_pelo_usuario", False)
-        if (not ativo) or bool(fechado):
-            continue
-
-        refs = a.get("referencias") or {}
-        if (str(refs.get("bloco") or "").strip().upper() == str(bloco or "").strip().upper() and
-            str(refs.get("apartamento") or "").strip().upper() == str(apartamento or "").strip().upper() and
-            int(refs.get("quantidade") or 0) == int(quantidade or 0) and
-            str(refs.get("ultimo_registro_id") or "") == str(ultimo_id or "") and
-            str(refs.get("origem_status") or "").strip().upper() == str(origem_status or "").strip().upper()):
-            return True
-    return False
+        if (a.get("identidade") or "").strip().upper() == (identidade or "").strip().upper():
+            return idx
+    return -1
 def _build_message_morador_sem_tag(rec: dict) -> str:
     n = (rec.get("NOME","") or "").strip().title()
     s = (rec.get("SOBRENOME","") or "").strip().title()
@@ -386,6 +374,23 @@ def close_encomenda_avisos_by_record(record: Dict[str, Any], out_path: str = AVI
         atomic_save(out_path, avisos)
     return closed
 
+def _close_stale_encomenda_avisos(existing_list: List[dict], valid_identities: set):
+    now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    for aviso in existing_list:
+        if (aviso.get("tipo") or "") != "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO":
+            continue
+        identidade = (aviso.get("identidade") or "").strip().upper()
+        if identidade in valid_identities:
+            continue
+        st = aviso.setdefault("status", {})
+        if st.get("ativo") is False:
+            continue
+        st["ativo"] = False
+        st["fechado_pelo_usuario"] = True
+        ts = aviso.setdefault("timestamps", {})
+        if not ts.get("fechado_em"):
+            ts["fechado_em"] = now_str
+
 def build_avisos(analises_path: str = ANALISES, out_path: str = AVISOS) -> Dict[str, Any]:
     analises = _read_json(analises_path) or {"registros": []}
     avisos = _read_json(out_path) or {"registros": [], "ultimo_aviso_ativo": None}
@@ -393,7 +398,8 @@ def build_avisos(analises_path: str = ANALISES, out_path: str = AVISOS) -> Dict[
 
     created = 0
 
-    # avisos de encomendas múltiplas por BLOCO/APARTAMENTO (sem conflito com os demais padrões)
+    # avisos de encomendas múltiplas por BLOCO/APARTAMENTO (1 ou mais encomendas)
+    current_encomenda_ids = set()
     for entry in analises.get("encomendas_multiplas_bloco_apartamento", []) or []:
         tipo = "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO"
         bloco = (entry.get("bloco","") or "").strip().upper()
@@ -401,47 +407,80 @@ def build_avisos(analises_path: str = ANALISES, out_path: str = AVISOS) -> Dict[
         regs = entry.get("registros", []) or []
         quantidade = int(entry.get("quantidade") or len(regs))
         origem_status = (entry.get("origem_status") or "").strip().upper()
-        if not bloco or not apartamento or quantidade < 2:
+        identidade = (entry.get("identidade") or f"ENCOMENDA|{bloco}|{apartamento}|{origem_status or 'SEM_STATUS'}")
+        if not bloco or not apartamento or quantidade < 1:
             continue
+
+        current_encomenda_ids.add(identidade.strip().upper())
         ultimo = regs[-1] if regs else {}
         ultimo_id = _registro_event_id(ultimo)
-        if _aviso_encomenda_exists(existing_list, bloco, apartamento, quantidade, ultimo_id, tipo, origem_status):
-            continue
-        id_aviso = _next_aviso_id(existing_list)
-        aviso = {
-            "id_aviso": id_aviso,
-            "identidade": (entry.get("identidade") or f"ENCOMENDA|{bloco}|{apartamento}|{origem_status or 'SEM_STATUS'}"),
-            "tipo": tipo,
-            "nivel": "warn",
-            "mensagem": _build_message_encomendas_multiplas(entry),
-            "ui": {
+        idx_aviso = _find_encomenda_aviso_index(existing_list, identidade, tipo)
+
+        if idx_aviso >= 0:
+            aviso = existing_list[idx_aviso]
+            aviso["nivel"] = "warn"
+            aviso["mensagem"] = _build_message_encomendas_multiplas(entry)
+            aviso["ui"] = {
                 "background_color": "#FFFF00",
                 "opacity": 0.7,
                 "text_color": "#000000",
                 "icone": "⚠",
                 "exibir_botao_fechar": True
-            },
-            "referencias": {
+            }
+            aviso["referencias"] = {
                 "bloco": bloco,
                 "apartamento": apartamento,
                 "quantidade": quantidade,
                 "ultimo_registro_id": ultimo_id,
                 "origem_status": origem_status,
-            },
-            "ultimo_registro": ultimo,
-            "timestamps": {
-                "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                "exibido_em": None,
-                "fechado_em": None
-            },
-            "status": {
-                "ativo": True,
-                "fechado_pelo_usuario": False
             }
-        }
-        existing_list.append(aviso)
-        avisos["ultimo_aviso_ativo"] = id_aviso
-        created += 1
+            aviso["ultimo_registro"] = ultimo
+            ts = aviso.setdefault("timestamps", {})
+            if not ts.get("gerado_em"):
+                ts["gerado_em"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            ts["fechado_em"] = None
+            st = aviso.setdefault("status", {})
+            st["ativo"] = True
+            st["fechado_pelo_usuario"] = False
+            avisos["ultimo_aviso_ativo"] = aviso.get("id_aviso")
+        else:
+            id_aviso = _next_aviso_id(existing_list)
+            aviso = {
+                "id_aviso": id_aviso,
+                "identidade": identidade,
+                "tipo": tipo,
+                "nivel": "warn",
+                "mensagem": _build_message_encomendas_multiplas(entry),
+                "ui": {
+                    "background_color": "#FFFF00",
+                    "opacity": 0.7,
+                    "text_color": "#000000",
+                    "icone": "⚠",
+                    "exibir_botao_fechar": True
+                },
+                "referencias": {
+                    "bloco": bloco,
+                    "apartamento": apartamento,
+                    "quantidade": quantidade,
+                    "ultimo_registro_id": ultimo_id,
+                    "origem_status": origem_status,
+                },
+                "ultimo_registro": ultimo,
+                "timestamps": {
+                    "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                    "exibido_em": None,
+                    "fechado_em": None
+                },
+                "status": {
+                    "ativo": True,
+                    "fechado_pelo_usuario": False
+                }
+            }
+            existing_list.append(aviso)
+            avisos["ultimo_aviso_ativo"] = id_aviso
+            created += 1
+
+    _close_stale_encomenda_avisos(existing_list, current_encomenda_ids)
 
     for entry in analises.get("registros", []) or []:
         regs = entry.get("registros", []) or []
@@ -583,180 +622,10 @@ def build_avisos(analises_path: str = ANALISES, out_path: str = AVISOS) -> Dict[
     return avisos
 
 def build_avisos_for_identity(identity_key: str, analises_path: str = ANALISES, out_path: str = AVISOS) -> Dict[str, Any]:
-    analises = _read_json(analises_path) or {"registros": []}
-    avisos = _read_json(out_path) or {"registros": [], "ultimo_aviso_ativo": None}
-    existing_list = avisos.get("registros", []) or []
+    # Mantemos o entrypoint incremental por compatibilidade, mas para encomendas a regra
+    # exige sincronização por quantidade total (sobe/desce) no mesmo aviso.
+    return build_avisos(analises_path, out_path)
 
-    target = (identity_key or "").strip().upper()
-    candidates = [e for e in analises.get("registros", []) if (e.get("identidade","") or "").upper() == target]
-    created = 0
-
-    # encomendas no modo incremental por identidade do morador: recalcula lista e cria apenas novos eventos
-    for entry in analises.get("encomendas_multiplas_bloco_apartamento", []) or []:
-        tipo = "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO"
-        bloco = (entry.get("bloco","") or "").strip().upper()
-        apartamento = (entry.get("apartamento","") or "").strip().upper()
-        regs = entry.get("registros", []) or []
-        quantidade = int(entry.get("quantidade") or len(regs))
-        origem_status = (entry.get("origem_status") or "").strip().upper()
-        if not bloco or not apartamento or quantidade < 2:
-            continue
-        ultimo = regs[-1] if regs else {}
-        ultimo_id = _registro_event_id(ultimo)
-        if _aviso_encomenda_exists(existing_list, bloco, apartamento, quantidade, ultimo_id, tipo, origem_status):
-            continue
-        id_aviso = _next_aviso_id(existing_list)
-        aviso = {
-            "id_aviso": id_aviso,
-            "identidade": (entry.get("identidade") or f"ENCOMENDA|{bloco}|{apartamento}|{origem_status or 'SEM_STATUS'}"),
-            "tipo": tipo,
-            "nivel": "warn",
-            "mensagem": _build_message_encomendas_multiplas(entry),
-            "ui": {
-                "background_color": "#FFFF00",
-                "opacity": 0.7,
-                "text_color": "#000000",
-                "icone": "⚠",
-                "exibir_botao_fechar": True
-            },
-            "referencias": {
-                "bloco": bloco,
-                "apartamento": apartamento,
-                "quantidade": quantidade,
-                "ultimo_registro_id": ultimo_id,
-                "origem_status": origem_status,
-            },
-            "ultimo_registro": ultimo,
-            "timestamps": {
-                "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                "exibido_em": None,
-                "fechado_em": None
-            },
-            "status": {
-                "ativo": True,
-                "fechado_pelo_usuario": False
-            }
-        }
-        existing_list.append(aviso)
-        avisos["ultimo_aviso_ativo"] = id_aviso
-        created += 1
-
-    for entry in candidates:
-        regs = entry.get("registros", []) or []
-        identidade = entry.get("identidade") or ""
-        for rec in regs:
-            if _flag_true(rec.get("MORADOR SEM TAG")):
-                tipo = "MORADOR_SEM_TAG"
-                nivel = "warn"
-                bg_color = "#FF0000"
-                txt = _build_message_morador_sem_tag(rec)
-                ultimo_id = _registro_event_id(rec)
-                if _aviso_exists(existing_list, identidade, ultimo_id, tipo):
-                    continue
-                id_aviso = _next_aviso_id(existing_list)
-                aviso = {
-                    "id_aviso": id_aviso,
-                    "identidade": identidade,
-                    "tipo": tipo,
-                    "nivel": nivel,
-                    "mensagem": txt,
-                    "ui": {
-                        "background_color": bg_color,
-                        "opacity": 0.7,
-                        "text_color": "#000000",
-                        "icone": "⚠",
-                        "exibir_botao_fechar": True
-                    },
-                    "referencias": {
-                        "ultimo_registro_id": ultimo_id,
-                    },
-                    "ultimo_registro": rec,
-                    "timestamps": {
-                        "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                        "exibido_em": None,
-                        "fechado_em": None
-                    },
-                    "status": {
-                        "ativo": True,
-                        "fechado_pelo_usuario": False
-                    }
-                }
-                existing_list.append(aviso)
-                avisos["ultimo_aviso_ativo"] = id_aviso
-                created += 1
-        if len(regs) < 2:
-            continue
-        primeiro = regs[0]
-        for idx in range(1, len(regs)):
-            ultimo = regs[idx]
-            access_count = idx + 1
-            cmp_keys = ["NOME","SOBRENOME","BLOCO","APARTAMENTO","PLACA","MODELO","COR","STATUS"]
-            comp = _compare_fields(primeiro, ultimo, cmp_keys)
-
-            try:
-                has_vehicle_info = bool((primeiro.get("PLACA") or "") or (ultimo.get("PLACA") or "") or (primeiro.get("MODELO") or "") or (ultimo.get("MODELO") or "") or (primeiro.get("COR") or "") or (ultimo.get("COR") or ""))
-                if has_vehicle_info:
-                    same_vehicle = vehicles_considered_same(primeiro, ultimo)
-                    vehicle_div = not same_vehicle
-                else:
-                    vehicle_div = False
-            except Exception:
-                vehicle_keys = ["PLACA","MODELO","COR"]
-                vehicle_div = any(not comp[k][2] and (comp[k][0] or comp[k][1]) for k in vehicle_keys)
-
-            vehicle_keys = ["PLACA","MODELO","COR"]
-            non_vehicle_div = any(not comp[k][2] and (comp[k][0] or comp[k][1]) for k in cmp_keys if k not in vehicle_keys)
-
-            if vehicle_div:
-                tipo = "PADRAO_3"; nivel="critical"; bg_color="#FF0000"; txt=_build_message_tipo3(primeiro, ultimo, entry, access_count)
-            elif non_vehicle_div:
-                tipo = "PADRAO_2"; nivel="warn"; bg_color="#FFFF00"; txt=_build_message_tipo2(primeiro, ultimo, entry, access_count)
-            else:
-                tipo = "PADRAO_1"; nivel="info"; bg_color="#FFFF00"; txt=_build_message_tipo1(primeiro, ultimo, entry, access_count)
-
-            ultimo_id = _registro_event_id(ultimo)
-            if _aviso_exists(existing_list, identidade, ultimo_id, tipo):
-                continue
-
-            id_aviso = _next_aviso_id(existing_list)
-            aviso = {
-                "id_aviso": id_aviso,
-                "identidade": identidade,
-                "tipo": tipo,
-                "nivel": nivel,
-                "mensagem": txt,
-                "ui": {
-                    "background_color": bg_color,
-                    "opacity": 0.7,
-                    "text_color": "#000000",
-                    "icone": "⚠",
-                    "exibir_botao_fechar": True
-                },
-                "referencias": {
-                    "primeiro_registro_id": _registro_event_id(primeiro),
-                    "ultimo_registro_id": ultimo_id,
-                    "quantidade_acessos": access_count
-                },
-                "primeiro_registro": primeiro,
-                "ultimo_registro": ultimo,
-                "timestamps": {
-                    "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                    "exibido_em": None,
-                    "fechado_em": None
-                },
-                "status": {
-                    "ativo": True,
-                    "fechado_pelo_usuario": False
-                }
-            }
-            existing_list.append(aviso)
-            avisos["ultimo_aviso_ativo"] = id_aviso
-            created += 1
-
-    avisos["registros"] = existing_list
-    atomic_save(out_path, avisos)
-    print(f"[avisos] build_avisos_for_identity('{identity_key}') criou: {created} novos avisos. total: {len(existing_list)}")
-    return avisos
 
 if __name__ == "__main__":
     print("[avisos] Executando build_avisos() inicial...")

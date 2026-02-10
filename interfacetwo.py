@@ -801,12 +801,6 @@ def _update_encomenda_status(record, status):
         except Exception:
             pass
 
-        if (status or "").strip().upper() == "AVISADO":
-            try:
-                import avisos as avisos_mod
-                avisos_mod.close_encomenda_avisos_by_record(match, AVISOS_ARQUIVO)
-            except Exception:
-                pass
         return True
     except Exception:
         return False
