@@ -6,7 +6,6 @@ import os
 import tempfile
 import time
 import re
-import shutil
 import unicodedata
 from typing import Any, Dict, List, Optional
 
@@ -52,13 +51,7 @@ def _read_json(path: str):
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
     except json.JSONDecodeError:
-        try:
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            bak = f"{path}.corrupted.{ts}.bak"
-            shutil.copy2(path, bak)
-            print(f"[avisos] JSON corrompido em {path} — backup salvo em {bak}")
-        except Exception:
-            pass
+        print(f"[avisos] JSON inválido em {path}; usando fallback sem criar .corrupted")
         return None
     except Exception as e:
         print(f"[avisos] Erro ao ler {path}: {e}")

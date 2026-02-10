@@ -6,7 +6,6 @@ import os
 import tempfile
 import time
 import re
-import shutil
 from typing import List, Dict, Any
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -48,16 +47,7 @@ def _read_json(path: str):
             if attempt < 4:
                 time.sleep(0.05)
                 continue
-
-            try:
-                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-                bak = f"{path}.corrupted.{ts}.bak"
-                # salva exatamente o conteúdo inválido lido para diagnóstico fiel
-                with open(bak, "w", encoding="utf-8") as bf:
-                    bf.write(last_raw)
-                print(f"[analises] JSON corrompido em {path} — backup salvo em {bak}")
-            except Exception:
-                pass
+            print(f"[analises] JSON inválido em {path}; usando fallback sem criar .corrupted")
             return None
         except Exception as e:
             print(f"[analises] Erro ao ler {path}: {e}")

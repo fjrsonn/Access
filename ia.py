@@ -172,12 +172,7 @@ def carregar(path: str) -> Dict[str, Any]:
     except FileNotFoundError:
         return {"registros": []}
     except json.JSONDecodeError:
-        try:
-            bak = f"{path}.corrupted.{int(time.time())}.bak"
-            os.replace(path, bak)
-            print(f"[ia.py] JSON corrompido, backup criado: {bak}")
-        except Exception:
-            pass
+        print(f"[ia.py] JSON inválido em {path}; usando fallback sem criar .corrupted")
         return {"registros": []}
     except Exception as e:
         print(f"[ia.py] Erro ao carregar {path}: {e}")
