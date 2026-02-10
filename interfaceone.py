@@ -1818,7 +1818,6 @@ class AvisoBar(tk.Frame):
         self.btn_close = tk.Button(self, text="X", width=3, command=self._on_close_click)
         self.btn_close.pack(side=tk.RIGHT, padx=(0,6), pady=(2,2))
         self._active_avisos = []
-        self._avisos_sig = None
         self._idx = 0
         self._after_id = None
         self._visible = False
@@ -1847,17 +1846,8 @@ class AvisoBar(tk.Frame):
             return hex_color or "#FFFFFF"
 
     def _load_avisos_active(self):
-        try:
-            if os.path.exists(AVISOS_FILE):
-                st = os.stat(AVISOS_FILE)
-                sig = (st.st_mtime_ns, st.st_size)
-            else:
-                sig = (0, 0)
-        except Exception:
-            sig = (0, 0)
-        if sig == self._avisos_sig and self._active_avisos:
-            return
-        self._avisos_sig = sig
+        # Recarrega sempre para garantir que qualquer alteração recém-gravada
+        # em avisos.json apareça sem depender de resolução de timestamp do FS.
         self._active_avisos = []
         data = _read_json(AVISOS_FILE) or {}
         regs = data.get("registros", []) or []
