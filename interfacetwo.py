@@ -90,7 +90,6 @@ def _load_safe(path: str):
             shutil.copy2(path, corrupted)
         except Exception:
             pass
-        # não imprimir (para evitar janela/console indesejada)
         return []
     except Exception:
         return []
@@ -115,14 +114,9 @@ def safe(v):
     return v if v and v != "-" else "-"
 
 def format_line(r: dict) -> str:
-    """
-    Formata a linha exibida no monitor. Se MODELO/COR estiverem ausentes tenta inferir
-    a partir do campo 'texto' (heurística simples).
-    """
     modelo = r.get("MODELO") or ""
     cor = r.get("COR") or ""
     if (not modelo or modelo == "-") or (not cor or cor == "-"):
-        # tentar inferir do campo texto
         texto = r.get("texto") or r.get("texto_original") or ""
         inf_mod, inf_cor = _infer_model_color_from_text(texto)
         if not modelo and inf_mod:
@@ -181,9 +175,6 @@ def _record_hash_key(r: dict) -> str:
     return hashlib.md5(raw.encode("utf-8")).hexdigest()
 
 def format_creative_entry(r: dict) -> str:
-    """
-    Gera um texto criativo para cada registro, preservando os dados.
-    """
     modelo = r.get("MODELO") or ""
     cor = r.get("COR") or ""
     if (not modelo or modelo == "-") or (not cor or cor == "-"):
@@ -358,6 +349,43 @@ def _apply_filters(registros, filters):
     filtrados.sort(key=sort_key, reverse=reverse)
     return filtrados
 
+# ---------- novo helper: handler quando tag de encomenda for clicada ----------
+def _encomenda_on_tag_click(text_widget, record, event=None, rec_tag=None):
+    """
+    Handler chamado a partir de tag_bind para o registro clicado.
+    Atualiza o UI de ações associado ao text_widget e mostra o frame de ações.
+    Também destaca visualmente o registro selecionado.
+    """
+    ui = _encomenda_action_ui.get(text_widget)
+    if not ui:
+        return
+    current = ui.get("current")
+    if current is None:
+        current = {"record": None, "rec_tag": None}
+        ui["current"] = current
+    current["record"] = record
+    current["rec_tag"] = rec_tag
+
+    # highlight selected record visually
+    try:
+        # remove old highlight
+        text_widget.config(state="normal")
+        text_widget.tag_remove("encomenda_selected", "1.0", tk.END)
+        if rec_tag:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if ranges and len(ranges) >= 2:
+                text_widget.tag_add("encomenda_selected", ranges[0], ranges[1])
+        text_widget.config(state="disabled")
+    except Exception:
+        try:
+            text_widget.tag_remove("encomenda_selected", "1.0", tk.END)
+        except Exception:
+            pass
+
+    show_fn = ui.get("show")
+    if callable(show_fn):
+        show_fn()
+
 def _populate_text(text_widget, info_label):
     source = _monitor_sources.get(text_widget, {})
     arquivo = source.get("path", ARQUIVO)
@@ -368,40 +396,93 @@ def _populate_text(text_widget, info_label):
     info_label.config(
         text=f"Arquivo: {arquivo} — registros: {len(filtrados)} (de {len(registros)})"
     )
+    # sempre operar em state normal para evitar problemas na medição de ranges
     text_widget.config(state="normal")
     text_widget.delete("1.0", tk.END)
     record_ranges = []
     record_tag_map = {}
     record_line_map = {}
+
     for idx, r in enumerate(filtrados):
-        start = text_widget.index(tk.END)
+        rec_tag = f"encomenda_record_{idx}" if formatter == format_encomenda_entry else None
         linha = formatter(r)
-        text_widget.insert(tk.END, linha)
+        # Inserir já com a tag — isto garante que o tag cubra exatamente o texto
         try:
-            end = text_widget.index(f"{start}+{len(linha)}c")
+            if rec_tag:
+                text_widget.insert(tk.END, linha + "\n\n", (rec_tag,))
+            else:
+                text_widget.insert(tk.END, linha + "\n\n")
         except Exception:
-            end = text_widget.index(tk.END)
-        text_widget.insert(tk.END, "\n\n")
-        record_ranges.append((start, end, r))
-        if formatter == format_encomenda_entry:
-            rec_tag = f"encomenda_record_{idx}"
-            text_widget.tag_add(rec_tag, start, end)
+            # fallback simples
+            text_widget.insert(tk.END, linha + "\n\n")
+
+        # calcular start/end com base nas ranges da tag (quando aplicável)
+        if rec_tag:
+            try:
+                ranges = text_widget.tag_ranges(rec_tag)
+                if ranges and len(ranges) >= 2:
+                    start = ranges[0]
+                    end = ranges[1]
+                else:
+                    # fallback: aproximar pelo 'end' antes das quebras adicionadas
+                    end = text_widget.index("end-2c")
+                    start = text_widget.index(f"{end} - {len(linha)}c")
+            except Exception:
+                start = "1.0"
+                end = text_widget.index("end-2c")
+            record_ranges.append((start, end, r))
             record_tag_map[rec_tag] = r
             try:
-                line_no = start.split(".", 1)[0]
+                line_no = str(start).split(".", 1)[0]
                 record_line_map[line_no] = r
             except Exception:
                 pass
             status = (r.get("STATUS_ENCOMENDA") or "").strip().upper()
             if status == "AVISADO":
-                text_widget.tag_add("status_avisado", start, end)
+                try:
+                    text_widget.tag_add("status_avisado", start, end)
+                except Exception:
+                    pass
             elif status == "SEM CONTATO":
-                text_widget.tag_add("status_sem_contato", start, end)
+                try:
+                    text_widget.tag_add("status_sem_contato", start, end)
+                except Exception:
+                    pass
+
+            # bind por tag: captura o registro e a tag
+            try:
+                text_widget.tag_unbind(rec_tag, "<Button-1>")
+            except Exception:
+                pass
+            try:
+                # capturar rec_tag e r no default args
+                text_widget.tag_bind(rec_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag: _encomenda_on_tag_click(tw, rec, ev, tag))
+            except Exception:
+                pass
+        else:
+            # para registros não-encomenda, só guardar ranges genéricos
+            try:
+                end = text_widget.index("end-2c")
+                start = text_widget.index(f"{end} - {len(linha)}c")
+                record_ranges.append((start, end, r))
+                try:
+                    line_no = str(start).split(".", 1)[0]
+                    record_line_map[line_no] = r
+                except Exception:
+                    pass
+            except Exception:
+                pass
+
+    # desativa edição após inserir
     text_widget.config(state="disabled")
     if formatter == format_encomenda_entry:
         _encomenda_display_map[text_widget] = record_ranges
         _encomenda_tag_map[text_widget] = record_tag_map
         _encomenda_line_map[text_widget] = record_line_map
+    else:
+        _encomenda_display_map.pop(text_widget, None)
+        _encomenda_tag_map.pop(text_widget, None)
+        _encomenda_line_map.pop(text_widget, None)
     _restore_hover_if_needed(text_widget, "hover_line")
 
 def _schedule_update(text_widgets, info_label):
@@ -663,8 +744,11 @@ def _find_encomenda_record_at_index(text_widget, index):
         line_no = None
 
     for start, end, record in ranges:
-        if text_widget.compare(index, ">=", start) and text_widget.compare(index, "<=", end):
-            return record
+        try:
+            if text_widget.compare(index, ">=", start) and text_widget.compare(index, "<=", end):
+                return record
+        except Exception:
+            pass
         if line_no is not None:
             try:
                 s_line = int(str(start).split(".", 1)[0])
@@ -713,11 +797,20 @@ def _build_encomenda_actions(frame, text_widget, info_label):
     action_frame = tk.Frame(frame, bg="white")
     action_frame.pack_forget()
 
-    current = {"record": None}
+    # manter estado por widget dentro do mapa global
+    current = {"record": None, "rec_tag": None}
 
     def hide_actions():
         action_frame.pack_forget()
         current["record"] = None
+        current["rec_tag"] = None
+        # remover highlight
+        try:
+            text_widget.config(state="normal")
+            text_widget.tag_remove("encomenda_selected", "1.0", tk.END)
+            text_widget.config(state="disabled")
+        except Exception:
+            pass
 
     def show_actions():
         if action_frame.winfo_ismapped():
@@ -732,18 +825,7 @@ def _build_encomenda_actions(frame, text_widget, info_label):
             _populate_text(text_widget, info_label)
         hide_actions()
 
-    def on_click(event):
-        try:
-            index = text_widget.index(f"@{event.x},{event.y}")
-        except Exception:
-            return
-        record = _find_encomenda_record_at_index(text_widget, index)
-        if not record:
-            hide_actions()
-            return
-        current["record"] = record
-        show_actions()
-
+    # botões existentes
     tk.Button(
         action_frame,
         text="AVISADO",
@@ -767,8 +849,77 @@ def _build_encomenda_actions(frame, text_widget, info_label):
         padx=18,
     ).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
 
+    # Armazenar a UI de ações no mapa global, incluindo current e funções de show/hide
+    _encomenda_action_ui[text_widget] = {
+        "frame": action_frame,
+        "hide": hide_actions,
+        "show": show_actions,
+        "current": current,
+    }
+
+    # --- fallback global: bind no Text que localiza o registro clicado e mostra ações ---
+    def on_click(event):
+        """
+        Handler global: quando o usuário clicar em qualquer ponto do Text, busca o registro
+        e atualiza `current` no mapa global, depois mostra o painel de ações.
+        Isso funciona mesmo quando tag_bind falha.
+        """
+        try:
+            idx = text_widget.index(f"@{event.x},{event.y}")
+        except Exception:
+            return
+        record = _find_encomenda_record_at_index(text_widget, idx)
+        ui = _encomenda_action_ui.get(text_widget)
+        if not ui:
+            return
+        if record:
+            cur = ui.get("current")
+            if cur is None:
+                cur = {"record": None, "rec_tag": None}
+                ui["current"] = cur
+            cur["record"] = record
+            # tentar achar o rec_tag correspondente (comparando hash)
+            rec_tag_found = None
+            tag_map = _encomenda_tag_map.get(text_widget, {})
+            try:
+                target_key = _record_hash_key_encomenda(record)
+            except Exception:
+                target_key = None
+            if target_key:
+                for tag, rec_obj in tag_map.items():
+                    try:
+                        if _record_hash_key_encomenda(rec_obj) == target_key:
+                            rec_tag_found = tag
+                            break
+                    except Exception:
+                        continue
+            cur["rec_tag"] = rec_tag_found
+            # destacar se houver tag encontrada
+            try:
+                text_widget.config(state="normal")
+                text_widget.tag_remove("encomenda_selected", "1.0", tk.END)
+                if rec_tag_found:
+                    ranges = text_widget.tag_ranges(rec_tag_found)
+                    if ranges and len(ranges) >= 2:
+                        text_widget.tag_add("encomenda_selected", ranges[0], ranges[1])
+                text_widget.config(state="disabled")
+            except Exception:
+                pass
+            show_fn = ui.get("show")
+            if callable(show_fn):
+                show_fn()
+        else:
+            hide_fn = ui.get("hide")
+            if callable(hide_fn):
+                hide_fn()
+
+    # garantir que não existam binds duplicados:
+    try:
+        text_widget.unbind("<Button-1>")
+    except Exception:
+        pass
+    # adicionar bind de fallback
     text_widget.bind("<Button-1>", on_click)
-    _encomenda_action_ui[text_widget] = {"frame": action_frame, "hide": hide_actions}
 
 def _set_fullscreen(window):
     try:
@@ -839,6 +990,7 @@ def _build_monitor_ui(container):
         if formatter == format_encomenda_entry:
             text_widget.tag_configure("status_avisado", foreground="#2ecc71")
             text_widget.tag_configure("status_sem_contato", foreground="#ff5c5c")
+            text_widget.tag_configure("encomenda_selected", background="#f0f0f0", foreground="black")
         _build_filter_bar(frame, text_widget, info_label)
         text_widget.pack(padx=10, pady=(0, 8), fill=tk.BOTH, expand=True)
         text_widget.config(state="disabled")
@@ -873,10 +1025,6 @@ def _build_monitor_ui(container):
 
 # ---------- embutir como Toplevel ----------
 def create_monitor_toplevel(master):
-    """
-    Cria um Toplevel embutido na aplicação principal (não usa mainloop).
-    Guarda referência em _monitor_toplevel e atualiza via after.
-    """
     global _monitor_toplevel
     if _monitor_toplevel:
         try:
@@ -886,26 +1034,21 @@ def create_monitor_toplevel(master):
             pass
         return _monitor_toplevel
 
-    # cria Toplevel
     top = tk.Toplevel(master)
     top.title("Monitor de Acessos (embutido)")
-    # salvar referência global
     _monitor_toplevel = top
 
     _set_fullscreen(top)
     text_widgets, info_label = _build_monitor_ui(top)
 
-    # Atualizar via after
     _schedule_update(text_widgets, info_label)
 
     def on_close():
-        # cancela after e destrói
         _cancel_scheduled(text_widgets)
         try:
             top.destroy()
         except Exception:
             pass
-        # limpa referência global
         global _monitor_toplevel
         _monitor_toplevel = None
 
@@ -914,11 +1057,6 @@ def create_monitor_toplevel(master):
 
 # ---------- standalone (modo original) ----------
 def iniciar_monitor_standalone():
-    """
-    Modo standalone: cria Tk() próprio e roda mainloop.
-    Mantém lock file para evitar múltiplas instâncias.
-    """
-    # lock simples (escreve PID)
     try:
         with open(LOCK_FILE, "w", encoding="utf-8") as f:
             f.write(str(os.getpid()))
@@ -930,7 +1068,6 @@ def iniciar_monitor_standalone():
 
     text_widgets, info_label = _build_monitor_ui(root)
 
-    # atualiza via after
     _schedule_update(text_widgets, info_label)
 
     def on_close_standalone():
