@@ -271,6 +271,14 @@ def _aviso_encomenda_exists(existing_avisos: List[dict], bloco: str, apartamento
     for a in existing_avisos:
         if (a.get("tipo") or "") != (tipo or ""):
             continue
+
+        # Se o aviso já foi fechado/inativado, ele NÃO bloqueia reabertura.
+        st = a.get("status") or {}
+        ativo = st.get("ativo", True)
+        fechado = st.get("fechado_pelo_usuario", False)
+        if (not ativo) or bool(fechado):
+            continue
+
         refs = a.get("referencias") or {}
         if (str(refs.get("bloco") or "").strip().upper() == str(bloco or "").strip().upper() and
             str(refs.get("apartamento") or "").strip().upper() == str(apartamento or "").strip().upper() and
