@@ -789,6 +789,12 @@ def _update_encomenda_status(record, status):
     match["STATUS_DATA_HORA"] = now_str
     try:
         _atomic_write(ENCOMENDAS_ARQUIVO, {"registros": registros})
+        if (status or "").strip().upper() == "AVISADO":
+            try:
+                import avisos as avisos_mod
+                avisos_mod.close_encomenda_avisos_by_record(match)
+            except Exception:
+                pass
         return True
     except Exception:
         return False
