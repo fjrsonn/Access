@@ -21,7 +21,7 @@ AVISOS_JSON = os.path.join(BASE, "avisos.json")
 POLL_INTERVAL = 1.0  # segundos entre verificações de mtime
 
 # Estruturas pré-definidas (conformes com o que geramos anteriormente)
-_ANALISES_TEMPLATE = {"registros": []}
+_ANALISES_TEMPLATE = {"registros": [], "encomendas_multiplas_bloco_apartamento": []}
 _AVISOS_TEMPLATE = {"registros": [], "ultimo_aviso_ativo": None}
 
 def ensure_file(path, template):
