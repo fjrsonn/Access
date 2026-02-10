@@ -29,6 +29,7 @@ _monitor_sources = {}
 _hover_state = {}
 _encomenda_display_map = {}
 _encomenda_tag_map = {}
+_encomenda_line_map = {}
 _encomenda_action_ui = {}
 
 # ---------- inferência MODELO/COR (fallback a partir de 'texto') ----------
@@ -371,6 +372,7 @@ def _populate_text(text_widget, info_label):
     text_widget.delete("1.0", tk.END)
     record_ranges = []
     record_tag_map = {}
+    record_line_map = {}
     for idx, r in enumerate(filtrados):
         start = text_widget.index(tk.END)
         linha = formatter(r)
@@ -385,6 +387,11 @@ def _populate_text(text_widget, info_label):
             rec_tag = f"encomenda_record_{idx}"
             text_widget.tag_add(rec_tag, start, end)
             record_tag_map[rec_tag] = r
+            try:
+                line_no = start.split(".", 1)[0]
+                record_line_map[line_no] = r
+            except Exception:
+                pass
             status = (r.get("STATUS_ENCOMENDA") or "").strip().upper()
             if status == "AVISADO":
                 text_widget.tag_add("status_avisado", start, end)
@@ -394,6 +401,7 @@ def _populate_text(text_widget, info_label):
     if formatter == format_encomenda_entry:
         _encomenda_display_map[text_widget] = record_ranges
         _encomenda_tag_map[text_widget] = record_tag_map
+        _encomenda_line_map[text_widget] = record_line_map
     _restore_hover_if_needed(text_widget, "hover_line")
 
 def _schedule_update(text_widgets, info_label):
@@ -628,6 +636,22 @@ def _bind_hover_highlight(text_widget):
     text_widget.bind("<Leave>", lambda _event: _clear_hover_line(text_widget, hover_tag))
 
 def _find_encomenda_record_at_index(text_widget, index):
+    try:
+        line = index.split(".", 1)[0]
+    except Exception:
+        line = None
+    if line:
+        line_map = _encomenda_line_map.get(text_widget, {})
+        if line_map:
+            try:
+                line_text = text_widget.get(f"{line}.0", f"{line}.end")
+            except Exception:
+                line_text = ""
+            if line_text.strip():
+                rec = line_map.get(line)
+                if rec is not None:
+                    return rec
+            return None
     tag_map = _encomenda_tag_map.get(text_widget, {})
     if tag_map:
         try:
