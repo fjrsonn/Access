@@ -251,17 +251,23 @@ def _build_message_encomendas_multiplas(entry: dict) -> str:
     qtd_txt = cardinal_pt_upper(qtd)
 
     datas_registro = _collect_unique_datetimes(regs, "DATA_HORA")
-    datas_sem_contato = _collect_unique_datetimes(regs, "STATUS_DATA_HORA")
-
     data_registro_txt = " | ".join(datas_registro) if datas_registro else "-"
-    data_sem_contato_txt = " | ".join(datas_sem_contato) if datas_sem_contato else "-"
+    origem_status = (entry.get("origem_status") or "").strip().upper()
+
+    if origem_status == "SEM_CONTATO":
+        datas_sem_contato = _collect_unique_datetimes(regs, "STATUS_DATA_HORA")
+        data_sem_contato_txt = " | ".join(datas_sem_contato) if datas_sem_contato else "-"
+        return (
+            f"AVISO: HA {qtd_txt} ENCOMENDAS PARA O BLOCO {bloco} APARTAMENTO {ap} "
+            f"DATA E HORA {data_registro_txt} SEM CONTATO DATA HORA {data_sem_contato_txt}!"
+        )
 
     return (
         f"AVISO: HA {qtd_txt} ENCOMENDAS PARA O BLOCO {bloco} APARTAMENTO {ap} "
-        f"DATA E HORA {data_registro_txt} SEM CONTATO DATA HORA {data_sem_contato_txt}!"
+        f"DATA E HORA {data_registro_txt}!"
     )
 
-def _aviso_encomenda_exists(existing_avisos: List[dict], bloco: str, apartamento: str, quantidade: int, ultimo_id: Any, tipo: str) -> bool:
+def _aviso_encomenda_exists(existing_avisos: List[dict], bloco: str, apartamento: str, quantidade: int, ultimo_id: Any, tipo: str, origem_status: str = "") -> bool:
     for a in existing_avisos:
         if (a.get("tipo") or "") != (tipo or ""):
             continue
@@ -269,7 +275,8 @@ def _aviso_encomenda_exists(existing_avisos: List[dict], bloco: str, apartamento
         if (str(refs.get("bloco") or "").strip().upper() == str(bloco or "").strip().upper() and
             str(refs.get("apartamento") or "").strip().upper() == str(apartamento or "").strip().upper() and
             int(refs.get("quantidade") or 0) == int(quantidade or 0) and
-            str(refs.get("ultimo_registro_id") or "") == str(ultimo_id or "")):
+            str(refs.get("ultimo_registro_id") or "") == str(ultimo_id or "") and
+            str(refs.get("origem_status") or "").strip().upper() == str(origem_status or "").strip().upper()):
             return True
     return False
 def _build_message_morador_sem_tag(rec: dict) -> str:
@@ -334,6 +341,43 @@ def _build_message_tipo3(primeiro, ultimo, entry, access_count: Optional[int] = 
     hora_str = dt.strftime("%H:%M:%S") if dt else ""
     return f"{status_true} {n} {s}, DO BLOCO {b} APARTAMENTO {a}, ACESSOU O CONDOMINIO PELA {vez} VEZ, NA DATA {data_str}, HORARIO AS {hora_str}, COM VEICULO DIVERGENTE!"
 
+
+def close_encomenda_avisos_by_record(record: Dict[str, Any], out_path: str = AVISOS) -> int:
+    """Fecha avisos ativos de encomendas múltiplas para o mesmo BLOCO/APARTAMENTO."""
+    bloco = (record.get("BLOCO") or "").strip().upper()
+    apartamento = (record.get("APARTAMENTO") or "").strip().upper()
+    if not bloco or not apartamento:
+        return 0
+
+    avisos = _read_json(out_path) or {"registros": [], "ultimo_aviso_ativo": None}
+    registros = avisos.get("registros", []) or []
+    closed = 0
+    now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
+    for aviso in registros:
+        if (aviso.get("tipo") or "") != "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO":
+            continue
+        refs = aviso.get("referencias") or {}
+        a_bloco = (refs.get("bloco") or "").strip().upper()
+        a_ap = (refs.get("apartamento") or "").strip().upper()
+        if a_bloco != bloco or a_ap != apartamento:
+            continue
+
+        st = aviso.setdefault("status", {})
+        if st.get("ativo") is False:
+            continue
+        st["ativo"] = False
+        st["fechado_pelo_usuario"] = True
+
+        ts = aviso.setdefault("timestamps", {})
+        if not ts.get("fechado_em"):
+            ts["fechado_em"] = now_str
+        closed += 1
+
+    if closed:
+        atomic_save(out_path, avisos)
+    return closed
+
 def build_avisos(analises_path: str = ANALISES, out_path: str = AVISOS) -> Dict[str, Any]:
     analises = _read_json(analises_path) or {"registros": []}
     avisos = _read_json(out_path) or {"registros": [], "ultimo_aviso_ativo": None}
@@ -348,16 +392,17 @@ def build_avisos(analises_path: str = ANALISES, out_path: str = AVISOS) -> Dict[
         apartamento = (entry.get("apartamento","") or "").strip().upper()
         regs = entry.get("registros", []) or []
         quantidade = int(entry.get("quantidade") or len(regs))
+        origem_status = (entry.get("origem_status") or "").strip().upper()
         if not bloco or not apartamento or quantidade < 2:
             continue
         ultimo = regs[-1] if regs else {}
         ultimo_id = _registro_event_id(ultimo)
-        if _aviso_encomenda_exists(existing_list, bloco, apartamento, quantidade, ultimo_id, tipo):
+        if _aviso_encomenda_exists(existing_list, bloco, apartamento, quantidade, ultimo_id, tipo, origem_status):
             continue
         id_aviso = _next_aviso_id(existing_list)
         aviso = {
             "id_aviso": id_aviso,
-            "identidade": f"ENCOMENDA|{bloco}|{apartamento}",
+            "identidade": (entry.get("identidade") or f"ENCOMENDA|{bloco}|{apartamento}|{origem_status or 'SEM_STATUS'}"),
             "tipo": tipo,
             "nivel": "warn",
             "mensagem": _build_message_encomendas_multiplas(entry),
@@ -373,6 +418,7 @@ def build_avisos(analises_path: str = ANALISES, out_path: str = AVISOS) -> Dict[
                 "apartamento": apartamento,
                 "quantidade": quantidade,
                 "ultimo_registro_id": ultimo_id,
+                "origem_status": origem_status,
             },
             "ultimo_registro": ultimo,
             "timestamps": {
@@ -544,16 +590,17 @@ def build_avisos_for_identity(identity_key: str, analises_path: str = ANALISES, 
         apartamento = (entry.get("apartamento","") or "").strip().upper()
         regs = entry.get("registros", []) or []
         quantidade = int(entry.get("quantidade") or len(regs))
+        origem_status = (entry.get("origem_status") or "").strip().upper()
         if not bloco or not apartamento or quantidade < 2:
             continue
         ultimo = regs[-1] if regs else {}
         ultimo_id = _registro_event_id(ultimo)
-        if _aviso_encomenda_exists(existing_list, bloco, apartamento, quantidade, ultimo_id, tipo):
+        if _aviso_encomenda_exists(existing_list, bloco, apartamento, quantidade, ultimo_id, tipo, origem_status):
             continue
         id_aviso = _next_aviso_id(existing_list)
         aviso = {
             "id_aviso": id_aviso,
-            "identidade": f"ENCOMENDA|{bloco}|{apartamento}",
+            "identidade": (entry.get("identidade") or f"ENCOMENDA|{bloco}|{apartamento}|{origem_status or 'SEM_STATUS'}"),
             "tipo": tipo,
             "nivel": "warn",
             "mensagem": _build_message_encomendas_multiplas(entry),
@@ -569,6 +616,7 @@ def build_avisos_for_identity(identity_key: str, analises_path: str = ANALISES, 
                 "apartamento": apartamento,
                 "quantidade": quantidade,
                 "ultimo_registro_id": ultimo_id,
+                "origem_status": origem_status,
             },
             "ultimo_registro": ultimo,
             "timestamps": {

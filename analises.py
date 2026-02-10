@@ -108,30 +108,47 @@ def _build_encomendas_analises(encomendas_path: str = ENCOMENDASEND, min_group_s
 
     out = []
     for key, items in groups.items():
-        pendentes = []
+        sem_contato = []
+        sem_status = []
+
         for rec in items:
             status = (rec.get("STATUS_ENCOMENDA") or "").strip().upper()
             if status == "AVISADO":
                 continue
-            pendentes.append(rec)
-
-        if len(pendentes) < min_group_size:
-            continue
+            if status == "SEM CONTATO":
+                sem_contato.append(rec)
+            else:
+                sem_status.append(rec)
 
         def _dt_or_min(rec):
             dt = _parse_datetime(rec.get("DATA_HORA") or rec.get("data_hora") or "")
             return dt or datetime.min
 
-        pendentes_sorted = sorted(pendentes, key=_dt_or_min)
         bloco, ap = key.split("|", 1)
-        out.append({
-            "identidade": f"ENCOMENDA|{bloco}|{ap}",
-            "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
-            "bloco": bloco,
-            "apartamento": ap,
-            "quantidade": len(pendentes_sorted),
-            "registros": pendentes_sorted,
-        })
+
+        if len(sem_contato) >= min_group_size:
+            sem_contato_sorted = sorted(sem_contato, key=_dt_or_min)
+            out.append({
+                "identidade": f"ENCOMENDA|{bloco}|{ap}|SEM_CONTATO",
+                "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+                "origem_status": "SEM_CONTATO",
+                "bloco": bloco,
+                "apartamento": ap,
+                "quantidade": len(sem_contato_sorted),
+                "registros": sem_contato_sorted,
+            })
+
+        if len(sem_status) >= min_group_size:
+            sem_status_sorted = sorted(sem_status, key=_dt_or_min)
+            out.append({
+                "identidade": f"ENCOMENDA|{bloco}|{ap}|SEM_STATUS",
+                "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+                "origem_status": "SEM_STATUS",
+                "bloco": bloco,
+                "apartamento": ap,
+                "quantidade": len(sem_status_sorted),
+                "registros": sem_status_sorted,
+            })
     return out
 
 def load_dadosend(path: str = DADOSEND) -> List[dict]:
