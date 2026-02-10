@@ -223,12 +223,43 @@ ORD_CARD_MAP = {
 def cardinal_pt_upper(n: int) -> str:
     return ORD_CARD_MAP.get(n, str(n).upper())
 
+
+
+def _fmt_datetime_or_dash(value: Any) -> str:
+    dt = _parse_datetime(value or "")
+    if dt:
+        return dt.strftime("%d/%m/%Y %H:%M:%S")
+    raw = (value or "")
+    return str(raw).strip() if str(raw).strip() else "-"
+
+def _collect_unique_datetimes(registros: List[dict], field: str) -> List[str]:
+    seen = set()
+    ordered = []
+    for rec in registros or []:
+        val = _fmt_datetime_or_dash((rec or {}).get(field))
+        if val == "-":
+            continue
+        if val not in seen:
+            seen.add(val)
+            ordered.append(val)
+    return ordered
 def _build_message_encomendas_multiplas(entry: dict) -> str:
     bloco = (entry.get("bloco","") or "").strip()
     ap = (entry.get("apartamento","") or "").strip()
-    qtd = int(entry.get("quantidade") or len(entry.get("registros", []) or []))
+    regs = entry.get("registros", []) or []
+    qtd = int(entry.get("quantidade") or len(regs))
     qtd_txt = cardinal_pt_upper(qtd)
-    return f"AVISO: HA {qtd_txt} ENCOMENDAS PARA O BLOCO {bloco} APARTAMENTO {ap} DATA E HORA SEM CONTATO DATA HORA!"
+
+    datas_registro = _collect_unique_datetimes(regs, "DATA_HORA")
+    datas_sem_contato = _collect_unique_datetimes(regs, "STATUS_DATA_HORA")
+
+    data_registro_txt = " | ".join(datas_registro) if datas_registro else "-"
+    data_sem_contato_txt = " | ".join(datas_sem_contato) if datas_sem_contato else "-"
+
+    return (
+        f"AVISO: HA {qtd_txt} ENCOMENDAS PARA O BLOCO {bloco} APARTAMENTO {ap} "
+        f"DATA E HORA {data_registro_txt} SEM CONTATO DATA HORA {data_sem_contato_txt}!"
+    )
 
 def _aviso_encomenda_exists(existing_avisos: List[dict], bloco: str, apartamento: str, quantidade: int, ultimo_id: Any, tipo: str) -> bool:
     for a in existing_avisos:
