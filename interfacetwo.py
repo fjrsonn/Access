@@ -623,7 +623,7 @@ def _find_encomenda_record_at_index(text_widget, index):
     if not ranges:
         return None
     for start, end, record in ranges:
-        if text_widget.compare(index, ">=", start) and text_widget.compare(index, "<", end):
+        if text_widget.compare(index, ">=", start) and text_widget.compare(index, "<=", end):
             return record
     return None
 
