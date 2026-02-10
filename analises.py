@@ -33,7 +33,12 @@ def _read_json(path: str):
         return None
     try:
         with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
+            raw = f.read()
+        # arquivo vazio/branco pode acontecer em janelas de escrita concorrente;
+        # tratamos como "sem dados" para evitar gerar .corrupted desnecessário.
+        if not raw or not raw.strip():
+            return None
+        return json.loads(raw)
     except json.JSONDecodeError:
         # backup corrupted file and return None
         try:
