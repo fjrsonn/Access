@@ -206,6 +206,41 @@ def _flag_true(value: Any) -> bool:
         return value != 0
     return str(value).strip().upper() in ("SIM", "TRUE", "1", "YES")
 
+
+
+ORD_CARD_MAP = {
+    2: "DUAS",
+    3: "TRES",
+    4: "QUATRO",
+    5: "CINCO",
+    6: "SEIS",
+    7: "SETE",
+    8: "OITO",
+    9: "NOVE",
+    10: "DEZ"
+}
+
+def cardinal_pt_upper(n: int) -> str:
+    return ORD_CARD_MAP.get(n, str(n).upper())
+
+def _build_message_encomendas_multiplas(entry: dict) -> str:
+    bloco = (entry.get("bloco","") or "").strip()
+    ap = (entry.get("apartamento","") or "").strip()
+    qtd = int(entry.get("quantidade") or len(entry.get("registros", []) or []))
+    qtd_txt = cardinal_pt_upper(qtd)
+    return f"AVISO: HA {qtd_txt} ENCOMENDAS PARA O BLOCO {bloco} APARTAMENTO {ap} DATA E HORA SEM CONTATO DATA HORA!"
+
+def _aviso_encomenda_exists(existing_avisos: List[dict], bloco: str, apartamento: str, quantidade: int, ultimo_id: Any, tipo: str) -> bool:
+    for a in existing_avisos:
+        if (a.get("tipo") or "") != (tipo or ""):
+            continue
+        refs = a.get("referencias") or {}
+        if (str(refs.get("bloco") or "").strip().upper() == str(bloco or "").strip().upper() and
+            str(refs.get("apartamento") or "").strip().upper() == str(apartamento or "").strip().upper() and
+            int(refs.get("quantidade") or 0) == int(quantidade or 0) and
+            str(refs.get("ultimo_registro_id") or "") == str(ultimo_id or "")):
+            return True
+    return False
 def _build_message_morador_sem_tag(rec: dict) -> str:
     n = (rec.get("NOME","") or "").strip().title()
     s = (rec.get("SOBRENOME","") or "").strip().title()
@@ -274,6 +309,55 @@ def build_avisos(analises_path: str = ANALISES, out_path: str = AVISOS) -> Dict[
     existing_list = avisos.get("registros", []) or []
 
     created = 0
+
+    # avisos de encomendas múltiplas por BLOCO/APARTAMENTO (sem conflito com os demais padrões)
+    for entry in analises.get("encomendas_multiplas_bloco_apartamento", []) or []:
+        tipo = "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO"
+        bloco = (entry.get("bloco","") or "").strip().upper()
+        apartamento = (entry.get("apartamento","") or "").strip().upper()
+        regs = entry.get("registros", []) or []
+        quantidade = int(entry.get("quantidade") or len(regs))
+        if not bloco or not apartamento or quantidade < 2:
+            continue
+        ultimo = regs[-1] if regs else {}
+        ultimo_id = _registro_event_id(ultimo)
+        if _aviso_encomenda_exists(existing_list, bloco, apartamento, quantidade, ultimo_id, tipo):
+            continue
+        id_aviso = _next_aviso_id(existing_list)
+        aviso = {
+            "id_aviso": id_aviso,
+            "identidade": f"ENCOMENDA|{bloco}|{apartamento}",
+            "tipo": tipo,
+            "nivel": "warn",
+            "mensagem": _build_message_encomendas_multiplas(entry),
+            "ui": {
+                "background_color": "#FFFF00",
+                "opacity": 0.7,
+                "text_color": "#000000",
+                "icone": "⚠",
+                "exibir_botao_fechar": True
+            },
+            "referencias": {
+                "bloco": bloco,
+                "apartamento": apartamento,
+                "quantidade": quantidade,
+                "ultimo_registro_id": ultimo_id,
+            },
+            "ultimo_registro": ultimo,
+            "timestamps": {
+                "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                "exibido_em": None,
+                "fechado_em": None
+            },
+            "status": {
+                "ativo": True,
+                "fechado_pelo_usuario": False
+            }
+        }
+        existing_list.append(aviso)
+        avisos["ultimo_aviso_ativo"] = id_aviso
+        created += 1
+
     for entry in analises.get("registros", []) or []:
         regs = entry.get("registros", []) or []
         identidade = entry.get("identidade") or ""
@@ -421,6 +505,55 @@ def build_avisos_for_identity(identity_key: str, analises_path: str = ANALISES, 
     target = (identity_key or "").strip().upper()
     candidates = [e for e in analises.get("registros", []) if (e.get("identidade","") or "").upper() == target]
     created = 0
+
+    # encomendas no modo incremental por identidade do morador: recalcula lista e cria apenas novos eventos
+    for entry in analises.get("encomendas_multiplas_bloco_apartamento", []) or []:
+        tipo = "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO"
+        bloco = (entry.get("bloco","") or "").strip().upper()
+        apartamento = (entry.get("apartamento","") or "").strip().upper()
+        regs = entry.get("registros", []) or []
+        quantidade = int(entry.get("quantidade") or len(regs))
+        if not bloco or not apartamento or quantidade < 2:
+            continue
+        ultimo = regs[-1] if regs else {}
+        ultimo_id = _registro_event_id(ultimo)
+        if _aviso_encomenda_exists(existing_list, bloco, apartamento, quantidade, ultimo_id, tipo):
+            continue
+        id_aviso = _next_aviso_id(existing_list)
+        aviso = {
+            "id_aviso": id_aviso,
+            "identidade": f"ENCOMENDA|{bloco}|{apartamento}",
+            "tipo": tipo,
+            "nivel": "warn",
+            "mensagem": _build_message_encomendas_multiplas(entry),
+            "ui": {
+                "background_color": "#FFFF00",
+                "opacity": 0.7,
+                "text_color": "#000000",
+                "icone": "⚠",
+                "exibir_botao_fechar": True
+            },
+            "referencias": {
+                "bloco": bloco,
+                "apartamento": apartamento,
+                "quantidade": quantidade,
+                "ultimo_registro_id": ultimo_id,
+            },
+            "ultimo_registro": ultimo,
+            "timestamps": {
+                "gerado_em": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                "exibido_em": None,
+                "fechado_em": None
+            },
+            "status": {
+                "ativo": True,
+                "fechado_pelo_usuario": False
+            }
+        }
+        existing_list.append(aviso)
+        avisos["ultimo_aviso_ativo"] = id_aviso
+        created += 1
+
     for entry in candidates:
         regs = entry.get("registros", []) or []
         identidade = entry.get("identidade") or ""
