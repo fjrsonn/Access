@@ -36,6 +36,23 @@ class ChatPipelineTests(unittest.TestCase):
         self.assertIn("auditoria", mode)
         self.assertEqual(context.get("modo"), "auditoria_completa")
 
+    def test_consolidated_context_tracks_ambiguous_names(self):
+        full_sources = {
+            "dadosend.json": [
+                {"NOME": "Joao", "SOBRENOME": "Silva", "BLOCO": "2", "APARTAMENTO": "10", "DATA_HORA": "09/02/2026 10:00"},
+                {"NOME": "Joao", "SOBRENOME": "Silva", "BLOCO": "5", "APARTAMENTO": "3", "DATA_HORA": "09/02/2026 11:00"},
+            ],
+            "encomendasend.json": [],
+            "avisos.json": [],
+        }
+        consolidated = chat._build_consolidated_context(full_sources)
+        self.assertIn("joao silva", consolidated.get("nomes_ambiguos", {}))
+
+    def test_person_identity_changes_by_location(self):
+        r1 = {"NOME": "Joao", "SOBRENOME": "Silva", "BLOCO": "2", "APARTAMENTO": "10"}
+        r2 = {"NOME": "Joao", "SOBRENOME": "Silva", "BLOCO": "5", "APARTAMENTO": "3"}
+        self.assertNotEqual(chat._person_identity(r1), chat._person_identity(r2))
+
 
 if __name__ == "__main__":
     unittest.main()

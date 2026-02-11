@@ -2,6 +2,7 @@
 """Chat livre com LLM usando a mesma chave/API configurada em ia.py."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -148,6 +149,29 @@ def _extract_person_name(record: dict) -> str:
     return full.lower()
 
 
+
+
+def _extract_location(record: dict) -> tuple[str, str]:
+    bloco = str(record.get("BLOCO", record.get("bloco", ""))).strip()
+    apto = str(record.get("APARTAMENTO", record.get("apartamento", ""))).strip()
+    return bloco, apto
+
+
+def _person_identity(record: dict) -> str:
+    name = _normalize_text(_extract_person_name(record))
+    bloco, apto = _extract_location(record)
+    identity_raw = f"{name}|{_normalize_text(bloco)}|{_normalize_text(apto)}"
+    if not identity_raw.replace("|", "").strip():
+        return "desconhecido"
+    return hashlib.sha1(identity_raw.encode("utf-8")).hexdigest()[:12]
+
+
+def _emit_telemetry(event: str, payload: dict) -> None:
+    try:
+        print(f"[chat.telemetria.{event}] {json.dumps(payload, ensure_ascii=False)}")
+    except Exception:
+        print(f"[chat.telemetria.{event}] {payload}")
+
 def _extract_timestamp(record: dict) -> str:
     for key in ("DATA_HORA", "DATA", "HORARIO", "data_hora", "timestamp"):
         value = record.get(key)
@@ -178,6 +202,7 @@ def _parse_timestamp(value: str) -> datetime | None:
 
 def _build_consolidated_context(full_sources: dict) -> dict:
     people_summary = {}
+    identities_by_name: dict[str, set[str]] = {}
     stats_by_file = {}
     latest_seen_text = ""
     latest_seen_dt: datetime | None = None
@@ -189,13 +214,19 @@ def _build_consolidated_context(full_sources: dict) -> dict:
                 continue
             person = _extract_person_name(rec)
             if person:
+                person_id = _person_identity(rec)
+                bloco, apto = _extract_location(rec)
                 item = people_summary.setdefault(
-                    person,
+                    person_id,
                     {
+                        "nome": person,
+                        "bloco": bloco,
+                        "apartamento": apto,
                         "total_eventos": 0,
                         "ultima_ocorrencia": "",
                     },
                 )
+                identities_by_name.setdefault(person, set()).add(person_id)
                 item["total_eventos"] += 1
                 ts = _extract_timestamp(rec)
                 ts_dt = _parse_timestamp(ts)
@@ -214,9 +245,12 @@ def _build_consolidated_context(full_sources: dict) -> dict:
     )
     top_people = {k: v for k, v in sorted_people[:120]}
 
+    nomes_ambiguos = {n: len(ids) for n, ids in identities_by_name.items() if len(ids) > 1}
+
     return {
         "resumo_por_arquivo": stats_by_file,
         "pessoas_top_eventos": top_people,
+        "nomes_ambiguos": nomes_ambiguos,
         "ultimo_registro_observado": latest_seen_text,
     }
 
@@ -485,7 +519,7 @@ def _build_user_message(user_query: str) -> str:
         f"Pergunta do usuário: {user_query}\n"
         "Responda com base no estado consolidado e no recorte recente/relevante. "
         "Quando modo_consulta for auditoria, considere o resumo de correspondências no histórico inteiro como fonte principal. "
-        "No final, adicione um bloco 'EVIDENCIAS_USADAS' com fontes consultadas, quantidade de registros e se houve truncamento."
+        "No final, adicione um bloco 'EVIDENCIAS_USADAS' com fontes consultadas, quantidade de registros e se houve truncamento. Se houver nomes_ambiguos no contexto, explicite necessidade de desambiguação antes de afirmar destinatário."
     )
 
     _LAST_CONTEXT_META = {
@@ -540,14 +574,14 @@ def respond_chat(
             if hasattr(resposta, "choices") and resposta.choices
             else str(resposta)
         )
-        print(f"[chat.telemetria] {_LAST_CONTEXT_META}")
+        _emit_telemetry("sucesso", _LAST_CONTEXT_META)
         if isinstance(content, str):
             return ia._apply_agent_prompt_template(content)
         return content
     except Exception as e:
         err_msg = str(e).lower()
         print(f"[chat.respond_chat] Erro ao consultar LLM: {e}")
-        print(f"[chat.telemetria.erro] {_LAST_CONTEXT_META}")
+        _emit_telemetry("erro", _LAST_CONTEXT_META)
         traceback.print_exc()
         if "invalid_api_key" in err_msg or "401" in err_msg:
             ia._disable_client_due_to_auth()
