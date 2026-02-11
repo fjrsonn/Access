@@ -26,6 +26,7 @@ MAX_SOURCE_CHARS = 14000
 MAX_RECORD_CHARS = 450
 RECENT_RECORDS_PER_FILE = 30
 QUERY_MATCH_LIMIT = 80
+FULL_AUDIT_SAMPLE_LIMIT = 40
 CONSOLIDATED_FILE = "contexto_ia.json"
 
 
@@ -142,6 +143,68 @@ def _query_tokens(user_query: str) -> list[str]:
     return [t for t in terms if len(t) >= 3 and t not in stop][:8]
 
 
+
+
+def _is_full_audit_query(user_query: str) -> bool:
+    query = (user_query or "").lower()
+    triggers = (
+        "completo",
+        "completa",
+        "todos os registros",
+        "todo historico",
+        "histórico completo",
+        "auditoria",
+        "do primeiro ao último",
+        "primeiro ao ultimo",
+    )
+    return any(t in query for t in triggers)
+
+
+def _build_full_audit_context(user_query: str, full_sources: dict) -> dict:
+    tokens = _query_tokens(user_query)
+    if not tokens:
+        return {"modo": "auditoria_completa", "tokens_consulta": [], "resumo": {}}
+
+    summary = {}
+    total_matches = 0
+    exemplars = {}
+
+    for filename, records in full_sources.items():
+        count = 0
+        first_match = ""
+        last_match = ""
+        samples = []
+
+        for rec in records:
+            rec_text = json.dumps(rec, ensure_ascii=False).lower()
+            if not any(tok in rec_text for tok in tokens):
+                continue
+            count += 1
+            ts = _extract_timestamp(rec)
+            if ts and not first_match:
+                first_match = ts
+            if ts:
+                last_match = ts
+            if len(samples) < FULL_AUDIT_SAMPLE_LIMIT:
+                samples.append(rec)
+
+        if count:
+            summary[filename] = {
+                "total_correspondencias": count,
+                "primeira_correspondencia": first_match,
+                "ultima_correspondencia": last_match,
+            }
+            exemplars[filename] = _shrink_value(samples)
+            total_matches += count
+
+    return {
+        "modo": "auditoria_completa",
+        "tokens_consulta": tokens,
+        "total_correspondencias_no_historico": total_matches,
+        "resumo": summary,
+        "amostras_representativas": exemplars,
+    }
+
 def _build_query_specific_context(user_query: str, full_sources: dict) -> dict:
     tokens = _query_tokens(user_query)
     if not tokens:
@@ -174,10 +237,18 @@ def _load_db_sources(user_query: str) -> dict:
     consolidated = _build_consolidated_context(full_sources)
     _save_consolidated_context(consolidated)
 
+    is_full_audit = _is_full_audit_query(user_query)
+    query_context = (
+        _build_full_audit_context(user_query, full_sources)
+        if is_full_audit
+        else _build_query_specific_context(user_query, full_sources)
+    )
+
     return {
+        "modo_consulta": "auditoria_completa" if is_full_audit else "padrao",
         "estado_consolidado": consolidated,
         "contexto_recente": _build_recent_context(full_sources),
-        "consulta_especifica": _build_query_specific_context(user_query, full_sources),
+        "consulta_especifica": query_context,
     }
 
 
@@ -223,7 +294,7 @@ def _build_user_message(user_query: str) -> str:
         f"{db_json}\n\n"
         f"Pergunta do usuário: {user_query}\n"
         "Responda com base no estado consolidado e no recorte recente/relevante. "
-        "Se a pergunta exigir histórico completo, explicite isso e use os registros relevantes fornecidos."
+        "Quando modo_consulta for auditoria_completa, considere o resumo de correspondências no histórico inteiro como fonte principal."
     )
 
 
