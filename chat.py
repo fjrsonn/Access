@@ -59,8 +59,32 @@ def _load_db_sources() -> dict:
     return sources
 
 
+
+
+def _build_partial_context_notice(sources: dict) -> str:
+    partials = []
+    for filename in DB_FILES:
+        meta = sources.get(f"{filename}__meta")
+        if not isinstance(meta, dict):
+            continue
+        total = meta.get("registros_totais")
+        sent = meta.get("registros_enviados")
+        if isinstance(total, int) and isinstance(sent, int) and total > sent:
+            partials.append(f"{filename}: {sent}/{total} registros enviados")
+
+    if not partials:
+        return ""
+
+    details = "; ".join(partials)
+    return (
+        "ATENÇÃO: o contexto abaixo está parcial por limite de envio. "
+        f"Cobertura atual -> {details}. "
+        "Se a pergunta exigir análise completa, solicite análise em lotes ou resumo agregado."
+    )
+
 def _build_user_message(user_query: str) -> str:
     sources = _load_db_sources()
+    partial_notice = _build_partial_context_notice(sources)
     try:
         db_json = json.dumps(sources, ensure_ascii=False)
     except Exception:
@@ -73,9 +97,12 @@ def _build_user_message(user_query: str) -> str:
         )
 
     return (
+        f"{partial_notice}\n\n" if partial_notice else ""
+    ) + (
         f"{db_json}\n\n"
         f"Pergunta do usuário: {user_query}\n"
-        "Responda livremente usando apenas os dados acima."
+        "Responda livremente usando apenas os dados acima. "
+        "Se identificar contexto parcial/truncado, deixe isso explícito na resposta."
     )
 
 
