@@ -1,0 +1,19 @@
+{
+  "keywords_orientacoes": [
+    "relato", "relatos", "relatado", "ocorrencia", "ocorrências", "ocorrido",
+    "registro", "registrado", "orientado", "orientada", "orientacao", "orientação", "orientados"
+  ],
+  "keywords_observacoes": [
+    "aviso", "avisos", "avisar", "avisado", "avisados", "receber", "entregar", "guardar",
+    "errado", "errada", "engano", "enganada", "enganado"
+  ],
+  "keywords_encomendas": [
+    "encomenda", "encomendas", "pacote", "entrega", "shopee", "amazon", "mercado livre", "correios"
+  ],
+  "context_observacoes": [
+    "quando chegar", "avisar", "morador", "nome", "bloco", "apartamento"
+  ],
+  "context_orientacoes": [
+    "ocorrencia", "ocorrido", "relato", "registrado", "orientado", "portaria"
+  ]
+}
