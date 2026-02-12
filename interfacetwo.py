@@ -36,6 +36,7 @@ _encomenda_line_map = {}
 _encomenda_action_ui = {}
 _text_action_ui = {}
 _record_tag_map_generic = {}
+_text_edit_lock = set()
 
 # ---------- inferência MODELO/COR (fallback a partir de 'texto') ----------
 _STATUS_WORDS = set(["MORADOR","MORADORES","VISITANTE","VISITA","VISIT","PRESTADOR","PRESTADORES","SERVICO","SERVIÇO","TECNICO","DESCONHECIDO","FUNCIONARIO","FUNCIONÁRIO"])
@@ -284,31 +285,40 @@ def _extract_multi_fields(text: str) -> dict:
         "COR": [],
         "PLACA": [],
     }
-    for m in re.finditer(r"(?:BLOCO|BL)\s*[:\-]?\s*([A-Z0-9]+)", up):
+    sep = r"(?:\s*[:\-]\s*|\s+)"
+
+    for m in re.finditer(rf"\b(?:BLOCO|BL)\b{sep}([A-Z0-9]{{1,6}})\b", up):
         out["BLOCO"].append(m.group(1))
-    for m in re.finditer(r"(?:APARTAMENTO|APTO|APT|AP|UNIDADE|UN)\s*[:\-]?\s*([A-Z0-9]+)", up):
+    for m in re.finditer(rf"\b(?:APARTAMENTO|APTO|APT|AP|UNIDADE|UN)\b{sep}([0-9]{{1,4}}[A-Z]?)\b", up):
         out["APARTAMENTO"].append(m.group(1))
     for m in re.finditer(r"\b([01]?\d|2[0-3])[:H]([0-5]\d)\b", up):
         out["HORARIO"].append(f"{int(m.group(1)):02d}:{m.group(2)}")
     for m in re.finditer(r"\b([A-Z]{3}[0-9][A-Z0-9][0-9]{2}|[A-Z]{3}[0-9]{4})\b", up):
         out["PLACA"].append(m.group(1))
-    for m in re.finditer(r"(?:COR)\s*[:\-]?\s*([A-ZÇÃÕÁÉÍÓÚÀÂÊÔÜ]+)", up):
-        out["COR"].append(m.group(1))
-    for m in re.finditer(r"(?:VEICULO|VEÍCULO|CARRO|MOTO|MODELO)\s*[:\-]?\s*([A-Z0-9]+(?:\s+[A-Z0-9]+){0,2})", up):
+    for m in re.finditer(rf"\bCOR\b{sep}([A-ZÇÃÕÁÉÍÓÚÀÂÊÔÜ]{{3,}})\b", up):
+        cor = m.group(1)
+        if cor not in {"DO", "DA", "DE", "DAS", "DOS"}:
+            out["COR"].append(cor)
+    for m in re.finditer(rf"\b(?:VEICULO|VEÍCULO|CARRO|MOTO|MODELO)\b{sep}([A-Z0-9]{{2,}}(?:\s+[A-Z0-9]{{2,}}){{0,2}})", up):
         out["VEICULO"].append(m.group(1).strip())
 
     name_patterns = [
-        r"(?:MORADOR(?:A)?|SR\.?|SRA\.?|SENHOR|SENHORA)\s+([A-ZÀ-Ý][A-ZÀ-Ý'`.-]+(?:\s+[A-ZÀ-Ý][A-ZÀ-Ý'`.-]+)+)",
-        r"NOME\s*[:\-]?\s*([A-ZÀ-Ý][A-ZÀ-Ý'`.-]+(?:\s+[A-ZÀ-Ý][A-ZÀ-Ý'`.-]+)+)",
+        rf"\b(?:MORADOR(?:A)?|SR\.?|SRA\.?|SENHOR|SENHORA)\b{sep}([A-ZÀ-Ý]{{2,}}(?:\s+[A-ZÀ-Ý]{{2,}})+)",
+        rf"\bNOME\b{sep}([A-ZÀ-Ý]{{2,}}(?:\s+[A-ZÀ-Ý]{{2,}})+)",
     ]
+    invalid_name_tokens = {
+        "APRESENTAVA", "APRESENTAVA-SE", "ALTERADO", "ALTERADA", "QUANTO", "PROTOCOLO", "PORTARIA", "ORIENTOU"
+    }
     for pat in name_patterns:
         for m in re.finditer(pat, up):
             full = re.sub(r"\s+", " ", m.group(1)).strip(" .,-")
-            parts = [w for w in full.split() if w]
-            if parts:
-                out["NOME"].append(parts[0])
-                if len(parts) > 1:
-                    out["SOBRENOME"].append(" ".join(parts[1:]))
+            parts = [w.strip(" .,-") for w in full.split() if w.strip(" .,-")]
+            if len(parts) < 2:
+                continue
+            if any(p in invalid_name_tokens for p in parts[:2]):
+                continue
+            out["NOME"].append(parts[0])
+            out["SOBRENOME"].append(" ".join(parts[1:]))
 
     for k, vals in out.items():
         dedup = []
@@ -317,6 +327,7 @@ def _extract_multi_fields(text: str) -> dict:
                 dedup.append(v)
         out[k] = dedup
     return out
+
 
 def format_orientacao_entry(r: dict) -> str:
     return str(r.get("texto") or r.get("texto_original") or "")
@@ -566,6 +577,8 @@ def _populate_text(text_widget, info_label):
 def _schedule_update(text_widgets, info_label):
     global _monitor_after_id
     for tw in text_widgets:
+        if tw in _text_edit_lock:
+            continue
         _populate_text(tw, info_label)
     # schedule next update
     try:
@@ -1040,6 +1053,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
         if edit_state["active"]:
             edit_state["active"] = False
             edit_state["tag"] = None
+            _text_edit_lock.discard(text_widget)
             try:
                 text_widget.config(state="disabled")
             except Exception:
@@ -1058,6 +1072,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
             return
         edit_state["active"] = True
         edit_state["tag"] = rec_tag
+        _text_edit_lock.add(text_widget)
         try:
             text_widget.config(state="normal")
         except Exception:
@@ -1091,6 +1106,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
 
         edit_state["active"] = False
         edit_state["tag"] = None
+        _text_edit_lock.discard(text_widget)
         try:
             text_widget.config(state="disabled")
         except Exception:
