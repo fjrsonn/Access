@@ -1708,6 +1708,22 @@ def save_text(entry_widget=None, btn=None):
             parsed = None
 
     now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    is_orientacao = _contains_keywords(txt, _ORIENTACOES_KEYWORDS)
+    is_observacao = _contains_keywords(txt, _OBSERVACOES_KEYWORDS)
+
+    # Se houver palavra-chave explícita de ORIENTACAO/OBSERVACAO,
+    # tem prioridade sobre a heurística de encomenda.
+    if is_orientacao and not is_observacao:
+        _save_structured_text(ORIENTACOES_FILE, txt, now_str, "ORIENTACAO")
+        try: entry_widget.delete(0, "end")
+        except: pass
+        return
+    if is_observacao and not is_orientacao:
+        _save_structured_text(OBSERVACOES_FILE, txt, now_str, "OBSERVACAO")
+        try: entry_widget.delete(0, "end")
+        except: pass
+        return
+
     if _is_encomenda_text(txt, parsed):
         _save_encomenda_init(txt, now_str)
         try: entry_widget.delete(0, "end")
