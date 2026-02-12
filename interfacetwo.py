@@ -14,6 +14,12 @@ from tkinter import messagebox, ttk
 import re
 import hashlib
 
+try:
+    from text_classifier import build_structured_fields, log_audit_event
+except Exception:
+    build_structured_fields = None
+    log_audit_event = None
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ARQUIVO = os.path.join(BASE_DIR, "dadosend.json")
 ENCOMENDAS_ARQUIVO = os.path.join(BASE_DIR, "encomendasend.json")
@@ -37,6 +43,7 @@ _encomenda_action_ui = {}
 _text_action_ui = {}
 _record_tag_map_generic = {}
 _text_edit_lock = set()
+_filter_controls = {}
 
 # ---------- inferência MODELO/COR (fallback a partir de 'texto') ----------
 _STATUS_WORDS = set(["MORADOR","MORADORES","VISITANTE","VISITA","VISIT","PRESTADOR","PRESTADORES","SERVICO","SERVIÇO","TECNICO","DESCONHECIDO","FUNCIONARIO","FUNCIONÁRIO"])
@@ -273,60 +280,14 @@ def format_encomenda_entry(r: dict) -> str:
 
 
 def _extract_multi_fields(text: str) -> dict:
-    raw = str(text or "")
-    up = raw.upper()
-    out = {
-        "BLOCO": [],
-        "APARTAMENTO": [],
-        "NOME": [],
-        "SOBRENOME": [],
-        "HORARIO": [],
-        "VEICULO": [],
-        "COR": [],
-        "PLACA": [],
+    if build_structured_fields:
+        strict, inferred = build_structured_fields(text)
+        return {k: list(dict.fromkeys((strict.get(k, []) + inferred.get(k, [])))) for k in strict.keys()}
+    return {
+        "BLOCO": [], "APARTAMENTO": [], "NOME": [], "SOBRENOME": [],
+        "HORARIO": [], "VEICULO": [], "COR": [], "PLACA": []
     }
-    sep = r"(?:\s*[:\-]\s*|\s+)"
 
-    for m in re.finditer(rf"\b(?:BLOCO|BL)\b{sep}([A-Z0-9]{{1,6}})\b", up):
-        out["BLOCO"].append(m.group(1))
-    for m in re.finditer(rf"\b(?:APARTAMENTO|APTO|APT|AP|UNIDADE|UN)\b{sep}([0-9]{{1,4}}[A-Z]?)\b", up):
-        out["APARTAMENTO"].append(m.group(1))
-    for m in re.finditer(r"\b([01]?\d|2[0-3])[:H]([0-5]\d)\b", up):
-        out["HORARIO"].append(f"{int(m.group(1)):02d}:{m.group(2)}")
-    for m in re.finditer(r"\b([A-Z]{3}[0-9][A-Z0-9][0-9]{2}|[A-Z]{3}[0-9]{4})\b", up):
-        out["PLACA"].append(m.group(1))
-    for m in re.finditer(rf"\bCOR\b{sep}([A-ZÇÃÕÁÉÍÓÚÀÂÊÔÜ]{{3,}})\b", up):
-        cor = m.group(1)
-        if cor not in {"DO", "DA", "DE", "DAS", "DOS"}:
-            out["COR"].append(cor)
-    for m in re.finditer(rf"\b(?:VEICULO|VEÍCULO|CARRO|MOTO|MODELO)\b{sep}([A-Z0-9]{{2,}}(?:\s+[A-Z0-9]{{2,}}){{0,2}})", up):
-        out["VEICULO"].append(m.group(1).strip())
-
-    name_patterns = [
-        rf"\b(?:MORADOR(?:A)?|SR\.?|SRA\.?|SENHOR|SENHORA)\b{sep}([A-ZÀ-Ý]{{2,}}(?:\s+[A-ZÀ-Ý]{{2,}})+)",
-        rf"\bNOME\b{sep}([A-ZÀ-Ý]{{2,}}(?:\s+[A-ZÀ-Ý]{{2,}})+)",
-    ]
-    invalid_name_tokens = {
-        "APRESENTAVA", "APRESENTAVA-SE", "ALTERADO", "ALTERADA", "QUANTO", "PROTOCOLO", "PORTARIA", "ORIENTOU"
-    }
-    for pat in name_patterns:
-        for m in re.finditer(pat, up):
-            full = re.sub(r"\s+", " ", m.group(1)).strip(" .,-")
-            parts = [w.strip(" .,-") for w in full.split() if w.strip(" .,-")]
-            if len(parts) < 2:
-                continue
-            if any(p in invalid_name_tokens for p in parts[:2]):
-                continue
-            out["NOME"].append(parts[0])
-            out["SOBRENOME"].append(" ".join(parts[1:]))
-
-    for k, vals in out.items():
-        dedup = []
-        for v in vals:
-            if v and v not in dedup:
-                dedup.append(v)
-        out[k] = dedup
-    return out
 
 
 def format_orientacao_entry(r: dict) -> str:
@@ -735,6 +696,14 @@ def _build_filter_bar(parent, text_widget, info_label):
         padx=12,
     ).grid(row=0, column=11, padx=(0, 10), pady=8)
 
+    _filter_controls[text_widget] = [
+        order_combo,
+        date_mode_combo,
+        date_entry,
+        time_mode_combo,
+        time_entry,
+        query_entry,
+    ]
     bar.grid_columnconfigure(12, weight=1)
     date_mode_var.trace_add("write", lambda *_: update_entry_state())
     time_mode_var.trace_add("write", lambda *_: update_entry_state())
@@ -1061,7 +1030,20 @@ def _build_text_actions(frame, text_widget, info_label, path):
     action_frame = tk.Frame(frame, bg="white")
     action_frame.pack_forget()
     current = {"record": None, "rec_tag": None}
-    edit_state = {"active": False, "tag": None}
+    edit_state = {"active": False, "tag": None, "dirty": False}
+
+    edit_badge = tk.Label(action_frame, text="MODO EDIÇÃO ATIVO", bg="#ffef99", fg="black", padx=10, pady=4)
+    edit_badge.pack_forget()
+
+    def _set_filters_enabled(enabled: bool):
+        for w in _filter_controls.get(text_widget, []):
+            try:
+                if isinstance(w, ttk.Combobox):
+                    w.configure(state=("readonly" if enabled else "disabled"))
+                else:
+                    w.configure(state=("normal" if enabled else "disabled"))
+            except Exception:
+                pass
 
     def is_editing():
         return bool(edit_state.get("active"))
@@ -1087,6 +1069,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
             def _h(_event):
                 try:
                     text_widget.event_generate(name)
+                    edit_state["dirty"] = True
                 except Exception:
                     pass
                 return "break"
@@ -1133,7 +1116,9 @@ def _build_text_actions(frame, text_widget, info_label, path):
             return
         edit_state["active"] = True
         edit_state["tag"] = rec_tag
+        edit_state["dirty"] = False
         _text_edit_lock.add(text_widget)
+        _set_filters_enabled(False)
         try:
             text_widget.tag_remove("sel", "1.0", tk.END)
         except Exception:
@@ -1141,14 +1126,18 @@ def _build_text_actions(frame, text_widget, info_label, path):
         try:
             text_widget.config(state="normal")
             text_widget.focus_set()
+            edit_badge.pack(fill=tk.X, padx=8, pady=(6, 2), before=action_frame.winfo_children()[0] if action_frame.winfo_children() else None)
         except Exception:
             pass
 
     def _finish_editing(reload_text=True):
         edit_state["active"] = False
         edit_state["tag"] = None
+        edit_state["dirty"] = False
         _text_edit_lock.discard(text_widget)
+        _set_filters_enabled(True)
         try:
+            edit_badge.pack_forget()
             text_widget.config(state="disabled")
         except Exception:
             pass
@@ -1158,6 +1147,14 @@ def _build_text_actions(frame, text_widget, info_label, path):
     def cancel_edit():
         if not is_editing():
             return
+        if edit_state.get("dirty"):
+            try:
+                if not messagebox.askyesno("Cancelar edição", "Descartar alterações não salvas?"):
+                    return
+            except Exception:
+                pass
+        if log_audit_event:
+            log_audit_event("texto_cancelado", os.path.basename(path), (current.get("record") or {}).get("texto", ""))
         _finish_editing(reload_text=True)
 
     def save_edit():
@@ -1183,8 +1180,14 @@ def _build_text_actions(frame, text_widget, info_label, path):
             return
 
         target["texto"] = new_text
+        strict, inferred = build_structured_fields(new_text) if build_structured_fields else ({}, {})
+        target["campos_extraidos_confirmados"] = strict
+        target["campos_extraidos_inferidos"] = inferred
         target["campos_extraidos"] = _extract_multi_fields(new_text)
         _atomic_write(path, {"registros": registros})
+        if log_audit_event:
+            log_audit_event("texto_editado", os.path.basename(path), new_text)
+            log_audit_event("campos_reextraidos", os.path.basename(path), new_text)
 
         _finish_editing(reload_text=True)
 
@@ -1202,7 +1205,15 @@ def _build_text_actions(frame, text_widget, info_label, path):
 
     def on_click(event):
         if is_editing():
-            return
+            if edit_state.get("dirty"):
+                try:
+                    if not messagebox.askyesno("Alterações não salvas", "Deseja sair da edição sem salvar?"):
+                        return
+                except Exception:
+                    return
+                cancel_edit()
+            else:
+                return
         try:
             idx = text_widget.index(f"@{event.x},{event.y}")
             for tag in text_widget.tag_names(idx):
@@ -1222,9 +1233,14 @@ def _build_text_actions(frame, text_widget, info_label, path):
             return
         hide_actions()
 
+    def on_key_change(_event):
+        if is_editing():
+            edit_state["dirty"] = True
+
     _bind_edit_shortcuts()
     try:
         text_widget.bind("<Button-1>", on_click, add="+")
+        text_widget.bind("<Key>", on_key_change, add="+")
     except Exception:
         pass
     try:
