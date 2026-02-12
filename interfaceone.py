@@ -65,6 +65,8 @@ DB_FILE = os.path.join(BASE, "dadosend.json")
 IN_FILE = os.path.join(BASE, "dadosinit.json")
 ENCOMENDAS_IN_FILE = os.path.join(BASE, "encomendasinit.json")
 ENCOMENDAS_DB_FILE = os.path.join(BASE, "encomendasend.json")
+ORIENTACOES_FILE = os.path.join(BASE, "orientacoes.json")
+OBSERVACOES_FILE = os.path.join(BASE, "observacoes.json")
 AVISOS_FILE = os.path.join(BASE, "avisos.json")
 ANALISES_FILE = os.path.join(BASE, "analises.json")
 _DB_LOCKFILE = DB_FILE + ".lock"
@@ -199,6 +201,91 @@ def _save_encomenda_init(txt: str, now_str: str) -> None:
         atomic_save(ENCOMENDAS_IN_FILE, {"registros": regs})
     except Exception as e:
         print("Erro save (ENCOMENDAS_IN_FILE):", e)
+
+
+_ORIENTACOES_KEYWORDS = {
+    "RELATO", "RELATOS", "RELATADO", "OCORRENCIA", "OCORRIDO", "REGISTRO", "REGISTRADO",
+    "ORIENTADO", "ORIENTADA", "ORIENTACAO", "ORIENTADOS", "ORIENTAÇÕES", "ORIENTAÇÃO",
+}
+
+_OBSERVACOES_KEYWORDS = {
+    "AVISO", "AVISOS", "AVISADO", "AVISADOS", "RECEBER", "ENTREGAR", "GUARDAR",
+    "ERRADO", "ERRADA", "ENGANO", "ENGANADA", "ENGANADO",
+}
+
+def _contains_keywords(text: str, keywords: set[str]) -> bool:
+    toks_up = [t.upper() for t in tokens(text)]
+    return any(t in keywords for t in toks_up)
+
+def _extract_multi_fields(text: str) -> dict:
+    toks = [t.upper() for t in tokens(text)]
+    out = {"BLOCO": [], "APARTAMENTO": [], "NOME": [], "SOBRENOME": [], "HORARIO": [], "VEICULO": [], "COR": [], "PLACA": []}
+    if not toks:
+        return out
+
+    for i, t in enumerate(toks):
+        if t in ("BLOCO", "BL", "B") and i + 1 < len(toks):
+            out["BLOCO"].append(toks[i + 1])
+        elif t in ("AP", "APT", "APTO", "APARTAMENTO", "APART") and i + 1 < len(toks):
+            out["APARTAMENTO"].append(toks[i + 1])
+        elif t in ("NOME", "NOM") and i + 1 < len(toks):
+            out["NOME"].append(toks[i + 1])
+            if i + 2 < len(toks):
+                out["SOBRENOME"].append(toks[i + 2])
+        elif t in ("SOBRENOME", "SNOME") and i + 1 < len(toks):
+            out["SOBRENOME"].append(toks[i + 1])
+        elif t in ("HORARIO", "HORA") and i + 1 < len(toks):
+            out["HORARIO"].append(toks[i + 1])
+        elif t in ("VEICULO", "CARRO", "MOTO", "MODELO") and i + 1 < len(toks):
+            out["VEICULO"].append(toks[i + 1])
+        elif t == "COR" and i + 1 < len(toks):
+            out["COR"].append(toks[i + 1])
+
+        if re.match(r"^([A-Z]{3}[0-9][A-Z0-9][0-9]{2}|[A-Z]{3}[0-9]{4})$", t):
+            out["PLACA"].append(t)
+        if re.match(r"^\d{1,2}:\d{2}$", t):
+            out["HORARIO"].append(t)
+
+    return {k: list(dict.fromkeys(v)) for k, v in out.items()}
+
+def _formalize_occurrence_text(text: str, extracted: dict, now_str: str) -> str:
+    cleaned = clean_whitespace(text)
+    data = now_str.split()[0] if now_str else "-"
+    hora = now_str.split()[1] if now_str and " " in now_str else "-"
+    blocos = ", ".join(extracted.get("BLOCO", [])) or "não informado"
+    aps = ", ".join(extracted.get("APARTAMENTO", [])) or "não informado"
+    placas = ", ".join(extracted.get("PLACA", [])) or "não informado"
+    return (
+        f"Registro em {data} às {hora}. Relato formalizado para acompanhamento interno. "
+        f"Bloco(s): {blocos}. Apartamento(s): {aps}. Placa(s): {placas}. "
+        f"Descrição: {cleaned}."
+    )
+
+def _save_structured_text(path: str, txt: str, now_str: str, tipo: str) -> None:
+    try:
+        existing = _read_json(path)
+        if isinstance(existing, dict) and "registros" in existing:
+            regs = existing.get("registros") or []
+        elif isinstance(existing, list):
+            regs = existing
+        else:
+            regs = []
+    except Exception:
+        regs = []
+
+    nid = _compute_next_in_id(regs)
+    extracted = _extract_multi_fields(txt)
+    rec = {
+        "id": nid,
+        "tipo": tipo,
+        "texto_original": txt,
+        "texto_tratado": _formalize_occurrence_text(txt, extracted, now_str),
+        "campos_extraidos": extracted,
+        "data_hora": now_str,
+        "processado": True,
+    }
+    regs.append(rec)
+    atomic_save(path, {"registros": regs})
 
 # ---------- util ----------
 def _norm(s: str, keep_dash=False) -> str:
@@ -1614,6 +1701,19 @@ def save_text(entry_widget=None, btn=None):
                     threading.Thread(target=ia_module.processar, daemon=True).start()
             except Exception as e:
                 print("Falha ao iniciar processamento IA para encomendas:", e)
+        return
+
+    is_orientacao = _contains_keywords(txt, _ORIENTACOES_KEYWORDS)
+    is_observacao = _contains_keywords(txt, _OBSERVACOES_KEYWORDS)
+    if is_orientacao and not is_observacao:
+        _save_structured_text(ORIENTACOES_FILE, txt, now_str, "ORIENTACAO")
+        try: entry_widget.delete(0, "end")
+        except: pass
+        return
+    if is_observacao and not is_orientacao:
+        _save_structured_text(OBSERVACOES_FILE, txt, now_str, "OBSERVACAO")
+        try: entry_widget.delete(0, "end")
+        except: pass
         return
     rec = None
     fields_for_flags = {}
