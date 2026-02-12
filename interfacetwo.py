@@ -456,6 +456,9 @@ def _record_on_tag_click(text_widget, record, event=None, rec_tag=None):
     ui = _text_action_ui.get(text_widget) or _encomenda_action_ui.get(text_widget)
     if not ui:
         return
+    is_editing = ui.get("is_editing")
+    if callable(is_editing) and is_editing():
+        return
     current = ui.get("current") or {"record": None, "rec_tag": None}
     ui["current"] = current
     current["record"] = record
@@ -1046,18 +1049,61 @@ def _build_text_actions(frame, text_widget, info_label, path):
     current = {"record": None, "rec_tag": None}
     edit_state = {"active": False, "tag": None}
 
+    def is_editing():
+        return bool(edit_state.get("active"))
+
+    def _bind_edit_shortcuts():
+        def _only_editing(handler):
+            def _wrapped(event):
+                if not is_editing():
+                    return None
+                return handler(event)
+            return _wrapped
+
+        def _sel_all(_event):
+            try:
+                text_widget.tag_add("sel", "1.0", "end-1c")
+                text_widget.mark_set("insert", "1.0")
+                text_widget.see("insert")
+            except Exception:
+                pass
+            return "break"
+
+        def _virtual(name):
+            def _h(_event):
+                try:
+                    text_widget.event_generate(name)
+                except Exception:
+                    pass
+                return "break"
+            return _h
+
+        shortcuts = {
+            "<Control-a>": _sel_all,
+            "<Control-A>": _sel_all,
+            "<Control-z>": _virtual("<<Undo>>"),
+            "<Control-Z>": _virtual("<<Undo>>"),
+            "<Control-y>": _virtual("<<Redo>>"),
+            "<Control-Y>": _virtual("<<Redo>>"),
+            "<Control-x>": _virtual("<<Cut>>"),
+            "<Control-X>": _virtual("<<Cut>>"),
+            "<Control-c>": _virtual("<<Copy>>"),
+            "<Control-C>": _virtual("<<Copy>>"),
+            "<Control-v>": _virtual("<<Paste>>"),
+            "<Control-V>": _virtual("<<Paste>>"),
+        }
+        for seq, handler in shortcuts.items():
+            try:
+                text_widget.bind(seq, _only_editing(handler), add="+")
+            except Exception:
+                pass
+
     def hide_actions():
+        if is_editing():
+            return
         action_frame.pack_forget()
         current["record"] = None
         current["rec_tag"] = None
-        if edit_state["active"]:
-            edit_state["active"] = False
-            edit_state["tag"] = None
-            _text_edit_lock.discard(text_widget)
-            try:
-                text_widget.config(state="disabled")
-            except Exception:
-                pass
 
     def show_actions():
         rec = current.get("record")
@@ -1075,6 +1121,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
         _text_edit_lock.add(text_widget)
         try:
             text_widget.config(state="normal")
+            text_widget.focus_set()
         except Exception:
             pass
 
@@ -1116,9 +1163,17 @@ def _build_text_actions(frame, text_widget, info_label, path):
     tk.Button(action_frame, text="Editar", command=enable_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
     tk.Button(action_frame, text="Salvar", command=save_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
 
-    _text_action_ui[text_widget] = {"frame": action_frame, "hide": hide_actions, "show": show_actions, "current": current}
+    _text_action_ui[text_widget] = {
+        "frame": action_frame,
+        "hide": hide_actions,
+        "show": show_actions,
+        "current": current,
+        "is_editing": is_editing,
+    }
 
     def on_click(event):
+        if is_editing():
+            return
         try:
             idx = text_widget.index(f"@{event.x},{event.y}")
             for tag in text_widget.tag_names(idx):
@@ -1132,6 +1187,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
         except Exception:
             return
 
+    _bind_edit_shortcuts()
     try:
         text_widget.bind("<Button-1>", on_click, add="+")
     except Exception:
@@ -1184,6 +1240,9 @@ def _build_monitor_ui(container):
             fg="white",
             insertbackground="white",
             relief="flat",
+            undo=True,
+            autoseparators=True,
+            maxundo=-1,
         )
         if formatter == format_encomenda_entry:
             text_widget.tag_configure("status_avisado", foreground="#2ecc71")
