@@ -17,6 +17,8 @@ import hashlib
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ARQUIVO = os.path.join(BASE_DIR, "dadosend.json")
 ENCOMENDAS_ARQUIVO = os.path.join(BASE_DIR, "encomendasend.json")
+ORIENTACOES_ARQUIVO = os.path.join(BASE_DIR, "orientacoes.json")
+OBSERVACOES_ARQUIVO = os.path.join(BASE_DIR, "observacoes.json")
 ANALISES_ARQUIVO = os.path.join(BASE_DIR, "analises.json")
 AVISOS_ARQUIVO = os.path.join(BASE_DIR, "avisos.json")
 LOCK_FILE = os.path.join(BASE_DIR, "monitor.lock")
@@ -32,6 +34,9 @@ _encomenda_display_map = {}
 _encomenda_tag_map = {}
 _encomenda_line_map = {}
 _encomenda_action_ui = {}
+_text_action_ui = {}
+_record_tag_map_generic = {}
+_text_edit_lock = set()
 
 # ---------- inferência MODELO/COR (fallback a partir de 'texto') ----------
 _STATUS_WORDS = set(["MORADOR","MORADORES","VISITANTE","VISITA","VISIT","PRESTADOR","PRESTADORES","SERVICO","SERVIÇO","TECNICO","DESCONHECIDO","FUNCIONARIO","FUNCIONÁRIO"])
@@ -265,6 +270,71 @@ def format_encomenda_entry(r: dict) -> str:
     return base_text
 
 # ---------- UI helpers (embutido) ----------
+
+
+def _extract_multi_fields(text: str) -> dict:
+    raw = str(text or "")
+    up = raw.upper()
+    out = {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": [],
+    }
+    sep = r"(?:\s*[:\-]\s*|\s+)"
+
+    for m in re.finditer(rf"\b(?:BLOCO|BL)\b{sep}([A-Z0-9]{{1,6}})\b", up):
+        out["BLOCO"].append(m.group(1))
+    for m in re.finditer(rf"\b(?:APARTAMENTO|APTO|APT|AP|UNIDADE|UN)\b{sep}([0-9]{{1,4}}[A-Z]?)\b", up):
+        out["APARTAMENTO"].append(m.group(1))
+    for m in re.finditer(r"\b([01]?\d|2[0-3])[:H]([0-5]\d)\b", up):
+        out["HORARIO"].append(f"{int(m.group(1)):02d}:{m.group(2)}")
+    for m in re.finditer(r"\b([A-Z]{3}[0-9][A-Z0-9][0-9]{2}|[A-Z]{3}[0-9]{4})\b", up):
+        out["PLACA"].append(m.group(1))
+    for m in re.finditer(rf"\bCOR\b{sep}([A-ZÇÃÕÁÉÍÓÚÀÂÊÔÜ]{{3,}})\b", up):
+        cor = m.group(1)
+        if cor not in {"DO", "DA", "DE", "DAS", "DOS"}:
+            out["COR"].append(cor)
+    for m in re.finditer(rf"\b(?:VEICULO|VEÍCULO|CARRO|MOTO|MODELO)\b{sep}([A-Z0-9]{{2,}}(?:\s+[A-Z0-9]{{2,}}){{0,2}})", up):
+        out["VEICULO"].append(m.group(1).strip())
+
+    name_patterns = [
+        rf"\b(?:MORADOR(?:A)?|SR\.?|SRA\.?|SENHOR|SENHORA)\b{sep}([A-ZÀ-Ý]{{2,}}(?:\s+[A-ZÀ-Ý]{{2,}})+)",
+        rf"\bNOME\b{sep}([A-ZÀ-Ý]{{2,}}(?:\s+[A-ZÀ-Ý]{{2,}})+)",
+    ]
+    invalid_name_tokens = {
+        "APRESENTAVA", "APRESENTAVA-SE", "ALTERADO", "ALTERADA", "QUANTO", "PROTOCOLO", "PORTARIA", "ORIENTOU"
+    }
+    for pat in name_patterns:
+        for m in re.finditer(pat, up):
+            full = re.sub(r"\s+", " ", m.group(1)).strip(" .,-")
+            parts = [w.strip(" .,-") for w in full.split() if w.strip(" .,-")]
+            if len(parts) < 2:
+                continue
+            if any(p in invalid_name_tokens for p in parts[:2]):
+                continue
+            out["NOME"].append(parts[0])
+            out["SOBRENOME"].append(" ".join(parts[1:]))
+
+    for k, vals in out.items():
+        dedup = []
+        for v in vals:
+            if v and v not in dedup:
+                dedup.append(v)
+        out[k] = dedup
+    return out
+
+
+def format_orientacao_entry(r: dict) -> str:
+    return str(r.get("texto") or r.get("texto_original") or "")
+
+def format_observacao_entry(r: dict) -> str:
+    return str(r.get("texto") or r.get("texto_original") or "")
+
 def _normalize_date_value(value: str):
     if not value:
         return None
@@ -382,6 +452,18 @@ def _encomenda_on_tag_click(text_widget, record, event=None, rec_tag=None):
     if callable(show_fn):
         show_fn()
 
+def _record_on_tag_click(text_widget, record, event=None, rec_tag=None):
+    ui = _text_action_ui.get(text_widget) or _encomenda_action_ui.get(text_widget)
+    if not ui:
+        return
+    current = ui.get("current") or {"record": None, "rec_tag": None}
+    ui["current"] = current
+    current["record"] = record
+    current["rec_tag"] = rec_tag
+    show_fn = ui.get("show")
+    if callable(show_fn):
+        show_fn()
+
 def _populate_text(text_widget, info_label):
     source = _monitor_sources.get(text_widget, {})
     arquivo = source.get("path", ARQUIVO)
@@ -398,9 +480,15 @@ def _populate_text(text_widget, info_label):
     record_ranges = []
     record_tag_map = {}
     record_line_map = {}
+    has_clickable_records = False
 
     for idx, r in enumerate(filtrados):
-        rec_tag = f"encomenda_record_{idx}" if formatter == format_encomenda_entry else None
+        is_clickable = formatter in (format_encomenda_entry, format_orientacao_entry, format_observacao_entry)
+        rec_tag = None
+        if is_clickable:
+            has_clickable_records = True
+            prefix = "encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else "observacao")
+            rec_tag = f"{prefix}_record_{idx}"
         linha = formatter(r)
         # Inserir já com a tag — isto garante que o tag cubra exatamente o texto
         try:
@@ -452,7 +540,7 @@ def _populate_text(text_widget, info_label):
                 pass
             try:
                 # capturar rec_tag e r no default args
-                text_widget.tag_bind(rec_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag: _encomenda_on_tag_click(tw, rec, ev, tag))
+                text_widget.tag_bind(rec_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag: _record_on_tag_click(tw, rec, ev, tag))
             except Exception:
                 pass
         else:
@@ -479,11 +567,18 @@ def _populate_text(text_widget, info_label):
         _encomenda_display_map.pop(text_widget, None)
         _encomenda_tag_map.pop(text_widget, None)
         _encomenda_line_map.pop(text_widget, None)
+
+    if has_clickable_records or formatter in (format_orientacao_entry, format_observacao_entry):
+        _record_tag_map_generic[text_widget] = record_tag_map
+    else:
+        _record_tag_map_generic.pop(text_widget, None)
     _restore_hover_if_needed(text_widget, "hover_line")
 
 def _schedule_update(text_widgets, info_label):
     global _monitor_after_id
     for tw in text_widgets:
+        if tw in _text_edit_lock:
+            continue
         _populate_text(tw, info_label)
     # schedule next update
     try:
@@ -945,6 +1040,103 @@ def _apply_light_theme(widget):
     except Exception:
         pass
 
+def _build_text_actions(frame, text_widget, info_label, path):
+    action_frame = tk.Frame(frame, bg="white")
+    action_frame.pack_forget()
+    current = {"record": None, "rec_tag": None}
+    edit_state = {"active": False, "tag": None}
+
+    def hide_actions():
+        action_frame.pack_forget()
+        current["record"] = None
+        current["rec_tag"] = None
+        if edit_state["active"]:
+            edit_state["active"] = False
+            edit_state["tag"] = None
+            _text_edit_lock.discard(text_widget)
+            try:
+                text_widget.config(state="disabled")
+            except Exception:
+                pass
+
+    def show_actions():
+        rec = current.get("record")
+        if not rec:
+            return
+        if not action_frame.winfo_ismapped():
+            action_frame.pack(fill=tk.X, padx=10, pady=(0, 8))
+
+    def enable_edit():
+        rec_tag = current.get("rec_tag")
+        if not rec_tag:
+            return
+        edit_state["active"] = True
+        edit_state["tag"] = rec_tag
+        _text_edit_lock.add(text_widget)
+        try:
+            text_widget.config(state="normal")
+        except Exception:
+            pass
+
+    def save_edit():
+        rec = current.get("record")
+        rec_tag = current.get("rec_tag")
+        if not rec or not rec_tag:
+            return
+        try:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if not ranges or len(ranges) < 2:
+                return
+            new_text = text_widget.get(ranges[0], ranges[1]).strip()
+        except Exception:
+            return
+
+        registros = _load_safe(path)
+        target = None
+        for r in registros:
+            if str(r.get("id")) == str(rec.get("id")):
+                target = r
+                break
+        if not target:
+            return
+
+        target["texto"] = new_text
+        target["campos_extraidos"] = _extract_multi_fields(new_text)
+        _atomic_write(path, {"registros": registros})
+
+        edit_state["active"] = False
+        edit_state["tag"] = None
+        _text_edit_lock.discard(text_widget)
+        try:
+            text_widget.config(state="disabled")
+        except Exception:
+            pass
+        _populate_text(text_widget, info_label)
+
+    tk.Button(action_frame, text="Editar", command=enable_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+    tk.Button(action_frame, text="Salvar", command=save_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+
+    _text_action_ui[text_widget] = {"frame": action_frame, "hide": hide_actions, "show": show_actions, "current": current}
+
+    def on_click(event):
+        try:
+            idx = text_widget.index(f"@{event.x},{event.y}")
+            for tag in text_widget.tag_names(idx):
+                if "_record_" in tag:
+                    rec = _record_tag_map_generic.get(text_widget, {}).get(tag)
+                    if rec:
+                        current["record"] = rec
+                        current["rec_tag"] = tag
+                        show_actions()
+                        return
+        except Exception:
+            return
+
+    try:
+        text_widget.bind("<Button-1>", on_click, add="+")
+    except Exception:
+        pass
+
 def _build_monitor_ui(container):
     _apply_light_theme(container)
     style = ttk.Style(container)
@@ -981,8 +1173,8 @@ def _build_monitor_ui(container):
     tab_configs = [
         (controle_frame, ARQUIVO, format_creative_entry),
         (encomendas_frame, ENCOMENDAS_ARQUIVO, format_encomenda_entry),
-        (orientacoes_frame, ARQUIVO, format_creative_entry),
-        (observacoes_frame, ARQUIVO, format_creative_entry),
+        (orientacoes_frame, ORIENTACOES_ARQUIVO, format_orientacao_entry),
+        (observacoes_frame, OBSERVACOES_ARQUIVO, format_observacao_entry),
     ]
     for frame, arquivo, formatter in tab_configs:
         text_widget = tk.Text(
@@ -1003,6 +1195,8 @@ def _build_monitor_ui(container):
         _bind_hover_highlight(text_widget)
         if formatter == format_encomenda_entry:
             _build_encomenda_actions(frame, text_widget, info_label)
+        elif formatter in (format_orientacao_entry, format_observacao_entry):
+            _build_text_actions(frame, text_widget, info_label, arquivo)
         text_widgets.append(text_widget)
         _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter}
 

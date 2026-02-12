@@ -65,6 +65,8 @@ DB_FILE = os.path.join(BASE, "dadosend.json")
 IN_FILE = os.path.join(BASE, "dadosinit.json")
 ENCOMENDAS_IN_FILE = os.path.join(BASE, "encomendasinit.json")
 ENCOMENDAS_DB_FILE = os.path.join(BASE, "encomendasend.json")
+ORIENTACOES_FILE = os.path.join(BASE, "orientacoes.json")
+OBSERVACOES_FILE = os.path.join(BASE, "observacoes.json")
 AVISOS_FILE = os.path.join(BASE, "avisos.json")
 ANALISES_FILE = os.path.join(BASE, "analises.json")
 _DB_LOCKFILE = DB_FILE + ".lock"
@@ -199,6 +201,111 @@ def _save_encomenda_init(txt: str, now_str: str) -> None:
         atomic_save(ENCOMENDAS_IN_FILE, {"registros": regs})
     except Exception as e:
         print("Erro save (ENCOMENDAS_IN_FILE):", e)
+
+
+_ORIENTACOES_KEYWORDS = {
+    "RELATO", "RELATOS", "RELATADO", "OCORRENCIA", "OCORRIDO", "REGISTRO", "REGISTRADO",
+    "ORIENTADO", "ORIENTADA", "ORIENTACAO", "ORIENTADOS", "ORIENTAÇÕES", "ORIENTAÇÃO",
+}
+
+_OBSERVACOES_KEYWORDS = {
+    "AVISO", "AVISOS", "AVISADO", "AVISADOS", "RECEBER", "ENTREGAR", "GUARDAR",
+    "ERRADO", "ERRADA", "ENGANO", "ENGANADA", "ENGANADO",
+}
+
+def _contains_keywords(text: str, keywords: set[str]) -> bool:
+    toks_up = [t.upper() for t in tokens(text)]
+    return any(t in keywords for t in toks_up)
+
+def _extract_multi_fields(text: str) -> dict:
+    raw = str(text or "")
+    up = raw.upper()
+    out = {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": [],
+    }
+
+    sep = r"(?:\s*[:\-]\s*|\s+)"
+
+    for m in re.finditer(rf"\b(?:BLOCO|BL)\b{sep}([A-Z0-9]{{1,6}})\b", up):
+        out["BLOCO"].append(m.group(1))
+
+    for m in re.finditer(rf"\b(?:APARTAMENTO|APTO|APT|AP|UNIDADE|UN)\b{sep}([0-9]{{1,4}}[A-Z]?)\b", up):
+        out["APARTAMENTO"].append(m.group(1))
+
+    for m in re.finditer(r"\b([01]?\d|2[0-3])[:H]([0-5]\d)\b", up):
+        out["HORARIO"].append(f"{int(m.group(1)):02d}:{m.group(2)}")
+
+    for m in re.finditer(r"\b([A-Z]{3}[0-9][A-Z0-9][0-9]{2}|[A-Z]{3}[0-9]{4})\b", up):
+        out["PLACA"].append(m.group(1))
+
+    for m in re.finditer(rf"\bCOR\b{sep}([A-ZÇÃÕÁÉÍÓÚÀÂÊÔÜ]{{3,}})\b", up):
+        cor = m.group(1)
+        if cor not in {"DO", "DA", "DE", "DAS", "DOS"}:
+            out["COR"].append(cor)
+
+    for m in re.finditer(rf"\b(?:VEICULO|VEÍCULO|CARRO|MOTO|MODELO)\b{sep}([A-Z0-9]{{2,}}(?:\s+[A-Z0-9]{{2,}}){{0,2}})", up):
+        out["VEICULO"].append(m.group(1).strip())
+
+    name_patterns = [
+        rf"\b(?:MORADOR(?:A)?|SR\.?|SRA\.?|SENHOR|SENHORA)\b{sep}([A-ZÀ-Ý]{{2,}}(?:\s+[A-ZÀ-Ý]{{2,}})+)",
+        rf"\bNOME\b{sep}([A-ZÀ-Ý]{{2,}}(?:\s+[A-ZÀ-Ý]{{2,}})+)",
+    ]
+    invalid_name_tokens = {
+        "APRESENTAVA", "APRESENTAVA-SE", "ALTERADO", "ALTERADA", "QUANTO", "PROTOCOLO", "PORTARIA", "ORIENTOU"
+    }
+    for pat in name_patterns:
+        for m in re.finditer(pat, up):
+            full = re.sub(r"\s+", " ", m.group(1)).strip(" .,-")
+            parts = [w.strip(" .,-") for w in full.split() if w.strip(" .,-")]
+            if len(parts) < 2:
+                continue
+            if any(p in invalid_name_tokens for p in parts[:2]):
+                continue
+            out["NOME"].append(parts[0])
+            out["SOBRENOME"].append(" ".join(parts[1:]))
+
+    for k, vals in out.items():
+        dedup = []
+        for v in vals:
+            if v and v not in dedup:
+                dedup.append(v)
+        out[k] = dedup
+    return out
+
+
+
+def _save_structured_text(path: str, txt: str, now_str: str, tipo: str) -> None:
+    try:
+        existing = _read_json(path)
+        if isinstance(existing, dict) and "registros" in existing:
+            regs = existing.get("registros") or []
+        elif isinstance(existing, list):
+            regs = existing
+        else:
+            regs = []
+    except Exception:
+        regs = []
+
+    nid = _compute_next_in_id(regs)
+    extracted = _extract_multi_fields(txt)
+    rec = {
+        "id": nid,
+        "tipo": tipo,
+        "texto": txt,
+        "campos_extraidos": extracted,
+        "data_hora": now_str,
+        "processado": True,
+    }
+    regs.append(rec)
+    atomic_save(path, {"registros": regs})
+
 
 # ---------- util ----------
 def _norm(s: str, keep_dash=False) -> str:
@@ -1614,6 +1721,19 @@ def save_text(entry_widget=None, btn=None):
                     threading.Thread(target=ia_module.processar, daemon=True).start()
             except Exception as e:
                 print("Falha ao iniciar processamento IA para encomendas:", e)
+        return
+
+    is_orientacao = _contains_keywords(txt, _ORIENTACOES_KEYWORDS)
+    is_observacao = _contains_keywords(txt, _OBSERVACOES_KEYWORDS)
+    if is_orientacao and not is_observacao:
+        _save_structured_text(ORIENTACOES_FILE, txt, now_str, "ORIENTACAO")
+        try: entry_widget.delete(0, "end")
+        except: pass
+        return
+    if is_observacao and not is_orientacao:
+        _save_structured_text(OBSERVACOES_FILE, txt, now_str, "OBSERVACAO")
+        try: entry_widget.delete(0, "end")
+        except: pass
         return
     rec = None
     fields_for_flags = {}
