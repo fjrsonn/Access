@@ -495,7 +495,13 @@ def _populate_text(text_widget, info_label):
         linha = formatter(r)
         # Inserir já com a tag — isto garante que o tag cubra exatamente o texto
         try:
-            if rec_tag:
+            if rec_tag and formatter in (format_orientacao_entry, format_observacao_entry):
+                text_widget.insert(tk.END, linha + "\n", (rec_tag,))
+                if idx < len(filtrados) - 1:
+                    text_widget.insert(tk.END, "─" * 80 + "\n\n")
+                else:
+                    text_widget.insert(tk.END, "\n")
+            elif rec_tag:
                 text_widget.insert(tk.END, linha + "\n\n", (rec_tag,))
             else:
                 text_widget.insert(tk.END, linha + "\n\n")
@@ -1207,12 +1213,22 @@ def _build_text_actions(frame, text_widget, info_label, path):
                         current["rec_tag"] = tag
                         show_actions()
                         return
+            hide_actions()
         except Exception:
             return
+
+    def on_click_outside(_event):
+        if is_editing():
+            return
+        hide_actions()
 
     _bind_edit_shortcuts()
     try:
         text_widget.bind("<Button-1>", on_click, add="+")
+    except Exception:
+        pass
+    try:
+        frame.bind("<Button-1>", on_click_outside, add="+")
     except Exception:
         pass
 
