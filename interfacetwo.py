@@ -646,28 +646,29 @@ def _build_filter_bar(parent, text_widget, info_label):
         _populate_text(text_widget, info_label)
 
     tk.Label(bar, text="Ordem", bg="#111111", fg="white").grid(row=0, column=0, padx=(10, 6), pady=8, sticky="w")
-    ttk.Combobox(bar, textvariable=order_var, values=["Recentes", "Ultimas"], width=10, state="readonly").grid(
-        row=0, column=1, padx=(0, 12), pady=8, sticky="w"
-    )
+    order_combo = ttk.Combobox(bar, textvariable=order_var, values=["Recentes", "Ultimas"], width=10, state="readonly")
+    order_combo.grid(row=0, column=1, padx=(0, 12), pady=8, sticky="w")
 
     tk.Label(bar, text="Data", bg="#111111", fg="white").grid(row=0, column=2, padx=(0, 6), pady=8, sticky="w")
-    ttk.Combobox(
+    date_mode_combo = ttk.Combobox(
         bar,
         textvariable=date_mode_var,
         values=["Recentes", "Especifica"],
         width=10,
         state="readonly",
-    ).grid(row=0, column=3, padx=(0, 6), pady=8, sticky="w")
+    )
+    date_mode_combo.grid(row=0, column=3, padx=(0, 6), pady=8, sticky="w")
     date_entry.grid(row=0, column=4, padx=(0, 12), pady=8, sticky="w")
 
     tk.Label(bar, text="Hora", bg="#111111", fg="white").grid(row=0, column=5, padx=(0, 6), pady=8, sticky="w")
-    ttk.Combobox(
+    time_mode_combo = ttk.Combobox(
         bar,
         textvariable=time_mode_var,
         values=["Recentes", "Especifica"],
         width=10,
         state="readonly",
-    ).grid(row=0, column=6, padx=(0, 6), pady=8, sticky="w")
+    )
+    time_mode_combo.grid(row=0, column=6, padx=(0, 6), pady=8, sticky="w")
     time_entry.grid(row=0, column=7, padx=(0, 12), pady=8, sticky="w")
 
     tk.Label(bar, text="Consultar", bg="#111111", fg="white").grid(row=0, column=8, padx=(0, 6), pady=8, sticky="w")
