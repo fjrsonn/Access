@@ -17,6 +17,8 @@ import hashlib
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ARQUIVO = os.path.join(BASE_DIR, "dadosend.json")
 ENCOMENDAS_ARQUIVO = os.path.join(BASE_DIR, "encomendasend.json")
+ORIENTACOES_ARQUIVO = os.path.join(BASE_DIR, "orientacoes.json")
+OBSERVACOES_ARQUIVO = os.path.join(BASE_DIR, "observacoes.json")
 ANALISES_ARQUIVO = os.path.join(BASE_DIR, "analises.json")
 AVISOS_ARQUIVO = os.path.join(BASE_DIR, "avisos.json")
 LOCK_FILE = os.path.join(BASE_DIR, "monitor.lock")
@@ -32,6 +34,8 @@ _encomenda_display_map = {}
 _encomenda_tag_map = {}
 _encomenda_line_map = {}
 _encomenda_action_ui = {}
+_text_action_ui = {}
+_record_tag_map_generic = {}
 
 # ---------- inferência MODELO/COR (fallback a partir de 'texto') ----------
 _STATUS_WORDS = set(["MORADOR","MORADORES","VISITANTE","VISITA","VISIT","PRESTADOR","PRESTADORES","SERVICO","SERVIÇO","TECNICO","DESCONHECIDO","FUNCIONARIO","FUNCIONÁRIO"])
@@ -265,6 +269,37 @@ def format_encomenda_entry(r: dict) -> str:
     return base_text
 
 # ---------- UI helpers (embutido) ----------
+
+
+def _extract_multi_fields(text: str) -> dict:
+    toks = re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ0-9\-:]+", str(text or "").upper())
+    out = {"BLOCO": [], "APARTAMENTO": [], "NOME": [], "SOBRENOME": [], "HORARIO": [], "VEICULO": [], "COR": [], "PLACA": []}
+    for i, t in enumerate(toks):
+        if t in ("BLOCO", "BL", "B") and i + 1 < len(toks): out["BLOCO"].append(toks[i+1])
+        if t in ("AP", "APT", "APARTAMENTO", "APTO") and i + 1 < len(toks): out["APARTAMENTO"].append(toks[i+1])
+        if t == "NOME" and i + 1 < len(toks): out["NOME"].append(toks[i+1])
+        if t == "SOBRENOME" and i + 1 < len(toks): out["SOBRENOME"].append(toks[i+1])
+        if t in ("HORARIO", "HORA") and i + 1 < len(toks): out["HORARIO"].append(toks[i+1])
+        if t in ("VEICULO", "CARRO", "MOTO", "MODELO") and i + 1 < len(toks): out["VEICULO"].append(toks[i+1])
+        if t == "COR" and i + 1 < len(toks): out["COR"].append(toks[i+1])
+        if re.match(r"^([A-Z]{3}[0-9][A-Z0-9][0-9]{2}|[A-Z]{3}[0-9]{4})$", t): out["PLACA"].append(t)
+        if re.match(r"^\d{1,2}:\d{2}$", t): out["HORARIO"].append(t)
+    return {k: list(dict.fromkeys(v)) for k,v in out.items()}
+
+def _formalize_occurrence_text(text: str, extracted: dict, data_hora: str) -> str:
+    data, hora = _split_date_time(data_hora or "")
+    blocos = ", ".join(extracted.get("BLOCO", [])) or "não informado"
+    aps = ", ".join(extracted.get("APARTAMENTO", [])) or "não informado"
+    placas = ", ".join(extracted.get("PLACA", [])) or "não informado"
+    cleaned = re.sub(r"\s+", " ", str(text or "")).strip()
+    return f"Registro em {data or '-'} às {hora or '-'}. Bloco(s): {blocos}. Apartamento(s): {aps}. Placa(s): {placas}. Descrição: {cleaned}."
+
+def format_orientacao_entry(r: dict) -> str:
+    return str(r.get("texto_tratado") or _formalize_occurrence_text(r.get("texto_original") or "", r.get("campos_extraidos") or {}, r.get("data_hora") or r.get("DATA_HORA") or ""))
+
+def format_observacao_entry(r: dict) -> str:
+    return str(r.get("texto_tratado") or _formalize_occurrence_text(r.get("texto_original") or "", r.get("campos_extraidos") or {}, r.get("data_hora") or r.get("DATA_HORA") or ""))
+
 def _normalize_date_value(value: str):
     if not value:
         return None
@@ -382,6 +417,18 @@ def _encomenda_on_tag_click(text_widget, record, event=None, rec_tag=None):
     if callable(show_fn):
         show_fn()
 
+def _record_on_tag_click(text_widget, record, event=None, rec_tag=None):
+    ui = _text_action_ui.get(text_widget) or _encomenda_action_ui.get(text_widget)
+    if not ui:
+        return
+    current = ui.get("current") or {"record": None, "rec_tag": None}
+    ui["current"] = current
+    current["record"] = record
+    current["rec_tag"] = rec_tag
+    show_fn = ui.get("show")
+    if callable(show_fn):
+        show_fn()
+
 def _populate_text(text_widget, info_label):
     source = _monitor_sources.get(text_widget, {})
     arquivo = source.get("path", ARQUIVO)
@@ -398,9 +445,15 @@ def _populate_text(text_widget, info_label):
     record_ranges = []
     record_tag_map = {}
     record_line_map = {}
+    has_clickable_records = False
 
     for idx, r in enumerate(filtrados):
-        rec_tag = f"encomenda_record_{idx}" if formatter == format_encomenda_entry else None
+        is_clickable = formatter in (format_encomenda_entry, format_orientacao_entry, format_observacao_entry)
+        rec_tag = None
+        if is_clickable:
+            has_clickable_records = True
+            prefix = "encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else "observacao")
+            rec_tag = f"{prefix}_record_{idx}"
         linha = formatter(r)
         # Inserir já com a tag — isto garante que o tag cubra exatamente o texto
         try:
@@ -452,7 +505,7 @@ def _populate_text(text_widget, info_label):
                 pass
             try:
                 # capturar rec_tag e r no default args
-                text_widget.tag_bind(rec_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag: _encomenda_on_tag_click(tw, rec, ev, tag))
+                text_widget.tag_bind(rec_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag: _record_on_tag_click(tw, rec, ev, tag))
             except Exception:
                 pass
         else:
@@ -479,6 +532,11 @@ def _populate_text(text_widget, info_label):
         _encomenda_display_map.pop(text_widget, None)
         _encomenda_tag_map.pop(text_widget, None)
         _encomenda_line_map.pop(text_widget, None)
+
+    if has_clickable_records or formatter in (format_orientacao_entry, format_observacao_entry):
+        _record_tag_map_generic[text_widget] = record_tag_map
+    else:
+        _record_tag_map_generic.pop(text_widget, None)
     _restore_hover_if_needed(text_widget, "hover_line")
 
 def _schedule_update(text_widgets, info_label):
@@ -945,6 +1003,80 @@ def _apply_light_theme(widget):
     except Exception:
         pass
 
+def _build_text_actions(frame, text_widget, info_label, path):
+    action_frame = tk.Frame(frame, bg="white")
+    action_frame.pack_forget()
+    current = {"record": None, "rec_tag": None}
+
+    editor = tk.Text(action_frame, height=5, wrap="word", bg="white", fg="black")
+    editor.pack(fill=tk.X, padx=10, pady=(8, 4))
+    editor.config(state="disabled")
+
+    def hide_actions():
+        action_frame.pack_forget()
+        current["record"] = None
+
+    def show_actions():
+        rec = current.get("record")
+        if not rec:
+            return
+        editor.config(state="normal")
+        editor.delete("1.0", tk.END)
+        editor.insert("1.0", rec.get("texto_original") or rec.get("texto_tratado") or "")
+        editor.config(state="disabled")
+        if not action_frame.winfo_ismapped():
+            action_frame.pack(fill=tk.X, padx=10, pady=(0, 8))
+
+    def enable_edit():
+        editor.config(state="normal")
+
+    def save_edit():
+        rec = current.get("record")
+        if not rec:
+            return
+        new_text = editor.get("1.0", "end-1c").strip()
+        registros = _load_safe(path)
+        target = None
+        for r in registros:
+            if str(r.get("id")) == str(rec.get("id")):
+                target = r
+                break
+        if not target:
+            return
+        dh = target.get("data_hora") or target.get("DATA_HORA") or datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        extracted = _extract_multi_fields(new_text)
+        target["texto_original"] = new_text
+        target["campos_extraidos"] = extracted
+        target["texto_tratado"] = _formalize_occurrence_text(new_text, extracted, dh)
+        _atomic_write(path, {"registros": registros})
+        editor.config(state="disabled")
+        _populate_text(text_widget, info_label)
+
+    btns = tk.Frame(action_frame, bg="white")
+    btns.pack(fill=tk.X, padx=10, pady=(0, 8))
+    tk.Button(btns, text="Editar", command=enable_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10)
+    tk.Button(btns, text="Salvar", command=save_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10)
+
+    _text_action_ui[text_widget] = {"frame": action_frame, "hide": hide_actions, "show": show_actions, "current": current}
+
+    def on_click(event):
+        try:
+            idx = text_widget.index(f"@{event.x},{event.y}")
+            for tag in text_widget.tag_names(idx):
+                if tag.endswith("_record_" + tag.split("_record_")[-1]):
+                    rec = _record_tag_map_generic.get(text_widget, {}).get(tag)
+                    if rec:
+                        current["record"] = rec
+                        show_actions()
+                        return
+        except Exception:
+            return
+
+    try:
+        text_widget.bind("<Button-1>", on_click, add="+")
+    except Exception:
+        pass
+
 def _build_monitor_ui(container):
     _apply_light_theme(container)
     style = ttk.Style(container)
@@ -981,8 +1113,8 @@ def _build_monitor_ui(container):
     tab_configs = [
         (controle_frame, ARQUIVO, format_creative_entry),
         (encomendas_frame, ENCOMENDAS_ARQUIVO, format_encomenda_entry),
-        (orientacoes_frame, ARQUIVO, format_creative_entry),
-        (observacoes_frame, ARQUIVO, format_creative_entry),
+        (orientacoes_frame, ORIENTACOES_ARQUIVO, format_orientacao_entry),
+        (observacoes_frame, OBSERVACOES_ARQUIVO, format_observacao_entry),
     ]
     for frame, arquivo, formatter in tab_configs:
         text_widget = tk.Text(
@@ -1003,6 +1135,8 @@ def _build_monitor_ui(container):
         _bind_hover_highlight(text_widget)
         if formatter == format_encomenda_entry:
             _build_encomenda_actions(frame, text_widget, info_label)
+        elif formatter in (format_orientacao_entry, format_observacao_entry):
+            _build_text_actions(frame, text_widget, info_label, arquivo)
         text_widgets.append(text_widget)
         _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter}
 
