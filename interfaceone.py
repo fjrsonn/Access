@@ -56,6 +56,21 @@ except Exception:
     extrair_tudo_consumo = None
     corrigir_token_nome = None
 
+try:
+    from text_classifier import (
+        classificar_destino_texto,
+        build_structured_fields,
+        validate_structured_record,
+        log_audit_event,
+        load_rules,
+    )
+except Exception:
+    classificar_destino_texto = None
+    build_structured_fields = None
+    validate_structured_record = None
+    log_audit_event = None
+    load_rules = None
+
 # paths
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "dados")
@@ -65,6 +80,8 @@ DB_FILE = os.path.join(BASE, "dadosend.json")
 IN_FILE = os.path.join(BASE, "dadosinit.json")
 ENCOMENDAS_IN_FILE = os.path.join(BASE, "encomendasinit.json")
 ENCOMENDAS_DB_FILE = os.path.join(BASE, "encomendasend.json")
+ORIENTACOES_FILE = os.path.join(BASE, "orientacoes.json")
+OBSERVACOES_FILE = os.path.join(BASE, "observacoes.json")
 AVISOS_FILE = os.path.join(BASE, "avisos.json")
 ANALISES_FILE = os.path.join(BASE, "analises.json")
 _DB_LOCKFILE = DB_FILE + ".lock"
@@ -199,6 +216,79 @@ def _save_encomenda_init(txt: str, now_str: str) -> None:
         atomic_save(ENCOMENDAS_IN_FILE, {"registros": regs})
     except Exception as e:
         print("Erro save (ENCOMENDAS_IN_FILE):", e)
+
+
+_loaded_rules = load_rules() if load_rules else {}
+_ORIENTACOES_KEYWORDS = set(k.upper() for k in _loaded_rules.get("keywords_orientacoes", [
+    "RELATO", "RELATOS", "RELATADO", "OCORRENCIA", "OCORRIDO", "REGISTRO", "REGISTRADO",
+    "ORIENTADO", "ORIENTADA", "ORIENTACAO", "ORIENTADOS", "ORIENTAÇÕES", "ORIENTAÇÃO",
+]))
+
+_OBSERVACOES_KEYWORDS = set(k.upper() for k in _loaded_rules.get("keywords_observacoes", [
+    "AVISO", "AVISOS", "AVISAR", "AVISADO", "AVISADOS", "RECEBER", "ENTREGAR", "GUARDAR",
+    "ERRADO", "ERRADA", "ENGANO", "ENGANADA", "ENGANADO",
+]))
+
+def _contains_keywords(text: str, keywords: set[str]) -> bool:
+    toks_up = [t.upper() for t in tokens(text)]
+    return any(t in keywords for t in toks_up)
+
+def _extract_multi_fields(text: str) -> dict:
+    if build_structured_fields:
+        strict, inferred = build_structured_fields(text)
+        return {k: list(dict.fromkeys((strict.get(k, []) + inferred.get(k, [])))) for k in strict.keys()}
+    return {
+        "BLOCO": [], "APARTAMENTO": [], "NOME": [], "SOBRENOME": [],
+        "HORARIO": [], "VEICULO": [], "COR": [], "PLACA": []
+    }
+
+
+def _save_structured_text(path: str, txt: str, now_str: str, tipo: str, decision_meta: dict = None) -> None:
+    try:
+        existing = _read_json(path)
+        if isinstance(existing, dict) and "registros" in existing:
+            regs = existing.get("registros") or []
+        elif isinstance(existing, list):
+            regs = existing
+        else:
+            regs = []
+    except Exception:
+        regs = []
+
+    nid = _compute_next_in_id(regs)
+    strict, inferred = build_structured_fields(txt) if build_structured_fields else ({}, {})
+    merged = {k: list(dict.fromkeys((strict.get(k, []) + inferred.get(k, [])))) for k in (strict.keys() or ["BLOCO","APARTAMENTO","NOME","SOBRENOME","HORARIO","VEICULO","COR","PLACA"])}
+    rec = {
+        "id": nid,
+        "tipo": tipo,
+        "texto": txt,
+        "campos_extraidos_confirmados": strict,
+        "campos_extraidos_inferidos": inferred,
+        "campos_extraidos": merged,
+        "data_hora": now_str,
+        "processado": True,
+        "motivo_roteamento": (decision_meta or {}).get("motivo", ""),
+        "versao_regras": (decision_meta or {}).get("versao_regras", "v1"),
+        "confianca_classificacao": (decision_meta or {}).get("confianca", 0.0),
+        "ambiguo": bool((decision_meta or {}).get("ambiguo", False)),
+    }
+    ok, errs = validate_structured_record(rec) if validate_structured_record else (True, [])
+    if not ok:
+        review_path = os.path.join(BASE, "fila_revisao.json")
+        fila = _read_json(review_path)
+        if not isinstance(fila, dict) or "registros" not in fila:
+            fila = {"registros": []}
+        fila["registros"].append({"erro": errs, "registro": rec})
+        atomic_save(review_path, fila)
+        if log_audit_event:
+            log_audit_event("texto_validacao_falhou", tipo, txt, erros=errs)
+        return
+
+    regs.append(rec)
+    atomic_save(path, {"registros": regs})
+    if log_audit_event:
+        log_audit_event("texto_persistido", tipo, txt, confianca=rec.get("confianca_classificacao"), ambiguo=rec.get("ambiguo"))
+
 
 # ---------- util ----------
 def _norm(s: str, keep_dash=False) -> str:
@@ -1601,8 +1691,31 @@ def save_text(entry_widget=None, btn=None):
             parsed = None
 
     now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    if _is_encomenda_text(txt, parsed):
+    if log_audit_event:
+        log_audit_event("texto_recebido", "entrada", txt)
+
+    decision = classificar_destino_texto(txt, parsed) if classificar_destino_texto else {
+        "destino": "dados", "motivo": "fallback", "score": 0.0, "ambiguo": False, "confianca": 0.0, "versao_regras": "v1"
+    }
+    destino = decision.get("destino")
+    if log_audit_event:
+        log_audit_event("texto_classificado", destino, txt, motivo=decision.get("motivo"), score=decision.get("score"), confianca=decision.get("confianca"), ambiguo=decision.get("ambiguo"))
+
+    if destino == "orientacoes":
+        _save_structured_text(ORIENTACOES_FILE, txt, now_str, "ORIENTACAO", decision_meta=decision)
+        try: entry_widget.delete(0, "end")
+        except: pass
+        return
+    if destino == "observacoes":
+        _save_structured_text(OBSERVACOES_FILE, txt, now_str, "OBSERVACAO", decision_meta=decision)
+        try: entry_widget.delete(0, "end")
+        except: pass
+        return
+
+    if destino == "encomendas" or _is_encomenda_text(txt, parsed):
         _save_encomenda_init(txt, now_str)
+        if log_audit_event:
+            log_audit_event("texto_persistido", "ENCOMENDAS_INIT", txt, motivo=decision.get("motivo"), score=decision.get("score"))
         try: entry_widget.delete(0, "end")
         except: pass
         if btn:

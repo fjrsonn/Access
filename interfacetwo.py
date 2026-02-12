@@ -14,9 +14,17 @@ from tkinter import messagebox, ttk
 import re
 import hashlib
 
+try:
+    from text_classifier import build_structured_fields, log_audit_event
+except Exception:
+    build_structured_fields = None
+    log_audit_event = None
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ARQUIVO = os.path.join(BASE_DIR, "dadosend.json")
 ENCOMENDAS_ARQUIVO = os.path.join(BASE_DIR, "encomendasend.json")
+ORIENTACOES_ARQUIVO = os.path.join(BASE_DIR, "orientacoes.json")
+OBSERVACOES_ARQUIVO = os.path.join(BASE_DIR, "observacoes.json")
 ANALISES_ARQUIVO = os.path.join(BASE_DIR, "analises.json")
 AVISOS_ARQUIVO = os.path.join(BASE_DIR, "avisos.json")
 LOCK_FILE = os.path.join(BASE_DIR, "monitor.lock")
@@ -32,6 +40,10 @@ _encomenda_display_map = {}
 _encomenda_tag_map = {}
 _encomenda_line_map = {}
 _encomenda_action_ui = {}
+_text_action_ui = {}
+_record_tag_map_generic = {}
+_text_edit_lock = set()
+_filter_controls = {}
 
 # ---------- inferência MODELO/COR (fallback a partir de 'texto') ----------
 _STATUS_WORDS = set(["MORADOR","MORADORES","VISITANTE","VISITA","VISIT","PRESTADOR","PRESTADORES","SERVICO","SERVIÇO","TECNICO","DESCONHECIDO","FUNCIONARIO","FUNCIONÁRIO"])
@@ -265,6 +277,25 @@ def format_encomenda_entry(r: dict) -> str:
     return base_text
 
 # ---------- UI helpers (embutido) ----------
+
+
+def _extract_multi_fields(text: str) -> dict:
+    if build_structured_fields:
+        strict, inferred = build_structured_fields(text)
+        return {k: list(dict.fromkeys((strict.get(k, []) + inferred.get(k, [])))) for k in strict.keys()}
+    return {
+        "BLOCO": [], "APARTAMENTO": [], "NOME": [], "SOBRENOME": [],
+        "HORARIO": [], "VEICULO": [], "COR": [], "PLACA": []
+    }
+
+
+
+def format_orientacao_entry(r: dict) -> str:
+    return str(r.get("texto") or r.get("texto_original") or "")
+
+def format_observacao_entry(r: dict) -> str:
+    return str(r.get("texto") or r.get("texto_original") or "")
+
 def _normalize_date_value(value: str):
     if not value:
         return None
@@ -382,6 +413,21 @@ def _encomenda_on_tag_click(text_widget, record, event=None, rec_tag=None):
     if callable(show_fn):
         show_fn()
 
+def _record_on_tag_click(text_widget, record, event=None, rec_tag=None):
+    ui = _text_action_ui.get(text_widget) or _encomenda_action_ui.get(text_widget)
+    if not ui:
+        return
+    is_editing = ui.get("is_editing")
+    if callable(is_editing) and is_editing():
+        return
+    current = ui.get("current") or {"record": None, "rec_tag": None}
+    ui["current"] = current
+    current["record"] = record
+    current["rec_tag"] = rec_tag
+    show_fn = ui.get("show")
+    if callable(show_fn):
+        show_fn()
+
 def _populate_text(text_widget, info_label):
     source = _monitor_sources.get(text_widget, {})
     arquivo = source.get("path", ARQUIVO)
@@ -398,13 +444,25 @@ def _populate_text(text_widget, info_label):
     record_ranges = []
     record_tag_map = {}
     record_line_map = {}
+    has_clickable_records = False
 
     for idx, r in enumerate(filtrados):
-        rec_tag = f"encomenda_record_{idx}" if formatter == format_encomenda_entry else None
+        is_clickable = formatter in (format_encomenda_entry, format_orientacao_entry, format_observacao_entry)
+        rec_tag = None
+        if is_clickable:
+            has_clickable_records = True
+            prefix = "encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else "observacao")
+            rec_tag = f"{prefix}_record_{idx}"
         linha = formatter(r)
         # Inserir já com a tag — isto garante que o tag cubra exatamente o texto
         try:
-            if rec_tag:
+            if rec_tag and formatter in (format_orientacao_entry, format_observacao_entry):
+                text_widget.insert(tk.END, linha + "\n", (rec_tag,))
+                if idx < len(filtrados) - 1:
+                    text_widget.insert(tk.END, "─" * 80 + "\n\n")
+                else:
+                    text_widget.insert(tk.END, "\n")
+            elif rec_tag:
                 text_widget.insert(tk.END, linha + "\n\n", (rec_tag,))
             else:
                 text_widget.insert(tk.END, linha + "\n\n")
@@ -452,7 +510,7 @@ def _populate_text(text_widget, info_label):
                 pass
             try:
                 # capturar rec_tag e r no default args
-                text_widget.tag_bind(rec_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag: _encomenda_on_tag_click(tw, rec, ev, tag))
+                text_widget.tag_bind(rec_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag: _record_on_tag_click(tw, rec, ev, tag))
             except Exception:
                 pass
         else:
@@ -479,11 +537,18 @@ def _populate_text(text_widget, info_label):
         _encomenda_display_map.pop(text_widget, None)
         _encomenda_tag_map.pop(text_widget, None)
         _encomenda_line_map.pop(text_widget, None)
+
+    if has_clickable_records or formatter in (format_orientacao_entry, format_observacao_entry):
+        _record_tag_map_generic[text_widget] = record_tag_map
+    else:
+        _record_tag_map_generic.pop(text_widget, None)
     _restore_hover_if_needed(text_widget, "hover_line")
 
 def _schedule_update(text_widgets, info_label):
     global _monitor_after_id
     for tw in text_widgets:
+        if tw in _text_edit_lock:
+            continue
         _populate_text(tw, info_label)
     # schedule next update
     try:
@@ -631,6 +696,14 @@ def _build_filter_bar(parent, text_widget, info_label):
         padx=12,
     ).grid(row=0, column=11, padx=(0, 10), pady=8)
 
+    _filter_controls[text_widget] = [
+        order_combo,
+        date_mode_combo,
+        date_entry,
+        time_mode_combo,
+        time_entry,
+        query_entry,
+    ]
     bar.grid_columnconfigure(12, weight=1)
     date_mode_var.trace_add("write", lambda *_: update_entry_state())
     time_mode_var.trace_add("write", lambda *_: update_entry_state())
@@ -638,6 +711,8 @@ def _build_filter_bar(parent, text_widget, info_label):
     _filter_state[text_widget] = _default_filters()
 
 def _apply_hover_line(text_widget, line, hover_tag):
+    if text_widget in _text_edit_lock:
+        return
     if not line:
         return
     start = f"{line}.0"
@@ -653,6 +728,8 @@ def _apply_hover_line(text_widget, line, hover_tag):
             pass
 
 def _clear_hover_line(text_widget, hover_tag):
+    if text_widget in _text_edit_lock:
+        return
     try:
         text_widget.config(state="normal")
         text_widget.tag_remove(hover_tag, "1.0", tk.END)
@@ -665,6 +742,8 @@ def _clear_hover_line(text_widget, hover_tag):
     _hover_state[text_widget] = None
 
 def _restore_hover_if_needed(text_widget, hover_tag):
+    if text_widget in _text_edit_lock:
+        return
     line = _hover_state.get(text_widget)
     if not line:
         return
@@ -691,6 +770,8 @@ def _bind_hover_highlight(text_widget):
     _hover_state[text_widget] = None
 
     def on_motion(event):
+        if text_widget in _text_edit_lock:
+            return
         try:
             index = text_widget.index(f"@{event.x},{event.y}")
         except Exception:
@@ -945,6 +1026,228 @@ def _apply_light_theme(widget):
     except Exception:
         pass
 
+def _build_text_actions(frame, text_widget, info_label, path):
+    action_frame = tk.Frame(frame, bg="white")
+    action_frame.pack_forget()
+    current = {"record": None, "rec_tag": None}
+    edit_state = {"active": False, "tag": None, "dirty": False}
+
+    edit_badge = tk.Label(action_frame, text="MODO EDIÇÃO ATIVO", bg="#ffef99", fg="black", padx=10, pady=4)
+    edit_badge.pack_forget()
+
+    def _set_filters_enabled(enabled: bool):
+        for w in _filter_controls.get(text_widget, []):
+            try:
+                if isinstance(w, ttk.Combobox):
+                    w.configure(state=("readonly" if enabled else "disabled"))
+                else:
+                    w.configure(state=("normal" if enabled else "disabled"))
+            except Exception:
+                pass
+
+    def is_editing():
+        return bool(edit_state.get("active"))
+
+    def _bind_edit_shortcuts():
+        def _only_editing(handler):
+            def _wrapped(event):
+                if not is_editing():
+                    return None
+                return handler(event)
+            return _wrapped
+
+        def _sel_all(_event):
+            try:
+                text_widget.tag_add("sel", "1.0", "end-1c")
+                text_widget.mark_set("insert", "1.0")
+                text_widget.see("insert")
+            except Exception:
+                pass
+            return "break"
+
+        def _virtual(name):
+            def _h(_event):
+                try:
+                    text_widget.event_generate(name)
+                    edit_state["dirty"] = True
+                except Exception:
+                    pass
+                return "break"
+            return _h
+
+        shortcuts = {
+            "<Control-a>": _sel_all,
+            "<Control-A>": _sel_all,
+            "<Control-z>": _virtual("<<Undo>>"),
+            "<Control-Z>": _virtual("<<Undo>>"),
+            "<Control-y>": _virtual("<<Redo>>"),
+            "<Control-Y>": _virtual("<<Redo>>"),
+            "<Control-x>": _virtual("<<Cut>>"),
+            "<Control-X>": _virtual("<<Cut>>"),
+            "<Control-c>": _virtual("<<Copy>>"),
+            "<Control-C>": _virtual("<<Copy>>"),
+            "<Control-v>": _virtual("<<Paste>>"),
+            "<Control-V>": _virtual("<<Paste>>"),
+        }
+        shortcuts["<Escape>"] = lambda _event: (cancel_edit() or "break")
+        for seq, handler in shortcuts.items():
+            try:
+                text_widget.bind(seq, _only_editing(handler), add="+")
+            except Exception:
+                pass
+
+    def hide_actions():
+        if is_editing():
+            return
+        action_frame.pack_forget()
+        current["record"] = None
+        current["rec_tag"] = None
+
+    def show_actions():
+        rec = current.get("record")
+        if not rec:
+            return
+        if not action_frame.winfo_ismapped():
+            action_frame.pack(fill=tk.X, padx=10, pady=(0, 8))
+
+    def enable_edit():
+        rec_tag = current.get("rec_tag")
+        if not rec_tag:
+            return
+        edit_state["active"] = True
+        edit_state["tag"] = rec_tag
+        edit_state["dirty"] = False
+        _text_edit_lock.add(text_widget)
+        _set_filters_enabled(False)
+        try:
+            text_widget.tag_remove("sel", "1.0", tk.END)
+        except Exception:
+            pass
+        try:
+            text_widget.config(state="normal")
+            text_widget.focus_set()
+            edit_badge.pack(fill=tk.X, padx=8, pady=(6, 2), before=action_frame.winfo_children()[0] if action_frame.winfo_children() else None)
+        except Exception:
+            pass
+
+    def _finish_editing(reload_text=True):
+        edit_state["active"] = False
+        edit_state["tag"] = None
+        edit_state["dirty"] = False
+        _text_edit_lock.discard(text_widget)
+        _set_filters_enabled(True)
+        try:
+            edit_badge.pack_forget()
+            text_widget.config(state="disabled")
+        except Exception:
+            pass
+        if reload_text:
+            _populate_text(text_widget, info_label)
+
+    def cancel_edit():
+        if not is_editing():
+            return
+        if edit_state.get("dirty"):
+            try:
+                if not messagebox.askyesno("Cancelar edição", "Descartar alterações não salvas?"):
+                    return
+            except Exception:
+                pass
+        if log_audit_event:
+            log_audit_event("texto_cancelado", os.path.basename(path), (current.get("record") or {}).get("texto", ""))
+        _finish_editing(reload_text=True)
+
+    def save_edit():
+        rec = current.get("record")
+        rec_tag = current.get("rec_tag")
+        if not rec or not rec_tag:
+            return
+        try:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if not ranges or len(ranges) < 2:
+                return
+            new_text = text_widget.get(ranges[0], ranges[1]).strip()
+        except Exception:
+            return
+
+        registros = _load_safe(path)
+        target = None
+        for r in registros:
+            if str(r.get("id")) == str(rec.get("id")):
+                target = r
+                break
+        if not target:
+            return
+
+        target["texto"] = new_text
+        strict, inferred = build_structured_fields(new_text) if build_structured_fields else ({}, {})
+        target["campos_extraidos_confirmados"] = strict
+        target["campos_extraidos_inferidos"] = inferred
+        target["campos_extraidos"] = _extract_multi_fields(new_text)
+        _atomic_write(path, {"registros": registros})
+        if log_audit_event:
+            log_audit_event("texto_editado", os.path.basename(path), new_text)
+            log_audit_event("campos_reextraidos", os.path.basename(path), new_text)
+
+        _finish_editing(reload_text=True)
+
+    tk.Button(action_frame, text="Editar", command=enable_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+    tk.Button(action_frame, text="Salvar", command=save_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+    tk.Button(action_frame, text="Cancelar", command=cancel_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+
+    _text_action_ui[text_widget] = {
+        "frame": action_frame,
+        "hide": hide_actions,
+        "show": show_actions,
+        "current": current,
+        "is_editing": is_editing,
+    }
+
+    def on_click(event):
+        if is_editing():
+            if edit_state.get("dirty"):
+                try:
+                    if not messagebox.askyesno("Alterações não salvas", "Deseja sair da edição sem salvar?"):
+                        return
+                except Exception:
+                    return
+                cancel_edit()
+            else:
+                return
+        try:
+            idx = text_widget.index(f"@{event.x},{event.y}")
+            for tag in text_widget.tag_names(idx):
+                if "_record_" in tag:
+                    rec = _record_tag_map_generic.get(text_widget, {}).get(tag)
+                    if rec:
+                        current["record"] = rec
+                        current["rec_tag"] = tag
+                        show_actions()
+                        return
+            hide_actions()
+        except Exception:
+            return
+
+    def on_click_outside(_event):
+        if is_editing():
+            return
+        hide_actions()
+
+    def on_key_change(_event):
+        if is_editing():
+            edit_state["dirty"] = True
+
+    _bind_edit_shortcuts()
+    try:
+        text_widget.bind("<Button-1>", on_click, add="+")
+        text_widget.bind("<Key>", on_key_change, add="+")
+    except Exception:
+        pass
+    try:
+        frame.bind("<Button-1>", on_click_outside, add="+")
+    except Exception:
+        pass
+
 def _build_monitor_ui(container):
     _apply_light_theme(container)
     style = ttk.Style(container)
@@ -981,8 +1284,8 @@ def _build_monitor_ui(container):
     tab_configs = [
         (controle_frame, ARQUIVO, format_creative_entry),
         (encomendas_frame, ENCOMENDAS_ARQUIVO, format_encomenda_entry),
-        (orientacoes_frame, ARQUIVO, format_creative_entry),
-        (observacoes_frame, ARQUIVO, format_creative_entry),
+        (orientacoes_frame, ORIENTACOES_ARQUIVO, format_orientacao_entry),
+        (observacoes_frame, OBSERVACOES_ARQUIVO, format_observacao_entry),
     ]
     for frame, arquivo, formatter in tab_configs:
         text_widget = tk.Text(
@@ -992,6 +1295,9 @@ def _build_monitor_ui(container):
             fg="white",
             insertbackground="white",
             relief="flat",
+            undo=True,
+            autoseparators=True,
+            maxundo=-1,
         )
         if formatter == format_encomenda_entry:
             text_widget.tag_configure("status_avisado", foreground="#2ecc71")
@@ -1003,6 +1309,8 @@ def _build_monitor_ui(container):
         _bind_hover_highlight(text_widget)
         if formatter == format_encomenda_entry:
             _build_encomenda_actions(frame, text_widget, info_label)
+        elif formatter in (format_orientacao_entry, format_observacao_entry):
+            _build_text_actions(frame, text_widget, info_label, arquivo)
         text_widgets.append(text_widget)
         _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter}
 
