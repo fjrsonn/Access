@@ -736,6 +736,8 @@ def _build_filter_bar(parent, text_widget, info_label):
     _filter_state[text_widget] = _default_filters()
 
 def _apply_hover_line(text_widget, line, hover_tag):
+    if text_widget in _text_edit_lock:
+        return
     if not line:
         return
     start = f"{line}.0"
@@ -751,6 +753,8 @@ def _apply_hover_line(text_widget, line, hover_tag):
             pass
 
 def _clear_hover_line(text_widget, hover_tag):
+    if text_widget in _text_edit_lock:
+        return
     try:
         text_widget.config(state="normal")
         text_widget.tag_remove(hover_tag, "1.0", tk.END)
@@ -763,6 +767,8 @@ def _clear_hover_line(text_widget, hover_tag):
     _hover_state[text_widget] = None
 
 def _restore_hover_if_needed(text_widget, hover_tag):
+    if text_widget in _text_edit_lock:
+        return
     line = _hover_state.get(text_widget)
     if not line:
         return
@@ -789,6 +795,8 @@ def _bind_hover_highlight(text_widget):
     _hover_state[text_widget] = None
 
     def on_motion(event):
+        if text_widget in _text_edit_lock:
+            return
         try:
             index = text_widget.index(f"@{event.x},{event.y}")
         except Exception:
@@ -1092,6 +1100,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
             "<Control-v>": _virtual("<<Paste>>"),
             "<Control-V>": _virtual("<<Paste>>"),
         }
+        shortcuts["<Escape>"] = lambda _event: (cancel_edit() or "break")
         for seq, handler in shortcuts.items():
             try:
                 text_widget.bind(seq, _only_editing(handler), add="+")
@@ -1120,10 +1129,30 @@ def _build_text_actions(frame, text_widget, info_label, path):
         edit_state["tag"] = rec_tag
         _text_edit_lock.add(text_widget)
         try:
+            text_widget.tag_remove("sel", "1.0", tk.END)
+        except Exception:
+            pass
+        try:
             text_widget.config(state="normal")
             text_widget.focus_set()
         except Exception:
             pass
+
+    def _finish_editing(reload_text=True):
+        edit_state["active"] = False
+        edit_state["tag"] = None
+        _text_edit_lock.discard(text_widget)
+        try:
+            text_widget.config(state="disabled")
+        except Exception:
+            pass
+        if reload_text:
+            _populate_text(text_widget, info_label)
+
+    def cancel_edit():
+        if not is_editing():
+            return
+        _finish_editing(reload_text=True)
 
     def save_edit():
         rec = current.get("record")
@@ -1151,17 +1180,11 @@ def _build_text_actions(frame, text_widget, info_label, path):
         target["campos_extraidos"] = _extract_multi_fields(new_text)
         _atomic_write(path, {"registros": registros})
 
-        edit_state["active"] = False
-        edit_state["tag"] = None
-        _text_edit_lock.discard(text_widget)
-        try:
-            text_widget.config(state="disabled")
-        except Exception:
-            pass
-        _populate_text(text_widget, info_label)
+        _finish_editing(reload_text=True)
 
     tk.Button(action_frame, text="Editar", command=enable_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
     tk.Button(action_frame, text="Salvar", command=save_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+    tk.Button(action_frame, text="Cancelar", command=cancel_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
 
     _text_action_ui[text_widget] = {
         "frame": action_frame,
