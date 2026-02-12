@@ -218,48 +218,59 @@ def _contains_keywords(text: str, keywords: set[str]) -> bool:
     return any(t in keywords for t in toks_up)
 
 def _extract_multi_fields(text: str) -> dict:
-    toks = [t.upper() for t in tokens(text)]
-    out = {"BLOCO": [], "APARTAMENTO": [], "NOME": [], "SOBRENOME": [], "HORARIO": [], "VEICULO": [], "COR": [], "PLACA": []}
-    if not toks:
-        return out
+    raw = str(text or "")
+    up = raw.upper()
+    out = {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": [],
+    }
 
-    for i, t in enumerate(toks):
-        if t in ("BLOCO", "BL", "B") and i + 1 < len(toks):
-            out["BLOCO"].append(toks[i + 1])
-        elif t in ("AP", "APT", "APTO", "APARTAMENTO", "APART") and i + 1 < len(toks):
-            out["APARTAMENTO"].append(toks[i + 1])
-        elif t in ("NOME", "NOM") and i + 1 < len(toks):
-            out["NOME"].append(toks[i + 1])
-            if i + 2 < len(toks):
-                out["SOBRENOME"].append(toks[i + 2])
-        elif t in ("SOBRENOME", "SNOME") and i + 1 < len(toks):
-            out["SOBRENOME"].append(toks[i + 1])
-        elif t in ("HORARIO", "HORA") and i + 1 < len(toks):
-            out["HORARIO"].append(toks[i + 1])
-        elif t in ("VEICULO", "CARRO", "MOTO", "MODELO") and i + 1 < len(toks):
-            out["VEICULO"].append(toks[i + 1])
-        elif t == "COR" and i + 1 < len(toks):
-            out["COR"].append(toks[i + 1])
+    for m in re.finditer(r"(?:BLOCO|BL)\s*[:\-]?\s*([A-Z0-9]+)", up):
+        out["BLOCO"].append(m.group(1))
 
-        if re.match(r"^([A-Z]{3}[0-9][A-Z0-9][0-9]{2}|[A-Z]{3}[0-9]{4})$", t):
-            out["PLACA"].append(t)
-        if re.match(r"^\d{1,2}:\d{2}$", t):
-            out["HORARIO"].append(t)
+    for m in re.finditer(r"(?:APARTAMENTO|APTO|APT|AP|UNIDADE|UN)\s*[:\-]?\s*([A-Z0-9]+)", up):
+        out["APARTAMENTO"].append(m.group(1))
 
-    return {k: list(dict.fromkeys(v)) for k, v in out.items()}
+    for m in re.finditer(r"\b([01]?\d|2[0-3])[:H]([0-5]\d)\b", up):
+        out["HORARIO"].append(f"{int(m.group(1)):02d}:{m.group(2)}")
 
-def _formalize_occurrence_text(text: str, extracted: dict, now_str: str) -> str:
-    cleaned = clean_whitespace(text)
-    data = now_str.split()[0] if now_str else "-"
-    hora = now_str.split()[1] if now_str and " " in now_str else "-"
-    blocos = ", ".join(extracted.get("BLOCO", [])) or "não informado"
-    aps = ", ".join(extracted.get("APARTAMENTO", [])) or "não informado"
-    placas = ", ".join(extracted.get("PLACA", [])) or "não informado"
-    return (
-        f"Registro em {data} às {hora}. Relato formalizado para acompanhamento interno. "
-        f"Bloco(s): {blocos}. Apartamento(s): {aps}. Placa(s): {placas}. "
-        f"Descrição: {cleaned}."
-    )
+    for m in re.finditer(r"\b([A-Z]{3}[0-9][A-Z0-9][0-9]{2}|[A-Z]{3}[0-9]{4})\b", up):
+        out["PLACA"].append(m.group(1))
+
+    for m in re.finditer(r"(?:COR)\s*[:\-]?\s*([A-ZÇÃÕÁÉÍÓÚÀÂÊÔÜ]+)", up):
+        out["COR"].append(m.group(1))
+
+    for m in re.finditer(r"(?:VEICULO|VEÍCULO|CARRO|MOTO|MODELO)\s*[:\-]?\s*([A-Z0-9]+(?:\s+[A-Z0-9]+){0,2})", up):
+        out["VEICULO"].append(m.group(1).strip())
+
+    name_patterns = [
+        r"(?:MORADOR(?:A)?|SR\.?|SRA\.?|SENHOR|SENHORA)\s+([A-ZÀ-Ý][A-ZÀ-Ý'`.-]+(?:\s+[A-ZÀ-Ý][A-ZÀ-Ý'`.-]+)+)",
+        r"NOME\s*[:\-]?\s*([A-ZÀ-Ý][A-ZÀ-Ý'`.-]+(?:\s+[A-ZÀ-Ý][A-ZÀ-Ý'`.-]+)+)",
+    ]
+    for pat in name_patterns:
+        for m in re.finditer(pat, up):
+            full = re.sub(r"\s+", " ", m.group(1)).strip(" .,-")
+            parts = [w for w in full.split() if w]
+            if parts:
+                out["NOME"].append(parts[0])
+                if len(parts) > 1:
+                    out["SOBRENOME"].append(" ".join(parts[1:]))
+
+    for k, vals in out.items():
+        dedup = []
+        for v in vals:
+            if v and v not in dedup:
+                dedup.append(v)
+        out[k] = dedup
+    return out
+
+
 
 def _save_structured_text(path: str, txt: str, now_str: str, tipo: str) -> None:
     try:
@@ -278,14 +289,14 @@ def _save_structured_text(path: str, txt: str, now_str: str, tipo: str) -> None:
     rec = {
         "id": nid,
         "tipo": tipo,
-        "texto_original": txt,
-        "texto_tratado": _formalize_occurrence_text(txt, extracted, now_str),
+        "texto": txt,
         "campos_extraidos": extracted,
         "data_hora": now_str,
         "processado": True,
     }
     regs.append(rec)
     atomic_save(path, {"registros": regs})
+
 
 # ---------- util ----------
 def _norm(s: str, keep_dash=False) -> str:

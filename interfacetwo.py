@@ -272,33 +272,57 @@ def format_encomenda_entry(r: dict) -> str:
 
 
 def _extract_multi_fields(text: str) -> dict:
-    toks = re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ0-9\-:]+", str(text or "").upper())
-    out = {"BLOCO": [], "APARTAMENTO": [], "NOME": [], "SOBRENOME": [], "HORARIO": [], "VEICULO": [], "COR": [], "PLACA": []}
-    for i, t in enumerate(toks):
-        if t in ("BLOCO", "BL", "B") and i + 1 < len(toks): out["BLOCO"].append(toks[i+1])
-        if t in ("AP", "APT", "APARTAMENTO", "APTO") and i + 1 < len(toks): out["APARTAMENTO"].append(toks[i+1])
-        if t == "NOME" and i + 1 < len(toks): out["NOME"].append(toks[i+1])
-        if t == "SOBRENOME" and i + 1 < len(toks): out["SOBRENOME"].append(toks[i+1])
-        if t in ("HORARIO", "HORA") and i + 1 < len(toks): out["HORARIO"].append(toks[i+1])
-        if t in ("VEICULO", "CARRO", "MOTO", "MODELO") and i + 1 < len(toks): out["VEICULO"].append(toks[i+1])
-        if t == "COR" and i + 1 < len(toks): out["COR"].append(toks[i+1])
-        if re.match(r"^([A-Z]{3}[0-9][A-Z0-9][0-9]{2}|[A-Z]{3}[0-9]{4})$", t): out["PLACA"].append(t)
-        if re.match(r"^\d{1,2}:\d{2}$", t): out["HORARIO"].append(t)
-    return {k: list(dict.fromkeys(v)) for k,v in out.items()}
+    raw = str(text or "")
+    up = raw.upper()
+    out = {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": [],
+    }
+    for m in re.finditer(r"(?:BLOCO|BL)\s*[:\-]?\s*([A-Z0-9]+)", up):
+        out["BLOCO"].append(m.group(1))
+    for m in re.finditer(r"(?:APARTAMENTO|APTO|APT|AP|UNIDADE|UN)\s*[:\-]?\s*([A-Z0-9]+)", up):
+        out["APARTAMENTO"].append(m.group(1))
+    for m in re.finditer(r"\b([01]?\d|2[0-3])[:H]([0-5]\d)\b", up):
+        out["HORARIO"].append(f"{int(m.group(1)):02d}:{m.group(2)}")
+    for m in re.finditer(r"\b([A-Z]{3}[0-9][A-Z0-9][0-9]{2}|[A-Z]{3}[0-9]{4})\b", up):
+        out["PLACA"].append(m.group(1))
+    for m in re.finditer(r"(?:COR)\s*[:\-]?\s*([A-ZÇÃÕÁÉÍÓÚÀÂÊÔÜ]+)", up):
+        out["COR"].append(m.group(1))
+    for m in re.finditer(r"(?:VEICULO|VEÍCULO|CARRO|MOTO|MODELO)\s*[:\-]?\s*([A-Z0-9]+(?:\s+[A-Z0-9]+){0,2})", up):
+        out["VEICULO"].append(m.group(1).strip())
 
-def _formalize_occurrence_text(text: str, extracted: dict, data_hora: str) -> str:
-    data, hora = _split_date_time(data_hora or "")
-    blocos = ", ".join(extracted.get("BLOCO", [])) or "não informado"
-    aps = ", ".join(extracted.get("APARTAMENTO", [])) or "não informado"
-    placas = ", ".join(extracted.get("PLACA", [])) or "não informado"
-    cleaned = re.sub(r"\s+", " ", str(text or "")).strip()
-    return f"Registro em {data or '-'} às {hora or '-'}. Bloco(s): {blocos}. Apartamento(s): {aps}. Placa(s): {placas}. Descrição: {cleaned}."
+    name_patterns = [
+        r"(?:MORADOR(?:A)?|SR\.?|SRA\.?|SENHOR|SENHORA)\s+([A-ZÀ-Ý][A-ZÀ-Ý'`.-]+(?:\s+[A-ZÀ-Ý][A-ZÀ-Ý'`.-]+)+)",
+        r"NOME\s*[:\-]?\s*([A-ZÀ-Ý][A-ZÀ-Ý'`.-]+(?:\s+[A-ZÀ-Ý][A-ZÀ-Ý'`.-]+)+)",
+    ]
+    for pat in name_patterns:
+        for m in re.finditer(pat, up):
+            full = re.sub(r"\s+", " ", m.group(1)).strip(" .,-")
+            parts = [w for w in full.split() if w]
+            if parts:
+                out["NOME"].append(parts[0])
+                if len(parts) > 1:
+                    out["SOBRENOME"].append(" ".join(parts[1:]))
+
+    for k, vals in out.items():
+        dedup = []
+        for v in vals:
+            if v and v not in dedup:
+                dedup.append(v)
+        out[k] = dedup
+    return out
 
 def format_orientacao_entry(r: dict) -> str:
-    return str(r.get("texto_tratado") or _formalize_occurrence_text(r.get("texto_original") or "", r.get("campos_extraidos") or {}, r.get("data_hora") or r.get("DATA_HORA") or ""))
+    return str(r.get("texto") or r.get("texto_original") or "")
 
 def format_observacao_entry(r: dict) -> str:
-    return str(r.get("texto_tratado") or _formalize_occurrence_text(r.get("texto_original") or "", r.get("campos_extraidos") or {}, r.get("data_hora") or r.get("DATA_HORA") or ""))
+    return str(r.get("texto") or r.get("texto_original") or "")
 
 def _normalize_date_value(value: str):
     if not value:
@@ -1007,34 +1031,51 @@ def _build_text_actions(frame, text_widget, info_label, path):
     action_frame = tk.Frame(frame, bg="white")
     action_frame.pack_forget()
     current = {"record": None, "rec_tag": None}
-
-    editor = tk.Text(action_frame, height=5, wrap="word", bg="white", fg="black")
-    editor.pack(fill=tk.X, padx=10, pady=(8, 4))
-    editor.config(state="disabled")
+    edit_state = {"active": False, "tag": None}
 
     def hide_actions():
         action_frame.pack_forget()
         current["record"] = None
+        current["rec_tag"] = None
+        if edit_state["active"]:
+            edit_state["active"] = False
+            edit_state["tag"] = None
+            try:
+                text_widget.config(state="disabled")
+            except Exception:
+                pass
 
     def show_actions():
         rec = current.get("record")
         if not rec:
             return
-        editor.config(state="normal")
-        editor.delete("1.0", tk.END)
-        editor.insert("1.0", rec.get("texto_original") or rec.get("texto_tratado") or "")
-        editor.config(state="disabled")
         if not action_frame.winfo_ismapped():
             action_frame.pack(fill=tk.X, padx=10, pady=(0, 8))
 
     def enable_edit():
-        editor.config(state="normal")
+        rec_tag = current.get("rec_tag")
+        if not rec_tag:
+            return
+        edit_state["active"] = True
+        edit_state["tag"] = rec_tag
+        try:
+            text_widget.config(state="normal")
+        except Exception:
+            pass
 
     def save_edit():
         rec = current.get("record")
-        if not rec:
+        rec_tag = current.get("rec_tag")
+        if not rec or not rec_tag:
             return
-        new_text = editor.get("1.0", "end-1c").strip()
+        try:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if not ranges or len(ranges) < 2:
+                return
+            new_text = text_widget.get(ranges[0], ranges[1]).strip()
+        except Exception:
+            return
+
         registros = _load_safe(path)
         target = None
         for r in registros:
@@ -1043,19 +1084,21 @@ def _build_text_actions(frame, text_widget, info_label, path):
                 break
         if not target:
             return
-        dh = target.get("data_hora") or target.get("DATA_HORA") or datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        extracted = _extract_multi_fields(new_text)
-        target["texto_original"] = new_text
-        target["campos_extraidos"] = extracted
-        target["texto_tratado"] = _formalize_occurrence_text(new_text, extracted, dh)
+
+        target["texto"] = new_text
+        target["campos_extraidos"] = _extract_multi_fields(new_text)
         _atomic_write(path, {"registros": registros})
-        editor.config(state="disabled")
+
+        edit_state["active"] = False
+        edit_state["tag"] = None
+        try:
+            text_widget.config(state="disabled")
+        except Exception:
+            pass
         _populate_text(text_widget, info_label)
 
-    btns = tk.Frame(action_frame, bg="white")
-    btns.pack(fill=tk.X, padx=10, pady=(0, 8))
-    tk.Button(btns, text="Editar", command=enable_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10)
-    tk.Button(btns, text="Salvar", command=save_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10)
+    tk.Button(action_frame, text="Editar", command=enable_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+    tk.Button(action_frame, text="Salvar", command=save_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
 
     _text_action_ui[text_widget] = {"frame": action_frame, "hide": hide_actions, "show": show_actions, "current": current}
 
@@ -1063,10 +1106,11 @@ def _build_text_actions(frame, text_widget, info_label, path):
         try:
             idx = text_widget.index(f"@{event.x},{event.y}")
             for tag in text_widget.tag_names(idx):
-                if tag.endswith("_record_" + tag.split("_record_")[-1]):
+                if "_record_" in tag:
                     rec = _record_tag_map_generic.get(text_widget, {}).get(tag)
                     if rec:
                         current["record"] = rec
+                        current["rec_tag"] = tag
                         show_actions()
                         return
         except Exception:
