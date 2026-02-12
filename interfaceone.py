@@ -1738,6 +1738,19 @@ def save_text(entry_widget=None, btn=None):
             except Exception as e:
                 print("Falha ao iniciar processamento IA para encomendas:", e)
         return
+
+    is_orientacao = _contains_keywords(txt, _ORIENTACOES_KEYWORDS)
+    is_observacao = _contains_keywords(txt, _OBSERVACOES_KEYWORDS)
+    if is_orientacao and not is_observacao:
+        _save_structured_text(ORIENTACOES_FILE, txt, now_str, "ORIENTACAO")
+        try: entry_widget.delete(0, "end")
+        except: pass
+        return
+    if is_observacao and not is_orientacao:
+        _save_structured_text(OBSERVACOES_FILE, txt, now_str, "OBSERVACAO")
+        try: entry_widget.delete(0, "end")
+        except: pass
+        return
     rec = None
     fields_for_flags = {}
     if parsed:
