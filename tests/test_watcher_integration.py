@@ -55,7 +55,7 @@ class WatcherIntegrationTests(unittest.TestCase):
                  mock.patch.object(main, "_get_last_record_identity", return_value="ANA|SILVA|A|1"), \
                  mock.patch.object(main.time, "sleep", side_effect=controlled_sleep):
                 with self.assertRaises(StopIteration):
-                    main.watcher_thread(f"{td}/dadosend.json", fake_a, fake_v, poll=0.01)
+                    main.watcher_thread(f"{td}/dadosend.json", fake_a, fake_v, poll=0.01, debounce_window=0.0)
 
             self.assertTrue(any(c[0] == "build_analises_for_identity" for c in fake_a.calls))
             self.assertTrue(any(c[0] == "build_avisos_for_identity" for c in fake_v.calls))

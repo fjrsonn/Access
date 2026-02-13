@@ -19,6 +19,20 @@ LAST_STATUS_FILE = os.path.join(LOG_DIR, "runtime_last_status.json")
 _LOCK = threading.Lock()
 
 
+class RuntimeStatusStore:
+    """Armazena caminhos de status/eventos para evitar dependência em globais mutáveis."""
+
+    def __init__(self, *, events_file: str = EVENTS_FILE, last_status_file: str = LAST_STATUS_FILE):
+        self.events_file = events_file
+        self.last_status_file = last_status_file
+
+    def get_last_status(self) -> Dict[str, Any]:
+        return get_last_status(self.last_status_file)
+
+
+DEFAULT_STORE = RuntimeStatusStore()
+
+
 def _now_iso() -> str:
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -68,15 +82,24 @@ def report_status(action: str, status: str, *, stage: str = "", details: Dict[st
             pass
 
 
-def get_last_status() -> Dict[str, Any]:
+def report_log(module: str, level: str, message: str, *, stage: str = "", details: Dict[str, Any] | None = None) -> None:
+    """Atalho para logs estruturados com action fixa de componente."""
+    payload = dict(details or {})
+    payload.update({"module": module, "message": str(message)})
+    report_status(f"log:{module}", str(level).upper(), stage=stage, details=payload)
+
+
+def get_last_status(path: str | None = None) -> Dict[str, Any]:
+    target = path or LAST_STATUS_FILE
     try:
-        with open(LAST_STATUS_FILE, "r", encoding="utf-8") as f:
+        with open(target, "r", encoding="utf-8") as f:
             data = json.load(f)
         if isinstance(data, dict):
             return data
     except Exception:
         pass
     return {}
+
 
 def _read_json(path: str) -> Any:
     try:

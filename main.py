@@ -1,4 +1,3 @@
-
 """
 main.py
 Inicializa o sistema:
@@ -13,6 +12,16 @@ import time
 import json
 import threading
 import traceback
+from collections import deque
+
+try:
+    from runtime_status import report_status, report_log
+except Exception:
+    def report_status(*args, **kwargs):
+        return None
+
+    def report_log(*args, **kwargs):
+        return None
 
 try:
     from runtime_status import report_status
@@ -26,52 +35,53 @@ ANALISES_JSON = os.path.join(BASE, "analises.json")
 AVISOS_JSON = os.path.join(BASE, "avisos.json")
 ENCOMENDASEND = os.path.join(BASE, "encomendasend.json")
 
-POLL_INTERVAL = 1.0  # segundos entre verificações de mtime
+POLL_INTERVAL = 1.0
+WATCHER_DEBOUNCE_WINDOW = 0.35
 
-# Estruturas pré-definidas (conformes com o que geramos anteriormente)
 _ANALISES_TEMPLATE = {"registros": [], "encomendas_multiplas_bloco_apartamento": []}
 _AVISOS_TEMPLATE = {"registros": [], "ultimo_aviso_ativo": None}
 
+
+def _log(level: str, stage: str, message: str, **details):
+    report_log("main", level, message, stage=stage, details=details)
+    print(f"[main] {message}")
+
+
 def ensure_file(path, template):
-    """Cria o arquivo com template JSON se não existir ou estiver vazio/ inválido."""
     if not os.path.exists(path):
         try:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(template, f, ensure_ascii=False, indent=2)
-            print(f"[main] Criado: {path}")
-        except Exception as e:
-            print("[main] Falha ao criar", path, e)
+            _log("OK", "ensure_file_created", f"Criado: {path}", path=path)
+        except OSError as e:
+            _log("ERROR", "ensure_file_create_failed", "Falha ao criar arquivo", path=path, error=str(e))
     else:
-        # tenta ler para validar; se inválido, reescreve com template
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
             if not isinstance(data, dict):
                 raise ValueError("conteúdo inválido")
-        except Exception:
+        except (OSError, ValueError, json.JSONDecodeError):
             try:
                 with open(path, "w", encoding="utf-8") as f:
                     json.dump(template, f, ensure_ascii=False, indent=2)
-                print(f"[main] Recriado (template aplicado): {path}")
-            except Exception as e:
-                print("[main] Falha ao recriar", path, e)
+                _log("OK", "ensure_file_recreated", f"Recriado (template aplicado): {path}", path=path)
+            except OSError as e:
+                _log("ERROR", "ensure_file_recreate_failed", "Falha ao recriar arquivo", path=path, error=str(e))
+
 
 def _identity_from_record(rec):
-    """Gera identidade 'NOME|SOBRENOME|BLOCO|APARTAMENTO' a partir de um registro (robusto)."""
     def _v(k):
         return (rec.get(k, "") or "").strip().upper()
-    nome = _v("NOME")
-    sobrenome = _v("SOBRENOME")
-    bloco = _v("BLOCO")
-    ap = _v("APARTAMENTO")
-    return f"{nome}|{sobrenome}|{bloco}|{ap}"
+
+    return f"{_v('NOME')}|{_v('SOBRENOME')}|{_v('BLOCO')}|{_v('APARTAMENTO')}"
+
 
 def _get_last_record_identity(dadosend_path):
-    """Retorna identity da última gravação detectável em dadosend.json (por ID ou DATA_HORA)."""
     try:
         with open(dadosend_path, "r", encoding="utf-8") as f:
             d = json.load(f)
-    except Exception:
+    except (OSError, json.JSONDecodeError):
         return None
     regs = []
     if isinstance(d, dict) and "registros" in d:
@@ -80,28 +90,27 @@ def _get_last_record_identity(dadosend_path):
         regs = d
     if not regs:
         return None
-    # tentar por ID (maior ID), senão por DATA_HORA (mais recente), senão último item
     try:
         regs_with_id = [r for r in regs if isinstance(r.get("ID"), int)]
         if regs_with_id:
             last = max(regs_with_id, key=lambda r: int(r.get("ID") or 0))
             return _identity_from_record(last)
-    except Exception:
+    except (TypeError, ValueError):
         pass
-    # tentativa por DATA_HORA parseável (mais recente)
+
     def _dt_key(rec):
         s = rec.get("DATA_HORA") or rec.get("data_hora") or ""
         try:
-            # formato esperado "dd/mm/YYYY HH:MM:SS"
             from datetime import datetime
             for fmt in ("%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M"):
                 try:
                     return datetime.strptime(s, fmt)
-                except:
+                except ValueError:
                     pass
-        except:
+        except Exception:
             pass
         return None
+
     try:
         regs_with_dt = [(r, _dt_key(r)) for r in regs]
         regs_with_dt = [t for t in regs_with_dt if t[1] is not None]
@@ -110,29 +119,86 @@ def _get_last_record_identity(dadosend_path):
             return _identity_from_record(last)
     except Exception:
         pass
-    # fallback: último item do array
+
     try:
         return _identity_from_record(regs[-1])
     except Exception:
         return None
 
-def watcher_thread(dadosend_path, analises_mod, avisos_mod, poll=POLL_INTERVAL):
-    """Monitora mtime de dadosend.json e encomendasend.json e atualiza analises/avisos."""
-    print("[main] Watcher iniciado para", dadosend_path, "e", ENCOMENDASEND)
+
+def _process_dadosend_change(dadosend_path, analises_mod, avisos_mod):
+    report_status("watcher", "STARTED", stage="dadosend_changed")
+    _log("STARTED", "dadosend_changed", "Alteração detectada em dadosend.json")
+    ident = _get_last_record_identity(dadosend_path)
+    if ident:
+        try:
+            analises_mod.build_analises_for_identity(ident, dadosend_path, ANALISES_JSON)
+            report_status("watcher", "OK", stage="build_analises_for_identity", details={"identidade": ident})
+        except Exception:
+            report_status("watcher", "ERROR", stage="build_analises_for_identity", details={"identidade": ident, "error": traceback.format_exc()})
+            try:
+                analises_mod.build_analises(dadosend_path, ANALISES_JSON)
+                report_status("watcher", "OK", stage="build_analises_full")
+            except Exception:
+                _log("ERROR", "build_analises_full_failed", "erro build_analises (fallback)", error=traceback.format_exc())
+
+        try:
+            avisos_mod.build_avisos_for_identity(ident, ANALISES_JSON, AVISOS_JSON)
+            report_status("watcher", "OK", stage="build_avisos_for_identity", details={"identidade": ident})
+        except Exception:
+            report_status("watcher", "ERROR", stage="build_avisos_for_identity", details={"identidade": ident, "error": traceback.format_exc()})
+            try:
+                avisos_mod.build_avisos(ANALISES_JSON, AVISOS_JSON)
+                report_status("watcher", "OK", stage="build_avisos_full")
+            except Exception:
+                _log("ERROR", "build_avisos_full_failed", "erro build_avisos (fallback)", error=traceback.format_exc())
+    else:
+        _log("WARNING", "identity_missing", "não foi possível identificar registro — recalculando tudo")
+        try:
+            analises_mod.build_analises(dadosend_path, ANALISES_JSON)
+            report_status("watcher", "OK", stage="build_analises_full")
+        except Exception:
+            _log("ERROR", "build_analises_full_failed", "erro build_analises", error=traceback.format_exc())
+        try:
+            avisos_mod.build_avisos(ANALISES_JSON, AVISOS_JSON)
+            report_status("watcher", "OK", stage="build_avisos_full")
+        except Exception:
+            _log("ERROR", "build_avisos_full_failed", "erro build_avisos", error=traceback.format_exc())
+
+
+def _process_encomendas_change(dadosend_path, analises_mod, avisos_mod):
+    report_status("watcher", "STARTED", stage="encomendas_changed")
+    _log("STARTED", "encomendas_changed", "Alteração detectada em encomendasend.json")
+    try:
+        analises_mod.build_analises(dadosend_path, ANALISES_JSON)
+        report_status("watcher", "OK", stage="build_analises_full")
+    except Exception:
+        report_status("watcher", "ERROR", stage="build_analises_full", details={"error": traceback.format_exc()})
+        _log("ERROR", "build_analises_full_failed", "erro build_analises (encomendas)", error=traceback.format_exc())
+    try:
+        avisos_mod.build_avisos(ANALISES_JSON, AVISOS_JSON)
+        report_status("watcher", "OK", stage="build_avisos_full")
+    except Exception:
+        report_status("watcher", "ERROR", stage="build_avisos_full", details={"error": traceback.format_exc()})
+        _log("ERROR", "build_avisos_full_failed", "erro build_avisos (encomendas)", error=traceback.format_exc())
+
+
+def watcher_thread(dadosend_path, analises_mod, avisos_mod, poll=POLL_INTERVAL, debounce_window=WATCHER_DEBOUNCE_WINDOW):
+    _log("OK", "watcher_started", f"Watcher iniciado para {dadosend_path} e {ENCOMENDASEND}")
     last_mtime_dadosend = None
     last_mtime_encomendas = None
+    pending_events = deque()
+    pending_map = {}
     while True:
+        now = time.time()
         try:
-            dados_changed = False
-            encomendas_changed = False
-
             if os.path.exists(dadosend_path):
                 m_dados = os.path.getmtime(dadosend_path)
                 if last_mtime_dadosend is None:
                     last_mtime_dadosend = m_dados
                 elif m_dados != last_mtime_dadosend:
                     last_mtime_dadosend = m_dados
-                    dados_changed = True
+                    pending_map["dadosend"] = now
 
             if os.path.exists(ENCOMENDASEND):
                 m_encomendas = os.path.getmtime(ENCOMENDASEND)
@@ -140,121 +206,78 @@ def watcher_thread(dadosend_path, analises_mod, avisos_mod, poll=POLL_INTERVAL):
                     last_mtime_encomendas = m_encomendas
                 elif m_encomendas != last_mtime_encomendas:
                     last_mtime_encomendas = m_encomendas
-                    encomendas_changed = True
+                    pending_map["encomendas"] = now
 
-            if dados_changed:
-                report_status("watcher", "STARTED", stage="dadosend_changed")
-                print("[main] Alteração detectada em dadosend.json — iniciando análise incremental...")
-                ident = _get_last_record_identity(dadosend_path)
-                if ident:
-                    try:
-                        analises_mod.build_analises_for_identity(ident, dadosend_path, ANALISES_JSON)
-                        report_status("watcher", "OK", stage="build_analises_for_identity", details={"identidade": ident})
-                    except Exception:
-                        report_status("watcher", "ERROR", stage="build_analises_for_identity", details={"identidade": ident, "error": traceback.format_exc()})
-                        print("[main] erro build_analises_for_identity:", traceback.format_exc())
-                        try:
-                            analises_mod.build_analises(dadosend_path, ANALISES_JSON)
-                            report_status("watcher", "OK", stage="build_analises_full")
-                        except Exception:
-                            print("[main] erro build_analises (fallback):", traceback.format_exc())
-                    try:
-                        avisos_mod.build_avisos_for_identity(ident, ANALISES_JSON, AVISOS_JSON)
-                        report_status("watcher", "OK", stage="build_avisos_for_identity", details={"identidade": ident})
-                    except Exception:
-                        report_status("watcher", "ERROR", stage="build_avisos_for_identity", details={"identidade": ident, "error": traceback.format_exc()})
-                        print("[main] erro build_avisos_for_identity:", traceback.format_exc())
-                        try:
-                            avisos_mod.build_avisos(ANALISES_JSON, AVISOS_JSON)
-                            report_status("watcher", "OK", stage="build_avisos_full")
-                        except Exception:
-                            print("[main] erro build_avisos (fallback):", traceback.format_exc())
-                else:
-                    print("[main] não foi possível identificar registro — recalculando tudo")
-                    try:
-                        analises_mod.build_analises(dadosend_path, ANALISES_JSON)
-                        report_status("watcher", "OK", stage="build_analises_full")
-                    except Exception:
-                        print("[main] erro build_analises:", traceback.format_exc())
-                    try:
-                        avisos_mod.build_avisos(ANALISES_JSON, AVISOS_JSON)
-                        report_status("watcher", "OK", stage="build_avisos_full")
-                    except Exception:
-                        print("[main] erro build_avisos:", traceback.format_exc())
+            for event_name, last_change_ts in list(pending_map.items()):
+                if now - last_change_ts >= debounce_window:
+                    pending_events.append(event_name)
+                    pending_map.pop(event_name, None)
 
-            if encomendas_changed and not dados_changed:
-                report_status("watcher", "STARTED", stage="encomendas_changed")
-                print("[main] Alteração detectada em encomendasend.json — recalculando análises/avisos...")
-                try:
-                    analises_mod.build_analises(dadosend_path, ANALISES_JSON)
-                    report_status("watcher", "OK", stage="build_analises_full")
-                except Exception:
-                    report_status("watcher", "ERROR", stage="build_analises_full", details={"error": traceback.format_exc()})
-                    print("[main] erro build_analises (encomendas):", traceback.format_exc())
-                try:
-                    avisos_mod.build_avisos(ANALISES_JSON, AVISOS_JSON)
-                    report_status("watcher", "OK", stage="build_avisos_full")
-                except Exception:
-                    report_status("watcher", "ERROR", stage="build_avisos_full", details={"error": traceback.format_exc()})
-                    print("[main] erro build_avisos (encomendas):", traceback.format_exc())
+            processed_in_tick = set()
+            while pending_events:
+                event_name = pending_events.popleft()
+                if event_name in processed_in_tick:
+                    continue
+                processed_in_tick.add(event_name)
+                if event_name == "dadosend":
+                    _process_dadosend_change(dadosend_path, analises_mod, avisos_mod)
+                elif event_name == "encomendas" and "dadosend" not in processed_in_tick:
+                    _process_encomendas_change(dadosend_path, analises_mod, avisos_mod)
         except Exception:
-            print("[main] watcher erro:", traceback.format_exc())
+            _log("ERROR", "watcher_loop_exception", "watcher erro", error=traceback.format_exc())
         time.sleep(poll)
 
+
 def initialize_system(start_watcher=True):
-    """Inicializa infraestrutura e builds iniciais. Retorna thread watcher (ou None)."""
-    # 1) garante arquivos de infraestrutura
     ensure_file(ANALISES_JSON, _ANALISES_TEMPLATE)
     ensure_file(AVISOS_JSON, _AVISOS_TEMPLATE)
     if not os.path.exists(DADOSEND):
-        # cria dadosend.json vazio por segurança
         try:
             with open(DADOSEND, "w", encoding="utf-8") as f:
                 json.dump({"registros": []}, f, ensure_ascii=False, indent=2)
-            print("[main] Criado dadosend.json vazio.")
-        except Exception:
-            print("[main] Falha ao criar dadosend.json:", traceback.format_exc())
+            _log("OK", "dadosend_created", "Criado dadosend.json vazio.")
+        except OSError:
+            _log("ERROR", "dadosend_create_failed", "Falha ao criar dadosend.json", error=traceback.format_exc())
 
-    # 2) importa módulos analises/avisos (assume que analises.py e avisos.py existem no mesmo dir)
     try:
         import analises
         import avisos
     except Exception as e:
-        print("[main] Falha ao importar analises/avisos:", e)
+        _log("ERROR", "module_import_failed", "Falha ao importar analises/avisos", error=str(e))
         raise
 
-    # 3) inicializa análises/avisos completos no startup (garantia)
     try:
-        print("[main] Executando build_analises() inicial...")
+        _log("STARTED", "build_analises_initial", "Executando build_analises() inicial...")
         analises.build_analises(DADOSEND, ANALISES_JSON)
     except Exception:
-        print("[main] build_analises falhou:", traceback.format_exc())
+        _log("ERROR", "build_analises_initial_failed", "build_analises falhou", error=traceback.format_exc())
     try:
-        print("[main] Executando build_avisos() inicial...")
+        _log("STARTED", "build_avisos_initial", "Executando build_avisos() inicial...")
         avisos.build_avisos(ANALISES_JSON, AVISOS_JSON)
     except Exception:
-        print("[main] build_avisos falhou:", traceback.format_exc())
+        _log("ERROR", "build_avisos_initial_failed", "build_avisos falhou", error=traceback.format_exc())
 
-    # 4) start watcher (opcional)
     watcher = None
     if start_watcher:
-        watcher = threading.Thread(target=watcher_thread, args=(DADOSEND, analises, avisos, POLL_INTERVAL), daemon=True)
+        watcher = threading.Thread(
+            target=watcher_thread,
+            args=(DADOSEND, analises, avisos, POLL_INTERVAL, WATCHER_DEBOUNCE_WINDOW),
+            daemon=True,
+        )
         watcher.start()
-
     return watcher
 
 
 def main():
     initialize_system(start_watcher=True)
-
-    # 5) inicia interface grafica (bloqueante)
     try:
         import interfaceone
-        print("[main] Inicializando interface grafica (interfaceone)...")
+        _log("STARTED", "ui_starting", "Inicializando interface grafica (interfaceone)...")
         interfaceone.iniciar_interface_principal()
     except Exception:
-        print("[main] Falha ao iniciar interfaceone:", traceback.format_exc())
+        _log("ERROR", "ui_start_failed", "Falha ao iniciar interfaceone", error=traceback.format_exc())
         raise
+
 
 if __name__ == "__main__":
     main()

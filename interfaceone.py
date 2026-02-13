@@ -80,11 +80,18 @@ except Exception:
     montar_entrada_bruta = None
 
 try:
-    from runtime_status import report_status
+    from runtime_status import report_status, report_log
 except Exception:
     def report_status(*args, **kwargs):
         return None
+    def report_log(*args, **kwargs):
+        return None
 
+
+
+def _log_ui(level: str, stage: str, message: str, **details):
+    report_log("interfaceone", level, message, stage=stage, details=details)
+    print(f"[interfaceone] {message}")
 # paths
 BASE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE, "dados")
@@ -329,7 +336,8 @@ def atomic_save(path, obj):
     finally:
         if os.path.exists(tmp):
             try: os.remove(tmp)
-            except: pass
+            except Exception:
+                pass
 
 # helper: garante data_hora válida e salva o DB (uso centralizado para evitar nulls)
 def sanitize_and_save_db(regs):
@@ -348,7 +356,8 @@ def sanitize_and_save_db(regs):
             r["DATA_HORA"] = now_str
             if "data_hora" in r:
                 try: r.pop("data_hora")
-                except: pass
+                except Exception:
+                    pass
             changed = True
 
     try:
@@ -373,7 +382,8 @@ def parse_datetime(ds: str):
     s = (ds or "").strip()
     for fmt in ("%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M"):
         try: return datetime.strptime(s, fmt)
-        except: pass
+        except Exception:
+            pass
     return None
 
 def date_of_datetime_str(ds: str) -> str:
@@ -400,7 +410,8 @@ def load_db():
             r["DATA_HORA"] = now_str
             if "data_hora" in r:
                 try: r.pop("data_hora")
-                except: pass
+                except Exception:
+                    pass
             changed = True
     if changed:
         try:
@@ -478,7 +489,8 @@ def build_suggestions(max_entries=2000):
     finally:
         if os.path.exists(tmp):
             try: os.remove(tmp)
-            except: pass
+            except Exception:
+                pass
 
 def sync_suggestions(force=False):
     global _db_mtime
@@ -486,7 +498,8 @@ def sync_suggestions(force=False):
     except: m=0
     if force or m==0 or m!=_db_mtime or not os.path.exists(SUGG_PATH):
         try: build_suggestions()
-        except: pass
+        except Exception:
+            pass
         _db_mtime = m
 
 def _load_suggestions(force=False):
@@ -678,9 +691,11 @@ def _acquire_db_lock(timeout=5.0, poll=0.05):
         try:
             fd = os.open(_DB_LOCKFILE, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
             try: os.write(fd, f"{os.getpid()} {time.time()}".encode("utf-8"))
-            except: pass
+            except Exception:
+                pass
             try: os.close(fd)
-            except: pass
+            except Exception:
+                pass
             return True
         except FileExistsError:
             if (time.time() - start) >= timeout:
@@ -688,8 +703,10 @@ def _acquire_db_lock(timeout=5.0, poll=0.05):
                     m = os.path.getmtime(_DB_LOCKFILE)
                     if time.time() - m > (timeout * 2):
                         try: os.remove(_DB_LOCKFILE)
-                        except: pass
-                except: pass
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
                 return False
             time.sleep(poll)
         except Exception:
@@ -698,7 +715,8 @@ def _acquire_db_lock(timeout=5.0, poll=0.05):
 def _release_db_lock():
     try:
         if os.path.exists(_DB_LOCKFILE): os.remove(_DB_LOCKFILE)
-    except: pass
+    except Exception:
+        pass
 
 # ---------- ensure DATA_HORA ----------
 def _ensure_datetime_on_records(regs):
@@ -709,7 +727,8 @@ def _ensure_datetime_on_records(regs):
             r["DATA_HORA"] = now
             if "data_hora" in r:
                 try: r.pop("data_hora")
-                except: pass
+                except Exception:
+                    pass
 
 # ---------- build record (mantido) ----------
 def build_db_record_from_parsed(parsed: dict, raw_text: str = "") -> dict:
@@ -861,7 +880,8 @@ def _next_db_id(regs):
         try:
             v = int(r.get("ID") or r.get("id") or 0)
             if v > max_id: max_id = v
-        except: pass
+        except (TypeError, ValueError):
+            pass
     return max_id + 1
 
 def append_record_to_db(rec: dict):
@@ -920,11 +940,12 @@ def append_record_to_db(rec: dict):
         sanitize_and_save_db(regs)
         report_status("db_append", "OK", stage="persisted", details={"id": rec_to_insert.get("ID"), "entrada_id": rec_to_insert.get("_entrada_id")})
         try: sync_suggestions(force=True)
-        except: pass
+        except Exception:
+            pass
         return True
     except Exception as e:
         report_status("db_append", "ERROR", stage="exception", details={"error": str(e)})
-        print("Erro append_record_to_db:", e); return False
+        _log_ui("ERROR", "append_record_exception", "Erro append_record_to_db", error=str(e)); return False
     finally:
         _release_db_lock()
 
@@ -952,10 +973,11 @@ def _append_record_to_db_nolock(rec: dict):
         regs.append(rec_to_insert)
         _ensure_datetime_on_records(regs); sanitize_and_save_db(regs)
         try: sync_suggestions(force=True)
-        except: pass
+        except Exception:
+            pass
         return True
     except Exception as e:
-        print("Erro _append_record_to_db_nolock:", e); return False
+        _log_ui("ERROR", "append_record_nolock_exception", "Erro _append_record_to_db_nolock", error=str(e)); return False
 
 # ---------- util overlay: common prefix ----------
 def token_common_prefix_len(a: str, b: str) -> int:
@@ -988,7 +1010,8 @@ def post_validate_and_clean_record(rec: dict, modelos_hint: Iterable[str]=None, 
     try:
         if rec.get("MODELO") and rec.get("MODELO") not in ("", "-"):
             modelos_hint.append(rec.get("MODELO"))
-    except: pass
+    except Exception:
+        pass
 
     def _norm_token_local(t):
         if not t: return ""
@@ -1119,7 +1142,8 @@ class SuggestEntry(tk.Frame):
         # Não há thread de avisos; mantemos apenas sugestões/sync se necessário.
         try:
             threading.Thread(target=lambda: sync_suggestions(force=False), daemon=True).start()
-        except: pass
+        except Exception:
+            pass
 
     # overlay helpers
     def _typed_x(self):
@@ -1132,7 +1156,8 @@ class SuggestEntry(tk.Frame):
         typed, x = self._typed_x()
         try:
             if self.entry.index("insert") != len(typed): return self._hide_overlay()
-        except: pass
+        except Exception:
+            pass
         self.overlay.config(text=suffix)
         if not self.overlay_visible:
             self.overlay.place(in_=self.entry, x=x+4, y=1); self.overlay_visible = True
@@ -1142,7 +1167,8 @@ class SuggestEntry(tk.Frame):
     def _hide_overlay(self):
         if getattr(self, "overlay_visible", False):
             try: self.overlay.place_forget()
-            except: pass
+            except Exception:
+                pass
             self.overlay_visible=False
         self.overlay.config(text="")
 
@@ -1151,7 +1177,8 @@ class SuggestEntry(tk.Frame):
         k = event.keysym
         if self.ia_waiting_for_query and k not in ("Up","Down","Left","Right","Return","Tab","Escape"):
             try: self.entry_var.set(""); self.entry.icursor(0)
-            except: pass
+            except Exception:
+                pass
             self.ia_waiting_for_query=False
         if self.ia_mode:
             if k not in ("Up","Down"): self._just_accepted=False
@@ -1162,7 +1189,8 @@ class SuggestEntry(tk.Frame):
         self._has_user_navigated=False; self._just_accepted=False
         for sel in list(self.tree.selection()):
             try: self.tree.selection_remove(sel)
-            except: pass
+            except Exception:
+                pass
         typed = self.entry_var.get()
         if not typed.strip(): self.hide_list(); self._hide_overlay(); return
         tok_list = tokens(typed); last_token = tok_list[-1] if tok_list else typed.strip()
@@ -1172,7 +1200,8 @@ class SuggestEntry(tk.Frame):
         else:
             self.correction = ""; self._hide_overlay()
         try: self.show_db()
-        except: pass
+        except Exception:
+            pass
 
     def on_tab(self, event):
         if self.ia_mode: return "break"
@@ -1197,11 +1226,14 @@ class SuggestEntry(tk.Frame):
                     self.entry.selection_clear()
                     self.entry.focus_set()
                     try: self.entry.xview_moveto(1.0)
-                    except: pass
-                except: pass
+                    except Exception:
+                        pass
+                except Exception:
+                    pass
             self._hide_overlay(); self.correction="";
             try: self.show_db()
-            except: pass
+            except Exception:
+                pass
             self._just_accepted=True
             return "break"
         # Completion from the list
@@ -1214,7 +1246,8 @@ class SuggestEntry(tk.Frame):
                 if self.step_idx < len(self.steps):
                     token = self.steps[self.step_idx]; self._apply_step_token(token); self.step_idx += 1
                 try: self.show_db()
-                except: pass
+                except Exception:
+                    pass
                 self._just_accepted=True
                 return "break"
             return "break"
@@ -1248,7 +1281,8 @@ class SuggestEntry(tk.Frame):
             if re.fullmatch(r"\s*(ia|ai)([,.\s]*)?$", text, flags=re.IGNORECASE) or re.match(r"^\s*(ia|ai)\b", text, flags=re.IGNORECASE):
                 self.ia_mode=True; self.ia_waiting_for_query=True
                 try: self._enter_ia_mode()
-                except: pass
+                except Exception:
+                    pass
                 self._hide_overlay(); self.hide_list(); return "break"
         if self.ia_mode:
             if self.ia_waiting_for_query: return "break"
@@ -1256,12 +1290,14 @@ class SuggestEntry(tk.Frame):
             if command in DB_PANEL_COMMANDS:
                 try:
                     self.entry_var.set(""); self.entry.icursor(0)
-                except: pass
+                except Exception:
+                    pass
                 self._open_db_panel(DB_PANEL_COMMANDS[command], command)
                 return "break"
             if text.lower() in ("sair","exit","fim","close","voltar"):
                 try: self._exit_ia_mode()
-                except: pass
+                except Exception:
+                    pass
                 return "break"
             query_text = text; self.entry_var.set(""); self.entry.icursor(0)
             threading.Thread(target=self._send_query_to_ia_thread, args=(query_text,), daemon=True).start()
@@ -1273,16 +1309,19 @@ class SuggestEntry(tk.Frame):
                 except: idx = 0
                 self._accept_into_entry(idx, hide=True, append_all=True)
                 try: self.show_db()
-                except: pass
+                except Exception:
+                    pass
                 self._just_accepted=True
                 return "break"
             else:
                 try: save_text(entry_widget=self.entry)
-                except: pass
+                except Exception:
+                    pass
                 return "break"
         else:
             try: save_text(entry_widget=self.entry)
-            except: pass
+            except Exception:
+                pass
             return "break"
 
     def on_tree_return(self, event): return self.on_return(event)
@@ -1524,7 +1563,8 @@ class SuggestEntry(tk.Frame):
         row = self.tree.identify_row(event.y)
         if row:
             try: self.tree.selection_set(row)
-            except: pass
+            except Exception:
+                pass
             self._has_user_navigated=True
         return None
 
@@ -1535,14 +1575,16 @@ class SuggestEntry(tk.Frame):
         except: idx = 0
         self._accept_into_entry(idx, hide=True, append_all=True)
         try: self.show_db()
-        except: pass
+        except Exception:
+            pass
         self._just_accepted=True
 
     def on_tree_motion(self, event):
         row = self.tree.identify_row(event.y)
         if row:
             try: self.tree.selection_set(row)
-            except: pass
+            except Exception:
+                pass
             self.tree.focus(row); self._has_user_navigated=True
 
     def _accept_into_entry(self, idx, hide=False, append_all=False):
@@ -1550,7 +1592,8 @@ class SuggestEntry(tk.Frame):
         disp, rec = self.suggestions[idx]; name_text = full_name(rec)
         self.entry_var.set(name_text)
         try: self.entry.icursor(len(name_text)); self.entry.select_clear(); self.entry.focus_set()
-        except: pass
+        except Exception:
+            pass
         steps=[]
         for k in ("BLOCO","APARTAMENTO","PLACA","MODELO","COR","STATUS"):
             v = clean_whitespace(rec.get(k) or "")
@@ -1564,26 +1607,31 @@ class SuggestEntry(tk.Frame):
             t, x = self._typed_x()
             try:
                 self.overlay.place_configure(x=x+4, y=1); self.overlay.config(text=steps[0]); self.overlay_visible=True
-            except: pass
+            except Exception:
+                pass
         else:
             self._hide_overlay()
         if hide: self.hide_list()
         try: self.show_db()
-        except: pass
+        except Exception:
+            pass
 
     def _apply_step_token(self, token):
         current = self.entry_var.get().strip()
         if current.upper().endswith(token.upper()): return
         new_text = f"{current} {token}".strip(); self.entry_var.set(new_text)
         try: self.entry.icursor(len(new_text)); self.entry.select_clear(); self.entry.focus_set()
-        except: pass
+        except Exception:
+            pass
         if self.step_idx + 1 < len(self.steps):
             next_hint = self.steps[self.step_idx + 1]; x = self.font.measure(new_text)
             try: self.overlay.place_configure(x=x+4, y=1); self.overlay.config(text=next_hint); self.overlay_visible=True
-            except: pass
+            except Exception:
+                pass
         else: self._hide_overlay()
         try: self.show_db()
-        except: pass
+        except Exception:
+            pass
 
     def show_list(self, matches):
         if not self.entry_var.get().strip(): self.hide_list(); self._hide_overlay(); return
@@ -1617,7 +1665,8 @@ class SuggestEntry(tk.Frame):
                     scale = (parent_w - 40) / total_req
                     col_nome_w = int(col_nome_w * scale)
                     col_det_w = int(col_det_w * scale)
-        except: pass
+        except Exception:
+            pass
 
         for i,(nome,det,rec) in enumerate(rows):
             self.tree.insert("", "end", str(i), values=(nome, det))
@@ -1625,15 +1674,18 @@ class SuggestEntry(tk.Frame):
         try:
             self.tree.column("nome", width=col_nome_w, minwidth=40)
             self.tree.column("detalhes", width=col_det_w, minwidth=60)
-        except: pass
+        except Exception:
+            pass
 
         visible = min(len(rows), self.MAX_VISIBLE) if rows else 0
         if visible <= 0: self.hide_list(); return
         try: self.tree.configure(height=visible)
-        except: pass
+        except Exception:
+            pass
         for sel in list(self.tree.selection()):
             try: self.tree.selection_remove(sel)
-            except: pass
+            except Exception:
+                pass
         if not self.list_visible:
             self.frame.pack(side=tk.TOP, fill=tk.X, pady=(4,0)); self.list_visible=True
         self._has_user_navigated=False; self._just_accepted=False
@@ -1663,12 +1715,16 @@ class SuggestEntry(tk.Frame):
                 try: ia_module.activate_agent_prompt()
                 except Exception as e: print("Falha ao ativar prompt do agente:", e)
             try: self.entry_var.set(""); self.entry.icursor(0)
-            except: pass
+            except Exception:
+                pass
             try: self.entry.configure(bg="black", fg="white", insertbackground="white")
-            except: pass
+            except Exception:
+                pass
             try: self.entry.focus_set()
-            except: pass
-        except: pass
+            except Exception:
+                pass
+        except Exception:
+            pass
 
     def _exit_ia_mode(self):
         try:
@@ -1680,10 +1736,13 @@ class SuggestEntry(tk.Frame):
                 try: ia_module.deactivate_agent_prompt()
                 except Exception as e: print("Falha ao desativar prompt do agente:", e)
             try: self.entry.configure(bg=self._orig_entry_bg, fg=self._orig_entry_fg, insertbackground=self._orig_insert_bg)
-            except: pass
+            except Exception:
+                pass
             try: self.entry_var.set(""); self.entry.icursor(0); self.entry.focus_set()
-            except: pass
-        except: pass
+            except Exception:
+                pass
+        except Exception:
+            pass
 
 # =========================
 # save_text (corrigido para usar preprocessor.extrair_tudo_consumo quando disponível)
@@ -1695,19 +1754,23 @@ def _compute_next_in_id(regs):
         try:
             v = int(r.get("id") or r.get("ID") or 0)
             if v > max_id: max_id = v
-        except: pass
+        except (TypeError, ValueError):
+            pass
     return max_id + 1
 
 def save_text(entry_widget=None, btn=None):
-    if entry_widget is None: return
+    if entry_widget is None:
+        return
     txt = entry_widget.get().strip()
-    if not txt: return
+    if not txt:
+        return
     report_status("user_input", "STARTED", stage="save_text", details={"text_len": len(txt)})
     parsed = None
     if extrair_tudo_consumo:
         try:
             parsed = extrair_tudo_consumo(txt)
-        except Exception:
+        except Exception as e:
+            _log_ui("WARNING", "preprocess_failed", "Falha no preprocess em save_text", error=str(e))
             parsed = None
 
     now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
@@ -1729,14 +1792,18 @@ def save_text(entry_widget=None, btn=None):
     if destino == "orientacoes":
         _save_structured_text(ORIENTACOES_FILE, txt, now_str, "ORIENTACAO", decision_meta=decision)
         report_status("user_input", "OK", stage="saved_orientacao", details={"path": ORIENTACOES_FILE})
-        try: entry_widget.delete(0, "end")
-        except: pass
+        try:
+            entry_widget.delete(0, "end")
+        except Exception as e:
+            _log_ui("WARNING", "entry_clear_failed", "Falha ao limpar entrada", error=str(e))
         return
     if destino == "observacoes":
         _save_structured_text(OBSERVACOES_FILE, txt, now_str, "OBSERVACAO", decision_meta=decision)
         report_status("user_input", "OK", stage="saved_observacao", details={"path": OBSERVACOES_FILE})
-        try: entry_widget.delete(0, "end")
-        except: pass
+        try:
+            entry_widget.delete(0, "end")
+        except Exception as e:
+            _log_ui("WARNING", "entry_clear_failed", "Falha ao limpar entrada", error=str(e))
         return
 
     if destino == "encomendas" or _is_encomenda_text(txt, parsed):
@@ -1744,11 +1811,16 @@ def save_text(entry_widget=None, btn=None):
         report_status("user_input", "OK", stage="saved_encomenda_init", details={"path": ENCOMENDAS_IN_FILE})
         if log_audit_event:
             log_audit_event("texto_persistido", "ENCOMENDAS_INIT", txt, motivo=decision.get("motivo"), score=decision.get("score"))
-        try: entry_widget.delete(0, "end")
-        except: pass
+        try:
+            entry_widget.delete(0, "end")
+        except Exception as e:
+            _log_ui("WARNING", "entry_clear_failed", "Falha ao limpar entrada", error=str(e))
         if btn:
-            try: btn.config(state="disabled"); entry_widget.after(500, lambda: btn.config(state="normal"))
-            except: pass
+            try:
+                btn.config(state="disabled")
+                entry_widget.after(500, lambda: btn.config(state="normal"))
+            except Exception as e:
+                _log_ui("WARNING", "button_toggle_failed", "Falha ao atualizar estado do botão", error=str(e))
         if HAS_IA_MODULE and hasattr(ia_module, "processar"):
             try:
                 if not (hasattr(ia_module, "is_chat_mode_active") and ia_module.is_chat_mode_active()):
@@ -1756,20 +1828,24 @@ def save_text(entry_widget=None, btn=None):
                     report_status("ia_pipeline", "STARTED", stage="thread_started", details={"source": "save_text_encomenda"})
             except Exception as e:
                 report_status("ia_pipeline", "ERROR", stage="thread_start_failed", details={"error": str(e), "source": "save_text_encomenda"})
-                print("Falha ao iniciar processamento IA para encomendas:", e)
+                _log_ui("ERROR", "ia_thread_start_failed", "Falha ao iniciar processamento IA para encomendas", error=str(e))
         return
 
     is_orientacao = _contains_keywords(txt, _ORIENTACOES_KEYWORDS)
     is_observacao = _contains_keywords(txt, _OBSERVACOES_KEYWORDS)
     if is_orientacao and not is_observacao:
         _save_structured_text(ORIENTACOES_FILE, txt, now_str, "ORIENTACAO")
-        try: entry_widget.delete(0, "end")
-        except: pass
+        try:
+            entry_widget.delete(0, "end")
+        except Exception as e:
+            _log_ui("WARNING", "entry_clear_failed", "Falha ao limpar entrada", error=str(e))
         return
     if is_observacao and not is_orientacao:
         _save_structured_text(OBSERVACOES_FILE, txt, now_str, "OBSERVACAO")
-        try: entry_widget.delete(0, "end")
-        except: pass
+        try:
+            entry_widget.delete(0, "end")
+        except Exception as e:
+            _log_ui("WARNING", "entry_clear_failed", "Falha ao limpar entrada", error=str(e))
         return
     rec = None
     fields_for_flags = {}
@@ -1792,7 +1868,7 @@ def save_text(entry_widget=None, btn=None):
         try:
             post_validate_and_clean_record(rec, modelos_hint=[rec.get("MODELO")] if rec.get("MODELO") and rec.get("MODELO") != "-" else [], cores_hint=[rec.get("COR")] if rec.get("COR") and rec.get("COR") != "-" else [])
         except Exception as e:
-            print("Aviso: falha validação final otimista:", e)
+            _log_ui("WARNING", "optimistic_validation_failed", "Falha validação final otimista", error=str(e))
     else:
         try:
             parsed2 = parse_input_to_fields(txt)
@@ -1821,7 +1897,7 @@ def save_text(entry_widget=None, btn=None):
             regs = existing
         else:
             regs = []
-    except:
+    except (OSError, json.JSONDecodeError, TypeError):
         regs = []
 
     # compute next id robustly
@@ -1845,14 +1921,17 @@ def save_text(entry_widget=None, btn=None):
         report_status("user_input", "OK", stage="saved_dadosinit", details={"path": IN_FILE, "entrada_id": nid})
     except Exception as e:
         report_status("user_input", "ERROR", stage="save_dadosinit_failed", details={"error": str(e), "path": IN_FILE})
-        print("Erro save (IN_FILE):", e)
+        _log_ui("ERROR", "save_dadosinit_failed", "Erro save (IN_FILE)", error=str(e))
     try: entry_widget.delete(0, "end")
-    except: pass
+    except Exception:
+        pass
     if btn:
         try: btn.config(state="disabled"); entry_widget.after(500, lambda: btn.config(state="normal"))
-        except: pass
+        except Exception:
+            pass
     try: threading.Thread(target=sync_suggestions, kwargs={"force": True}, daemon=True).start()
-    except: pass
+    except Exception:
+        pass
 
     if missing_fields and _warning_bar:
         try:
@@ -1871,7 +1950,7 @@ def save_text(entry_widget=None, btn=None):
                 report_status("ia_pipeline", "STARTED", stage="thread_started", details={"source": "save_text_dados"})
         except Exception as e:
             report_status("ia_pipeline", "ERROR", stage="thread_start_failed", details={"error": str(e), "source": "save_text_dados"})
-            print("Falha ao iniciar processamento IA em background:", e)
+            _log_ui("ERROR", "ia_thread_start_failed", "Falha ao iniciar processamento IA em background", error=str(e))
 
     # ----------------------
     # OTIMISTIC APPEND (melhorado): usa preprocessor.extrair_tudo_consumo se disponível
@@ -1888,7 +1967,7 @@ def save_text(entry_widget=None, btn=None):
                 report_status("db_append", "ERROR", stage="optimistic_append", details={"entrada_id": nid})
         except Exception as e:
             report_status("db_append", "ERROR", stage="optimistic_append_exception", details={"error": str(e), "entrada_id": nid})
-            print("Erro ao anexar rec otimista ao DB:", e)
+            _log_ui("ERROR", "optimistic_db_append_failed", "Erro ao anexar rec otimista ao DB", error=str(e))
     else:
         # fallback ao parser simplista se preprocessor ausente
         try:
@@ -1902,10 +1981,10 @@ def save_text(entry_widget=None, btn=None):
                 try:
                     post_validate_and_clean_record(rec, modelos_hint=[rec.get("MODELO")] if rec.get("MODELO") and rec.get("MODELO") != "-" else [], cores_hint=[rec.get("COR")] if rec.get("COR") and rec.get("COR") != "-" else [])
                 except Exception as e:
-                    print("Aviso: falha validação final fallback:", e)
+                    _log_ui("WARNING", "fallback_validation_failed", "Falha validação final fallback", error=str(e))
                 append_record_to_db(rec)
         except Exception as e:
-            print("Erro ao parsear / anexar ao DB (fallback):", e)
+            _log_ui("ERROR", "fallback_db_append_exception", "Erro ao parsear / anexar ao DB (fallback)", error=str(e))
 
 # ---------- open monitor fallback (mantido) ----------
 def open_monitor_fallback_subprocess():
@@ -2058,7 +2137,8 @@ class AvisoBar(tk.Frame):
         try:
             if self._after_id:
                 try: self.after_cancel(self._after_id)
-                except: pass
+                except Exception:
+                    pass
             self._advance_index()
             self._after_id = self.after(self.CYCLE_INTERVAL_MS, self._schedule_cycle)
         except Exception:
@@ -2196,7 +2276,8 @@ def start_ui():
             import interfacetwo
             if getattr(interfacetwo, "_monitor_toplevel", None):
                 try: interfacetwo._monitor_toplevel.lift(); interfacetwo._monitor_toplevel.focus_force()
-                except: pass
+                except Exception:
+                    pass
                 return
             interfacetwo.create_monitor_toplevel(root)
         except Exception as e:
@@ -2215,7 +2296,8 @@ def start_ui():
     root.bind("<Control-Return>", ctrl_enter)
     root.bind("<Escape>", lambda e: (s.hide_list(), s._hide_overlay()))
     try: sync_suggestions()
-    except: pass
+    except Exception:
+        pass
     root.mainloop()
 
 def iniciar_interface_principal():

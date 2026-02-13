@@ -32,15 +32,23 @@ from preprocessor import (
 from logger import log_forense
 
 try:
-    from runtime_status import report_status
+    from runtime_status import report_status, report_log
 except Exception:
     def report_status(*args, **kwargs):
+        return None
+    def report_log(*args, **kwargs):
         return None
 
 # =========================
 # PATHS / ENV
 # =========================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def _log_ia(level: str, stage: str, message: str, **details):
+    report_log("ia", level, message, stage=stage, details=details)
+    print(f"[ia.py] {message}")
+
 ENV_PATH = os.path.join(BASE_DIR, ".env")
 
 def load_dotenv(path: str) -> None:
@@ -836,11 +844,11 @@ def _fill_nome_from_raw(dados: dict, nome_raw: str) -> None:
 def processar():
     if is_chat_mode_active():
         report_status("ia_pipeline", "SKIPPED", stage="chat_mode_active")
-        print("[ia.py] Modo chat ativo. Processamento IA suspenso.")
+        _log_ia("INFO", "chat_mode_active", "Modo chat ativo. Processamento IA suspenso.")
         return
     if not acquire_lock(timeout=5):
         report_status("ia_pipeline", "SKIPPED", stage="lock_not_acquired")
-        print("[ia.py] Outro processo em execução. Abortando.")
+        _log_ia("WARNING", "lock_not_acquired", "Outro processo em execução. Abortando.")
         return
 
     try:
@@ -858,7 +866,7 @@ def processar():
                 pre = extrair_tudo_consumo(texto_original)
             except Exception as e:
                 report_status("ia_pipeline", "ERROR", stage="preprocess_failed", details={"entrada_id": r.get("id") or r.get("ID"), "error": str(e)})
-                print(f"[ia.py] Erro ao extrair dados (id={r.get('id')}): {e}")
+                _log_ia("ERROR", "preprocess_failed", "Erro ao extrair dados", entrada_id=r.get("id"), error=str(e))
                 traceback.print_exc()
                 pre = {
                     "TEXTO_LIMPO": texto_original or "",
@@ -913,7 +921,7 @@ def processar():
                 except Exception as e:
                     err_msg = str(e).lower()
                     report_status("ia_pipeline", "ERROR", stage="llm_call_failed", details={"entrada_id": r.get("id") or r.get("ID"), "error": str(e)})
-                    print(f"[ia.py] Falha IA (fallback ativo): {e}")
+                    _log_ia("ERROR", "llm_call_failed", "Falha IA (fallback ativo)", entrada_id=r.get("id") or r.get("ID"), error=str(e))
                     traceback.print_exc()
                     if "invalid_api_key" in err_msg or "401" in err_msg:
                         _disable_client_due_to_auth()
@@ -991,7 +999,7 @@ def processar():
                 salvar_atomico(ENTRADA, entrada)
             except Exception as e:
                 report_status("ia_pipeline", "ERROR", stage="save_entrada_failed", details={"entrada_id": entrada_id, "error": str(e)})
-                print("[ia.py] Falha ao salvar ENTRADA:", e)
+                _log_ia("ERROR", "save_entrada_failed", "Falha ao salvar ENTRADA", entrada_id=entrada_id, error=str(e))
 
             # última validação: limpa NOME/SOBRENOME de tokens de MODELO/COR/PLACA
             try:
@@ -1001,7 +1009,7 @@ def processar():
                     cores_hint=[dados.get("COR")] if dados.get("COR") and dados.get("COR") != "-" else []
                 )
             except Exception as e:
-                print("[ia.py] Aviso: falha na validação final (não bloqueante):", e)
+                _log_ia("WARNING", "validation_failed", "Falha na validação final (não bloqueante)", entrada_id=entrada_id, error=str(e))
 
             if nome_raw:
                 _fill_nome_from_raw(dados, nome_raw)
@@ -1011,13 +1019,13 @@ def processar():
                 ok = append_or_update_saida(dados, entrada_id=entrada_id)
                 if not ok:
                     report_status("ia_pipeline", "ERROR", stage="save_saida_failed", details={"entrada_id": entrada_id})
-                    print("[ia.py] Falha ao anexar/atualizar registro em SAIDA")
+                    _log_ia("ERROR", "save_saida_failed", "Falha ao anexar/atualizar registro em SAIDA", entrada_id=entrada_id)
                 else:
                     report_status("ia_pipeline", "OK", stage="save_saida_ok", details={"entrada_id": entrada_id, "placa": dados.get("PLACA"), "modelo": dados.get("MODELO")})
-                    print(f"[ia.py] Registro processado: entrada_id={entrada_id} PLACA={dados.get('PLACA')} MODELO={dados.get('MODELO')} COR={dados.get('COR')}")
+                    _log_ia("OK", "save_saida_ok", "Registro processado", entrada_id=entrada_id, placa=dados.get("PLACA"), modelo=dados.get("MODELO"), cor=dados.get("COR"))
             except Exception as e:
                 report_status("ia_pipeline", "ERROR", stage="save_saida_exception", details={"entrada_id": entrada_id, "error": str(e)})
-                print("[ia.py] Erro ao anexar/atualizar registro em SAIDA:", e)
+                _log_ia("ERROR", "save_saida_exception", "Erro ao anexar/atualizar registro em SAIDA", entrada_id=entrada_id, error=str(e))
                 traceback.print_exc()
 
             log_forense(r.get("id"), texto_original, dados.get("STATUS"), "ia.py")
@@ -1052,18 +1060,18 @@ def processar():
                 salvar_atomico(ENCOMENDAS_ENTRADA, encomendas)
             except Exception as e:
                 report_status("ia_pipeline", "ERROR", stage="save_encomendas_entrada_failed", details={"entrada_id": entrada_id, "error": str(e)})
-                print("[ia.py] Falha ao salvar ENCOMENDAS_ENTRADA:", e)
+                _log_ia("ERROR", "save_encomendas_entrada_failed", "Falha ao salvar ENCOMENDAS_ENTRADA", entrada_id=entrada_id, error=str(e))
 
             try:
                 ok = append_or_update_encomendas(dados, entrada_id=entrada_id)
                 if not ok:
                     report_status("ia_pipeline", "ERROR", stage="save_encomendas_saida_failed", details={"entrada_id": entrada_id})
-                    print("[ia.py] Falha ao anexar/atualizar encomenda em ENCOMENDAS_SAIDA")
+                    _log_ia("ERROR", "save_encomendas_saida_failed", "Falha ao anexar/atualizar encomenda em ENCOMENDAS_SAIDA", entrada_id=entrada_id)
                 else:
                     report_status("ia_pipeline", "OK", stage="save_encomendas_saida_ok", details={"entrada_id": entrada_id, "bloco": dados.get("BLOCO"), "apartamento": dados.get("APARTAMENTO")})
             except Exception as e:
                 report_status("ia_pipeline", "ERROR", stage="save_encomendas_saida_exception", details={"entrada_id": entrada_id, "error": str(e)})
-                print("[ia.py] Erro ao anexar/atualizar encomenda:", e)
+                _log_ia("ERROR", "save_encomendas_saida_exception", "Erro ao anexar/atualizar encomenda", entrada_id=entrada_id, error=str(e))
                 traceback.print_exc()
 
     finally:

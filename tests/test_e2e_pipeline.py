@@ -145,6 +145,39 @@ class E2EPipelineTests(unittest.TestCase):
         self.assertIn("save_entrada_failed", stages)
         self.assertIn("save_saida_ok", stages)
 
+    def test_e2e_replay_idempotent_por_entrada_id(self):
+        saida = os.path.join(self.td.name, "dadosend_replay.json")
+        with open(saida, "w", encoding="utf-8") as f:
+            json.dump({"registros": []}, f)
+
+        with mock.patch.object(ia, "SAIDA", saida):
+            first = {"NOME": "ANA", "SOBRENOME": "SILVA", "PLACA": "ABC1234", "MODELO": "ONIX", "COR": "PRETO", "BLOCO": "A", "APARTAMENTO": "101", "STATUS": "VISITANTE", "DATA_HORA": "10/01/2026 10:00:00"}
+            second = {"NOME": "ANA", "SOBRENOME": "SILVA", "PLACA": "ABC1234", "MODELO": "ONIX", "COR": "PRETO", "BLOCO": "A", "APARTAMENTO": "101", "STATUS": "VISITANTE", "DATA_HORA": "10/01/2026 09:50:00"}
+            ia.append_or_update_saida(first, entrada_id=77)
+            ia.append_or_update_saida(second, entrada_id=77)
+
+        with open(saida, "r", encoding="utf-8") as f:
+            registros = (json.load(f) or {}).get("registros") or []
+        self.assertEqual(len(registros), 1)
+        self.assertEqual(str(registros[0].get("_entrada_id")), "77")
+
+    def test_e2e_evento_atrasado_nao_quebra_ordem_temporal(self):
+        saida = os.path.join(self.td.name, "dadosend_temporal.json")
+        with open(saida, "w", encoding="utf-8") as f:
+            json.dump({"registros": []}, f)
+
+        with mock.patch.object(ia, "SAIDA", saida):
+            recente = {"NOME": "JOAO", "SOBRENOME": "LIMA", "PLACA": "AAA1111", "MODELO": "GOL", "COR": "PRATA", "BLOCO": "B", "APARTAMENTO": "201", "STATUS": "VISITANTE", "DATA_HORA": "10/01/2026 10:10:00"}
+            atrasado = {"NOME": "MARIA", "SOBRENOME": "LIMA", "PLACA": "BBB2222", "MODELO": "ARGO", "COR": "BRANCO", "BLOCO": "B", "APARTAMENTO": "202", "STATUS": "VISITANTE", "DATA_HORA": "10/01/2026 09:00:00"}
+            ia.append_or_update_saida(recente, entrada_id=88)
+            ia.append_or_update_saida(atrasado, entrada_id=89)
+
+        with open(saida, "r", encoding="utf-8") as f:
+            registros = (json.load(f) or {}).get("registros") or []
+        self.assertEqual(len(registros), 2)
+        horas = sorted(r.get("DATA_HORA") for r in registros)
+        self.assertEqual(horas, ["10/01/2026 09:00:00", "10/01/2026 10:10:00"])
+
 
 if __name__ == "__main__":
     unittest.main()

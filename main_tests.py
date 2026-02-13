@@ -14,7 +14,7 @@ import runtime_status
 
 
 class TestPanelApp:
-    def __init__(self, root: tk.Tk):
+    def __init__(self, root: tk.Tk, status_store: runtime_status.RuntimeStatusStore | None = None):
         self.root = root
         self.root.title("Painel de Testes - Access")
         self.root.geometry("1000x700")
@@ -46,6 +46,10 @@ class TestPanelApp:
         self.text.pack(fill="both", expand=True, padx=8, pady=8)
         self.text.configure(state="disabled")
         self._last_status_fingerprint = ""
+        self._status_store = status_store or runtime_status.RuntimeStatusStore(
+            events_file=runtime_status.EVENTS_FILE,
+            last_status_file=runtime_status.LAST_STATUS_FILE,
+        )
 
     def log(self, msg: str):
         self.text.configure(state="normal")
@@ -67,7 +71,7 @@ class TestPanelApp:
 
     def _poll_runtime_status(self):
         try:
-            st = runtime_status.get_last_status()
+            st = self._status_store.get_last_status()
             if isinstance(st, dict) and st:
                 fp = f"{st.get('timestamp')}|{st.get('action')}|{st.get('status')}|{st.get('stage')}"
                 if fp != self._last_status_fingerprint:
