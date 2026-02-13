@@ -73,6 +73,13 @@ except Exception:
     load_rules = None
 
 try:
+    from interfaceone_core import decidir_destino, montar_registro_acesso, montar_entrada_bruta
+except Exception:
+    decidir_destino = None
+    montar_registro_acesso = None
+    montar_entrada_bruta = None
+
+try:
     from runtime_status import report_status
 except Exception:
     def report_status(*args, **kwargs):
@@ -1707,10 +1714,14 @@ def save_text(entry_widget=None, btn=None):
     if log_audit_event:
         log_audit_event("texto_recebido", "entrada", txt)
 
-    decision = classificar_destino_texto(txt, parsed) if classificar_destino_texto else {
-        "destino": "dados", "motivo": "fallback", "score": 0.0, "ambiguo": False, "confianca": 0.0, "versao_regras": "v1"
-    }
-    destino = decision.get("destino")
+    if decidir_destino:
+        decision = decidir_destino(txt, parsed, classificar_fn=classificar_destino_texto, is_encomenda_fn=_is_encomenda_text)
+    else:
+        decision = classificar_destino_texto(txt, parsed) if classificar_destino_texto else {
+            "destino": "dados", "motivo": "fallback", "score": 0.0, "ambiguo": False, "confianca": 0.0, "versao_regras": "v1"
+        }
+        decision["destino_final"] = decision.get("destino")
+    destino = decision.get("destino_final")
     report_status("user_input", "OK", stage="classification", details={"destino": destino, "score": decision.get("score"), "ambiguo": decision.get("ambiguo")})
     if log_audit_event:
         log_audit_event("texto_classificado", destino, txt, motivo=decision.get("motivo"), score=decision.get("score"), confianca=decision.get("confianca"), ambiguo=decision.get("ambiguo"))
@@ -1763,43 +1774,18 @@ def save_text(entry_widget=None, btn=None):
     rec = None
     fields_for_flags = {}
     if parsed:
-        # parsed contém keys: STATUS, BLOCO, APARTAMENTO, PLACA, MODELOS (list), COR, NOME_RAW, TEXTO_LIMPO
-        nome_raw = parsed.get("NOME_RAW", "") or ""
-        nome = ""
-        sobrenome = ""
-        if nome_raw:
-            parts = nome_raw.split()
-            if parts:
-                if corrigir_token_nome:
-                    parts = [corrigir_token_nome(p) for p in parts]
-                nome = parts[0].title()
-                sobrenome = " ".join(parts[1:]).title() if len(parts) > 1 else ""
-
-        modelo_candidate = ""
-        modelos_list = parsed.get("MODELOS") or []
-        if modelos_list:
-            modelo_candidate = modelos_list[0]
-        cor_candidate = parsed.get("COR") or ""
-        placa_candidate = parsed.get("PLACA") or ""
-        bloco_candidate = parsed.get("BLOCO") or ""
-        apt_candidate = parsed.get("APARTAMENTO") or ""
-        status_candidate = parsed.get("STATUS") or ""
-
-        rec = {
-            "NOME": (nome or "").upper(),
-            "SOBRENOME": (sobrenome or "").upper() or "-",
-            "BLOCO": (str(bloco_candidate) or "").strip(),
-            "APARTAMENTO": (str(apt_candidate) or "").strip(),
-            "PLACA": (placa_candidate or "").upper() or "-",
-            "MODELO": (str(modelo_candidate) or "").upper() if modelo_candidate else None,
-            "COR": (str(cor_candidate) or "").upper() if cor_candidate else None,
-            "STATUS": (status_candidate or "").upper() or "-",
-            "DATA_HORA": now_str,
-        }
-        # Remove None values so append_record_to_db will not insert empty keys
-        for k in list(rec.keys()):
-            if rec[k] is None:
-                rec.pop(k, None)
+        if montar_registro_acesso:
+            rec = montar_registro_acesso(parsed, corrigir_nome_fn=corrigir_token_nome, now_str=now_str)
+        else:
+            rec = {
+                "NOME": "-",
+                "SOBRENOME": "-",
+                "BLOCO": str(parsed.get("BLOCO") or "").strip(),
+                "APARTAMENTO": str(parsed.get("APARTAMENTO") or "").strip(),
+                "PLACA": (parsed.get("PLACA") or "").upper() or "-",
+                "STATUS": (parsed.get("STATUS") or "").upper() or "-",
+                "DATA_HORA": now_str,
+            }
         fields_for_flags = dict(rec)
 
         # última validação antes de persistir (defensiva)
@@ -1807,14 +1793,6 @@ def save_text(entry_widget=None, btn=None):
             post_validate_and_clean_record(rec, modelos_hint=[rec.get("MODELO")] if rec.get("MODELO") and rec.get("MODELO") != "-" else [], cores_hint=[rec.get("COR")] if rec.get("COR") and rec.get("COR") != "-" else [])
         except Exception as e:
             print("Aviso: falha validação final otimista:", e)
-
-        if nome_raw and rec.get("SOBRENOME") in (None, "", "-"):
-            parts = nome_raw.split()
-            if parts:
-                if corrigir_token_nome:
-                    parts = [corrigir_token_nome(p) for p in parts]
-                if len(parts) > 1:
-                    rec["SOBRENOME"] = " ".join(parts[1:]).upper()
     else:
         try:
             parsed2 = parse_input_to_fields(txt)
@@ -1849,14 +1827,17 @@ def save_text(entry_widget=None, btn=None):
     # compute next id robustly
     nid = _compute_next_in_id(regs)
 
-    new_rec = {
-        "id": nid,
-        "texto": txt,
-        "processado": False,
-        "data_hora": now_str
-    }
-    if access_flags:
-        new_rec.update(access_flags)
+    if montar_entrada_bruta:
+        new_rec = montar_entrada_bruta(nid, txt, now_str, access_flags)
+    else:
+        new_rec = {
+            "id": nid,
+            "texto": txt,
+            "processado": False,
+            "data_hora": now_str
+        }
+        if access_flags:
+            new_rec.update(access_flags)
     regs.append(new_rec)
 
     try:
