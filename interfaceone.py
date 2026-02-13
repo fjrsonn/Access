@@ -27,11 +27,12 @@ except Exception as e:
     scrolledtext = None
     print("Aviso: tkinter não disponível:", e)
 
-# rapidfuzz obrigatório
+# rapidfuzz opcional (fallback sem fuzzy quando indisponível)
 try:
     from rapidfuzz import process as rf_process, fuzz as rf_fuzz
-except Exception as e:
-    raise ImportError("rapidfuzz é obrigatório. Instale com: pip install rapidfuzz") from e
+except Exception:
+    rf_process = None
+    rf_fuzz = None
 
 # tentativas de módulo ia (opcionais)
 try:

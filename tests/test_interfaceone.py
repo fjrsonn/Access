@@ -1,15 +1,9 @@
 import unittest
+from unittest import mock
 
-try:
-    import interfaceone
-except Exception as e:  # pragma: no cover
-    interfaceone = None
-    _IMPORT_ERR = e
-else:
-    _IMPORT_ERR = None
+import interfaceone
 
 
-@unittest.skipIf(interfaceone is None, "Dependência ausente para interfaceone")
 class InterfaceOneTests(unittest.TestCase):
     def test_encomenda_text_detection(self):
         txt = "PACOTE SHOPEE BLOCO A AP 101"
@@ -19,9 +13,12 @@ class InterfaceOneTests(unittest.TestCase):
         self.assertFalse(interfaceone._is_encomenda_text(txt2, parsed={"PLACA": "ABC1234"}))
 
     def test_token_common_prefix_len(self):
-        # token_common_prefix_len mede prefixo comum por caractere (não por token)
         self.assertEqual(interfaceone.token_common_prefix_len("MARIA SILVA", "MARIA SOUZA"), 7)
         self.assertEqual(interfaceone.token_common_prefix_len("ANA", "BRUNO"), 0)
+
+    def test_match_store_token_without_rapidfuzz(self):
+        with mock.patch.object(interfaceone, "rf_process", None), mock.patch.object(interfaceone, "rf_fuzz", None):
+            self.assertFalse(interfaceone._match_encomenda_store_token(["SHOPEE"]))
 
 
 if __name__ == "__main__":

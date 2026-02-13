@@ -77,3 +77,199 @@ def get_last_status() -> Dict[str, Any]:
     except Exception:
         pass
     return {}
+
+def _read_json(path: str) -> Any:
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def _to_records(obj: Any) -> list:
+    if isinstance(obj, dict) and "registros" in obj:
+        recs = obj.get("registros") or []
+        return recs if isinstance(recs, list) else list(recs)
+    if isinstance(obj, list):
+        return obj
+    return []
+
+
+def read_runtime_events(path: str = EVENTS_FILE) -> list[Dict[str, Any]]:
+    events: list[Dict[str, Any]] = []
+    if not os.path.exists(path):
+        return events
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = (line or "").strip()
+                if not line:
+                    continue
+                try:
+                    ev = json.loads(line)
+                    if isinstance(ev, dict):
+                        events.append(ev)
+                except Exception:
+                    continue
+    except Exception:
+        return []
+    return events
+
+
+def _parse_ts(value: Any):
+    s = str(value or "").strip()
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M"):
+        try:
+            return datetime.strptime(s, fmt)
+        except Exception:
+            pass
+    return None
+
+
+def analisar_saude_pipeline(events_path: str = EVENTS_FILE) -> Dict[str, Any]:
+    """Analisa saúde do pipeline baseado em runtime_events.jsonl."""
+    events = read_runtime_events(events_path)
+    stage_counts: Dict[str, int] = {}
+    stage_errors: Dict[str, int] = {}
+    error_messages: Dict[str, int] = {}
+    action_started: Dict[str, datetime] = {}
+    action_durations: Dict[str, list[float]] = {}
+
+    for ev in events:
+        stage = str(ev.get("stage") or "-")
+        status = str(ev.get("status") or "").upper()
+        action = str(ev.get("action") or "UNKNOWN")
+
+        stage_counts[stage] = stage_counts.get(stage, 0) + 1
+        if status == "ERROR":
+            stage_errors[stage] = stage_errors.get(stage, 0) + 1
+            details = ev.get("details") or {}
+            err = ""
+            if isinstance(details, dict):
+                err = str(details.get("error") or details.get("reason") or "unknown")
+            else:
+                err = str(details)
+            error_messages[err] = error_messages.get(err, 0) + 1
+
+        ts = _parse_ts(ev.get("timestamp"))
+        if status == "STARTED" and ts:
+            action_started[action] = ts
+        elif status in ("OK", "ERROR") and ts and action in action_started:
+            diff = (ts - action_started[action]).total_seconds()
+            if diff >= 0:
+                action_durations.setdefault(action, []).append(diff)
+            action_started.pop(action, None)
+
+    error_rate_by_stage = {}
+    for st, total in stage_counts.items():
+        err = stage_errors.get(st, 0)
+        error_rate_by_stage[st] = round((err / total) if total else 0.0, 4)
+
+    avg_time_started_to_end = {
+        action: round(sum(vals) / len(vals), 4) for action, vals in action_durations.items() if vals
+    }
+
+    top_5_errors = sorted(error_messages.items(), key=lambda x: x[1], reverse=True)[:5]
+
+    return {
+        "total_events": len(events),
+        "error_rate_by_stage": error_rate_by_stage,
+        "top_5_errors": [{"error": e, "count": c} for e, c in top_5_errors],
+        "avg_time_started_to_end_by_action": avg_time_started_to_end,
+    }
+
+
+def detectar_conflitos_dados(base_dir: str = BASE_DIR) -> Dict[str, Any]:
+    """Procura inconsistências entre dadosinit/dadosend/analises/avisos."""
+    dadosinit = _to_records(_read_json(os.path.join(base_dir, "dadosinit.json")))
+    dadosend = _to_records(_read_json(os.path.join(base_dir, "dadosend.json")))
+    analises_raw = _read_json(os.path.join(base_dir, "analises.json")) or {}
+    avisos_raw = _read_json(os.path.join(base_dir, "avisos.json")) or {}
+
+    analises_regs = []
+    if isinstance(analises_raw, dict):
+        analises_regs = analises_raw.get("registros") or []
+    avisos_regs = []
+    if isinstance(avisos_raw, dict):
+        avisos_regs = avisos_raw.get("registros") or []
+
+    saida_entrada_ids = set(str(r.get("_entrada_id")) for r in dadosend if r.get("_entrada_id") is not None)
+
+    processed_without_saida = []
+    for r in dadosinit:
+        if not r.get("processado"):
+            continue
+        rid = r.get("id") or r.get("ID")
+        if rid is None:
+            continue
+        if str(rid) not in saida_entrada_ids:
+            processed_without_saida.append(rid)
+
+    duplicated_entrada_ids = {}
+    seen = {}
+    for r in dadosend:
+        eid = r.get("_entrada_id")
+        if eid is None:
+            continue
+        k = str(eid)
+        seen[k] = seen.get(k, 0) + 1
+    for k, v in seen.items():
+        if v > 1:
+            duplicated_entrada_ids[k] = v
+
+    analysis_ids = set()
+    for a in analises_regs:
+        ident = (a.get("identidade") or "").strip().upper()
+        if ident:
+            analysis_ids.add(ident)
+
+    avisos_sem_analise = []
+    for av in avisos_regs:
+        ident = (av.get("identidade") or "").strip().upper()
+        if ident and ident not in analysis_ids and not ident.startswith("ENCOMENDA|"):
+            avisos_sem_analise.append(ident)
+
+    return {
+        "processed_without_saida": processed_without_saida,
+        "duplicated_entrada_ids": duplicated_entrada_ids,
+        "avisos_sem_analise": sorted(set(avisos_sem_analise)),
+    }
+
+
+def gerar_relatorio_diagnostico_diario(base_dir: str = BASE_DIR, events_path: str = EVENTS_FILE) -> Dict[str, Any]:
+    """Resumo diário: volume, falhas e sugestões automáticas."""
+    events = read_runtime_events(events_path)
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    daily = [e for e in events if str(e.get("timestamp") or "").startswith(today)]
+
+    volume_by_action: Dict[str, int] = {}
+    failures_by_stage: Dict[str, int] = {}
+    for ev in daily:
+        action = str(ev.get("action") or "UNKNOWN")
+        volume_by_action[action] = volume_by_action.get(action, 0) + 1
+        if str(ev.get("status") or "").upper() == "ERROR":
+            st = str(ev.get("stage") or "-")
+            failures_by_stage[st] = failures_by_stage.get(st, 0) + 1
+
+    saude = analisar_saude_pipeline(events_path)
+    conflitos = detectar_conflitos_dados(base_dir)
+
+    sugestoes = []
+    if conflitos.get("processed_without_saida"):
+        sugestoes.append("Revisar fluxo de merge por _entrada_id entre dadosinit e dadosend.")
+    if conflitos.get("duplicated_entrada_ids"):
+        sugestoes.append("Validar deduplicação no append otimista e na atualização da IA.")
+    if failures_by_stage:
+        sugestoes.append("Priorizar correções nos estágios com mais ERROR no runtime_events.jsonl.")
+    if not sugestoes:
+        sugestoes.append("Pipeline estável no dia atual; manter monitoramento e ampliar testes E2E.")
+
+    return {
+        "date": today,
+        "volume_by_action": volume_by_action,
+        "failures_by_stage": failures_by_stage,
+        "pipeline_health": saude,
+        "data_conflicts": conflitos,
+        "suggestions": sugestoes,
+    }
