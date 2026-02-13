@@ -10,6 +10,7 @@ import tkinter as tk
 from tkinter import ttk
 
 import main as app_main
+import runtime_status
 
 
 class TestPanelApp:
@@ -44,6 +45,7 @@ class TestPanelApp:
         self.text = tk.Text(root, wrap="word")
         self.text.pack(fill="both", expand=True, padx=8, pady=8)
         self.text.configure(state="disabled")
+        self._last_status_fingerprint = ""
 
     def log(self, msg: str):
         self.text.configure(state="normal")
@@ -61,6 +63,19 @@ class TestPanelApp:
         self.lbl_ok.config(text=f"Sucesso: {ok}")
         self.lbl_fail.config(text=f"Falhas: {failures}")
         self.lbl_err.config(text=f"Erros: {errors}")
+
+
+    def _poll_runtime_status(self):
+        try:
+            st = runtime_status.get_last_status()
+            if isinstance(st, dict) and st:
+                fp = f"{st.get('timestamp')}|{st.get('action')}|{st.get('status')}|{st.get('stage')}"
+                if fp != self._last_status_fingerprint:
+                    self._last_status_fingerprint = fp
+                    self.log(f"[RUNTIME] {st.get('action')} -> {st.get('status')} ({st.get('stage')}) {st.get('details', {})}")
+        except Exception:
+            pass
+        self.root.after(1000, self._poll_runtime_status)
 
     def start(self):
         self.btn_run.config(state="disabled")
@@ -114,6 +129,7 @@ def main():
     root = tk.Tk()
     app = TestPanelApp(root)
     app.log("Painel pronto. Clique para iniciar o sistema e rodar os testes.")
+    app._poll_runtime_status()
     root.mainloop()
 
 
