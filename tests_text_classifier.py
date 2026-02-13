@@ -24,6 +24,16 @@ class TestClassificacaoTexto(unittest.TestCase):
         out = classificar_destino_texto(t, None)
         self.assertIn(out["destino"], {"observacoes", "encomendas"})
 
+    def test_notificacao_amazon_mercado_livre(self):
+        t = "Avisar Ana Maria sobre encomenda quando chegar, Amazon e Mercado livre, sao 4 encomendas no total."
+        out = classificar_destino_texto(t, None)
+        self.assertEqual(out["destino"], "observacoes")
+
+    def test_notificacao_encomenda_bloco_ap(self):
+        t = "Avisar encomenda quando chegar para Ana maria bloco 7 ap24, Mercado Livre"
+        out = classificar_destino_texto(t, None)
+        self.assertEqual(out["destino"], "observacoes")
+
 
 if __name__ == "__main__":
     unittest.main()

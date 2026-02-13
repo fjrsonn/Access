@@ -89,11 +89,26 @@ def _score_encomenda(text: str, rules: dict) -> float:
     return score
 
 
+
+
+def _is_notification_intent(text: str) -> bool:
+    norm = _normalize_text(text)
+    has_notify = bool(re.search(r"\bavis(ar|o|os|ado|ados)?\b", norm))
+    has_arrival = ("quando chegar" in norm) or bool(re.search(r"\bchega(r|da)?\b", norm))
+    has_receiver = bool(re.search(r"\b(nome|morador|bloco|apartamento|ap\s*\d+)\b", norm))
+    return has_notify and (has_arrival or has_receiver)
+
 def classificar_destino_texto(texto: str, parsed: dict | None = None) -> dict:
     rules = load_rules()
     s_orient = _score_by_keywords(texto, rules.get("keywords_orientacoes", []), rules.get("context_orientacoes", []))
     s_obs = _score_by_keywords(texto, rules.get("keywords_observacoes", []), rules.get("context_observacoes", []))
     s_enc = _score_encomenda(texto, rules)
+
+    # Intenção explícita de aviso (ex.: "avisar ... quando chegar") deve priorizar OBSERVACOES,
+    # mesmo contendo termos de encomenda/loja.
+    if _is_notification_intent(texto):
+        s_obs += 3.0
+        s_enc = max(0.0, s_enc - 1.5)
 
     # Evitar conflitos com texto de acesso veicular (já extraído por parsed)
     if parsed and (parsed.get("PLACA") or parsed.get("MODELOS")):
