@@ -14,6 +14,12 @@ import json
 import threading
 import traceback
 
+try:
+    from runtime_status import report_status
+except Exception:
+    def report_status(*args, **kwargs):
+        return None
+
 BASE = os.path.dirname(os.path.abspath(__file__))
 DADOSEND = os.path.join(BASE, "dadosend.json")
 ANALISES_JSON = os.path.join(BASE, "analises.json")
@@ -137,51 +143,66 @@ def watcher_thread(dadosend_path, analises_mod, avisos_mod, poll=POLL_INTERVAL):
                     encomendas_changed = True
 
             if dados_changed:
+                report_status("watcher", "STARTED", stage="dadosend_changed")
                 print("[main] Alteração detectada em dadosend.json — iniciando análise incremental...")
                 ident = _get_last_record_identity(dadosend_path)
                 if ident:
                     try:
                         analises_mod.build_analises_for_identity(ident, dadosend_path, ANALISES_JSON)
+                        report_status("watcher", "OK", stage="build_analises_for_identity", details={"identidade": ident})
                     except Exception:
+                        report_status("watcher", "ERROR", stage="build_analises_for_identity", details={"identidade": ident, "error": traceback.format_exc()})
                         print("[main] erro build_analises_for_identity:", traceback.format_exc())
                         try:
                             analises_mod.build_analises(dadosend_path, ANALISES_JSON)
+                            report_status("watcher", "OK", stage="build_analises_full")
                         except Exception:
                             print("[main] erro build_analises (fallback):", traceback.format_exc())
                     try:
                         avisos_mod.build_avisos_for_identity(ident, ANALISES_JSON, AVISOS_JSON)
+                        report_status("watcher", "OK", stage="build_avisos_for_identity", details={"identidade": ident})
                     except Exception:
+                        report_status("watcher", "ERROR", stage="build_avisos_for_identity", details={"identidade": ident, "error": traceback.format_exc()})
                         print("[main] erro build_avisos_for_identity:", traceback.format_exc())
                         try:
                             avisos_mod.build_avisos(ANALISES_JSON, AVISOS_JSON)
+                            report_status("watcher", "OK", stage="build_avisos_full")
                         except Exception:
                             print("[main] erro build_avisos (fallback):", traceback.format_exc())
                 else:
                     print("[main] não foi possível identificar registro — recalculando tudo")
                     try:
                         analises_mod.build_analises(dadosend_path, ANALISES_JSON)
+                        report_status("watcher", "OK", stage="build_analises_full")
                     except Exception:
                         print("[main] erro build_analises:", traceback.format_exc())
                     try:
                         avisos_mod.build_avisos(ANALISES_JSON, AVISOS_JSON)
+                        report_status("watcher", "OK", stage="build_avisos_full")
                     except Exception:
                         print("[main] erro build_avisos:", traceback.format_exc())
 
             if encomendas_changed and not dados_changed:
+                report_status("watcher", "STARTED", stage="encomendas_changed")
                 print("[main] Alteração detectada em encomendasend.json — recalculando análises/avisos...")
                 try:
                     analises_mod.build_analises(dadosend_path, ANALISES_JSON)
+                    report_status("watcher", "OK", stage="build_analises_full")
                 except Exception:
+                    report_status("watcher", "ERROR", stage="build_analises_full", details={"error": traceback.format_exc()})
                     print("[main] erro build_analises (encomendas):", traceback.format_exc())
                 try:
                     avisos_mod.build_avisos(ANALISES_JSON, AVISOS_JSON)
+                    report_status("watcher", "OK", stage="build_avisos_full")
                 except Exception:
+                    report_status("watcher", "ERROR", stage="build_avisos_full", details={"error": traceback.format_exc()})
                     print("[main] erro build_avisos (encomendas):", traceback.format_exc())
         except Exception:
             print("[main] watcher erro:", traceback.format_exc())
         time.sleep(poll)
 
-def main():
+def initialize_system(start_watcher=True):
+    """Inicializa infraestrutura e builds iniciais. Retorna thread watcher (ou None)."""
     # 1) garante arquivos de infraestrutura
     ensure_file(ANALISES_JSON, _ANALISES_TEMPLATE)
     ensure_file(AVISOS_JSON, _AVISOS_TEMPLATE)
@@ -214,9 +235,17 @@ def main():
     except Exception:
         print("[main] build_avisos falhou:", traceback.format_exc())
 
-    # 4) start watcher
-    t = threading.Thread(target=watcher_thread, args=(DADOSEND, analises, avisos, POLL_INTERVAL), daemon=True)
-    t.start()
+    # 4) start watcher (opcional)
+    watcher = None
+    if start_watcher:
+        watcher = threading.Thread(target=watcher_thread, args=(DADOSEND, analises, avisos, POLL_INTERVAL), daemon=True)
+        watcher.start()
+
+    return watcher
+
+
+def main():
+    initialize_system(start_watcher=True)
 
     # 5) inicia interface grafica (bloqueante)
     try:

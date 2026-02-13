@@ -31,6 +31,12 @@ from preprocessor import (
 )
 from logger import log_forense
 
+try:
+    from runtime_status import report_status
+except Exception:
+    def report_status(*args, **kwargs):
+        return None
+
 # =========================
 # PATHS / ENV
 # =========================
@@ -829,24 +835,29 @@ def _fill_nome_from_raw(dados: dict, nome_raw: str) -> None:
 # =========================
 def processar():
     if is_chat_mode_active():
+        report_status("ia_pipeline", "SKIPPED", stage="chat_mode_active")
         print("[ia.py] Modo chat ativo. Processamento IA suspenso.")
         return
     if not acquire_lock(timeout=5):
+        report_status("ia_pipeline", "SKIPPED", stage="lock_not_acquired")
         print("[ia.py] Outro processo em execução. Abortando.")
         return
 
     try:
+        report_status("ia_pipeline", "STARTED", stage="load_inputs")
         entrada = carregar(ENTRADA)
         prompt_base = carregar_prompt()
 
         for r in entrada.get("registros", []):
             if r.get("processado"):
                 continue
+            report_status("ia_pipeline", "STARTED", stage="process_registro", details={"entrada_id": r.get("id") or r.get("ID")})
 
             texto_original = r.get("texto", "") or r.get("texto_original", "") or ""
             try:
                 pre = extrair_tudo_consumo(texto_original)
             except Exception as e:
+                report_status("ia_pipeline", "ERROR", stage="preprocess_failed", details={"entrada_id": r.get("id") or r.get("ID"), "error": str(e)})
                 print(f"[ia.py] Erro ao extrair dados (id={r.get('id')}): {e}")
                 traceback.print_exc()
                 pre = {
@@ -901,6 +912,7 @@ def processar():
                         dados_ia = uppercase_dict_values(dados_ia)
                 except Exception as e:
                     err_msg = str(e).lower()
+                    report_status("ia_pipeline", "ERROR", stage="llm_call_failed", details={"entrada_id": r.get("id") or r.get("ID"), "error": str(e)})
                     print(f"⚠️ Falha IA (fallback ativo): {e}")
                     traceback.print_exc()
                     if "invalid_api_key" in err_msg or "401" in err_msg:
@@ -978,6 +990,7 @@ def processar():
             try:
                 salvar_atomico(ENTRADA, entrada)
             except Exception as e:
+                report_status("ia_pipeline", "ERROR", stage="save_entrada_failed", details={"entrada_id": entrada_id, "error": str(e)})
                 print("[ia.py] Falha ao salvar ENTRADA:", e)
 
             # última validação: limpa NOME/SOBRENOME de tokens de MODELO/COR/PLACA
@@ -997,10 +1010,13 @@ def processar():
             try:
                 ok = append_or_update_saida(dados, entrada_id=entrada_id)
                 if not ok:
+                    report_status("ia_pipeline", "ERROR", stage="save_saida_failed", details={"entrada_id": entrada_id})
                     print("[ia.py] Falha ao anexar/atualizar registro em SAIDA")
                 else:
+                    report_status("ia_pipeline", "OK", stage="save_saida_ok", details={"entrada_id": entrada_id, "placa": dados.get("PLACA"), "modelo": dados.get("MODELO")})
                     print(f"[ia.py] Registro processado: entrada_id={entrada_id} PLACA={dados.get('PLACA')} MODELO={dados.get('MODELO')} COR={dados.get('COR')}")
             except Exception as e:
+                report_status("ia_pipeline", "ERROR", stage="save_saida_exception", details={"entrada_id": entrada_id, "error": str(e)})
                 print("[ia.py] Erro ao anexar/atualizar registro em SAIDA:", e)
                 traceback.print_exc()
 
@@ -1010,6 +1026,7 @@ def processar():
         for r in encomendas.get("registros", []):
             if r.get("processado"):
                 continue
+            report_status("ia_pipeline", "STARTED", stage="process_encomenda", details={"entrada_id": r.get("id") or r.get("ID")})
 
             texto_original = r.get("texto", "") or r.get("texto_original", "") or ""
             dados = _parse_encomenda_text(texto_original)
@@ -1034,17 +1051,23 @@ def processar():
             try:
                 salvar_atomico(ENCOMENDAS_ENTRADA, encomendas)
             except Exception as e:
+                report_status("ia_pipeline", "ERROR", stage="save_encomendas_entrada_failed", details={"entrada_id": entrada_id, "error": str(e)})
                 print("[ia.py] Falha ao salvar ENCOMENDAS_ENTRADA:", e)
 
             try:
                 ok = append_or_update_encomendas(dados, entrada_id=entrada_id)
                 if not ok:
+                    report_status("ia_pipeline", "ERROR", stage="save_encomendas_saida_failed", details={"entrada_id": entrada_id})
                     print("[ia.py] Falha ao anexar/atualizar encomenda em ENCOMENDAS_SAIDA")
+                else:
+                    report_status("ia_pipeline", "OK", stage="save_encomendas_saida_ok", details={"entrada_id": entrada_id, "bloco": dados.get("BLOCO"), "apartamento": dados.get("APARTAMENTO")})
             except Exception as e:
+                report_status("ia_pipeline", "ERROR", stage="save_encomendas_saida_exception", details={"entrada_id": entrada_id, "error": str(e)})
                 print("[ia.py] Erro ao anexar/atualizar encomenda:", e)
                 traceback.print_exc()
 
     finally:
+        report_status("ia_pipeline", "FINISHED", stage="release_lock")
         release_lock()
 
 # =========================
