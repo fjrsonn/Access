@@ -23,6 +23,12 @@ except Exception:
     def report_log(*args, **kwargs):
         return None
 
+try:
+    from runtime_status import report_status
+except Exception:
+    def report_status(*args, **kwargs):
+        return None
+
 BASE = os.path.dirname(os.path.abspath(__file__))
 DADOSEND = os.path.join(BASE, "dadosend.json")
 ANALISES_JSON = os.path.join(BASE, "analises.json")
