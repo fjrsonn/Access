@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Executor único de testes do projeto Access.
 
-- Executa a suíte unificada tests_unificados.py.
+- Executa a suíte unificada test_unificados.py.
 - Em caso de falha, grava log detalhado e tenta abrir painel (Tkinter).
 """
 from __future__ import annotations
@@ -51,8 +51,8 @@ def run(cmd: list[str]) -> subprocess.CompletedProcess:
 
 def main() -> int:
     steps = [
-        ["python", "-m", "py_compile", "preprocessor.py", "ia.py", "chat.py", "text_classifier.py", "main.py", "tests_unificados.py"],
-        ["python", "-m", "unittest", "-v", "tests_unificados.py"],
+        ["python", "-m", "py_compile", "preprocessor.py", "ia.py", "chat.py", "text_classifier.py", "main.py", "test_unificados.py"],
+        ["python", "-m", "unittest", "-v", "test_unificados.py"],
     ]
 
     for step in steps:
