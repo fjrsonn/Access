@@ -27,11 +27,12 @@ except Exception as e:
     scrolledtext = None
     print("Aviso: tkinter não disponível:", e)
 
-# rapidfuzz obrigatório
+# rapidfuzz opcional (fallback sem fuzzy quando indisponível)
 try:
     from rapidfuzz import process as rf_process, fuzz as rf_fuzz
-except Exception as e:
-    raise ImportError("rapidfuzz é obrigatório. Instale com: pip install rapidfuzz") from e
+except Exception:
+    rf_process = None
+    rf_fuzz = None
 
 # tentativas de módulo ia (opcionais)
 try:
@@ -70,6 +71,12 @@ except Exception:
     validate_structured_record = None
     log_audit_event = None
     load_rules = None
+
+try:
+    from runtime_status import report_status
+except Exception:
+    def report_status(*args, **kwargs):
+        return None
 
 # paths
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -858,8 +865,11 @@ def append_record_to_db(rec: dict):
     - Garante DATA_HORA e salva atômica.
     - Preserva campos extras como '_entrada_id' quando fornecidos.
     """
-    if not isinstance(rec, dict): return False
+    if not isinstance(rec, dict):
+        report_status("db_append", "ERROR", stage="input_validation", details={"reason": "record_not_dict"})
+        return False
     if not rec.get("DATA_HORA"): rec["DATA_HORA"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    report_status("db_append", "STARTED", stage="prepare_record", details={"has_entrada_id": bool(rec.get("_entrada_id"))})
     got = _acquire_db_lock(timeout=3.0)
     if not got:
         try:
@@ -901,10 +911,12 @@ def append_record_to_db(rec: dict):
 
         _ensure_datetime_on_records(regs)
         sanitize_and_save_db(regs)
+        report_status("db_append", "OK", stage="persisted", details={"id": rec_to_insert.get("ID"), "entrada_id": rec_to_insert.get("_entrada_id")})
         try: sync_suggestions(force=True)
         except: pass
         return True
     except Exception as e:
+        report_status("db_append", "ERROR", stage="exception", details={"error": str(e)})
         print("Erro append_record_to_db:", e); return False
     finally:
         _release_db_lock()
@@ -1683,6 +1695,7 @@ def save_text(entry_widget=None, btn=None):
     if entry_widget is None: return
     txt = entry_widget.get().strip()
     if not txt: return
+    report_status("user_input", "STARTED", stage="save_text", details={"text_len": len(txt)})
     parsed = None
     if extrair_tudo_consumo:
         try:
@@ -1698,22 +1711,26 @@ def save_text(entry_widget=None, btn=None):
         "destino": "dados", "motivo": "fallback", "score": 0.0, "ambiguo": False, "confianca": 0.0, "versao_regras": "v1"
     }
     destino = decision.get("destino")
+    report_status("user_input", "OK", stage="classification", details={"destino": destino, "score": decision.get("score"), "ambiguo": decision.get("ambiguo")})
     if log_audit_event:
         log_audit_event("texto_classificado", destino, txt, motivo=decision.get("motivo"), score=decision.get("score"), confianca=decision.get("confianca"), ambiguo=decision.get("ambiguo"))
 
     if destino == "orientacoes":
         _save_structured_text(ORIENTACOES_FILE, txt, now_str, "ORIENTACAO", decision_meta=decision)
+        report_status("user_input", "OK", stage="saved_orientacao", details={"path": ORIENTACOES_FILE})
         try: entry_widget.delete(0, "end")
         except: pass
         return
     if destino == "observacoes":
         _save_structured_text(OBSERVACOES_FILE, txt, now_str, "OBSERVACAO", decision_meta=decision)
+        report_status("user_input", "OK", stage="saved_observacao", details={"path": OBSERVACOES_FILE})
         try: entry_widget.delete(0, "end")
         except: pass
         return
 
     if destino == "encomendas" or _is_encomenda_text(txt, parsed):
         _save_encomenda_init(txt, now_str)
+        report_status("user_input", "OK", stage="saved_encomenda_init", details={"path": ENCOMENDAS_IN_FILE})
         if log_audit_event:
             log_audit_event("texto_persistido", "ENCOMENDAS_INIT", txt, motivo=decision.get("motivo"), score=decision.get("score"))
         try: entry_widget.delete(0, "end")
@@ -1725,7 +1742,9 @@ def save_text(entry_widget=None, btn=None):
             try:
                 if not (hasattr(ia_module, "is_chat_mode_active") and ia_module.is_chat_mode_active()):
                     threading.Thread(target=ia_module.processar, daemon=True).start()
+                    report_status("ia_pipeline", "STARTED", stage="thread_started", details={"source": "save_text_encomenda"})
             except Exception as e:
+                report_status("ia_pipeline", "ERROR", stage="thread_start_failed", details={"error": str(e), "source": "save_text_encomenda"})
                 print("Falha ao iniciar processamento IA para encomendas:", e)
         return
 
@@ -1842,7 +1861,9 @@ def save_text(entry_widget=None, btn=None):
 
     try:
         atomic_save(IN_FILE, {"registros": regs})
+        report_status("user_input", "OK", stage="saved_dadosinit", details={"path": IN_FILE, "entrada_id": nid})
     except Exception as e:
+        report_status("user_input", "ERROR", stage="save_dadosinit_failed", details={"error": str(e), "path": IN_FILE})
         print("Erro save (IN_FILE):", e)
     try: entry_widget.delete(0, "end")
     except: pass
@@ -1866,7 +1887,9 @@ def save_text(entry_widget=None, btn=None):
                 pass
             else:
                 threading.Thread(target=ia_module.processar, daemon=True).start()
+                report_status("ia_pipeline", "STARTED", stage="thread_started", details={"source": "save_text_dados"})
         except Exception as e:
+            report_status("ia_pipeline", "ERROR", stage="thread_start_failed", details={"error": str(e), "source": "save_text_dados"})
             print("Falha ao iniciar processamento IA em background:", e)
 
     # ----------------------
@@ -1881,9 +1904,9 @@ def save_text(entry_widget=None, btn=None):
         try:
             ok = append_record_to_db(rec)
             if not ok:
-                # fallback: nothing
-                pass
+                report_status("db_append", "ERROR", stage="optimistic_append", details={"entrada_id": nid})
         except Exception as e:
+            report_status("db_append", "ERROR", stage="optimistic_append_exception", details={"error": str(e), "entrada_id": nid})
             print("Erro ao anexar rec otimista ao DB:", e)
     else:
         # fallback ao parser simplista se preprocessor ausente
