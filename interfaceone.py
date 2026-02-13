@@ -27,11 +27,12 @@ except Exception as e:
     scrolledtext = None
     print("Aviso: tkinter não disponível:", e)
 
-# rapidfuzz obrigatório
+# rapidfuzz opcional (fallback sem fuzzy quando indisponível)
 try:
     from rapidfuzz import process as rf_process, fuzz as rf_fuzz
-except Exception as e:
-    raise ImportError("rapidfuzz é obrigatório. Instale com: pip install rapidfuzz") from e
+except Exception:
+    rf_process = None
+    rf_fuzz = None
 
 # tentativas de módulo ia (opcionais)
 try:
@@ -70,6 +71,19 @@ except Exception:
     validate_structured_record = None
     log_audit_event = None
     load_rules = None
+
+try:
+    from interfaceone_core import decidir_destino, montar_registro_acesso, montar_entrada_bruta
+except Exception:
+    decidir_destino = None
+    montar_registro_acesso = None
+    montar_entrada_bruta = None
+
+try:
+    from runtime_status import report_status
+except Exception:
+    def report_status(*args, **kwargs):
+        return None
 
 # paths
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -858,8 +872,11 @@ def append_record_to_db(rec: dict):
     - Garante DATA_HORA e salva atômica.
     - Preserva campos extras como '_entrada_id' quando fornecidos.
     """
-    if not isinstance(rec, dict): return False
+    if not isinstance(rec, dict):
+        report_status("db_append", "ERROR", stage="input_validation", details={"reason": "record_not_dict"})
+        return False
     if not rec.get("DATA_HORA"): rec["DATA_HORA"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    report_status("db_append", "STARTED", stage="prepare_record", details={"has_entrada_id": bool(rec.get("_entrada_id"))})
     got = _acquire_db_lock(timeout=3.0)
     if not got:
         try:
@@ -901,10 +918,12 @@ def append_record_to_db(rec: dict):
 
         _ensure_datetime_on_records(regs)
         sanitize_and_save_db(regs)
+        report_status("db_append", "OK", stage="persisted", details={"id": rec_to_insert.get("ID"), "entrada_id": rec_to_insert.get("_entrada_id")})
         try: sync_suggestions(force=True)
         except: pass
         return True
     except Exception as e:
+        report_status("db_append", "ERROR", stage="exception", details={"error": str(e)})
         print("Erro append_record_to_db:", e); return False
     finally:
         _release_db_lock()
@@ -1683,6 +1702,7 @@ def save_text(entry_widget=None, btn=None):
     if entry_widget is None: return
     txt = entry_widget.get().strip()
     if not txt: return
+    report_status("user_input", "STARTED", stage="save_text", details={"text_len": len(txt)})
     parsed = None
     if extrair_tudo_consumo:
         try:
@@ -1694,26 +1714,34 @@ def save_text(entry_widget=None, btn=None):
     if log_audit_event:
         log_audit_event("texto_recebido", "entrada", txt)
 
-    decision = classificar_destino_texto(txt, parsed) if classificar_destino_texto else {
-        "destino": "dados", "motivo": "fallback", "score": 0.0, "ambiguo": False, "confianca": 0.0, "versao_regras": "v1"
-    }
-    destino = decision.get("destino")
+    if decidir_destino:
+        decision = decidir_destino(txt, parsed, classificar_fn=classificar_destino_texto, is_encomenda_fn=_is_encomenda_text)
+    else:
+        decision = classificar_destino_texto(txt, parsed) if classificar_destino_texto else {
+            "destino": "dados", "motivo": "fallback", "score": 0.0, "ambiguo": False, "confianca": 0.0, "versao_regras": "v1"
+        }
+        decision["destino_final"] = decision.get("destino")
+    destino = decision.get("destino_final")
+    report_status("user_input", "OK", stage="classification", details={"destino": destino, "score": decision.get("score"), "ambiguo": decision.get("ambiguo")})
     if log_audit_event:
         log_audit_event("texto_classificado", destino, txt, motivo=decision.get("motivo"), score=decision.get("score"), confianca=decision.get("confianca"), ambiguo=decision.get("ambiguo"))
 
     if destino == "orientacoes":
         _save_structured_text(ORIENTACOES_FILE, txt, now_str, "ORIENTACAO", decision_meta=decision)
+        report_status("user_input", "OK", stage="saved_orientacao", details={"path": ORIENTACOES_FILE})
         try: entry_widget.delete(0, "end")
         except: pass
         return
     if destino == "observacoes":
         _save_structured_text(OBSERVACOES_FILE, txt, now_str, "OBSERVACAO", decision_meta=decision)
+        report_status("user_input", "OK", stage="saved_observacao", details={"path": OBSERVACOES_FILE})
         try: entry_widget.delete(0, "end")
         except: pass
         return
 
     if destino == "encomendas" or _is_encomenda_text(txt, parsed):
         _save_encomenda_init(txt, now_str)
+        report_status("user_input", "OK", stage="saved_encomenda_init", details={"path": ENCOMENDAS_IN_FILE})
         if log_audit_event:
             log_audit_event("texto_persistido", "ENCOMENDAS_INIT", txt, motivo=decision.get("motivo"), score=decision.get("score"))
         try: entry_widget.delete(0, "end")
@@ -1725,7 +1753,9 @@ def save_text(entry_widget=None, btn=None):
             try:
                 if not (hasattr(ia_module, "is_chat_mode_active") and ia_module.is_chat_mode_active()):
                     threading.Thread(target=ia_module.processar, daemon=True).start()
+                    report_status("ia_pipeline", "STARTED", stage="thread_started", details={"source": "save_text_encomenda"})
             except Exception as e:
+                report_status("ia_pipeline", "ERROR", stage="thread_start_failed", details={"error": str(e), "source": "save_text_encomenda"})
                 print("Falha ao iniciar processamento IA para encomendas:", e)
         return
 
@@ -1744,43 +1774,18 @@ def save_text(entry_widget=None, btn=None):
     rec = None
     fields_for_flags = {}
     if parsed:
-        # parsed contém keys: STATUS, BLOCO, APARTAMENTO, PLACA, MODELOS (list), COR, NOME_RAW, TEXTO_LIMPO
-        nome_raw = parsed.get("NOME_RAW", "") or ""
-        nome = ""
-        sobrenome = ""
-        if nome_raw:
-            parts = nome_raw.split()
-            if parts:
-                if corrigir_token_nome:
-                    parts = [corrigir_token_nome(p) for p in parts]
-                nome = parts[0].title()
-                sobrenome = " ".join(parts[1:]).title() if len(parts) > 1 else ""
-
-        modelo_candidate = ""
-        modelos_list = parsed.get("MODELOS") or []
-        if modelos_list:
-            modelo_candidate = modelos_list[0]
-        cor_candidate = parsed.get("COR") or ""
-        placa_candidate = parsed.get("PLACA") or ""
-        bloco_candidate = parsed.get("BLOCO") or ""
-        apt_candidate = parsed.get("APARTAMENTO") or ""
-        status_candidate = parsed.get("STATUS") or ""
-
-        rec = {
-            "NOME": (nome or "").upper(),
-            "SOBRENOME": (sobrenome or "").upper() or "-",
-            "BLOCO": (str(bloco_candidate) or "").strip(),
-            "APARTAMENTO": (str(apt_candidate) or "").strip(),
-            "PLACA": (placa_candidate or "").upper() or "-",
-            "MODELO": (str(modelo_candidate) or "").upper() if modelo_candidate else None,
-            "COR": (str(cor_candidate) or "").upper() if cor_candidate else None,
-            "STATUS": (status_candidate or "").upper() or "-",
-            "DATA_HORA": now_str,
-        }
-        # Remove None values so append_record_to_db will not insert empty keys
-        for k in list(rec.keys()):
-            if rec[k] is None:
-                rec.pop(k, None)
+        if montar_registro_acesso:
+            rec = montar_registro_acesso(parsed, corrigir_nome_fn=corrigir_token_nome, now_str=now_str)
+        else:
+            rec = {
+                "NOME": "-",
+                "SOBRENOME": "-",
+                "BLOCO": str(parsed.get("BLOCO") or "").strip(),
+                "APARTAMENTO": str(parsed.get("APARTAMENTO") or "").strip(),
+                "PLACA": (parsed.get("PLACA") or "").upper() or "-",
+                "STATUS": (parsed.get("STATUS") or "").upper() or "-",
+                "DATA_HORA": now_str,
+            }
         fields_for_flags = dict(rec)
 
         # última validação antes de persistir (defensiva)
@@ -1788,14 +1793,6 @@ def save_text(entry_widget=None, btn=None):
             post_validate_and_clean_record(rec, modelos_hint=[rec.get("MODELO")] if rec.get("MODELO") and rec.get("MODELO") != "-" else [], cores_hint=[rec.get("COR")] if rec.get("COR") and rec.get("COR") != "-" else [])
         except Exception as e:
             print("Aviso: falha validação final otimista:", e)
-
-        if nome_raw and rec.get("SOBRENOME") in (None, "", "-"):
-            parts = nome_raw.split()
-            if parts:
-                if corrigir_token_nome:
-                    parts = [corrigir_token_nome(p) for p in parts]
-                if len(parts) > 1:
-                    rec["SOBRENOME"] = " ".join(parts[1:]).upper()
     else:
         try:
             parsed2 = parse_input_to_fields(txt)
@@ -1830,19 +1827,24 @@ def save_text(entry_widget=None, btn=None):
     # compute next id robustly
     nid = _compute_next_in_id(regs)
 
-    new_rec = {
-        "id": nid,
-        "texto": txt,
-        "processado": False,
-        "data_hora": now_str
-    }
-    if access_flags:
-        new_rec.update(access_flags)
+    if montar_entrada_bruta:
+        new_rec = montar_entrada_bruta(nid, txt, now_str, access_flags)
+    else:
+        new_rec = {
+            "id": nid,
+            "texto": txt,
+            "processado": False,
+            "data_hora": now_str
+        }
+        if access_flags:
+            new_rec.update(access_flags)
     regs.append(new_rec)
 
     try:
         atomic_save(IN_FILE, {"registros": regs})
+        report_status("user_input", "OK", stage="saved_dadosinit", details={"path": IN_FILE, "entrada_id": nid})
     except Exception as e:
+        report_status("user_input", "ERROR", stage="save_dadosinit_failed", details={"error": str(e), "path": IN_FILE})
         print("Erro save (IN_FILE):", e)
     try: entry_widget.delete(0, "end")
     except: pass
@@ -1866,7 +1868,9 @@ def save_text(entry_widget=None, btn=None):
                 pass
             else:
                 threading.Thread(target=ia_module.processar, daemon=True).start()
+                report_status("ia_pipeline", "STARTED", stage="thread_started", details={"source": "save_text_dados"})
         except Exception as e:
+            report_status("ia_pipeline", "ERROR", stage="thread_start_failed", details={"error": str(e), "source": "save_text_dados"})
             print("Falha ao iniciar processamento IA em background:", e)
 
     # ----------------------
@@ -1881,9 +1885,9 @@ def save_text(entry_widget=None, btn=None):
         try:
             ok = append_record_to_db(rec)
             if not ok:
-                # fallback: nothing
-                pass
+                report_status("db_append", "ERROR", stage="optimistic_append", details={"entrada_id": nid})
         except Exception as e:
+            report_status("db_append", "ERROR", stage="optimistic_append_exception", details={"error": str(e), "entrada_id": nid})
             print("Erro ao anexar rec otimista ao DB:", e)
     else:
         # fallback ao parser simplista se preprocessor ausente
