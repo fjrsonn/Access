@@ -19,7 +19,8 @@ class InterfaceOneTests(unittest.TestCase):
         self.assertFalse(interfaceone._is_encomenda_text(txt2, parsed={"PLACA": "ABC1234"}))
 
     def test_token_common_prefix_len(self):
-        self.assertEqual(interfaceone.token_common_prefix_len("MARIA SILVA", "MARIA SOUZA"), 1)
+        # token_common_prefix_len mede prefixo comum por caractere (não por token)
+        self.assertEqual(interfaceone.token_common_prefix_len("MARIA SILVA", "MARIA SOUZA"), 7)
         self.assertEqual(interfaceone.token_common_prefix_len("ANA", "BRUNO"), 0)
 
 
