@@ -181,7 +181,8 @@ def watcher_thread(dadosend_path, analises_mod, avisos_mod, poll=POLL_INTERVAL):
             print("[main] watcher erro:", traceback.format_exc())
         time.sleep(poll)
 
-def main():
+def initialize_system(start_watcher=True):
+    """Inicializa infraestrutura e builds iniciais. Retorna thread watcher (ou None)."""
     # 1) garante arquivos de infraestrutura
     ensure_file(ANALISES_JSON, _ANALISES_TEMPLATE)
     ensure_file(AVISOS_JSON, _AVISOS_TEMPLATE)
@@ -214,9 +215,17 @@ def main():
     except Exception:
         print("[main] build_avisos falhou:", traceback.format_exc())
 
-    # 4) start watcher
-    t = threading.Thread(target=watcher_thread, args=(DADOSEND, analises, avisos, POLL_INTERVAL), daemon=True)
-    t.start()
+    # 4) start watcher (opcional)
+    watcher = None
+    if start_watcher:
+        watcher = threading.Thread(target=watcher_thread, args=(DADOSEND, analises, avisos, POLL_INTERVAL), daemon=True)
+        watcher.start()
+
+    return watcher
+
+
+def main():
+    initialize_system(start_watcher=True)
 
     # 5) inicia interface grafica (bloqueante)
     try:
