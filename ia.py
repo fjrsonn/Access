@@ -913,7 +913,7 @@ def processar():
                 except Exception as e:
                     err_msg = str(e).lower()
                     report_status("ia_pipeline", "ERROR", stage="llm_call_failed", details={"entrada_id": r.get("id") or r.get("ID"), "error": str(e)})
-                    print(f"⚠️ Falha IA (fallback ativo): {e}")
+                    print(f"[ia.py] Falha IA (fallback ativo): {e}")
                     traceback.print_exc()
                     if "invalid_api_key" in err_msg or "401" in err_msg:
                         _disable_client_due_to_auth()
