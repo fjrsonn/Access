@@ -48,6 +48,13 @@ class IAModuleTests(unittest.TestCase):
         self.assertEqual(out["BLOCO"], "13")
         self.assertEqual(out["APARTAMENTO"], "111")
 
+    def test_parse_encomenda_identificacao_alfanumerica_sem_digitos(self):
+        txt = "JADLOG BL13 CAIX APARTAMEN11 BRUNO SOUZA OSIJEVXTKTOTI"
+        out = ia._parse_encomenda_text(txt)
+        self.assertEqual(out["IDENTIFICACAO"], "OSIJEVXTKTOTI")
+        self.assertEqual(out["LOJA"], "JADLOG")
+        self.assertEqual(out["TIPO"], "CAIXA")
+
     def test_parse_encomenda_with_aliases(self):
         txt = "SED 9C3R4DUHASD BEATRIZ LOPES BLCO7 APARTAMENTO86 ENVELOP"
         out = ia._parse_encomenda_text(txt)

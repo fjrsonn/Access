@@ -541,14 +541,28 @@ def _parse_bloco_ap_tokens(tokens_up):
             break
     return bloco, ap
 
-def _extract_identificacao(tokens_up):
+def _extract_identificacao(tokens_up, ignore_tokens=None):
     skip_prefixes = ("AP", "APT", "APART", "APTA", "APARTAMEN", "APARTAMENTO", "BL", "BLO", "BLOCO", "BLCO", "BLC")
+    ignore_tokens = set(ignore_tokens or [])
+
+    # 1) prioriza padrões típicos de rastreio/código longo com dígitos
     for tok in reversed(tokens_up):
         if re.match(r"^[A-Z]{3}\d{4}$", tok) or re.match(r"^[A-Z]{3}\d[A-Z]\d{2}$", tok):
             continue
         if tok.startswith(skip_prefixes):
             continue
-        if re.match(r"^(?=.*\d)[A-Z0-9]{10,}$", tok):
+        if tok in ignore_tokens:
+            continue
+        if re.match(r"^(?=.*\d)[A-Z0-9]{8,}$", tok):
+            return tok
+
+    # 2) fallback: aceita código único alfanumérico mesmo sem dígitos (sem "tratar" valor)
+    for tok in reversed(tokens_up):
+        if tok.startswith(skip_prefixes):
+            continue
+        if tok in ignore_tokens:
+            continue
+        if re.match(r"^[A-Z0-9]{8,}$", tok):
             return tok
     return ""
 
@@ -556,10 +570,12 @@ def _parse_encomenda_text(texto: str) -> dict:
     toks = _encomenda_tokens(texto)
     toks_up = [t.upper() for t in toks]
     bloco, ap = _parse_bloco_ap_tokens(toks_up)
-    identificacao = _extract_identificacao(toks_up)
-
     tipo = _match_encomenda_tipo(toks_up)
     loja = _match_encomenda_store(texto, toks_up)
+
+    ident_ignore_tokens = set(_ENCOMENDA_TIPO_MAP.keys()) | set(_ENCOMENDA_LOJA_MAP.keys())
+    ident_ignore_tokens.update(_ENCOMENDA_LOJA_IGNORE_TOKENS)
+    identificacao = _extract_identificacao(toks_up, ignore_tokens=ident_ignore_tokens)
     if not tipo:
         tipo = "ENCOMENDA" if loja or identificacao else ""
 

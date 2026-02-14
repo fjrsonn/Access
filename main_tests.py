@@ -84,8 +84,6 @@ def validate_encomenda_pipeline_record(raw_text: str, init_rec: dict | None, end
     ident = _norm_text_for_compare(end_rec.get("IDENTIFICACAO", ""))
     if ident in {"", "-"}:
         issues.append("identificacao_invalida")
-    elif not re.match(r"^(?=.*\d)[A-Z0-9]{6,}$", ident):
-        issues.append("identificacao_formato_invalido")
 
     return ("OK", []) if not issues else ("FALHOU", issues)
 
@@ -427,21 +425,27 @@ class TestPanelApp:
                         time.sleep(0.1)
                     started = time.perf_counter()
                     try:
-                        entry = _SimulatedEntry(rec)
-                        save_text(entry_widget=entry, btn=None)
-                        ia.processar()
-                        if not entry.deleted:
-                            raise RuntimeError("entrada não foi consumida pela barra digitadora")
-
-                        elapsed = time.perf_counter() - started
                         if encomendas_mode:
+                            now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                            before_init_data = interfaceone._read_json(interfaceone.ENCOMENDAS_IN_FILE)
+                            before_init_regs = (before_init_data or {}).get("registros", []) if isinstance(before_init_data, dict) else []
+                            before_ids = {str(r.get("id")) for r in before_init_regs if r.get("id") is not None}
+
+                            interfaceone._save_encomenda_init(rec, now_str)
+                            ia.processar()
+
                             init_data = interfaceone._read_json(interfaceone.ENCOMENDAS_IN_FILE)
                             end_data = interfaceone._read_json(interfaceone.ENCOMENDAS_DB_FILE)
                             init_regs = (init_data or {}).get("registros", []) if isinstance(init_data, dict) else []
                             end_regs = (end_data or {}).get("registros", []) if isinstance(end_data, dict) else []
 
-                            init_candidates = [r for r in init_regs if _norm_text_for_compare(r.get("texto") or "") == _norm_text_for_compare(rec)]
-                            init_rec = init_candidates[-1] if init_candidates else None
+                            new_init_regs = [r for r in init_regs if str(r.get("id")) not in before_ids]
+                            if new_init_regs:
+                                init_rec = sorted(new_init_regs, key=lambda x: int(x.get("id") or 0))[-1]
+                            else:
+                                init_candidates = [r for r in init_regs if _norm_text_for_compare(r.get("texto") or "") == _norm_text_for_compare(rec)]
+                                init_rec = init_candidates[-1] if init_candidates else None
+
                             end_rec = None
                             if init_rec is not None:
                                 eid = init_rec.get("id")
@@ -471,6 +475,13 @@ class TestPanelApp:
                                 self._sim_fail_count = fail
                                 self.root.after(0, self.log, f"[FALHOU] #{idx}/{total} | {rec} | problemas={issues}")
                         else:
+                            entry = _SimulatedEntry(rec)
+                            save_text(entry_widget=entry, btn=None)
+                            ia.processar()
+                            if not entry.deleted:
+                                raise RuntimeError("entrada não foi consumida pela barra digitadora")
+
+                            elapsed = time.perf_counter() - started
                             if elapsed > (interval_s * 1.5):
                                 bottleneck += 1
                                 self._sim_bottleneck_count = bottleneck
