@@ -39,6 +39,15 @@ class IAModuleTests(unittest.TestCase):
         self.assertFalse(ia.IN_IA_MODE)
         self.assertTrue(isinstance(msg, str) and msg)
 
+    def test_parse_encomenda_with_aliases(self):
+        txt = "SED 9C3R4DUHASD BEATRIZ LOPES BLCO7 APARTAMENTO86 ENVELOP"
+        out = ia._parse_encomenda_text(txt)
+        self.assertEqual(out["TIPO"], "ENVELOPE")
+        self.assertEqual(out["LOJA"], "CORREIOS")
+        self.assertEqual(out["BLOCO"], "7")
+        self.assertEqual(out["APARTAMENTO"], "86")
+        self.assertEqual(out["IDENTIFICACAO"], "9C3R4DUHASD")
+
 
 if __name__ == "__main__":
     unittest.main()
