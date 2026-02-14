@@ -20,6 +20,14 @@ class InterfaceOneTests(unittest.TestCase):
         with mock.patch.object(interfaceone, "rf_process", None), mock.patch.object(interfaceone, "rf_fuzz", None):
             self.assertFalse(interfaceone._match_encomenda_store_token(["SHOPEE"]))
 
+    def test_encomenda_aliases_detected(self):
+        txt = "APT111 88SG4RSHNA8BR ENV RIACHUELO BLO13 JOAO PEREIRA"
+        self.assertTrue(interfaceone._is_encomenda_text(txt, parsed={}))
+
+    def test_non_encomenda_person_record_not_forced(self):
+        txt = "JOAO PEREIRA BLOCO 13 AP 111"
+        self.assertFalse(interfaceone._is_encomenda_text(txt, parsed={}))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -129,6 +129,21 @@ _ENCOMENDA_TIPO_TOKENS = {
     "CAIXA",
     "CARTA",
     "ENTREGA",
+    "PACT",
+    "PACOT",
+    "PA",
+    "CAIX",
+    "EV",
+    "ENVEL",
+    "ENVLOPE",
+    "EVELOPE",
+    "ENVELOP",
+    "EVENLOPE",
+    "SAC",
+    "SA",
+    "SACOL",
+    "SCOLA",
+    "SAOLA",
 }
 _ENCOMENDA_LOJA_TOKENS = {
     "SHOPEE",
@@ -137,35 +152,87 @@ _ENCOMENDA_LOJA_TOKENS = {
     "MERCADOLIVRE",
     "ML",
     "AMAZON",
+    "AMAZ",
+    "AMA",
     "TIKTOK",
+    "TIKT",
+    "TIKOK",
+    "TITOK",
     "TKTK",
     "JNT",
     "J&T",
     "J&TEXPRESS",
     "JNTEXPRESS",
     "MAGAZINE",
+    "MAGAZIN",
+    "MAGAZI",
+    "MAGA",
+    "MLUIZA",
+    "MLIVRE",
     "MAGALU",
     "ALIEXPRESS",
+    "ALIEXPRES",
+    "ALIEX",
+    "ALIEXPR",
     "ALIE",
     "SHEIN",
     "CORREIOS",
+    "CORREI",
+    "COREIOS",
+    "COREIO",
+    "CRREIOS",
+    "CREIOS",
+    "CORREIS",
     "SEDEX",
+    "SED",
+    "SDEX",
+    "SEDE",
     "RIACHUELO",
+    "RIAHULE",
+    "RCHLO",
+    "RACHUELO",
+    "RENNER",
+    "RENER",
+    "RENE",
+    "RENNE",
+    "CEA",
+    "C&A",
+    "JADLOG",
+    "JADLO",
+    "JALOG",
+    "KABUM",
+    "KABUN",
+    "KBUN",
+    "TERABYTE",
+    "TERBYT",
+    "TERABITE",
     "GROWTH",
     "GRONWTH",
 }
 _ENCOMENDA_LOJA_PATTERNS = {
     "MERCADO LIVRE",
+    "M LIVRE",
+    "MERCADO LIV",
+    "MERC LIVR",
     "J T EXPRESS",
     "JNT EXPRESS",
     "J T",
     "MAGAZINE LUIZA",
+    "MAGAZIN LUZ",
+    "MAGAZI LUIZA",
+    "MAGA LUIZA",
+    "M LUIZA",
     "TIKTOK",
     "ALIEXPRESS",
     "SHOPEE",
     "CORREIOS",
     "SEDEX",
     "RIACHUELO",
+    "C A",
+    "C&A",
+    "JADLOG",
+    "KABUM",
+    "TERABYTE",
     "GROWTH",
 }
 
@@ -185,11 +252,26 @@ def _has_encomenda_identificacao(tokens_up):
     for tok in tokens_up:
         if re.match(r"^[A-Z]{3}\d{4}$", tok) or re.match(r"^[A-Z]{3}\d[A-Z]\d{2}$", tok):
             continue
-        if re.match(r"^\d{5,}[A-Z]{0,3}$", tok):
-            return True
-        if re.match(r"^[A-Z]{0,3}\d{5,}$", tok):
+        if re.match(r"^(?=.*\d)[A-Z0-9]{10,}$", tok):
             return True
     return False
+
+
+def _has_bloco_ap_indicador(tokens_up):
+    bloco_alias = {"BL", "BLO", "BLOCO", "BLCO", "BLC", "B"}
+    ap_alias = {"AP", "APT", "APART", "APTA", "APARTAMEN", "APARTAMENTO", "A"}
+    has_bloco = False
+    has_ap = False
+    for i, tok in enumerate(tokens_up):
+        if tok in bloco_alias and i + 1 < len(tokens_up) and tokens_up[i + 1].isdigit():
+            has_bloco = True
+        if tok in ap_alias and i + 1 < len(tokens_up) and tokens_up[i + 1].isdigit():
+            has_ap = True
+        if re.match(r"^(BL|BLO|BLOCO|BLCO|BLC)\d+$", tok):
+            has_bloco = True
+        if re.match(r"^(AP|APT|APART|APTA|APARTAMEN|APARTAMENTO|A)\d+[A-Z]?$", tok):
+            has_ap = True
+    return has_bloco, has_ap
 
 def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
     if not text:
@@ -200,16 +282,26 @@ def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
     if parsed:
         if parsed.get("PLACA") or parsed.get("MODELOS"):
             return False
-    if any(t in _ENCOMENDA_TIPO_TOKENS for t in toks_up):
+    has_tipo = any(t in _ENCOMENDA_TIPO_TOKENS for t in toks_up)
+    has_loja = any(t in _ENCOMENDA_LOJA_TOKENS for t in toks_up)
+    has_nf = _has_encomenda_identificacao(toks_up)
+    has_bloco, has_ap = _has_bloco_ap_indicador(toks_up)
+    has_endereco = has_bloco and has_ap
+
+    if has_loja and (has_tipo or has_nf or has_endereco):
         return True
-    if any(t in _ENCOMENDA_LOJA_TOKENS for t in toks_up):
+    if has_tipo and (has_nf or has_endereco):
         return True
+    if has_nf and has_endereco:
+        return True
+
     for pattern in _ENCOMENDA_LOJA_PATTERNS:
         if pattern.replace(" ", "") in normalized.replace(" ", ""):
-            return True
+            if has_tipo or has_nf or has_endereco:
+                return True
     if _match_encomenda_store_token(toks_up):
-        return True
-    if _has_encomenda_identificacao(toks_up) and any(t in ("BL", "B", "BLOCO", "AP", "A", "APT", "APARTAMENTO") for t in toks_up):
+        return has_tipo or has_nf or has_endereco
+    if has_nf and has_endereco:
         return True
     return False
 

@@ -335,26 +335,51 @@ _ENCOMENDA_TIPO_MAP = {
     "PACOTE": "PACOTE",
     "PAC": "PACOTE",
     "PCT": "PACOTE",
+    "PACT": "PACOTE",
+    "PACOT": "PACOTE",
+    "PA": "PACOTE",
     "CAIXA": "CAIXA",
     "CIXA": "CAIXA",
     "CX": "CAIXA",
+    "CAIX": "CAIXA",
     "CARTA": "CARTA",
     "ENVELOPE": "ENVELOPE",
     "ENV": "ENVELOPE",
+    "EV": "ENVELOPE",
+    "ENVEL": "ENVELOPE",
+    "ENVLOPE": "ENVELOPE",
+    "EVELOPE": "ENVELOPE",
+    "ENVELOP": "ENVELOPE",
+    "EVENLOPE": "ENVELOPE",
     "SACOLA": "SACOLA",
     "SACO": "SACOLA",
+    "SAC": "SACOLA",
+    "SA": "SACOLA",
+    "SACOL": "SACOLA",
+    "SCOLA": "SACOLA",
+    "SAOLA": "SACOLA",
     "ENTREGA": "ENTREGA",
 }
 _ENCOMENDA_LOJA_MAP = {
     "SHOPEE": "SHOPEE",
     "SHOPE": "SHOPEE",
+    "SHOP": "SHOPEE",
     "SHOPPE": "SHOPEE",
     "MERCADO": "MERCADO LIVRE",
     "MERCADOLIVRE": "MERCADO LIVRE",
     "MERCADO LIVRE": "MERCADO LIVRE",
+    "MERCADO LIV": "MERCADO LIVRE",
+    "MERC LIVR": "MERCADO LIVRE",
+    "M LIVRE": "MERCADO LIVRE",
+    "MLIVRE": "MERCADO LIVRE",
     "ML": "MERCADO LIVRE",
     "AMAZON": "AMAZON",
+    "AMAZ": "AMAZON",
+    "AMA": "AMAZON",
     "TIKTOK": "TIKTOK",
+    "TIKT": "TIKTOK",
+    "TIKOK": "TIKTOK",
+    "TITOK": "TIKTOK",
     "TIKTOKSHOP": "TIKTOK",
     "TKTK": "TIKTOK",
     "J&T": "J&T EXPRESS",
@@ -364,15 +389,54 @@ _ENCOMENDA_LOJA_MAP = {
     "J&TEXPRESS": "J&T EXPRESS",
     "J&T EXPRESS": "J&T EXPRESS",
     "MAGAZINE": "MAGAZINE LUIZA",
+    "MAGAZINE LUIZA": "MAGAZINE LUIZA",
+    "MAGAZIN LUZ": "MAGAZINE LUIZA",
+    "MAGAZI LUIZA": "MAGAZINE LUIZA",
+    "MAGAZIN": "MAGAZINE LUIZA",
+    "MAGAZI": "MAGAZINE LUIZA",
+    "MAGA LUIZA": "MAGAZINE LUIZA",
+    "M LUIZA": "MAGAZINE LUIZA",
+    "MLUIZA": "MAGAZINE LUIZA",
+    "MAGA": "MAGAZINE LUIZA",
     "MAGALU": "MAGAZINE LUIZA",
     "MAGAZINELUIZA": "MAGAZINE LUIZA",
     "LUIZA": "MAGAZINE LUIZA",
     "ALIEXPRESS": "ALIEXPRESS",
+    "ALIEXPRES": "ALIEXPRESS",
+    "ALIEX": "ALIEXPRESS",
+    "ALIEXPR": "ALIEXPRESS",
     "ALIE": "ALIEXPRESS",
     "SHEIN": "SHEIN",
     "CORREIOS": "CORREIOS",
+    "CORREI": "CORREIOS",
+    "COREIOS": "CORREIOS",
+    "COREIO": "CORREIOS",
+    "CRREIOS": "CORREIOS",
+    "CREIOS": "CORREIOS",
+    "CORREIS": "CORREIOS",
     "SEDEX": "CORREIOS",
+    "SED": "CORREIOS",
+    "SDEX": "CORREIOS",
+    "SEDE": "CORREIOS",
     "RIACHUELO": "RIACHUELO",
+    "RIAHULE": "RIACHUELO",
+    "RCHLO": "RIACHUELO",
+    "RACHUELO": "RIACHUELO",
+    "RENNER": "RENNER",
+    "RENER": "RENNER",
+    "RENE": "RENNER",
+    "RENNE": "RENNER",
+    "CEA": "CEA",
+    "C&A": "CEA",
+    "JADLOG": "JADLOG",
+    "JADLO": "JADLOG",
+    "JALOG": "JADLOG",
+    "KABUM": "KABUM",
+    "KABUN": "KABUM",
+    "KBUN": "KABUM",
+    "TERABYTE": "TERABYTE",
+    "TERBYT": "TERABYTE",
+    "TERABITE": "TERABYTE",
     "GROWTH": "GROWTH",
     "GRONWTH": "GROWTH",
 }
@@ -460,36 +524,32 @@ def _parse_bloco_ap_tokens(tokens_up):
     bloco = ""
     ap = ""
     for i, tok in enumerate(tokens_up):
-        if tok in ("BLOCO", "BL", "B") and i + 1 < len(tokens_up) and tokens_up[i + 1].isdigit():
+        if tok in ("BLOCO", "BL", "B", "BLO", "BLCO", "BLC") and i + 1 < len(tokens_up) and tokens_up[i + 1].isdigit():
             bloco = tokens_up[i + 1]
             break
-        if re.match(r"^BL\d+$", tok):
-            bloco = tok.replace("BL", "")
-            break
-        if re.match(r"^B\d+$", tok):
-            bloco = tok.replace("B", "")
+        m_bloco = re.match(r"^(BL|BLO|BLOCO|BLCO|BLC|B)(\d+)$", tok)
+        if m_bloco:
+            bloco = m_bloco.group(2)
             break
     for i, tok in enumerate(tokens_up):
-        if tok in ("AP", "APT", "APARTAMENTO", "A") and i + 1 < len(tokens_up) and tokens_up[i + 1].isdigit():
+        if tok in ("AP", "APT", "APARTAMENTO", "A", "APART", "APTA", "APARTAMEN") and i + 1 < len(tokens_up) and tokens_up[i + 1].isdigit():
             ap = tokens_up[i + 1]
             break
-        if re.match(r"^AP\d+$", tok):
-            ap = tok.replace("AP", "")
-            break
-        if re.match(r"^A\d+$", tok):
-            ap = tok.replace("A", "")
+        m_ap = re.match(r"^(AP|APT|APART|APTA|APARTAMEN|APARTAMENTO|A)(\d+[A-Z]?)$", tok)
+        if m_ap:
+            ap = m_ap.group(2)
             break
     return bloco, ap
 
 def _extract_identificacao(tokens_up):
+    skip_prefixes = ("AP", "APT", "APART", "APTA", "APARTAMEN", "APARTAMENTO", "BL", "BLO", "BLOCO", "BLCO", "BLC")
     for tok in reversed(tokens_up):
         if re.match(r"^[A-Z]{3}\d{4}$", tok) or re.match(r"^[A-Z]{3}\d[A-Z]\d{2}$", tok):
             continue
-        if re.match(r"^\d{5,}$", tok):
+        if tok.startswith(skip_prefixes):
+            continue
+        if re.match(r"^(?=.*\d)[A-Z0-9]{10,}$", tok):
             return tok
-        m = re.search(r"(\d{5,})", tok)
-        if m:
-            return m.group(1)
     return ""
 
 def _parse_encomenda_text(texto: str) -> dict:
@@ -505,7 +565,7 @@ def _parse_encomenda_text(texto: str) -> dict:
 
     ignore_tokens = set(_ENCOMENDA_TIPO_MAP.keys()) | set(_ENCOMENDA_LOJA_MAP.keys())
     ignore_tokens.update(_ENCOMENDA_LOJA_IGNORE_TOKENS)
-    ignore_tokens.update({"BLOCO", "BL", "AP", "APT", "APARTAMENTO"})
+    ignore_tokens.update({"BLOCO", "BL", "AP", "APT", "APARTAMENTO", "BLO", "BLCO", "BLC", "APART", "APTA", "APARTAMEN"})
     ignore_tokens.update({f"BL{bloco}" for bloco in ([bloco] if bloco else [])})
     ignore_tokens.update({f"AP{ap}" for ap in ([ap] if ap else [])})
 

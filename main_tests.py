@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 import tkinter as tk
-from tkinter import ttk
+from tkinter import filedialog, ttk
 
 import main as app_main
 import runtime_status
@@ -60,6 +60,13 @@ class TestPanelApp:
         ttk.Label(top, text="Limite (opcional):").pack(side="left", padx=(8, 2))
         self.entry_limit = ttk.Entry(top, width=8)
         self.entry_limit.pack(side="left")
+
+        ttk.Label(top, text="TXT simulador:").pack(side="left", padx=(8, 2))
+        self.entry_txt_file = ttk.Entry(top, width=34)
+        self.entry_txt_file.insert(0, str((Path(__file__).resolve().parent / "combinacoes.txt").name))
+        self.entry_txt_file.pack(side="left")
+        self.btn_txt_file = ttk.Button(top, text="Escolher TXT", command=self.select_txt_file)
+        self.btn_txt_file.pack(side="left", padx=(4, 0))
 
         self.lbl_status = ttk.Label(top, text="Pronto")
         self.lbl_status.pack(side="left", padx=12)
@@ -166,6 +173,28 @@ class TestPanelApp:
         if limit is not None:
             lines = lines[:limit]
         return lines
+
+    def _resolve_simulator_file(self) -> Path:
+        raw = (self.entry_txt_file.get() or "").strip()
+        base_dir = Path(__file__).resolve().parent
+        if not raw:
+            return base_dir / "combinacoes.txt"
+        p = Path(raw)
+        if not p.is_absolute():
+            p = base_dir / p
+        return p
+
+    def select_txt_file(self):
+        initial_dir = str(Path(__file__).resolve().parent)
+        selected = filedialog.askopenfilename(
+            title="Selecionar arquivo TXT para simulação",
+            initialdir=initial_dir,
+            filetypes=(("Arquivos TXT", "*.txt"), ("Todos os arquivos", "*.*")),
+        )
+        if selected:
+            self.entry_txt_file.delete(0, tk.END)
+            self.entry_txt_file.insert(0, selected)
+            self.log(f"Arquivo de simulação selecionado: {selected}")
 
 
     def _set_sim_stats(self):
@@ -281,7 +310,9 @@ class TestPanelApp:
             tpm = self._parse_tpm()
             limit = self._parse_limit()
             interval_s = 60.0 / tpm
-            combo_file = Path(__file__).resolve().parent / "combinacoes.txt"
+            combo_file = self._resolve_simulator_file()
+            if not combo_file.exists():
+                raise FileNotFoundError(f"Arquivo de simulação não encontrado: {combo_file}")
             regs = self._load_records(combo_file, limit=limit)
             total = len(regs)
 
