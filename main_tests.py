@@ -46,6 +46,12 @@ class TestPanelApp:
         self.btn_sim = ttk.Button(top, text="Simulador", command=self.start_simulator)
         self.btn_sim.pack(side="left", padx=8)
 
+        self.btn_pause = ttk.Button(top, text="Pausar", command=self.pause_simulator, state="disabled")
+        self.btn_pause.pack(side="left", padx=4)
+
+        self.btn_resume = ttk.Button(top, text="Retomar", command=self.resume_simulator, state="disabled")
+        self.btn_resume.pack(side="left", padx=4)
+
         ttk.Label(top, text="TPM:").pack(side="left", padx=(8, 2))
         self.entry_tpm = ttk.Entry(top, width=6)
         self.entry_tpm.insert(0, "30")
@@ -72,6 +78,17 @@ class TestPanelApp:
         for w in (self.lbl_total, self.lbl_ok, self.lbl_fail, self.lbl_err):
             w.pack(side="left", padx=10)
 
+        sim_stats = ttk.Frame(root, padding=(8, 0, 8, 8))
+        sim_stats.pack(fill="x")
+        self.lbl_sim_progress = ttk.Label(sim_stats, text="Simulador: parado")
+        self.lbl_sim_progress.pack(side="left", padx=10)
+        self.lbl_sim_ok = ttk.Label(sim_stats, text="OK: 0")
+        self.lbl_sim_ok.pack(side="left", padx=10)
+        self.lbl_sim_fail = ttk.Label(sim_stats, text="FALHOU: 0")
+        self.lbl_sim_fail.pack(side="left", padx=10)
+        self.lbl_sim_bottleneck = ttk.Label(sim_stats, text="GARGALO: 0")
+        self.lbl_sim_bottleneck.pack(side="left", padx=10)
+
         self.text = tk.Text(root, wrap="word")
         self.text.pack(fill="both", expand=True, padx=8, pady=8)
         self.text.configure(state="disabled")
@@ -83,6 +100,14 @@ class TestPanelApp:
         self._test_loader = test_loader or unittest.defaultTestLoader
         self._test_runner_factory = test_runner_factory or (lambda stream: unittest.TextTestRunner(stream=stream, verbosity=2))
         self._thread_factory = thread_factory or (lambda target: threading.Thread(target=target, daemon=True))
+        self._sim_pause_requested = False
+        self._sim_running = False
+        self._sim_index = 0
+        self._sim_total = 0
+        self._sim_ok_count = 0
+        self._sim_fail_count = 0
+        self._sim_bottleneck_count = 0
+        self._sim_current_record = ""
 
     def log(self, msg: str):
         self.text.configure(state="normal")
@@ -142,9 +167,42 @@ class TestPanelApp:
             lines = lines[:limit]
         return lines
 
+
+    def _set_sim_stats(self):
+        processed = self._sim_ok_count + self._sim_fail_count
+        remaining = max(0, self._sim_total - processed)
+        pos = self._sim_index if self._sim_index else 0
+        txt = f"Simulador: processados={processed}/{self._sim_total} | faltam={remaining} | último_idx={pos}"
+        if self._sim_current_record:
+            txt += f" | atual='{self._sim_current_record[:60]}'"
+        self.lbl_sim_progress.config(text=txt)
+        self.lbl_sim_ok.config(text=f"OK: {self._sim_ok_count}")
+        self.lbl_sim_fail.config(text=f"FALHOU: {self._sim_fail_count}")
+        self.lbl_sim_bottleneck.config(text=f"GARGALO: {self._sim_bottleneck_count}")
+
+    def pause_simulator(self):
+        if not self._sim_running:
+            return
+        self._sim_pause_requested = True
+        self.btn_pause.config(state="disabled")
+        self.btn_resume.config(state="normal")
+        self.lbl_status.config(text=f"Simulador pausado no registro #{self._sim_index}")
+        self.log(f"[SIM] PAUSADO no registro #{self._sim_index}/{self._sim_total}: {self._sim_current_record}")
+
+    def resume_simulator(self):
+        if not self._sim_running:
+            return
+        self._sim_pause_requested = False
+        self.btn_pause.config(state="normal")
+        self.btn_resume.config(state="disabled")
+        self.lbl_status.config(text=f"Simulador retomado do registro #{self._sim_index}")
+        self.log(f"[SIM] RETOMADO do registro #{self._sim_index}/{self._sim_total}")
+
     def start(self):
         self.btn_run.config(state="disabled")
         self.btn_sim.config(state="disabled")
+        self.btn_pause.config(state="disabled")
+        self.btn_resume.config(state="disabled")
         self.progress.start(8)
         self.lbl_status.config(text="Executando testes...")
         t = self._thread_factory(self._run_all)
@@ -153,8 +211,19 @@ class TestPanelApp:
     def start_simulator(self):
         self.btn_run.config(state="disabled")
         self.btn_sim.config(state="disabled")
+        self.btn_pause.config(state="normal")
+        self.btn_resume.config(state="disabled")
         self.progress.start(8)
         self.lbl_status.config(text="Executando simulador...")
+        self._sim_pause_requested = False
+        self._sim_running = True
+        self._sim_index = 0
+        self._sim_total = 0
+        self._sim_ok_count = 0
+        self._sim_fail_count = 0
+        self._sim_bottleneck_count = 0
+        self._sim_current_record = ""
+        self._set_sim_stats()
         t = self._thread_factory(self._run_simulator)
         t.start()
 
@@ -195,9 +264,13 @@ class TestPanelApp:
             self.root.after(0, self.log, traceback.format_exc())
             self.root.after(0, lambda: self.lbl_status.config(text="Erro crítico"))
         finally:
+            self._sim_running = False
             self.root.after(0, self.progress.stop)
             self.root.after(0, lambda: self.btn_run.config(state="normal"))
             self.root.after(0, lambda: self.btn_sim.config(state="normal"))
+            self.root.after(0, lambda: self.btn_pause.config(state="disabled"))
+            self.root.after(0, lambda: self.btn_resume.config(state="disabled"))
+            self.root.after(0, self._set_sim_stats)
 
     def _run_simulator(self):
         try:
@@ -217,11 +290,17 @@ class TestPanelApp:
             ok = 0
             fail = 0
             bottleneck = 0
+            self._sim_total = total
+            self.root.after(0, self._set_sim_stats)
 
             original_has_ia = getattr(interfaceone, "HAS_IA_MODULE", False)
             interfaceone.HAS_IA_MODULE = False
             try:
                 for idx, rec in enumerate(regs, start=1):
+                    self._sim_index = idx
+                    self._sim_current_record = rec
+                    while self._sim_pause_requested:
+                        time.sleep(0.1)
                     started = time.perf_counter()
                     try:
                         entry = _SimulatedEntry(rec)
@@ -232,14 +311,18 @@ class TestPanelApp:
                         elapsed = time.perf_counter() - started
                         if elapsed > (interval_s * 1.5):
                             bottleneck += 1
+                            self._sim_bottleneck_count = bottleneck
                             self.root.after(0, self.log, f"[GARGALO] #{idx}/{total} {elapsed:.2f}s | {rec}")
                         else:
                             self.root.after(0, self.log, f"[OK] #{idx}/{total} | {rec}")
                         ok += 1
+                        self._sim_ok_count = ok
                     except Exception as e:
                         fail += 1
+                        self._sim_fail_count = fail
                         self.root.after(0, self.log, f"[ERRO] #{idx}/{total} | {rec} | erro={e}")
 
+                    self.root.after(0, self._set_sim_stats)
                     remaining = interval_s - (time.perf_counter() - started)
                     if remaining > 0:
                         time.sleep(remaining)
@@ -254,9 +337,13 @@ class TestPanelApp:
             self.root.after(0, self.log, traceback.format_exc())
             self.root.after(0, lambda: self.lbl_status.config(text="Erro crítico no simulador"))
         finally:
+            self._sim_running = False
             self.root.after(0, self.progress.stop)
             self.root.after(0, lambda: self.btn_run.config(state="normal"))
             self.root.after(0, lambda: self.btn_sim.config(state="normal"))
+            self.root.after(0, lambda: self.btn_pause.config(state="disabled"))
+            self.root.after(0, lambda: self.btn_resume.config(state="disabled"))
+            self.root.after(0, self._set_sim_stats)
 
 
 def main():

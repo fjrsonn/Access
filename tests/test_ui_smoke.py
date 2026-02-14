@@ -167,6 +167,27 @@ class UISmokeTests(unittest.TestCase):
         self.assertIn("[OK] #2/2", joined)
         self.assertIn("Simulador finalizado", joined)
 
+    def test_pause_and_resume_update_status(self):
+        root = _FakeRoot()
+        with self._patch_tk(),              mock.patch.object(main_tests.app_main, "initialize_system", return_value=None):
+            app = main_tests.TestPanelApp(
+                root,
+                status_store=_FakeStore(),
+                test_loader=mock.Mock(discover=mock.Mock(return_value=object())),
+                test_runner_factory=lambda stream: _FakeRunner(stream),
+                thread_factory=lambda target: _FakeThread(target),
+            )
+            app._sim_running = True
+            app._sim_total = 10
+            app._sim_index = 4
+            app._sim_current_record = "REG TESTE"
+            app.pause_simulator()
+            self.assertTrue(app._sim_pause_requested)
+            self.assertEqual(app.btn_resume.kwargs.get("state"), "normal")
+            app.resume_simulator()
+            self.assertFalse(app._sim_pause_requested)
+            self.assertEqual(app.btn_pause.kwargs.get("state"), "normal")
+
 
 if __name__ == "__main__":
     unittest.main()
