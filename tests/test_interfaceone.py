@@ -28,6 +28,18 @@ class InterfaceOneTests(unittest.TestCase):
         txt = "EVELOPE SHOP BRUNO RIBEIRO BLOCO13 APARTAMEN109"
         self.assertTrue(interfaceone._is_encomenda_text(txt, parsed={}))
 
+    def test_encomenda_when_only_tipo_signal(self):
+        txt = "ENVELOPE JOAO SILVA BLOCO 1 AP 22"
+        self.assertTrue(interfaceone._is_encomenda_text(txt, parsed={}))
+
+    def test_encomenda_when_only_loja_signal(self):
+        txt = "SHOPEE JOAO SILVA BLOCO 1 AP 22"
+        self.assertTrue(interfaceone._is_encomenda_text(txt, parsed={}))
+
+    def test_encomenda_when_only_identificacao_signal(self):
+        txt = "OSIJEVXTKTOTI JOAO SILVA BLOCO 1 AP 22"
+        self.assertTrue(interfaceone._is_encomenda_text(txt, parsed={}))
+
     def test_non_encomenda_person_record_not_forced(self):
         txt = "JOAO PEREIRA BLOCO 13 AP 111"
         self.assertFalse(interfaceone._is_encomenda_text(txt, parsed={}))

@@ -257,7 +257,10 @@ def _has_encomenda_identificacao(tokens_up):
     for tok in tokens_up:
         if re.match(r"^[A-Z]{3}\d{4}$", tok) or re.match(r"^[A-Z]{3}\d[A-Z]\d{2}$", tok):
             continue
-        if re.match(r"^(?=.*\d)[A-Z0-9]{10,}$", tok):
+        if re.match(r"^(?=.*\d)[A-Z0-9]{8,}$", tok):
+            return True
+    for tok in tokens_up:
+        if re.match(r"^[A-Z0-9]{8,}$", tok):
             return True
     return False
 
@@ -293,20 +296,15 @@ def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
     has_bloco, has_ap = _has_bloco_ap_indicador(toks_up)
     has_endereco = has_bloco and has_ap
 
-    if has_loja and (has_tipo or has_nf or has_endereco):
-        return True
-    if has_tipo and (has_nf or has_endereco):
-        return True
-    if has_nf and has_endereco:
+    # Regra operacional: qualquer sinal de TIPO, IDENTIFICACAO ou EMPRESA/LOJA
+    # classifica o texto como encomenda.
+    if has_loja or has_tipo or has_nf:
         return True
 
     for pattern in _ENCOMENDA_LOJA_PATTERNS:
         if pattern.replace(" ", "") in normalized.replace(" ", ""):
-            if has_tipo or has_nf or has_endereco:
-                return True
+            return True
     if _match_encomenda_store_token(toks_up):
-        return has_tipo or has_nf or has_endereco
-    if has_nf and has_endereco:
         return True
     return False
 
