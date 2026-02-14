@@ -1,6 +1,13 @@
+import sys
 import unittest
+from pathlib import Path
 
-from tests.regression import run_regression
+THIS_DIR = Path(__file__).resolve().parent
+REGRESSION_DIR = THIS_DIR / "regression"
+if str(REGRESSION_DIR) not in sys.path:
+    sys.path.insert(0, str(REGRESSION_DIR))
+
+import run_regression
 
 
 class RegressionDatasetTests(unittest.TestCase):
