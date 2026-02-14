@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Painel de testes, diagnóstico e simulador de carga de registros."""
 import io
+import json
+import re
 import threading
 import time
 import traceback
@@ -13,6 +15,93 @@ from tkinter import filedialog, ttk
 
 import main as app_main
 import runtime_status
+
+
+
+
+def _norm_text_for_compare(s: str) -> str:
+    return re.sub(r"\s+", " ", str(s or "").strip().upper())
+
+
+def _is_valid_encomenda_name_token(v: str) -> bool:
+    up = _norm_text_for_compare(v)
+    if not up or up in {"-", ""}:
+        return False
+    if re.match(r"^(BL|BLO|BLOCO|BLCO|BLC|B)\d+$", up):
+        return False
+    if re.match(r"^(AP|APT|APART|APTA|APARTAMEN|APARTAMENTO|A)\d+[A-Z]?$", up):
+        return False
+    if re.match(r"^(?=.*\d)[A-Z0-9]{10,}$", up):
+        return False
+    return bool(re.match(r"^[A-ZÀ-ÖØ-Ý][A-ZÀ-ÖØ-Ý\s\-]{1,}$", up))
+
+
+def validate_encomenda_pipeline_record(raw_text: str, init_rec: dict | None, end_rec: dict | None) -> tuple[str, list[str]]:
+    """Valida se uma linha de encomenda percorreu corretamente init -> end.
+
+    Retorna (status, problemas):
+    - OK: registro processado e campos coerentes
+    - FALHOU: registro processado mas com dados inconsistentes
+    - GARGALO: registro não chegou ao fim do pipeline
+    """
+    issues: list[str] = []
+    if not init_rec:
+        return "GARGALO", ["ausente_em_encomendasinit"]
+    if not init_rec.get("processado"):
+        return "GARGALO", ["registro_nao_processado_em_encomendasinit"]
+    if not end_rec:
+        return "GARGALO", ["ausente_em_encomendasend"]
+
+    expected_text = _norm_text_for_compare(raw_text)
+    init_text = _norm_text_for_compare(init_rec.get("texto") or init_rec.get("texto_original") or "")
+    if init_text and expected_text and init_text != expected_text:
+        issues.append("texto_init_divergente")
+
+    required = ("NOME", "SOBRENOME", "BLOCO", "APARTAMENTO", "TIPO", "LOJA", "IDENTIFICACAO", "DATA_HORA", "ID", "_entrada_id")
+    for k in required:
+        v = end_rec.get(k)
+        if v is None or (isinstance(v, str) and not v.strip()):
+            issues.append(f"campo_obrigatorio_ausente:{k}")
+
+    if str(end_rec.get("_entrada_id", "")).strip() != str(init_rec.get("id", "")).strip():
+        issues.append("entrada_id_divergente")
+
+    if str(end_rec.get("BLOCO", "")).strip() in {"", "-"}:
+        issues.append("bloco_invalido")
+    if str(end_rec.get("APARTAMENTO", "")).strip() in {"", "-"}:
+        issues.append("apartamento_invalido")
+
+    if not _is_valid_encomenda_name_token(end_rec.get("NOME", "")):
+        issues.append("nome_invalido")
+    if not _is_valid_encomenda_name_token(end_rec.get("SOBRENOME", "")):
+        issues.append("sobrenome_invalido")
+
+    if str(end_rec.get("TIPO", "")).strip() in {"", "-"}:
+        issues.append("tipo_invalido")
+    if str(end_rec.get("LOJA", "")).strip() in {"", "-"}:
+        issues.append("loja_invalida")
+
+    ident = _norm_text_for_compare(end_rec.get("IDENTIFICACAO", ""))
+    if ident in {"", "-"}:
+        issues.append("identificacao_invalida")
+
+    return ("OK", []) if not issues else ("FALHOU", issues)
+
+
+def generate_encomenda_simulation_report(records_report: list[dict], report_path: Path) -> dict:
+    summary = {"OK": 0, "FALHOU": 0, "GARGALO": 0}
+    for item in records_report:
+        status = item.get("status", "FALHOU")
+        summary[status] = summary.get(status, 0) + 1
+
+    payload = {
+        "resumo": summary,
+        "total": len(records_report),
+        "registros": records_report,
+    }
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return payload
 
 
 class _SimulatedEntry:
@@ -321,6 +410,8 @@ class TestPanelApp:
             ok = 0
             fail = 0
             bottleneck = 0
+            detailed_results: list[dict] = []
+            encomendas_mode = combo_file.name.lower() == "encomendas.txt"
             self._sim_total = total
             self.root.after(0, self._set_sim_stats)
 
@@ -334,20 +425,71 @@ class TestPanelApp:
                         time.sleep(0.1)
                     started = time.perf_counter()
                     try:
-                        entry = _SimulatedEntry(rec)
-                        save_text(entry_widget=entry, btn=None)
-                        ia.processar()
-                        if not entry.deleted:
-                            raise RuntimeError("entrada não foi consumida pela barra digitadora")
-                        elapsed = time.perf_counter() - started
-                        if elapsed > (interval_s * 1.5):
-                            bottleneck += 1
-                            self._sim_bottleneck_count = bottleneck
-                            self.root.after(0, self.log, f"[GARGALO] #{idx}/{total} {elapsed:.2f}s | {rec}")
+                        if encomendas_mode:
+                            now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                            before_init_data = interfaceone._read_json(interfaceone.ENCOMENDAS_IN_FILE)
+                            before_init_regs = (before_init_data or {}).get("registros", []) if isinstance(before_init_data, dict) else []
+                            before_ids = {str(r.get("id")) for r in before_init_regs if r.get("id") is not None}
+
+                            interfaceone._save_encomenda_init(rec, now_str)
+                            ia.processar()
+
+                            init_data = interfaceone._read_json(interfaceone.ENCOMENDAS_IN_FILE)
+                            end_data = interfaceone._read_json(interfaceone.ENCOMENDAS_DB_FILE)
+                            init_regs = (init_data or {}).get("registros", []) if isinstance(init_data, dict) else []
+                            end_regs = (end_data or {}).get("registros", []) if isinstance(end_data, dict) else []
+
+                            new_init_regs = [r for r in init_regs if str(r.get("id")) not in before_ids]
+                            if new_init_regs:
+                                init_rec = sorted(new_init_regs, key=lambda x: int(x.get("id") or 0))[-1]
+                            else:
+                                init_candidates = [r for r in init_regs if _norm_text_for_compare(r.get("texto") or "") == _norm_text_for_compare(rec)]
+                                init_rec = init_candidates[-1] if init_candidates else None
+
+                            end_rec = None
+                            if init_rec is not None:
+                                eid = init_rec.get("id")
+                                for er in end_regs:
+                                    if str(er.get("_entrada_id", "")).strip() == str(eid).strip():
+                                        end_rec = er
+                                        break
+
+                            status, issues = validate_encomenda_pipeline_record(rec, init_rec, end_rec)
+                            detailed_results.append({
+                                "indice": idx,
+                                "texto": rec,
+                                "status": status,
+                                "problemas": issues,
+                                "entrada_id": init_rec.get("id") if isinstance(init_rec, dict) else None,
+                            })
+                            if status == "OK":
+                                ok += 1
+                                self._sim_ok_count = ok
+                                self.root.after(0, self.log, f"[OK] #{idx}/{total} | {rec}")
+                            elif status == "GARGALO":
+                                bottleneck += 1
+                                self._sim_bottleneck_count = bottleneck
+                                self.root.after(0, self.log, f"[GARGALO] #{idx}/{total} | {rec} | problemas={issues}")
+                            else:
+                                fail += 1
+                                self._sim_fail_count = fail
+                                self.root.after(0, self.log, f"[FALHOU] #{idx}/{total} | {rec} | problemas={issues}")
                         else:
-                            self.root.after(0, self.log, f"[OK] #{idx}/{total} | {rec}")
-                        ok += 1
-                        self._sim_ok_count = ok
+                            entry = _SimulatedEntry(rec)
+                            save_text(entry_widget=entry, btn=None)
+                            ia.processar()
+                            if not entry.deleted:
+                                raise RuntimeError("entrada não foi consumida pela barra digitadora")
+
+                            elapsed = time.perf_counter() - started
+                            if elapsed > (interval_s * 1.5):
+                                bottleneck += 1
+                                self._sim_bottleneck_count = bottleneck
+                                self.root.after(0, self.log, f"[GARGALO] #{idx}/{total} {elapsed:.2f}s | {rec}")
+                            else:
+                                self.root.after(0, self.log, f"[OK] #{idx}/{total} | {rec}")
+                            ok += 1
+                            self._sim_ok_count = ok
                     except Exception as e:
                         fail += 1
                         self._sim_fail_count = fail
@@ -360,8 +502,14 @@ class TestPanelApp:
             finally:
                 interfaceone.HAS_IA_MODULE = original_has_ia
 
-            self.root.after(0, self.log, f"Simulador finalizado. OK={ok} | ERRO={fail} | GARGALO={bottleneck}")
-            status_text = "Simulador concluído com sucesso" if fail == 0 else "Simulador concluído com erros"
+            if encomendas_mode:
+                report_file = Path(__file__).resolve().parent / "logs" / "encomendas_simulation_report.json"
+                payload = generate_encomenda_simulation_report(detailed_results, report_file)
+                self.root.after(0, self.log, f"Relatório encomendas salvo em: {report_file}")
+                self.root.after(0, self.log, f"Resumo encomendas: {payload.get('resumo', {})}")
+
+            self.root.after(0, self.log, f"Simulador finalizado. OK={ok} | FALHOU={fail} | GARGALO={bottleneck}")
+            status_text = "Simulador concluído com sucesso" if fail == 0 and bottleneck == 0 else "Simulador concluído com falhas/gargalos"
             self.root.after(0, lambda: self.lbl_status.config(text=status_text))
         except Exception:
             self.root.after(0, self.log, "Erro crítico no simulador:")

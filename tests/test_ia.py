@@ -39,6 +39,22 @@ class IAModuleTests(unittest.TestCase):
         self.assertFalse(ia.IN_IA_MODE)
         self.assertTrue(isinstance(msg, str) and msg)
 
+
+    def test_parse_encomenda_nome_sem_ruido_de_endereco(self):
+        txt = "APT111 88SG4RSHNA8BR ENV RIACHUELO BLO13 JOAO PEREIRA"
+        out = ia._parse_encomenda_text(txt)
+        self.assertEqual(out["NOME"], "JOÃO")
+        self.assertEqual(out["SOBRENOME"], "PEREIRA")
+        self.assertEqual(out["BLOCO"], "13")
+        self.assertEqual(out["APARTAMENTO"], "111")
+
+    def test_parse_encomenda_identificacao_alfanumerica_sem_digitos(self):
+        txt = "JADLOG BL13 CAIX APARTAMEN11 BRUNO SOUZA OSIJEVXTKTOTI"
+        out = ia._parse_encomenda_text(txt)
+        self.assertEqual(out["IDENTIFICACAO"], "OSIJEVXTKTOTI")
+        self.assertEqual(out["LOJA"], "JADLOG")
+        self.assertEqual(out["TIPO"], "CAIXA")
+
     def test_parse_encomenda_with_aliases(self):
         txt = "SED 9C3R4DUHASD BEATRIZ LOPES BLCO7 APARTAMENTO86 ENVELOP"
         out = ia._parse_encomenda_text(txt)

@@ -24,6 +24,10 @@ class InterfaceOneTests(unittest.TestCase):
         txt = "APT111 88SG4RSHNA8BR ENV RIACHUELO BLO13 JOAO PEREIRA"
         self.assertTrue(interfaceone._is_encomenda_text(txt, parsed={}))
 
+    def test_encomenda_alias_shop_detected(self):
+        txt = "EVELOPE SHOP BRUNO RIBEIRO BLOCO13 APARTAMEN109"
+        self.assertTrue(interfaceone._is_encomenda_text(txt, parsed={}))
+
     def test_non_encomenda_person_record_not_forced(self):
         txt = "JOAO PEREIRA BLOCO 13 AP 111"
         self.assertFalse(interfaceone._is_encomenda_text(txt, parsed={}))
