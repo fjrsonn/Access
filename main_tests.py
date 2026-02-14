@@ -14,7 +14,7 @@ import runtime_status
 
 
 class TestPanelApp:
-    def __init__(self, root: tk.Tk, status_store: runtime_status.RuntimeStatusStore | None = None):
+    def __init__(self, root: tk.Tk, status_store: runtime_status.RuntimeStatusStore | None = None, test_loader=None, test_runner_factory=None, thread_factory=None):
         self.root = root
         self.root.title("Painel de Testes - Access")
         self.root.geometry("1000x700")
@@ -50,6 +50,9 @@ class TestPanelApp:
             events_file=runtime_status.EVENTS_FILE,
             last_status_file=runtime_status.LAST_STATUS_FILE,
         )
+        self._test_loader = test_loader or unittest.defaultTestLoader
+        self._test_runner_factory = test_runner_factory or (lambda stream: unittest.TextTestRunner(stream=stream, verbosity=2))
+        self._thread_factory = thread_factory or (lambda target: threading.Thread(target=target, daemon=True))
 
     def log(self, msg: str):
         self.text.configure(state="normal")
@@ -85,7 +88,7 @@ class TestPanelApp:
         self.btn_run.config(state="disabled")
         self.progress.start(8)
         self.lbl_status.config(text="Executando...")
-        t = threading.Thread(target=self._run_all, daemon=True)
+        t = self._thread_factory(self._run_all)
         t.start()
 
     def _run_all(self):
@@ -94,9 +97,9 @@ class TestPanelApp:
             app_main.initialize_system(start_watcher=True)
             self.root.after(0, self.log, "Sistema inicializado. Iniciando suite de testes.")
 
-            suite = unittest.defaultTestLoader.discover("tests")
+            suite = self._test_loader.discover("tests")
             stream = io.StringIO()
-            runner = unittest.TextTestRunner(stream=stream, verbosity=2)
+            runner = self._test_runner_factory(stream)
             result = runner.run(suite)
 
             self.root.after(0, self._set_stats, result)

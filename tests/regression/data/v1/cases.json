@@ -1,0 +1,42 @@
+{
+  "version": "v1",
+  "cases": [
+    {
+      "id": "portaria_basico",
+      "kind": "save_text",
+      "text": "VISITANTE ANA BLOCO A AP 101 ABC1234 ONIX PRETO",
+      "classification": {"destino": "dados", "score": 2.5, "ambiguo": false},
+      "parsed": {
+        "NOME_RAW": "ANA SILVA",
+        "PLACA": "ABC1234",
+        "BLOCO": "A",
+        "APARTAMENTO": "101",
+        "MODELOS": ["ONIX"],
+        "COR": "PRETO",
+        "STATUS": "VISITANTE"
+      },
+      "expected": {"dadosinit_count": 1, "dadosend_count": 1}
+    },
+    {
+      "id": "encomenda_basica",
+      "kind": "save_text",
+      "text": "PACOTE SHOPEE BLOCO A AP 101",
+      "classification": {"destino": "encomendas", "score": 3.1, "ambiguo": false},
+      "parsed": {
+        "NOME_RAW": "-",
+        "PLACA": "",
+        "BLOCO": "A",
+        "APARTAMENTO": "101",
+        "MODELOS": [],
+        "COR": "",
+        "STATUS": "-"
+      },
+      "expected": {"dadosinit_count": 0, "dadosend_count": 0}
+    },
+    {
+      "id": "ia_lock_ocupado",
+      "kind": "ia_lock",
+      "expected_stage": "lock_not_acquired"
+    }
+  ]
+}
