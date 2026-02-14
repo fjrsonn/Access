@@ -569,6 +569,15 @@ def _parse_encomenda_text(texto: str) -> dict:
     ignore_tokens.update({f"BL{bloco}" for bloco in ([bloco] if bloco else [])})
     ignore_tokens.update({f"AP{ap}" for ap in ([ap] if ap else [])})
 
+    def _is_address_token(tok_up: str) -> bool:
+        if not tok_up:
+            return False
+        if re.match(r"^(BL|BLO|BLOCO|BLCO|BLC|B)\d+$", tok_up):
+            return True
+        if re.match(r"^(AP|APT|APART|APTA|APARTAMEN|APARTAMENTO|A)\d+[A-Z]?$", tok_up):
+            return True
+        return False
+
     nome_parts = []
     for tok in toks:
         tok_up = tok.upper()
@@ -578,7 +587,11 @@ def _parse_encomenda_text(texto: str) -> dict:
             continue
         if identificacao and tok_up == identificacao:
             continue
-        if re.match(r"^(BL|AP)\d+$", tok_up):
+        if _is_address_token(tok_up):
+            continue
+        if len(tok_up) <= 1:
+            continue
+        if not re.match(r"^[A-ZÀ-ÖØ-Ý][A-ZÀ-ÖØ-Ý\-]+$", tok_up):
             continue
         if re.match(r"^\d{5,}$", tok_up):
             continue
