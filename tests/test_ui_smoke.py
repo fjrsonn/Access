@@ -24,6 +24,18 @@ class _FakeWidget:
         self.kwargs["started"] = False
 
 
+class _FakeEntryWidget(_FakeWidget):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.value = ""
+
+    def insert(self, _idx, text):
+        self.value = str(text)
+
+    def get(self):
+        return self.value
+
+
 class _FakeText(_FakeWidget):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -93,6 +105,7 @@ class UISmokeTests(unittest.TestCase):
             Button=_FakeWidget,
             Label=_FakeWidget,
             Progressbar=_FakeWidget,
+            Entry=_FakeEntryWidget,
         )
         return mock.patch.multiple(main_tests, tk=types.SimpleNamespace(Text=_FakeText), ttk=fake_ttk)
 
@@ -119,6 +132,40 @@ class UISmokeTests(unittest.TestCase):
         self.assertIn("[RUNTIME]", joined)
         self.assertIn("fake_test ... ok", joined)
         self.assertEqual(app.lbl_status.kwargs.get("text"), "Concluído com sucesso")
+        self.assertEqual(app.btn_sim.kwargs.get("text"), "Simulador")
+
+    def test_simulator_runs_records_and_logs_ok(self):
+        root = _FakeRoot()
+
+        fake_interfaceone = types.SimpleNamespace(HAS_IA_MODULE=True)
+
+        def _save_text(entry_widget=None, btn=None):
+            if entry_widget is not None:
+                entry_widget.delete(0, "end")
+
+        fake_interfaceone.save_text = _save_text
+        fake_ia = types.SimpleNamespace(processar=lambda: None)
+
+        with self._patch_tk(), \
+             mock.patch.object(main_tests.app_main, "initialize_system", return_value=None), \
+             mock.patch.object(main_tests.TestPanelApp, "_load_records", return_value=["A B C", "D E F"]), \
+             mock.patch.object(main_tests.time, "sleep", return_value=None), \
+             mock.patch.dict("sys.modules", {"interfaceone": fake_interfaceone, "ia": fake_ia}):
+            app = main_tests.TestPanelApp(
+                root,
+                status_store=_FakeStore(),
+                test_loader=mock.Mock(discover=mock.Mock(return_value=object())),
+                test_runner_factory=lambda stream: _FakeRunner(stream),
+                thread_factory=lambda target: _FakeThread(target),
+            )
+            app.entry_tpm.insert(0, "120")
+            app.start_simulator()
+
+        joined = "".join(app.text.buffer)
+        self.assertIn("Simulador iniciado", joined)
+        self.assertIn("[OK] #1/2", joined)
+        self.assertIn("[OK] #2/2", joined)
+        self.assertIn("Simulador finalizado", joined)
 
 
 if __name__ == "__main__":
