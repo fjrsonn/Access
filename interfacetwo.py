@@ -20,6 +20,15 @@ except Exception:
     build_structured_fields = None
     log_audit_event = None
 
+
+try:
+    from runtime_status import get_last_status, report_status
+except Exception:
+    def get_last_status():
+        return {}
+    def report_status(*args, **kwargs):
+        return None
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ARQUIVO = os.path.join(BASE_DIR, "dadosend.json")
 ENCOMENDAS_ARQUIVO = os.path.join(BASE_DIR, "encomendasend.json")
@@ -430,13 +439,18 @@ def _record_on_tag_click(text_widget, record, event=None, rec_tag=None):
 
 def _populate_text(text_widget, info_label):
     source = _monitor_sources.get(text_widget, {})
+    report_status("monitor", "STARTED", stage="populate_text", details={"source": source.get("path")})
     arquivo = source.get("path", ARQUIVO)
     formatter = source.get("formatter", format_creative_entry)
     registros = _load_safe(arquivo)
     filters = _filter_state.get(text_widget, {})
     filtrados = _apply_filters(registros, filters)
+    last = get_last_status()
+    status_hint = ""
+    if last:
+        status_hint = f" | último status: {last.get('action','-')}:{last.get('status','-')}"
     info_label.config(
-        text=f"Arquivo: {arquivo} — registros: {len(filtrados)} (de {len(registros)})"
+        text=f"Arquivo: {arquivo} — registros: {len(filtrados)} (de {len(registros)}){status_hint}"
     )
     # sempre operar em state normal para evitar problemas na medição de ranges
     text_widget.config(state="normal")
@@ -529,6 +543,7 @@ def _populate_text(text_widget, info_label):
 
     # desativa edição após inserir
     text_widget.config(state="disabled")
+    report_status("monitor", "OK", stage="populate_text_done", details={"source": arquivo, "visible": len(filtrados)})
     if formatter == format_encomenda_entry:
         _encomenda_display_map[text_widget] = record_ranges
         _encomenda_tag_map[text_widget] = record_tag_map
