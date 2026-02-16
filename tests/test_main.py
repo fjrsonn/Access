@@ -32,6 +32,22 @@ class MainModuleTests(unittest.TestCase):
             ident = main._get_last_record_identity(p)
             self.assertEqual(ident, "BRUNO|LIMA|B|202")
 
+    def test_get_last_record_identity_accepts_string_id(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = os.path.join(td, "dadosend.json")
+            payload = {
+                "registros": [
+                    {"ID": "9", "NOME": "Ana", "SOBRENOME": "Silva", "BLOCO": "A", "APARTAMENTO": "101"},
+                    {"ID": 12, "NOME": "Bruno", "SOBRENOME": "Lima", "BLOCO": "B", "APARTAMENTO": "202"},
+                    {"ID": "15", "NOME": "Carla", "SOBRENOME": "Moraes", "BLOCO": "C", "APARTAMENTO": "303"},
+                ]
+            }
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False)
+
+            ident = main._get_last_record_identity(p)
+            self.assertEqual(ident, "CARLA|MORAES|C|303")
+
 
 if __name__ == "__main__":
     unittest.main()
