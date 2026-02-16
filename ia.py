@@ -675,8 +675,7 @@ def append_or_update_encomendas(dados: dict, entrada_id=None):
             found["DATA_HORA"] = dados.get("DATA_HORA")
         if not found.get("ID"):
             found["ID"] = _next_encomenda_id(regs)
-        _save_encomendas_saida(regs)
-        return True
+        return bool(_save_encomendas_saida(regs))
     rec = dict(dados)
     rec.pop("texto", None)
     rec.pop("texto_original", None)
@@ -686,8 +685,7 @@ def append_or_update_encomendas(dados: dict, entrada_id=None):
     if not rec.get("DATA_HORA"):
         rec["DATA_HORA"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     regs.append(rec)
-    _save_encomendas_saida(regs)
-    return True
+    return bool(_save_encomendas_saida(regs))
 
 def parse_dt(s):
     if not s: return None
@@ -1144,13 +1142,6 @@ def processar():
             else:
                 dados["DATA_HORA"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
-            r["processado"] = True
-            try:
-                salvar_atomico(ENCOMENDAS_ENTRADA, encomendas)
-            except Exception as e:
-                report_status("ia_pipeline", "ERROR", stage="save_encomendas_entrada_failed", details={"entrada_id": entrada_id, "error": str(e)})
-                _log_ia("ERROR", "save_encomendas_entrada_failed", "Falha ao salvar ENCOMENDAS_ENTRADA", entrada_id=entrada_id, error=str(e))
-
             try:
                 ok = append_or_update_encomendas(dados, entrada_id=entrada_id)
                 if not ok:
@@ -1158,6 +1149,12 @@ def processar():
                     _log_ia("ERROR", "save_encomendas_saida_failed", "Falha ao anexar/atualizar encomenda em ENCOMENDAS_SAIDA", entrada_id=entrada_id)
                 else:
                     report_status("ia_pipeline", "OK", stage="save_encomendas_saida_ok", details={"entrada_id": entrada_id, "bloco": dados.get("BLOCO"), "apartamento": dados.get("APARTAMENTO")})
+                    r["processado"] = True
+                    try:
+                        salvar_atomico(ENCOMENDAS_ENTRADA, encomendas)
+                    except Exception as e:
+                        report_status("ia_pipeline", "ERROR", stage="save_encomendas_entrada_failed", details={"entrada_id": entrada_id, "error": str(e)})
+                        _log_ia("ERROR", "save_encomendas_entrada_failed", "Falha ao salvar ENCOMENDAS_ENTRADA", entrada_id=entrada_id, error=str(e))
             except Exception as e:
                 report_status("ia_pipeline", "ERROR", stage="save_encomendas_saida_exception", details={"entrada_id": entrada_id, "error": str(e)})
                 _log_ia("ERROR", "save_encomendas_saida_exception", "Erro ao anexar/atualizar encomenda", entrada_id=entrada_id, error=str(e))
