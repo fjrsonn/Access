@@ -1,4 +1,5 @@
 import os
+import tempfile
 import unittest
 from unittest import mock
 
@@ -6,6 +7,9 @@ import ia
 
 
 class IAModuleTests(unittest.TestCase):
+    def tearDown(self):
+        ia._RETRY_SCHEDULED = False
+
     def test_uppercase_dict_values(self):
         data = {"nome": "ana", "nested": {"sobrenome": "silva"}, "arr": ["x", "y"]}
         out = ia.uppercase_dict_values(data)
@@ -65,11 +69,49 @@ class IAModuleTests(unittest.TestCase):
         self.assertEqual(out["APARTAMENTO"], "86")
         self.assertEqual(out["IDENTIFICACAO"], "9C3R4DUHASD")
 
+    def test_parse_encomenda_texto_orientacao_nao_inventa_loja_tipo(self):
+        txt = "Registrando ocorrencia de clamacao de barulho vindo do bloco 10 aparamneto 10, morador Flavio Junior foi orientado"
+        out = ia._parse_encomenda_text(txt)
+        self.assertEqual(out["LOJA"], "-")
+        self.assertEqual(out["TIPO"], "-")
+
     def test_append_or_update_encomendas_falha_quando_save_falha(self):
         with mock.patch.object(ia, "_load_encomendas_saida", return_value=[]), \
             mock.patch.object(ia, "_save_encomendas_saida", return_value=False):
             ok = ia.append_or_update_encomendas({"NOME": "ANA", "BLOCO": "A", "APARTAMENTO": "101"}, entrada_id=123)
         self.assertFalse(ok)
+
+    def test_processar_agenda_retry_quando_lock_ocupado(self):
+        with mock.patch.object(ia, "is_chat_mode_active", return_value=False), \
+             mock.patch.object(ia, "acquire_lock", return_value=False), \
+             mock.patch.object(ia, "_schedule_process_retry", return_value=True) as m_retry:
+            ia.processar()
+        m_retry.assert_called_once_with("lock_not_acquired")
+
+    def test_schedule_process_retry_evita_agendamento_duplicado(self):
+        fake_timer = mock.Mock()
+        with mock.patch.object(ia.threading, "Timer", return_value=fake_timer) as m_timer:
+            first = ia._schedule_process_retry("test")
+            second = ia._schedule_process_retry("test")
+
+        self.assertTrue(first)
+        self.assertFalse(second)
+        m_timer.assert_called_once()
+        fake_timer.start.assert_called_once()
+
+    def test_acquire_lock_remove_stale_lock_e_adquire(self):
+        with tempfile.TemporaryDirectory() as td:
+            lock_path = os.path.join(td, "process.lock")
+            with open(lock_path, "w", encoding="utf-8") as f:
+                f.write("stale")
+            old_ts = 1000.0
+            os.utime(lock_path, (old_ts, old_ts))
+
+            with mock.patch.object(ia, "LOCK_FILE", lock_path), \
+                 mock.patch.object(ia, "LOCK_STALE_SECONDS", 0.01):
+                ok = ia.acquire_lock(timeout=0.2)
+                self.assertTrue(ok)
+                ia.release_lock()
 
 
 

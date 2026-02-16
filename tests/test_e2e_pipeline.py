@@ -43,6 +43,7 @@ class E2EPipelineTests(unittest.TestCase):
             "DB_FILE": os.path.join(self.td.name, "dadosend.json"),
             "ENCOMENDAS_IN_FILE": os.path.join(self.td.name, "encomendasinit.json"),
             "ENCOMENDAS_DB_FILE": os.path.join(self.td.name, "encomendasend.json"),
+            "REVIEW_QUEUE_FILE": os.path.join(self.td.name, "fila_revisao.json"),
         }
         for p in self.paths.values():
             with open(p, "w", encoding="utf-8") as f:
@@ -82,6 +83,71 @@ class E2EPipelineTests(unittest.TestCase):
              mock.patch.object(interfaceone, "HAS_IA_MODULE", False):
             interfaceone.save_text(entry_widget=entry)
             self.assertTrue(m_save_enc.called)
+
+    def test_e2e_encomenda_com_classificador_confiante_em_orientacoes_ainda_vai_para_encomendas(self):
+        entry = _Entry("ENVELOP RIACHUELO BLO13 APARTAMEN109 JOAO")
+        with self._patch_interface_paths(), \
+             mock.patch.object(interfaceone, "classificar_destino_texto", return_value={"destino": "orientacoes", "score": 3.0, "ambiguo": False, "confianca": 0.92}), \
+             mock.patch.object(interfaceone, "extrair_tudo_consumo", return_value={}), \
+             mock.patch.object(interfaceone, "_save_encomenda_init") as m_save_enc, \
+             mock.patch.object(interfaceone, "HAS_IA_MODULE", False):
+            interfaceone.save_text(entry_widget=entry)
+            self.assertTrue(m_save_enc.called)
+
+    def test_e2e_texto_orientacao_usuario_nao_vai_para_encomendas(self):
+        entry = _Entry("Registrando ocorrencia de clamacao de barulho vindo do bloco 10 aparamneto 10, morador Flavio Junior foi orientado.")
+        with self._patch_interface_paths(), \
+             mock.patch.object(interfaceone, "_save_encomenda_init") as m_save_enc, \
+             mock.patch.object(interfaceone, "HAS_IA_MODULE", False):
+            interfaceone.save_text(entry_widget=entry)
+
+        self.assertFalse(m_save_enc.called)
+        with open(self.paths["ENCOMENDAS_IN_FILE"], "r", encoding="utf-8") as f:
+            encomendas_init = json.load(f)
+        self.assertEqual(len(encomendas_init["registros"]), 0)
+
+    def test_e2e_texto_ambiguo_vai_para_fila_revisao(self):
+        entry = _Entry("texto livre extremamente ambiguo")
+        with self._patch_interface_paths(), \
+             mock.patch.object(interfaceone, "extrair_tudo_consumo", return_value={}), \
+             mock.patch.object(interfaceone, "classificar_destino_texto", return_value={"destino": "dados", "score": 0.4, "ambiguo": True, "confianca": 0.2, "scores": {"encomendas": 0.3}}), \
+             mock.patch.object(interfaceone, "HAS_IA_MODULE", False):
+            interfaceone.save_text(entry_widget=entry)
+
+        with open(self.paths["REVIEW_QUEUE_FILE"], "r", encoding="utf-8") as f:
+            fila = json.load(f)
+        self.assertEqual(len(fila.get("registros", [])), 1)
+
+    def test_e2e_observacao_nao_cai_em_encomendas(self):
+        entry = _Entry("Avisar o morador do bloco A apartamento 101 quando chegar a entrega da farmacia.")
+        with self._patch_interface_paths(), \
+             mock.patch.object(interfaceone, "classificar_destino_texto", return_value={"destino": "observacoes", "score": 4.1, "ambiguo": False, "confianca": 0.9, "scores": {"encomendas": 0.8}}), \
+             mock.patch.object(interfaceone, "_save_encomenda_init") as m_save_enc, \
+             mock.patch.object(interfaceone, "HAS_IA_MODULE", False):
+            interfaceone.save_text(entry_widget=entry)
+
+        self.assertFalse(m_save_enc.called)
+        with open(self.paths["ENCOMENDAS_IN_FILE"], "r", encoding="utf-8") as f:
+            encomendas_init = json.load(f)
+        self.assertEqual(len(encomendas_init["registros"]), 0)
+
+    def test_e2e_encomenda_dispara_pipeline_mesmo_com_chat_ativo(self):
+        entry = _Entry("PACOTE SHOPEE BLOCO A AP 101")
+        fake_thread = mock.Mock()
+        fake_ia = mock.Mock()
+        fake_ia.processar = mock.Mock()
+        fake_ia.is_chat_mode_active = mock.Mock(return_value=True)
+        with self._patch_interface_paths(), \
+             mock.patch.object(interfaceone, "classificar_destino_texto", return_value={"destino": "encomendas", "score": 3.0, "ambiguo": False}), \
+             mock.patch.object(interfaceone, "_save_encomenda_init") as m_save_enc, \
+             mock.patch.object(interfaceone, "HAS_IA_MODULE", True), \
+             mock.patch.object(interfaceone, "ia_module", fake_ia), \
+             mock.patch.object(interfaceone.threading, "Thread", return_value=fake_thread) as m_thread:
+            interfaceone.save_text(entry_widget=entry)
+
+        self.assertTrue(m_save_enc.called)
+        m_thread.assert_called_once_with(target=fake_ia.processar, daemon=True)
+        fake_thread.start.assert_called_once()
 
     def test_e2e_erro_preprocess_ainda_salva(self):
         entry = _Entry("texto qualquer")

@@ -3,7 +3,66 @@
 from __future__ import annotations
 
 from datetime import datetime
+import re
 from typing import Any, Callable, Dict
+
+
+def _has_strong_people_signal(parsed: dict | None) -> bool:
+    if not isinstance(parsed, dict):
+        return False
+    placa = str(parsed.get("PLACA") or "").strip()
+    modelos = parsed.get("MODELOS") or []
+    if isinstance(modelos, str):
+        modelos = [modelos]
+    status = str(parsed.get("STATUS") or "").strip().upper()
+    bloco = str(parsed.get("BLOCO") or "").strip()
+    ap = str(parsed.get("APARTAMENTO") or "").strip()
+    nome = str(parsed.get("NOME_RAW") or "").strip()
+
+    has_vehicle = bool(placa) or bool([m for m in modelos if str(m).strip()])
+    has_identity = bool(nome) or (bool(bloco) and bool(ap))
+    has_status = status not in ("", "-", "DESCONHECIDO")
+    return has_vehicle and (has_identity or has_status)
+
+
+def _has_people_field_combo(texto: str, parsed: dict | None) -> bool:
+    txt = str(texto or "").upper()
+    if isinstance(parsed, dict):
+        for key in ("NOME_RAW", "BLOCO", "APARTAMENTO", "PLACA", "MODELOS", "COR", "STATUS"):
+            v = parsed.get(key)
+            if isinstance(v, list) and any(str(x).strip() for x in v):
+                return True
+            if isinstance(v, str) and v.strip():
+                return True
+    labels = ("NOME", "SOBRENOME", "BLOCO", "APARTAMENTO", "PLACA", "MODELO", "COR", "STATUS")
+    return sum(1 for lb in labels if f"{lb}:" in txt) >= 2
+
+
+def _has_explicit_encomenda_labels(texto: str) -> bool:
+    txt = str(texto or "").upper()
+    return any(lb in txt for lb in ("LOJA:", "TIPO:", "IDENTIFICACAO:", "IDENTIFICAÇÃO:"))
+
+
+def _has_explicit_orientacao(texto: str) -> bool:
+    txt = str(texto or "").upper()
+    return any(k in txt for k in ("ORIENTACAO", "ORIENTAÇÃO", "ORIENTADO", "ORIENTADA"))
+
+
+def _has_explicit_observacao(texto: str) -> bool:
+    txt = str(texto or "").upper()
+    return any(k in txt for k in ("OBSERVACAO", "OBSERVAÇÃO"))
+
+
+def _has_strong_encomenda_signal(destino_base: str, decision: dict, has_encomenda_signal: bool) -> bool:
+    if not has_encomenda_signal:
+        return False
+    scores = decision.get("scores") if isinstance(decision.get("scores"), dict) else {}
+    enc_score = float(scores.get("encomendas") or 0.0)
+    text = str(decision.get("_texto_raw") or "")
+    has_tracking_like = bool(re.search(r"\b(?=[A-Z0-9]{8,}\b)(?=[A-Z0-9]*\d)[A-Z0-9]+\b", text.upper()))
+    if destino_base in ("encomendas", "dados"):
+        return True
+    return enc_score >= 1.8 or has_tracking_like
 
 
 def decidir_destino(texto: str, parsed: dict | None, *,
@@ -13,11 +72,54 @@ def decidir_destino(texto: str, parsed: dict | None, *,
         "destino": "dados", "motivo": "fallback", "score": 0.0,
         "ambiguo": False, "confianca": 0.0, "versao_regras": "v1"
     }
-    destino = decision.get("destino")
-    if destino == "encomendas" or is_encomenda_fn(texto, parsed):
-        destino = "encomendas"
+    destino_base = str(decision.get("destino") or "dados")
     decision = dict(decision)
+    decision["_texto_raw"] = texto
+    has_encomenda_signal = bool(is_encomenda_fn(texto, parsed))
+    strong_people = _has_strong_people_signal(parsed)
+    people_combo = _has_people_field_combo(texto, parsed)
+    strong_encomenda = _has_strong_encomenda_signal(destino_base, decision, has_encomenda_signal)
+    explicit_encomenda = _has_explicit_encomenda_labels(texto)
+    explicit_orientacao = _has_explicit_orientacao(texto)
+    explicit_observacao = _has_explicit_observacao(texto)
+    ambiguo = bool(decision.get("ambiguo"))
+    conf_raw = decision.get("confianca")
+    has_confianca = conf_raw is not None
+    confianca = float(conf_raw or 0.0)
+
+    # Prioridade operacional (determinística):
+    # 1) Pessoas (sinal forte)
+    # 2) Encomendas (somente sinal forte)
+    # 3) Orientações
+    # 4) Observações
+    # 5) Ambíguo -> revisão
+    if strong_people:
+        destino = "dados"
+    elif people_combo and destino_base == "dados":
+        destino = "dados"
+    elif explicit_encomenda:
+        destino = "encomendas"
+    elif explicit_orientacao and not explicit_encomenda:
+        destino = "orientacoes"
+    elif explicit_observacao and not explicit_encomenda:
+        destino = "observacoes"
+    elif destino_base in ("orientacoes", "observacoes") and not ambiguo and confianca >= 0.60 and not strong_encomenda:
+        destino = destino_base
+    elif strong_encomenda:
+        destino = "encomendas"
+    elif destino_base == "orientacoes":
+        destino = "orientacoes"
+    elif destino_base == "observacoes":
+        destino = "observacoes"
+    elif ambiguo or (destino_base == "dados" and has_confianca and confianca < 0.45):
+        destino = "revisao"
+    else:
+        destino = "dados"
+
+    decision.pop("_texto_raw", None)
     decision["destino_final"] = destino
+    decision["strong_people_signal"] = strong_people
+    decision["strong_encomenda_signal"] = strong_encomenda
     return decision
 
 
