@@ -527,6 +527,44 @@ def _save_for_review(txt: str, now_str: str, decision_meta: dict = None) -> None
     atomic_save(REVIEW_QUEUE_FILE, fila)
 
 
+def _formalize_notes_text(raw_text: str, tipo: str) -> str:
+    txt = clean_whitespace(raw_text)
+    if not txt:
+        return txt
+    replacements = {
+        "aparamneto": "apartamento",
+        "clamacao": "reclamação",
+        "orientacao": "orientação",
+        "observacao": "observação",
+    }
+    words = txt.split(" ")
+    fixed = []
+    for w in words:
+        base = re.sub(r"[^A-Za-zÀ-ÖØ-öø-ÿ]", "", w).lower()
+        if base in replacements:
+            fixed_word = w.replace(base, replacements[base]) if base in w.lower() else replacements[base]
+            fixed.append(fixed_word)
+        else:
+            fixed.append(w)
+    txt = " ".join(fixed)
+
+    if corrigir_token_nome:
+        def _fix_token(tok: str) -> str:
+            if not tok.isalpha() or len(tok) < 3:
+                return tok
+            try:
+                return corrigir_token_nome(tok)
+            except Exception:
+                return tok
+        txt = " ".join(_fix_token(t) for t in txt.split())
+
+    if txt and txt[0].islower():
+        txt = txt[0].upper() + txt[1:]
+    if txt and txt[-1] not in ".!?":
+        txt = txt + "."
+    return txt
+
+
 # ---------- util ----------
 def _norm(s: str, keep_dash=False) -> str:
     if not s: return ""
@@ -2073,7 +2111,8 @@ def save_text(entry_widget=None, btn=None):
         return
 
     if destino == "orientacoes":
-        _save_structured_text(ORIENTACOES_FILE, txt, now_str, "ORIENTACAO", decision_meta=decision)
+        txt_formal = _formalize_notes_text(txt, "ORIENTACAO")
+        _save_structured_text(ORIENTACOES_FILE, txt_formal, now_str, "ORIENTACAO", decision_meta=decision)
         report_status("user_input", "OK", stage="saved_orientacao", details={"path": ORIENTACOES_FILE})
         try:
             entry_widget.delete(0, "end")
@@ -2082,7 +2121,8 @@ def save_text(entry_widget=None, btn=None):
         _report_save_metric("save_completed", destino="orientacoes")
         return
     if destino == "observacoes":
-        _save_structured_text(OBSERVACOES_FILE, txt, now_str, "OBSERVACAO", decision_meta=decision)
+        txt_formal = _formalize_notes_text(txt, "OBSERVACAO")
+        _save_structured_text(OBSERVACOES_FILE, txt_formal, now_str, "OBSERVACAO", decision_meta=decision)
         report_status("user_input", "OK", stage="saved_observacao", details={"path": OBSERVACOES_FILE})
         try:
             entry_widget.delete(0, "end")
@@ -2113,7 +2153,8 @@ def save_text(entry_widget=None, btn=None):
     is_orientacao = _contains_keywords(txt, _ORIENTACOES_KEYWORDS)
     is_observacao = _contains_keywords(txt, _OBSERVACOES_KEYWORDS)
     if is_orientacao and not is_observacao:
-        _save_structured_text(ORIENTACOES_FILE, txt, now_str, "ORIENTACAO")
+        txt_formal = _formalize_notes_text(txt, "ORIENTACAO")
+        _save_structured_text(ORIENTACOES_FILE, txt_formal, now_str, "ORIENTACAO")
         try:
             entry_widget.delete(0, "end")
         except Exception as e:
@@ -2121,7 +2162,8 @@ def save_text(entry_widget=None, btn=None):
         _report_save_metric("save_completed", destino="orientacoes_keywords")
         return
     if is_observacao and not is_orientacao:
-        _save_structured_text(OBSERVACOES_FILE, txt, now_str, "OBSERVACAO")
+        txt_formal = _formalize_notes_text(txt, "OBSERVACAO")
+        _save_structured_text(OBSERVACOES_FILE, txt_formal, now_str, "OBSERVACAO")
         try:
             entry_widget.delete(0, "end")
         except Exception as e:

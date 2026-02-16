@@ -77,6 +77,42 @@ class InterfaceOneCoreTests(unittest.TestCase):
         )
         self.assertEqual(out.get("destino_final"), "revisao")
 
+    def test_decidir_destino_rotulo_explicito_encomenda(self):
+        def fake_classifier(_txt, _parsed):
+            return {"destino": "observacoes", "score": 2.0, "confianca": 0.8, "ambiguo": False, "scores": {"encomendas": 0.4}}
+
+        out = core.decidir_destino(
+            "LOJA: SHOPEE | TIPO: ENVELOPE | IDENTIFICACAO: BR123456789",
+            {},
+            classificar_fn=fake_classifier,
+            is_encomenda_fn=lambda *_: False,
+        )
+        self.assertEqual(out.get("destino_final"), "encomendas")
+
+    def test_decidir_destino_rotulo_explicito_orientacao(self):
+        def fake_classifier(_txt, _parsed):
+            return {"destino": "dados", "score": 1.0, "confianca": 0.4, "ambiguo": False, "scores": {"encomendas": 0.0}}
+
+        out = core.decidir_destino(
+            "ORIENTACAO: morador orientado sobre conduta",
+            {},
+            classificar_fn=fake_classifier,
+            is_encomenda_fn=lambda *_: False,
+        )
+        self.assertEqual(out.get("destino_final"), "orientacoes")
+
+    def test_decidir_destino_rotulo_explicito_observacao(self):
+        def fake_classifier(_txt, _parsed):
+            return {"destino": "dados", "score": 1.0, "confianca": 0.4, "ambiguo": False, "scores": {"encomendas": 0.0}}
+
+        out = core.decidir_destino(
+            "OBSERVACAO: avisar morador quando chegar entrega",
+            {},
+            classificar_fn=fake_classifier,
+            is_encomenda_fn=lambda *_: False,
+        )
+        self.assertEqual(out.get("destino_final"), "observacoes")
+
     def test_montar_registro_acesso(self):
         parsed = {
             "NOME_RAW": "joao silva",

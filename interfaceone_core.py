@@ -25,6 +25,34 @@ def _has_strong_people_signal(parsed: dict | None) -> bool:
     return has_vehicle and (has_identity or has_status)
 
 
+def _has_people_field_combo(texto: str, parsed: dict | None) -> bool:
+    txt = str(texto or "").upper()
+    if isinstance(parsed, dict):
+        for key in ("NOME_RAW", "BLOCO", "APARTAMENTO", "PLACA", "MODELOS", "COR", "STATUS"):
+            v = parsed.get(key)
+            if isinstance(v, list) and any(str(x).strip() for x in v):
+                return True
+            if isinstance(v, str) and v.strip():
+                return True
+    labels = ("NOME", "SOBRENOME", "BLOCO", "APARTAMENTO", "PLACA", "MODELO", "COR", "STATUS")
+    return sum(1 for lb in labels if f"{lb}:" in txt) >= 2
+
+
+def _has_explicit_encomenda_labels(texto: str) -> bool:
+    txt = str(texto or "").upper()
+    return any(lb in txt for lb in ("LOJA:", "TIPO:", "IDENTIFICACAO:", "IDENTIFICAÇÃO:"))
+
+
+def _has_explicit_orientacao(texto: str) -> bool:
+    txt = str(texto or "").upper()
+    return any(k in txt for k in ("ORIENTACAO", "ORIENTAÇÃO", "ORIENTADO", "ORIENTADA"))
+
+
+def _has_explicit_observacao(texto: str) -> bool:
+    txt = str(texto or "").upper()
+    return any(k in txt for k in ("OBSERVACAO", "OBSERVAÇÃO"))
+
+
 def _has_strong_encomenda_signal(destino_base: str, decision: dict, has_encomenda_signal: bool) -> bool:
     if not has_encomenda_signal:
         return False
@@ -49,7 +77,11 @@ def decidir_destino(texto: str, parsed: dict | None, *,
     decision["_texto_raw"] = texto
     has_encomenda_signal = bool(is_encomenda_fn(texto, parsed))
     strong_people = _has_strong_people_signal(parsed)
+    people_combo = _has_people_field_combo(texto, parsed)
     strong_encomenda = _has_strong_encomenda_signal(destino_base, decision, has_encomenda_signal)
+    explicit_encomenda = _has_explicit_encomenda_labels(texto)
+    explicit_orientacao = _has_explicit_orientacao(texto)
+    explicit_observacao = _has_explicit_observacao(texto)
     ambiguo = bool(decision.get("ambiguo"))
     conf_raw = decision.get("confianca")
     has_confianca = conf_raw is not None
@@ -63,6 +95,14 @@ def decidir_destino(texto: str, parsed: dict | None, *,
     # 5) Ambíguo -> revisão
     if strong_people:
         destino = "dados"
+    elif people_combo and destino_base == "dados":
+        destino = "dados"
+    elif explicit_encomenda:
+        destino = "encomendas"
+    elif explicit_orientacao and not explicit_encomenda:
+        destino = "orientacoes"
+    elif explicit_observacao and not explicit_encomenda:
+        destino = "observacoes"
     elif destino_base in ("orientacoes", "observacoes") and not ambiguo and confianca >= 0.60 and not strong_encomenda:
         destino = destino_base
     elif strong_encomenda:

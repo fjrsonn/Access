@@ -109,6 +109,7 @@ class E2EPipelineTests(unittest.TestCase):
     def test_e2e_texto_ambiguo_vai_para_fila_revisao(self):
         entry = _Entry("texto livre extremamente ambiguo")
         with self._patch_interface_paths(), \
+             mock.patch.object(interfaceone, "extrair_tudo_consumo", return_value={}), \
              mock.patch.object(interfaceone, "classificar_destino_texto", return_value={"destino": "dados", "score": 0.4, "ambiguo": True, "confianca": 0.2, "scores": {"encomendas": 0.3}}), \
              mock.patch.object(interfaceone, "HAS_IA_MODULE", False):
             interfaceone.save_text(entry_widget=entry)
