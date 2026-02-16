@@ -65,6 +65,26 @@ class InterfaceOneCoreTests(unittest.TestCase):
         )
         self.assertEqual(out.get("destino_final"), "dados")
 
+    def test_decidir_destino_nao_forca_dados_quando_encomenda_com_ruido_de_campos(self):
+        def fake_classifier(_txt, _parsed):
+            return {"destino": "dados", "score": 0.8, "confianca": 0.55, "ambiguo": False, "scores": {"encomendas": 2.1}}
+
+        parsed = {
+            "PLACA": "APT111",  # ruído de apartamento
+            "MODELOS": ["RIACHUELO"],
+            "STATUS": "DESCONHECIDO",
+            "BLOCO": "",
+            "APARTAMENTO": "111",
+            "NOME_RAW": "ENV PEREIRA",
+        }
+        out = core.decidir_destino(
+            "APT111 88SG4RSHNA8BR ENV RIACHUELO BLO13 JOAO PEREIRA",
+            parsed,
+            classificar_fn=fake_classifier,
+            is_encomenda_fn=lambda *_: True,
+        )
+        self.assertEqual(out.get("destino_final"), "encomendas")
+
     def test_decidir_destino_ambiguo_vai_para_revisao(self):
         def fake_classifier(_txt, _parsed):
             return {"destino": "dados", "score": 0.5, "confianca": 0.2, "ambiguo": True, "scores": {"encomendas": 0.4}}

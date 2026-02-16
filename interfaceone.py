@@ -377,7 +377,7 @@ def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
         p = _norm(pattern)
         if not p:
             continue
-        p_regex = r"\\b" + r"\\s+".join(re.escape(part) for part in p.split()) + r"\\b"
+        p_regex = r"\b" + r"\s+".join(re.escape(part) for part in p.split()) + r"\b"
         if re.search(p_regex, normalized):
             return True
     if _match_encomenda_store_token(toks_up):
