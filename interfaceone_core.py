@@ -13,9 +13,21 @@ def decidir_destino(texto: str, parsed: dict | None, *,
         "destino": "dados", "motivo": "fallback", "score": 0.0,
         "ambiguo": False, "confianca": 0.0, "versao_regras": "v1"
     }
-    destino = decision.get("destino")
-    if destino == "encomendas" or is_encomenda_fn(texto, parsed):
-        destino = "encomendas"
+    destino_base = decision.get("destino") or "dados"
+    confianca = float(decision.get("confianca") or 0.0)
+    ambiguo = bool(decision.get("ambiguo"))
+    has_encomenda_signal = bool(is_encomenda_fn(texto, parsed))
+
+    force_encomenda = False
+    if destino_base == "encomendas":
+        force_encomenda = True
+    elif has_encomenda_signal:
+        if destino_base in ("dados", ""):
+            force_encomenda = True
+        elif destino_base in ("orientacoes", "observacoes") and (ambiguo or confianca < 0.55):
+            force_encomenda = True
+
+    destino = "encomendas" if force_encomenda else destino_base
     decision = dict(decision)
     decision["destino_final"] = destino
     return decision
