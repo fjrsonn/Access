@@ -16,6 +16,18 @@ class InterfaceOneCoreTests(unittest.TestCase):
         )
         self.assertEqual(out.get("destino_final"), "encomendas")
 
+    def test_decidir_destino_preserva_orientacoes_quando_confiavel(self):
+        def fake_classifier(_txt, _parsed):
+            return {"destino": "orientacoes", "score": 4.0, "confianca": 0.92, "ambiguo": False}
+
+        out = core.decidir_destino(
+            "Registrando ocorrencia de barulho no bloco 10 apartamento 10, morador foi orientado",
+            {},
+            classificar_fn=fake_classifier,
+            is_encomenda_fn=lambda *_: True,
+        )
+        self.assertEqual(out.get("destino_final"), "orientacoes")
+
     def test_montar_registro_acesso(self):
         parsed = {
             "NOME_RAW": "joao silva",

@@ -188,6 +188,16 @@ _ENCOMENDA_TIPO_TOKENS = {
     "SCOLA",
     "SAOLA",
 }
+_ENCOMENDA_TIPO_EXPLICITO = {
+    "ENCOMENDA",
+    "PACOTE",
+    "ENTREGA",
+    "ENVELOPE",
+    "CAIXA",
+    "SACOLA",
+    "CARTA",
+}
+_ENCOMENDA_TIPO_WEAK = {"PA", "SA", "EV", "CX"}
 _ENCOMENDA_LOJA_TOKENS = {
     "SHOPEE",
     "SHOPE",
@@ -336,7 +346,10 @@ def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
     if parsed:
         if parsed.get("PLACA") or parsed.get("MODELOS"):
             return False
-    has_tipo = any(t in _ENCOMENDA_TIPO_TOKENS for t in toks_up)
+    tipo_tokens = [t for t in toks_up if t in _ENCOMENDA_TIPO_TOKENS]
+    has_tipo_explicito = any(t in _ENCOMENDA_TIPO_EXPLICITO for t in tipo_tokens)
+    has_tipo_contextual = any((len(t) >= 3 and t not in _ENCOMENDA_TIPO_WEAK) for t in tipo_tokens)
+    has_tipo_weak = any(t in _ENCOMENDA_TIPO_WEAK for t in tipo_tokens)
     has_loja = any(t in _ENCOMENDA_LOJA_TOKENS for t in toks_up)
     has_nf = _has_encomenda_identificacao(toks, toks_up)
     has_bloco, has_ap = _has_bloco_ap_indicador(toks_up)
@@ -344,11 +357,21 @@ def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
 
     # Regra operacional: qualquer sinal de TIPO, IDENTIFICACAO ou EMPRESA/LOJA
     # classifica o texto como encomenda.
-    if has_loja or has_tipo or has_nf:
+    if has_loja or has_nf or has_tipo_explicito:
+        return True
+
+    if has_tipo_contextual and has_endereco:
+        return True
+
+    if has_tipo_weak and (has_loja or has_nf or has_endereco):
         return True
 
     for pattern in _ENCOMENDA_LOJA_PATTERNS:
-        if pattern.replace(" ", "") in normalized.replace(" ", ""):
+        p = _norm(pattern)
+        if not p:
+            continue
+        p_regex = r"\\b" + r"\\s+".join(re.escape(part) for part in p.split()) + r"\\b"
+        if re.search(p_regex, normalized):
             return True
     if _match_encomenda_store_token(toks_up):
         return True
