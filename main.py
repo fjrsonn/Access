@@ -85,12 +85,29 @@ def _get_last_record_identity(dadosend_path):
         regs = d
     if not regs:
         return None
+    def _safe_int_id(value):
+        try:
+            if value is None:
+                return None
+            if isinstance(value, bool):
+                return None
+            text = str(value).strip()
+            if not text:
+                return None
+            return int(text)
+        except (TypeError, ValueError):
+            return None
+
     try:
-        regs_with_id = [r for r in regs if isinstance(r.get("ID"), int)]
+        regs_with_id = []
+        for r in regs:
+            rid = _safe_int_id(r.get("ID"))
+            if rid is not None:
+                regs_with_id.append((r, rid))
         if regs_with_id:
-            last = max(regs_with_id, key=lambda r: int(r.get("ID") or 0))
+            last = max(regs_with_id, key=lambda item: item[1])[0]
             return _identity_from_record(last)
-    except (TypeError, ValueError):
+    except Exception:
         pass
 
     def _dt_key(rec):

@@ -14,6 +14,16 @@ from tkinter import messagebox, ttk
 import re
 import hashlib
 
+from ui_theme import (
+    UI_THEME,
+    build_card_frame,
+    build_primary_button,
+    build_secondary_button,
+    build_filter_input,
+    bind_focus_ring,
+    bind_button_states,
+)
+
 try:
     from text_classifier import build_structured_fields, log_audit_event
 except Exception:
@@ -53,6 +63,11 @@ _text_action_ui = {}
 _record_tag_map_generic = {}
 _text_edit_lock = set()
 _filter_controls = {}
+_control_table_map = {}
+_control_details_var = {}
+_control_sort_state = {}
+_control_selection_state = {}
+
 
 # ---------- inferência MODELO/COR (fallback a partir de 'texto') ----------
 _STATUS_WORDS = set(["MORADOR","MORADORES","VISITANTE","VISITA","VISIT","PRESTADOR","PRESTADORES","SERVICO","SERVIÇO","TECNICO","DESCONHECIDO","FUNCIONARIO","FUNCIONÁRIO"])
@@ -282,7 +297,14 @@ def format_encomenda_entry(r: dict) -> str:
         identificacao=identificacao,
     )
     if status not in ("-", ""):
-        return f"{base_text} — {status} {status_dh}"
+        status_up = status.strip().upper()
+        if status_up == "AVISADO":
+            prefix = "[AVISADO ✅]"
+        elif status_up == "SEM CONTATO":
+            prefix = "[SEM CONTATO ⚠]"
+        else:
+            prefix = f"[{status_up}]"
+        return f"{base_text} — {prefix} {status_dh}"
     return base_text
 
 # ---------- UI helpers (embutido) ----------
@@ -352,15 +374,17 @@ def _record_matches_query(record: dict, query: str) -> bool:
 def _apply_filters(registros, filters):
     if not filters:
         return registros
-    order = filters.get("order", "Recentes")
-    date_mode = filters.get("date_mode", "Recentes")
+    order = filters.get("order", "Mais recentes")
+    date_mode = filters.get("date_mode", "Mais recentes")
     date_value = filters.get("date_value", "")
-    time_mode = filters.get("time_mode", "Recentes")
+    time_mode = filters.get("time_mode", "Mais recentes")
     time_value = filters.get("time_value", "")
     query = filters.get("query", "")
+    status_filter = (filters.get("status", "Todos") or "Todos").strip().upper()
+    bloco_filter = (filters.get("bloco", "Todos") or "Todos").strip().upper()
 
-    normalized_date = _normalize_date_value(date_value) if date_mode == "Especifica" else None
-    normalized_time = _normalize_time_value(time_value) if time_mode == "Especifica" else None
+    normalized_date = _normalize_date_value(date_value) if date_mode == "Específica" else None
+    normalized_time = _normalize_time_value(time_value) if time_mode == "Específica" else None
 
     filtrados = []
     for r in registros:
@@ -375,13 +399,19 @@ def _apply_filters(registros, filters):
             continue
         if not _record_matches_query(r, query):
             continue
+        record_status = (safe(r.get("STATUS") if r.get("STATUS") is not None else r.get("STATUS_ENCOMENDA")) or "-").strip().upper()
+        record_bloco = (safe(r.get("BLOCO")) or "-").strip().upper()
+        if status_filter != "TODOS" and record_status != status_filter:
+            continue
+        if bloco_filter != "TODOS" and record_bloco != bloco_filter:
+            continue
         filtrados.append(r)
 
     def sort_key(record):
         parsed = _parse_data_hora(record.get("DATA_HORA", ""))
         return parsed or datetime.min
 
-    reverse = True if order == "Recentes" else False
+    reverse = True if order == "Mais recentes" else False
     filtrados.sort(key=sort_key, reverse=reverse)
     return filtrados
 
@@ -437,13 +467,110 @@ def _record_on_tag_click(text_widget, record, event=None, rec_tag=None):
     if callable(show_fn):
         show_fn()
 
+def _format_control_row(record: dict):
+    nome = _title_name(record.get("NOME", ""), record.get("SOBRENOME", ""))
+    return (
+        safe(record.get("DATA_HORA")),
+        nome,
+        f"{safe(record.get('BLOCO'))}/{safe(record.get('APARTAMENTO'))}",
+        safe(record.get("PLACA")).upper(),
+        safe(record.get("STATUS")),
+    )
+
+
+
+
+def _control_sort_value(record: dict, sort_key: str):
+    if sort_key == "data_hora":
+        return _parse_data_hora(record.get("DATA_HORA", "")) or datetime.min
+    if sort_key == "nome":
+        return _title_name(record.get("NOME", ""), record.get("SOBRENOME", "")).upper()
+    if sort_key == "bloco_ap":
+        return f"{safe(record.get('BLOCO'))}/{safe(record.get('APARTAMENTO'))}"
+    if sort_key == "placa":
+        return safe(record.get("PLACA")).upper()
+    if sort_key == "status":
+        return safe(record.get("STATUS")).upper()
+    return str(record.get(sort_key, ""))
+
+
+def _update_control_details(tree_widget, selection):
+    details_var = _control_details_var.get(tree_widget)
+    record_map = _control_table_map.get(tree_widget, {})
+    if details_var is None:
+        return
+    if not selection:
+        details_var.set("Selecione um registro para ver detalhes.")
+        return
+    rec = record_map.get(selection[0])
+    _control_selection_state[tree_widget] = str((rec or {}).get("ID") or (rec or {}).get("_entrada_id") or "")
+    if not rec:
+        details_var.set("Selecione um registro para ver detalhes.")
+        return
+    details_var.set(
+        f"Nome: {_title_name(rec.get('NOME',''), rec.get('SOBRENOME',''))}\n"
+        f"Bloco/AP: {safe(rec.get('BLOCO'))}/{safe(rec.get('APARTAMENTO'))}\n"
+        f"Placa: {safe(rec.get('PLACA')).upper()}\n"
+        f"Modelo/Cor: {safe(rec.get('MODELO'))} / {safe(rec.get('COR'))}\n"
+        f"Status: {safe(rec.get('STATUS'))}\n"
+        f"Data/Hora: {safe(rec.get('DATA_HORA'))}"
+    )
+
+
+def _populate_control_table(tree_widget, info_label):
+    source = _monitor_sources.get(tree_widget, {})
+    arquivo = source.get("path", ARQUIVO)
+    registros = _load_safe(arquivo)
+    filter_key = source.get("filter_key", tree_widget)
+    filters = _filter_state.get(filter_key, {})
+    filtrados = _apply_filters(registros, filters)
+
+    sort_state = _control_sort_state.get(tree_widget, {"key": "data_hora", "reverse": True})
+    sort_key = sort_state.get("key", "data_hora")
+    reverse = bool(sort_state.get("reverse", True))
+    filtrados = sorted(filtrados, key=lambda rec: _control_sort_value(rec, sort_key), reverse=reverse)
+
+    last = get_last_status()
+    status_hint = ""
+    if last:
+        status_hint = f" | último status: {last.get('action','-')}:{last.get('status','-')}"
+    info_label.config(text=f"Arquivo: {arquivo} — registros: {len(filtrados)} (de {len(registros)}){status_hint}")
+
+    selected_record = _control_selection_state.get(tree_widget)
+    for iid in tree_widget.get_children():
+        tree_widget.delete(iid)
+
+    record_map = {}
+    selected_iid = None
+    for idx, rec in enumerate(filtrados):
+        iid = f"row_{idx}"
+        tree_widget.insert("", tk.END, iid=iid, values=_format_control_row(rec))
+        record_map[iid] = rec
+        if selected_record and str(rec.get("ID") or rec.get("_entrada_id") or "") == selected_record:
+            selected_iid = iid
+
+    _control_table_map[tree_widget] = record_map
+    if selected_iid:
+        try:
+            tree_widget.selection_set(selected_iid)
+            tree_widget.focus(selected_iid)
+            tree_widget.see(selected_iid)
+        except Exception:
+            pass
+    _update_control_details(tree_widget, tree_widget.selection())
+
 def _populate_text(text_widget, info_label):
     source = _monitor_sources.get(text_widget, {})
     report_status("monitor", "STARTED", stage="populate_text", details={"source": source.get("path")})
+    if source.get("view") == "table":
+        _populate_control_table(text_widget, info_label)
+        report_status("monitor", "OK", stage="populate_text_done", details={"source": source.get("path"), "view": "table"})
+        return
     arquivo = source.get("path", ARQUIVO)
     formatter = source.get("formatter", format_creative_entry)
     registros = _load_safe(arquivo)
-    filters = _filter_state.get(text_widget, {})
+    filter_key = source.get("filter_key", text_widget)
+    filters = _filter_state.get(filter_key, {})
     filtrados = _apply_filters(registros, filters)
     last = get_last_status()
     status_hint = ""
@@ -611,30 +738,34 @@ def limpar_dados(text_widgets, info_label):
 
 def _default_filters():
     return {
-        "order": "Recentes",
-        "date_mode": "Recentes",
+        "order": "Mais recentes",
+        "date_mode": "Mais recentes",
         "date_value": "",
-        "time_mode": "Recentes",
+        "time_mode": "Mais recentes",
         "time_value": "",
         "query": "",
+        "status": "Todos",
+        "bloco": "Todos",
     }
 
 def _build_filter_bar(parent, text_widget, info_label):
-    bar = tk.Frame(parent, bg="#111111", highlightbackground="#222222", highlightthickness=1)
+    bar = build_card_frame(parent)
     bar.pack(fill=tk.X, padx=10, pady=(10, 6))
 
-    order_var = tk.StringVar(value="Recentes")
-    date_mode_var = tk.StringVar(value="Recentes")
-    time_mode_var = tk.StringVar(value="Recentes")
+    order_var = tk.StringVar(value="Mais recentes")
+    date_mode_var = tk.StringVar(value="Mais recentes")
+    time_mode_var = tk.StringVar(value="Mais recentes")
     query_var = tk.StringVar(value="")
+    status_var = tk.StringVar(value="Todos")
+    bloco_var = tk.StringVar(value="Todos")
 
-    date_entry = tk.Entry(bar, bg="#1c1c1c", fg="white", insertbackground="white", relief="flat", width=12)
-    time_entry = tk.Entry(bar, bg="#1c1c1c", fg="white", insertbackground="white", relief="flat", width=10)
-    query_entry = tk.Entry(bar, textvariable=query_var, bg="#1c1c1c", fg="white", insertbackground="white", relief="flat", width=18)
+    date_entry = build_filter_input(bar, width=12)
+    time_entry = build_filter_input(bar, width=10)
+    query_entry = build_filter_input(bar, textvariable=query_var, width=18)
 
     def update_entry_state():
-        date_state = "normal" if date_mode_var.get() == "Especifica" else "disabled"
-        time_state = "normal" if time_mode_var.get() == "Especifica" else "disabled"
+        date_state = "normal" if date_mode_var.get() == "Específica" else "disabled"
+        time_state = "normal" if time_mode_var.get() == "Específica" else "disabled"
         date_entry.configure(state=date_state)
         time_entry.configure(state=time_state)
 
@@ -646,71 +777,65 @@ def _build_filter_bar(parent, text_widget, info_label):
             "time_mode": time_mode_var.get(),
             "time_value": time_entry.get().strip(),
             "query": query_entry.get().strip(),
+            "status": status_var.get().strip() or "Todos",
+            "bloco": bloco_var.get().strip() or "Todos",
         }
+        report_status("ux_metrics", "OK", stage="filter_apply", details={"source": str(text_widget), "query_len": len(query_entry.get().strip())})
         _populate_text(text_widget, info_label)
 
     def clear_filters():
-        order_var.set("Recentes")
-        date_mode_var.set("Recentes")
-        time_mode_var.set("Recentes")
+        order_var.set("Mais recentes")
+        date_mode_var.set("Mais recentes")
+        time_mode_var.set("Mais recentes")
         query_var.set("")
+        status_var.set("Todos")
+        bloco_var.set("Todos")
         date_entry.delete(0, tk.END)
         time_entry.delete(0, tk.END)
         update_entry_state()
         _filter_state[text_widget] = _default_filters()
+        report_status("ux_metrics", "OK", stage="filter_clear", details={"source": str(text_widget)})
         _populate_text(text_widget, info_label)
 
-    tk.Label(bar, text="Ordem", bg="#111111", fg="white").grid(row=0, column=0, padx=(10, 6), pady=8, sticky="w")
-    order_combo = ttk.Combobox(bar, textvariable=order_var, values=["Recentes", "Ultimas"], width=10, state="readonly")
+    tk.Label(bar, text="Ordem", bg=UI_THEME["surface"], fg=UI_THEME["text"]).grid(row=0, column=0, padx=(10, 6), pady=8, sticky="w")
+    order_combo = ttk.Combobox(bar, textvariable=order_var, values=["Mais recentes", "Mais antigas"], width=12, state="readonly")
     order_combo.grid(row=0, column=1, padx=(0, 12), pady=8, sticky="w")
 
-    tk.Label(bar, text="Data", bg="#111111", fg="white").grid(row=0, column=2, padx=(0, 6), pady=8, sticky="w")
+    tk.Label(bar, text="Data", bg=UI_THEME["surface"], fg=UI_THEME["text"]).grid(row=0, column=2, padx=(0, 6), pady=8, sticky="w")
     date_mode_combo = ttk.Combobox(
         bar,
         textvariable=date_mode_var,
-        values=["Recentes", "Especifica"],
+        values=["Mais recentes", "Específica"],
         width=10,
         state="readonly",
     )
     date_mode_combo.grid(row=0, column=3, padx=(0, 6), pady=8, sticky="w")
     date_entry.grid(row=0, column=4, padx=(0, 12), pady=8, sticky="w")
 
-    tk.Label(bar, text="Hora", bg="#111111", fg="white").grid(row=0, column=5, padx=(0, 6), pady=8, sticky="w")
+    tk.Label(bar, text="Hora", bg=UI_THEME["surface"], fg=UI_THEME["text"]).grid(row=0, column=5, padx=(0, 6), pady=8, sticky="w")
     time_mode_combo = ttk.Combobox(
         bar,
         textvariable=time_mode_var,
-        values=["Recentes", "Especifica"],
+        values=["Mais recentes", "Específica"],
         width=10,
         state="readonly",
     )
     time_mode_combo.grid(row=0, column=6, padx=(0, 6), pady=8, sticky="w")
     time_entry.grid(row=0, column=7, padx=(0, 12), pady=8, sticky="w")
 
-    tk.Label(bar, text="Consultar", bg="#111111", fg="white").grid(row=0, column=8, padx=(0, 6), pady=8, sticky="w")
+    tk.Label(bar, text="Buscar", bg=UI_THEME["surface"], fg=UI_THEME["text"]).grid(row=0, column=8, padx=(0, 6), pady=8, sticky="w")
     query_entry.grid(row=0, column=9, padx=(0, 12), pady=8, sticky="w")
 
-    tk.Button(
-        bar,
-        text="Aplicar",
-        command=apply_filters,
-        bg="#1f6feb",
-        fg="white",
-        activebackground="#215db0",
-        activeforeground="white",
-        relief="flat",
-        padx=12,
-    ).grid(row=0, column=10, padx=(0, 6), pady=8)
-    tk.Button(
-        bar,
-        text="Limpar",
-        command=clear_filters,
-        bg="#2a2a2a",
-        fg="white",
-        activebackground="#3a3a3a",
-        activeforeground="white",
-        relief="flat",
-        padx=12,
-    ).grid(row=0, column=11, padx=(0, 10), pady=8)
+    tk.Label(bar, text="Status", bg=UI_THEME["surface"], fg=UI_THEME["text"]).grid(row=0, column=10, padx=(0, 6), pady=8, sticky="w")
+    status_combo = ttk.Combobox(bar, textvariable=status_var, values=["Todos", "MORADOR", "VISITANTE", "PRESTADOR", "AVISADO", "SEM CONTATO"], width=14, state="readonly")
+    status_combo.grid(row=0, column=11, padx=(0, 12), pady=8, sticky="w")
+
+    tk.Label(bar, text="Bloco", bg=UI_THEME["surface"], fg=UI_THEME["text"]).grid(row=0, column=12, padx=(0, 6), pady=8, sticky="w")
+    bloco_combo = ttk.Combobox(bar, textvariable=bloco_var, values=["Todos"] + [str(i) for i in range(1, 31)], width=8, state="readonly")
+    bloco_combo.grid(row=0, column=13, padx=(0, 12), pady=8, sticky="w")
+
+    build_primary_button(bar, "Aplicar", apply_filters).grid(row=0, column=14, padx=(0, 6), pady=8)
+    build_secondary_button(bar, "Limpar", clear_filters).grid(row=0, column=15, padx=(0, 10), pady=8)
 
     _filter_controls[text_widget] = [
         order_combo,
@@ -719,8 +844,12 @@ def _build_filter_bar(parent, text_widget, info_label):
         time_mode_combo,
         time_entry,
         query_entry,
+        status_combo,
+        bloco_combo,
     ]
-    bar.grid_columnconfigure(12, weight=1)
+    for control in _filter_controls[text_widget]:
+        bind_focus_ring(control)
+    bar.grid_columnconfigure(16, weight=1)
     date_mode_var.trace_add("write", lambda *_: update_entry_state())
     time_mode_var.trace_add("write", lambda *_: update_entry_state())
     update_entry_state()
@@ -782,7 +911,7 @@ def _restore_hover_if_needed(text_widget, hover_tag):
 
 def _bind_hover_highlight(text_widget):
     hover_tag = "hover_line"
-    text_widget.tag_configure(hover_tag, background="white", foreground="black")
+    text_widget.tag_configure(hover_tag, background=UI_THEME["focus_bg"], foreground=UI_THEME["focus_text"])
     _hover_state[text_widget] = None
 
     def on_motion(event):
@@ -897,7 +1026,7 @@ def _update_encomenda_status(record, status):
         return False
 
 def _build_encomenda_actions(frame, text_widget, info_label):
-    action_frame = tk.Frame(frame, bg="white")
+    action_frame = tk.Frame(frame, bg=UI_THEME["surface"])
     action_frame.pack_forget()
 
     # manter estado por widget dentro do mapa global
@@ -933,10 +1062,10 @@ def _build_encomenda_actions(frame, text_widget, info_label):
         action_frame,
         text="AVISADO",
         command=lambda: apply_status("AVISADO"),
-        bg="white",
-        fg="black",
-        activebackground="#e6e6e6",
-        activeforeground="black",
+        bg=UI_THEME["surface_alt"],
+        fg=UI_THEME["text"],
+        activebackground=UI_THEME["primary"],
+        activeforeground=UI_THEME["text"],
         relief="flat",
         padx=18,
     ).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
@@ -944,10 +1073,10 @@ def _build_encomenda_actions(frame, text_widget, info_label):
         action_frame,
         text="SEM CONTATO",
         command=lambda: apply_status("SEM CONTATO"),
-        bg="white",
-        fg="black",
-        activebackground="#e6e6e6",
-        activeforeground="black",
+        bg=UI_THEME["surface_alt"],
+        fg=UI_THEME["text"],
+        activebackground=UI_THEME["primary"],
+        activeforeground=UI_THEME["text"],
         relief="flat",
         padx=18,
     ).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
@@ -1032,23 +1161,23 @@ def _set_fullscreen(window):
 
 def _apply_dark_theme(widget):
     try:
-        widget.configure(bg="black")
+        widget.configure(bg=UI_THEME["surface"])
     except Exception:
         pass
 
 def _apply_light_theme(widget):
     try:
-        widget.configure(bg="white")
+        widget.configure(bg=UI_THEME["bg"])
     except Exception:
         pass
 
 def _build_text_actions(frame, text_widget, info_label, path):
-    action_frame = tk.Frame(frame, bg="white")
+    action_frame = tk.Frame(frame, bg=UI_THEME["surface"])
     action_frame.pack_forget()
     current = {"record": None, "rec_tag": None}
     edit_state = {"active": False, "tag": None, "dirty": False}
 
-    edit_badge = tk.Label(action_frame, text="MODO EDIÇÃO ATIVO", bg="#ffef99", fg="black", padx=10, pady=4)
+    edit_badge = tk.Label(action_frame, text="MODO EDIÇÃO ATIVO", bg=UI_THEME["edit_badge_bg"], fg=UI_THEME["edit_badge_text"], padx=10, pady=4)
     edit_badge.pack_forget()
 
     def _set_filters_enabled(enabled: bool):
@@ -1207,9 +1336,9 @@ def _build_text_actions(frame, text_widget, info_label, path):
 
         _finish_editing(reload_text=True)
 
-    tk.Button(action_frame, text="Editar", command=enable_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
-    tk.Button(action_frame, text="Salvar", command=save_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
-    tk.Button(action_frame, text="Cancelar", command=cancel_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+    tk.Button(action_frame, text="Editar", command=enable_edit, bg=UI_THEME["surface_alt"], fg=UI_THEME["text"], activebackground=UI_THEME["primary"], activeforeground=UI_THEME["text"], relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+    tk.Button(action_frame, text="Salvar", command=save_edit, bg=UI_THEME["primary"], fg=UI_THEME["text"], activebackground=UI_THEME["primary_active"], activeforeground=UI_THEME["text"], relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+    tk.Button(action_frame, text="Cancelar", command=cancel_edit, bg=UI_THEME["surface_alt"], fg=UI_THEME["text"], activebackground=UI_THEME["border"], activeforeground=UI_THEME["text"], relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
 
     _text_action_ui[text_widget] = {
         "frame": action_frame,
@@ -1271,32 +1400,35 @@ def _build_monitor_ui(container):
         style.theme_use("clam")
     except Exception:
         pass
-    style.configure("Dark.TNotebook", background="white", borderwidth=0)
-    style.configure("Dark.TNotebook.Tab", background="black", foreground="white", padding=(16, 6))
+    style.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0)
+    style.configure("Dark.TNotebook.Tab", background=UI_THEME["surface"], foreground=UI_THEME["text"], padding=(16, 6))
     style.map(
         "Dark.TNotebook.Tab",
-        background=[("selected", "black"), ("active", "#222222")],
-        foreground=[("selected", "white"), ("active", "white")],
+        background=[("selected", UI_THEME["primary"]), ("active", UI_THEME["surface_alt"])],
+        foreground=[("selected", UI_THEME["text"]), ("active", UI_THEME["text"])],
     )
-    style.configure("Encomenda.Text", background="black", foreground="white")
+    style.configure("Encomenda.Text", background=UI_THEME["surface"], foreground=UI_THEME["text"])
+    style.configure("Control.Treeview", background=UI_THEME["surface"], fieldbackground=UI_THEME["surface"], foreground=UI_THEME["text"], bordercolor=UI_THEME["border"], rowheight=28)
+    style.configure("Control.Treeview.Heading", background=UI_THEME["surface_alt"], foreground=UI_THEME["text"], relief="flat")
+    style.map("Control.Treeview", background=[("selected", UI_THEME["primary"])], foreground=[("selected", UI_THEME["text"])])
 
-    info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg="white", fg="black")
+    info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg=UI_THEME["bg"], fg=UI_THEME["muted_text"])
     info_label.pack(padx=10, pady=(6, 0), anchor="w")
 
     notebook = ttk.Notebook(container, style="Dark.TNotebook")
     notebook.pack(padx=10, pady=(8, 10), fill=tk.BOTH, expand=True)
 
-    controle_frame = tk.Frame(notebook, bg="black")
-    encomendas_frame = tk.Frame(notebook, bg="black")
-    orientacoes_frame = tk.Frame(notebook, bg="black")
-    observacoes_frame = tk.Frame(notebook, bg="black")
+    controle_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
+    encomendas_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
+    orientacoes_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
+    observacoes_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
 
     notebook.add(controle_frame, text="CONTROLE")
     notebook.add(encomendas_frame, text="ENCOMENDAS")
-    notebook.add(orientacoes_frame, text="ORIENTACOES")
-    notebook.add(observacoes_frame, text="OBSERVACOES")
+    notebook.add(orientacoes_frame, text="ORIENTAÇÕES")
+    notebook.add(observacoes_frame, text="OBSERVAÇÕES")
 
-    text_widgets = []
+    monitor_widgets = []
     tab_configs = [
         (controle_frame, ARQUIVO, format_creative_entry),
         (encomendas_frame, ENCOMENDAS_ARQUIVO, format_encomenda_entry),
@@ -1304,22 +1436,75 @@ def _build_monitor_ui(container):
         (observacoes_frame, OBSERVACOES_ARQUIVO, format_observacao_entry),
     ]
     for frame, arquivo, formatter in tab_configs:
+        if formatter == format_creative_entry:
+            table_wrap = build_card_frame(frame)
+            table_wrap.pack(padx=10, pady=(0, 8), fill=tk.BOTH, expand=True)
+            columns = ("data_hora", "nome", "bloco_ap", "placa", "status")
+            tree = ttk.Treeview(table_wrap, columns=columns, show="headings", style="Control.Treeview")
+            tree.heading("data_hora", text="Data/Hora")
+            tree.heading("nome", text="Nome")
+            tree.heading("bloco_ap", text="Bloco/AP")
+            tree.heading("placa", text="Placa")
+            tree.heading("status", text="Status")
+            _control_sort_state[tree] = {"key": "data_hora", "reverse": True}
+
+            def _sort_by(col, tw=tree):
+                st = _control_sort_state.get(tw, {"key": col, "reverse": False})
+                reverse = not st.get("reverse", False) if st.get("key") == col else False
+                _control_sort_state[tw] = {"key": col, "reverse": reverse}
+                _populate_text(tw, info_label)
+
+            for _col in columns:
+                tree.heading(_col, command=lambda c=_col: _sort_by(c))
+            tree.column("data_hora", width=160, anchor="w")
+            tree.column("nome", width=220, anchor="w")
+            tree.column("bloco_ap", width=110, anchor="center")
+            tree.column("placa", width=120, anchor="center")
+            tree.column("status", width=160, anchor="w")
+
+            def _on_resize(event, tw=tree):
+                total = max(event.width - 24, 300)
+                tw.column("data_hora", width=max(120, int(total * 0.22)))
+                tw.column("nome", width=max(180, int(total * 0.30)))
+                tw.column("bloco_ap", width=max(90, int(total * 0.14)))
+                tw.column("placa", width=max(90, int(total * 0.14)))
+                tw.column("status", width=max(120, int(total * 0.20)))
+
+            table_wrap.bind("<Configure>", _on_resize, add="+")
+            _build_filter_bar(frame, tree, info_label)
+            yscroll = ttk.Scrollbar(table_wrap, orient=tk.VERTICAL, command=tree.yview)
+            tree.configure(yscrollcommand=yscroll.set)
+            tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            yscroll.pack(side=tk.RIGHT, fill=tk.Y)
+            details_var = tk.StringVar(value="Selecione um registro para ver detalhes.")
+            details = tk.Label(frame, textvariable=details_var, bg=UI_THEME["surface_alt"], fg=UI_THEME["text"], anchor="w", justify="left", padx=10, pady=8)
+            details.pack(fill=tk.X, padx=10, pady=(0, 10))
+            _control_details_var[tree] = details_var
+            def _on_select(_e, tw=tree):
+                _update_control_details(tw, tw.selection())
+                report_status("ux_metrics", "OK", stage="control_row_selected", details={"selection_count": len(tw.selection())})
+            tree.bind("<<TreeviewSelect>>", _on_select, add="+")
+            bind_focus_ring(tree)
+            monitor_widgets.append(tree)
+            _monitor_sources[tree] = {"path": arquivo, "formatter": formatter, "view": "table", "filter_key": tree}
+            continue
+
         text_widget = tk.Text(
             frame,
             wrap="word",
-            bg="black",
-            fg="white",
-            insertbackground="white",
+            bg=UI_THEME["surface"],
+            fg=UI_THEME["text"],
+            insertbackground=UI_THEME["text"],
             relief="flat",
             undo=True,
             autoseparators=True,
             maxundo=-1,
         )
-        if formatter == format_encomenda_entry:
-            text_widget.tag_configure("status_avisado", foreground="#2ecc71")
-            text_widget.tag_configure("status_sem_contato", foreground="#ff5c5c")
-            text_widget.tag_configure("encomenda_selected", background="#f0f0f0", foreground="black")
         _build_filter_bar(frame, text_widget, info_label)
+        if formatter == format_encomenda_entry:
+            text_widget.tag_configure("status_avisado", foreground=UI_THEME["status_avisado_text"])
+            text_widget.tag_configure("status_sem_contato", foreground=UI_THEME["status_sem_contato_text"])
+            text_widget.tag_configure("encomenda_selected", background=UI_THEME["focus_bg"], foreground=UI_THEME["focus_text"])
         text_widget.pack(padx=10, pady=(0, 8), fill=tk.BOTH, expand=True)
         text_widget.config(state="disabled")
         _bind_hover_highlight(text_widget)
@@ -1327,31 +1512,15 @@ def _build_monitor_ui(container):
             _build_encomenda_actions(frame, text_widget, info_label)
         elif formatter in (format_orientacao_entry, format_observacao_entry):
             _build_text_actions(frame, text_widget, info_label, arquivo)
-        text_widgets.append(text_widget)
-        _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter}
+        monitor_widgets.append(text_widget)
+        _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter, "filter_key": text_widget}
 
-    btn_frame = tk.Frame(container, bg="white")
+    btn_frame = tk.Frame(container, bg=UI_THEME["bg"])
     btn_frame.pack(padx=10, pady=(0, 10))
-    tk.Button(
-        btn_frame,
-        text="Load",
-        command=lambda: forcar_recarregar(text_widgets, info_label),
-        bg="white",
-        fg="black",
-        activebackground="#e6e6e6",
-        activeforeground="black",
-    ).pack(side=tk.LEFT, padx=6)
-    tk.Button(
-        btn_frame,
-        text="Beckup",
-        command=lambda: limpar_dados(text_widgets, info_label),
-        bg="white",
-        fg="black",
-        activebackground="#e6e6e6",
-        activeforeground="black",
-    ).pack(side=tk.LEFT, padx=6)
+    build_primary_button(btn_frame, "Recarregar", lambda: forcar_recarregar(monitor_widgets, info_label)).pack(side=tk.LEFT, padx=6)
+    build_secondary_button(btn_frame, "Backup e Limpar", lambda: limpar_dados(monitor_widgets, info_label)).pack(side=tk.LEFT, padx=6)
 
-    return text_widgets, info_label
+    return monitor_widgets, info_label
 
 # ---------- embutir como Toplevel ----------
 def create_monitor_toplevel(master):
