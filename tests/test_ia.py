@@ -1,5 +1,6 @@
 import os
 import unittest
+from unittest import mock
 
 import ia
 
@@ -63,6 +64,13 @@ class IAModuleTests(unittest.TestCase):
         self.assertEqual(out["BLOCO"], "7")
         self.assertEqual(out["APARTAMENTO"], "86")
         self.assertEqual(out["IDENTIFICACAO"], "9C3R4DUHASD")
+
+    def test_append_or_update_encomendas_falha_quando_save_falha(self):
+        with mock.patch.object(ia, "_load_encomendas_saida", return_value=[]), \
+            mock.patch.object(ia, "_save_encomendas_saida", return_value=False):
+            ok = ia.append_or_update_encomendas({"NOME": "ANA", "BLOCO": "A", "APARTAMENTO": "101"}, entrada_id=123)
+        self.assertFalse(ok)
+
 
 
 if __name__ == "__main__":

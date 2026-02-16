@@ -675,8 +675,7 @@ def append_or_update_encomendas(dados: dict, entrada_id=None):
             found["DATA_HORA"] = dados.get("DATA_HORA")
         if not found.get("ID"):
             found["ID"] = _next_encomenda_id(regs)
-        _save_encomendas_saida(regs)
-        return True
+        return bool(_save_encomendas_saida(regs))
     rec = dict(dados)
     rec.pop("texto", None)
     rec.pop("texto_original", None)
@@ -686,8 +685,7 @@ def append_or_update_encomendas(dados: dict, entrada_id=None):
     if not rec.get("DATA_HORA"):
         rec["DATA_HORA"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     regs.append(rec)
-    _save_encomendas_saida(regs)
-    return True
+    return bool(_save_encomendas_saida(regs))
 
 def parse_dt(s):
     if not s: return None
