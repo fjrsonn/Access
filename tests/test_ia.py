@@ -69,6 +69,18 @@ class IAModuleTests(unittest.TestCase):
         self.assertEqual(out["APARTAMENTO"], "86")
         self.assertEqual(out["IDENTIFICACAO"], "9C3R4DUHASD")
 
+    def test_parse_encomenda_loja_composta_com_espaco(self):
+        txt = "BLCO8 101721960326BR RAFAEL LIMA MERC LIVR SAOLA AP93"
+        out = ia._parse_encomenda_text(txt)
+        self.assertEqual(out["LOJA"], "MERCADO LIVRE")
+        self.assertEqual(out["TIPO"], "SACOLA")
+
+    def test_parse_encomenda_loja_com_caractere_especial(self):
+        txt = "PACOT BLO14 CARLOS SANTOS C&A AP125 QDD0VNQNBIYL0"
+        out = ia._parse_encomenda_text(txt)
+        self.assertEqual(out["LOJA"], "CEA")
+        self.assertEqual(out["TIPO"], "PACOTE")
+
     def test_parse_encomenda_texto_orientacao_nao_inventa_loja_tipo(self):
         txt = "Registrando ocorrencia de clamacao de barulho vindo do bloco 10 aparamneto 10, morador Flavio Junior foi orientado"
         out = ia._parse_encomenda_text(txt)
