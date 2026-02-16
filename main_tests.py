@@ -189,6 +189,7 @@ class TestPanelApp:
         self.text.pack(fill="both", expand=True, padx=8, pady=8)
         self.text.configure(state="disabled")
         self._last_status_fingerprint = ""
+        self._last_conflicts_fingerprint = ""
         self._status_store = status_store or runtime_status.RuntimeStatusStore(
             events_file=runtime_status.EVENTS_FILE,
             last_status_file=runtime_status.LAST_STATUS_FILE,
@@ -230,6 +231,17 @@ class TestPanelApp:
                 if fp != self._last_status_fingerprint:
                     self._last_status_fingerprint = fp
                     self.log(f"[RUNTIME] {st.get('action')} -> {st.get('status')} ({st.get('stage')}) {st.get('details', {})}")
+
+            conflitos = runtime_status.detectar_conflitos_dados(Path(__file__).resolve().parent.as_posix())
+            cfp = json.dumps(conflitos, ensure_ascii=False, sort_keys=True)
+            if cfp != self._last_conflicts_fingerprint:
+                self._last_conflicts_fingerprint = cfp
+                if conflitos.get("nome_modelo_conflicts"):
+                    self.log(f"[CONFLITO_REGISTRO] nome/modelo: {conflitos.get('nome_modelo_conflicts')}")
+                if conflitos.get("status_encomenda_conflicts"):
+                    self.log(f"[CONFLITO_AVISO] status encomenda: {conflitos.get('status_encomenda_conflicts')}")
+                if conflitos.get("runtime_flow_errors"):
+                    self.log(f"[CONFLITO_FLUXO] erros pipeline: {conflitos.get('runtime_flow_errors')}")
         except Exception:
             pass
         self.root.after(1000, self._poll_runtime_status)

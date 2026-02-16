@@ -36,12 +36,16 @@ class InterfaceOneTests(unittest.TestCase):
         txt = "SHOPEE JOAO SILVA BLOCO 1 AP 22"
         self.assertTrue(interfaceone._is_encomenda_text(txt, parsed={}))
 
-    def test_encomenda_when_only_identificacao_signal(self):
+    def test_encomenda_when_only_identificacao_sem_digitos_nao_forca(self):
         txt = "OSIJEVXTKTOTI JOAO SILVA BLOCO 1 AP 22"
-        self.assertTrue(interfaceone._is_encomenda_text(txt, parsed={}))
+        self.assertFalse(interfaceone._is_encomenda_text(txt, parsed={}))
 
     def test_non_encomenda_person_record_not_forced(self):
         txt = "JOAO PEREIRA BLOCO 13 AP 111"
+        self.assertFalse(interfaceone._is_encomenda_text(txt, parsed={}))
+
+    def test_ocorrencia_nao_deve_ir_para_encomendas(self):
+        txt = "Registrando relato de ocorrencia do bloco 9 apartamento 3, reclamacao de barulho proveniente da unidade"
         self.assertFalse(interfaceone._is_encomenda_text(txt, parsed={}))
 
 

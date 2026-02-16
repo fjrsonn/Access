@@ -202,10 +202,28 @@ def analisar_saude_pipeline(events_path: str = EVENTS_FILE) -> Dict[str, Any]:
     }
 
 
+
+
+def _record_identity_conflicts(regs: list[dict]) -> list[dict]:
+    conflicts = []
+    for rec in regs:
+        nome = str(rec.get("NOME") or "").strip().upper()
+        sobrenome = str(rec.get("SOBRENOME") or "").strip().upper()
+        modelo = str(rec.get("MODELO") or "").strip().upper()
+        if not modelo:
+            continue
+        if nome and nome == modelo:
+            conflicts.append({"id": rec.get("ID"), "entrada_id": rec.get("_entrada_id"), "tipo": "nome_igual_modelo", "valor": modelo})
+        if sobrenome and sobrenome == modelo:
+            conflicts.append({"id": rec.get("ID"), "entrada_id": rec.get("_entrada_id"), "tipo": "sobrenome_igual_modelo", "valor": modelo})
+    return conflicts
+
+
 def detectar_conflitos_dados(base_dir: str = BASE_DIR) -> Dict[str, Any]:
     """Procura inconsistências entre dadosinit/dadosend/analises/avisos."""
     dadosinit = _to_records(_read_json(os.path.join(base_dir, "dadosinit.json")))
     dadosend = _to_records(_read_json(os.path.join(base_dir, "dadosend.json")))
+    encomendasend = _to_records(_read_json(os.path.join(base_dir, "encomendasend.json")))
     analises_raw = _read_json(os.path.join(base_dir, "analises.json")) or {}
     avisos_raw = _read_json(os.path.join(base_dir, "avisos.json")) or {}
 
@@ -252,10 +270,32 @@ def detectar_conflitos_dados(base_dir: str = BASE_DIR) -> Dict[str, Any]:
         if ident and ident not in analysis_ids and not ident.startswith("ENCOMENDA|"):
             avisos_sem_analise.append(ident)
 
+    nome_modelo_conflicts = _record_identity_conflicts(dadosend)
+
+    status_conflicts = []
+    valid_status = {"", "-", "AVISADO", "SEM CONTATO"}
+    for r in encomendasend:
+        st = str(r.get("STATUS_ENCOMENDA") or "").strip().upper()
+        if st and st not in valid_status:
+            status_conflicts.append({"id": r.get("ID"), "entrada_id": r.get("_entrada_id"), "status": st, "tipo": "status_encomenda_invalido"})
+
+    runtime_flow_errors = []
+    events = read_runtime_events(os.path.join(base_dir, "logs", "runtime_events.jsonl"))
+    for ev in events:
+        if str(ev.get("status") or "").upper() == "ERROR":
+            runtime_flow_errors.append({
+                "action": ev.get("action"),
+                "stage": ev.get("stage"),
+                "details": ev.get("details"),
+            })
+
     return {
         "processed_without_saida": processed_without_saida,
         "duplicated_entrada_ids": duplicated_entrada_ids,
         "avisos_sem_analise": sorted(set(avisos_sem_analise)),
+        "nome_modelo_conflicts": nome_modelo_conflicts,
+        "status_encomenda_conflicts": status_conflicts,
+        "runtime_flow_errors": runtime_flow_errors[-20:],
     }
 
 

@@ -257,10 +257,9 @@ def _has_encomenda_identificacao(tokens_up):
     for tok in tokens_up:
         if re.match(r"^[A-Z]{3}\d{4}$", tok) or re.match(r"^[A-Z]{3}\d[A-Z]\d{2}$", tok):
             continue
+        # identificação de encomenda precisa conter dígitos para evitar falsos positivos
+        # com palavras longas (ex.: PROVENIENTE, OCORRENCIA).
         if re.match(r"^(?=.*\d)[A-Z0-9]{8,}$", tok):
-            return True
-    for tok in tokens_up:
-        if re.match(r"^[A-Z0-9]{8,}$", tok):
             return True
     return False
 
@@ -302,7 +301,10 @@ def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
         return True
 
     for pattern in _ENCOMENDA_LOJA_PATTERNS:
-        if pattern.replace(" ", "") in normalized.replace(" ", ""):
+        patt = _norm(pattern)
+        if not patt:
+            continue
+        if re.search(rf"\b{re.escape(patt)}\b", normalized):
             return True
     if _match_encomenda_store_token(toks_up):
         return True
@@ -773,11 +775,22 @@ def compute_fp_from_record(rec: dict) -> str:
     placa = str(rec.get("PLACA","") or "").strip().upper()
     return f"{nome}|{bloco}|{apt}|{placa}"
 
+def _canonical_identity_value(v: object) -> str:
+    raw = str(v or "").strip().upper()
+    return "" if raw in {"", "-", "N/A", "NONE", "NULL"} else raw
+
+
 def _identity_key(rec: dict) -> str:
-    nome = clean_whitespace(((rec.get("NOME","") or "") + " " + (rec.get("SOBRENOME","") or "")).strip()).upper()
-    bloco = str(rec.get("BLOCO","") or "").strip().upper()
-    apt = str(rec.get("APARTAMENTO","") or "").strip().upper()
+    nome = clean_whitespace(((_canonical_identity_value(rec.get("NOME")) + " " + _canonical_identity_value(rec.get("SOBRENOME"))).strip())).upper()
+    bloco = _canonical_identity_value(rec.get("BLOCO"))
+    apt = _canonical_identity_value(rec.get("APARTAMENTO"))
     return f"{nome}|{bloco}|{apt}"
+
+
+def _full_record_identity_key(rec: dict) -> str:
+    """Identidade completa para deduplicar registros 100% iguais (ignorando DATA_HORA)."""
+    keys = ("NOME", "SOBRENOME", "BLOCO", "APARTAMENTO", "PLACA", "MODELO", "COR", "STATUS")
+    return "|".join(_canonical_identity_value(rec.get(k)) for k in keys)
 
 # ---------- file lock ----------
 def _acquire_db_lock(timeout=5.0, poll=0.05):
@@ -1004,9 +1017,16 @@ def append_record_to_db(rec: dict):
         if not isinstance(regs, list): regs = list(regs)
 
         # procura identidade já existente para reaproveitar ID de pessoa
+        full_fp = _full_record_identity_key(rec)
         new_idkey = _identity_key(rec)
         person_id = None
         for r in regs:
+            if _full_record_identity_key(r) == full_fp:
+                try:
+                    person_id = int(r.get("ID") or r.get("id"))
+                    break
+                except:
+                    continue
             if _identity_key(r) == new_idkey:
                 try:
                     person_id = int(r.get("ID") or r.get("id"))
@@ -1050,7 +1070,14 @@ def _append_record_to_db_nolock(rec: dict):
         regs = [] if base is None or not isinstance(base, dict) else (base.get("registros") or [])
         if not isinstance(regs, list): regs = list(regs)
         id_fp = _identity_key(rec); person_id=None
+        full_fp = _full_record_identity_key(rec)
         for r in regs:
+            if _full_record_identity_key(r) == full_fp:
+                try:
+                    person_id = int(r.get("ID") or r.get("id"))
+                    break
+                except:
+                    continue
             if _identity_key(r) == id_fp:
                 try:
                     person_id = int(r.get("ID") or r.get("id"))
@@ -1185,12 +1212,16 @@ def post_validate_and_clean_record(rec: dict, modelos_hint: Iterable[str]=None, 
 
     if cleaned:
         rec["NOME"] = cleaned[0].upper()
-        rec["SOBRENOME"] = " ".join(cleaned[1:]).upper() if len(cleaned) > 1 else "-"
+        rec["SOBRENOME"] = " ".join(cleaned[1:]).upper() if len(cleaned) > 1 else ""
     else:
-        if not rec.get("NOME") or rec.get("NOME") in ("", "-"):
-            rec["NOME"] = "-"
-        if not rec.get("SOBRENOME") or rec.get("SOBRENOME") in ("", "-"):
-            rec["SOBRENOME"] = "-"
+        rec["NOME"] = ""
+        rec["SOBRENOME"] = ""
+
+    modelo_clean = str(rec.get("MODELO") or "").strip().upper()
+    if modelo_clean and rec.get("NOME") and str(rec.get("NOME")).strip().upper() == modelo_clean:
+        rec["NOME"] = ""
+    if modelo_clean and rec.get("SOBRENOME") and str(rec.get("SOBRENOME")).strip().upper() == modelo_clean:
+        rec["SOBRENOME"] = ""
 
     for k in ("MODELO","PLACA","COR","STATUS","BLOCO","APARTAMENTO"):
         v = rec.get(k)

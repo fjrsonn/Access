@@ -138,8 +138,21 @@ def _find_matching_aviso(existing_avisos: List[dict], identidade: str, ultimo_id
     return None
 
 
+
+
+def _same_morador_sem_tag_event(aviso: Dict[str, Any], ultimo_id: Any) -> bool:
+    if (aviso.get("tipo") or "") != "MORADOR_SEM_TAG":
+        return False
+    last = aviso.get("ultimo_registro") or {}
+    return str(_registro_event_id(last) or "") == str(ultimo_id or "")
+
 def _reactivate_existing_aviso(existing_avisos: List[dict], identidade: str, ultimo_id: Any, tipo: str) -> bool:
     aviso = _find_matching_aviso(existing_avisos, identidade, ultimo_id, tipo)
+    if not aviso and (tipo or "") == "MORADOR_SEM_TAG":
+        for item in existing_avisos:
+            if _same_morador_sem_tag_event(item, ultimo_id):
+                aviso = item
+                break
     if not aviso:
         return False
     st = aviso.setdefault("status", {})

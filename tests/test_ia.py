@@ -1,5 +1,8 @@
 import os
+import json
+import tempfile
 import unittest
+from unittest import mock
 
 import ia
 
@@ -63,6 +66,24 @@ class IAModuleTests(unittest.TestCase):
         self.assertEqual(out["BLOCO"], "7")
         self.assertEqual(out["APARTAMENTO"], "86")
         self.assertEqual(out["IDENTIFICACAO"], "9C3R4DUHASD")
+
+    def test_append_or_update_saida_reusa_registro_com_dados_iguais_exceto_data_hora(self):
+        with tempfile.TemporaryDirectory() as td:
+            saida = os.path.join(td, "dadosend.json")
+            with open(saida, "w", encoding="utf-8") as f:
+                json.dump({"registros": []}, f)
+
+            a = {"NOME": "ANA", "SOBRENOME": "SILVA", "BLOCO": "A", "APARTAMENTO": "101", "PLACA": "ABC1234", "MODELO": "ONIX", "COR": "PRETO", "STATUS": "MORADOR", "DATA_HORA": "10/01/2026 10:00:00"}
+            b = {"NOME": "ANA", "SOBRENOME": "SILVA", "BLOCO": "A", "APARTAMENTO": "101", "PLACA": "ABC1234", "MODELO": "ONIX", "COR": "PRETO", "STATUS": "MORADOR", "DATA_HORA": "10/01/2026 10:05:00"}
+
+            with mock.patch.object(ia, "SAIDA", saida):
+                ia.append_or_update_saida(a, entrada_id=10)
+                ia.append_or_update_saida(b, entrada_id=11)
+
+            with open(saida, "r", encoding="utf-8") as f:
+                regs = (json.load(f) or {}).get("registros") or []
+            self.assertEqual(len(regs), 1)
+            self.assertEqual(regs[0].get("ID"), 1)
 
 
 if __name__ == "__main__":

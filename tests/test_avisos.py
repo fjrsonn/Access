@@ -33,6 +33,20 @@ class AvisosModuleTests(unittest.TestCase):
         self.assertTrue(avisos.vehicles_considered_same(a, b))
         self.assertFalse(avisos.vehicles_considered_same(a, c))
 
+    def test_reactivate_sem_tag_por_entrada_id_ignora_identidade(self):
+        existing = [
+            {
+                "identidade": "SEMNOME||A|1",
+                "tipo": "MORADOR_SEM_TAG",
+                "ultimo_registro": {"_entrada_id": 55},
+                "status": {"ativo": False, "fechado_pelo_usuario": True},
+                "timestamps": {"fechado_em": "10/01/2026 10:00:00"},
+            }
+        ]
+        changed = avisos._reactivate_existing_aviso(existing, "ANA|SILVA|A|1", 55, "MORADOR_SEM_TAG")
+        self.assertTrue(changed)
+        self.assertTrue(existing[0]["status"]["ativo"])
+
 
 if __name__ == "__main__":
     unittest.main()
