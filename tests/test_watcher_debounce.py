@@ -57,6 +57,35 @@ class WatcherDebounceTests(unittest.TestCase):
             self.assertEqual(fake_a.calls, 1)
             self.assertEqual(fake_v.calls, 1)
 
+    def test_watcher_ignores_mtime_only_changes(self):
+        with tempfile.TemporaryDirectory() as td:
+            fake_a = _FakeAnalises()
+            fake_v = _FakeAvisos()
+            mtime_values = [1.0, 1.0, 2.0, 2.0, 3.0, 3.0]
+            tick = {"n": 0}
+
+            def fake_time():
+                tick["n"] += 1
+                return tick["n"] * 0.1
+
+            def fake_sleep(_poll):
+                if tick["n"] > 6:
+                    raise StopIteration("end")
+
+            def fake_getmtime(_):
+                return mtime_values.pop(0) if mtime_values else 3.0
+
+            with mock.patch.object(main.os.path, "exists", return_value=True), \
+                 mock.patch.object(main.os.path, "getmtime", side_effect=fake_getmtime), \
+                 mock.patch.object(main, "_file_fingerprint", return_value="same-content"), \
+                 mock.patch.object(main.time, "time", side_effect=fake_time), \
+                 mock.patch.object(main.time, "sleep", side_effect=fake_sleep):
+                with self.assertRaises(StopIteration):
+                    main.watcher_thread(f"{td}/dadosend.json", fake_a, fake_v, poll=0.01, debounce_window=0.0)
+
+            self.assertEqual(fake_a.calls, 0)
+            self.assertEqual(fake_v.calls, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

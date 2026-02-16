@@ -10,6 +10,7 @@ Inicializa o sistema:
 import os
 import time
 import json
+import hashlib
 import threading
 import traceback
 from collections import deque
@@ -120,6 +121,18 @@ def _get_last_record_identity(dadosend_path):
         return None
 
 
+def _file_fingerprint(path):
+    """
+    Gera uma assinatura estável do conteúdo para ignorar mudanças apenas de mtime.
+    """
+    try:
+        with open(path, "rb") as f:
+            content = f.read()
+        return hashlib.sha1(content).hexdigest()
+    except OSError:
+        return None
+
+
 def _process_dadosend_change(dadosend_path, analises_mod, avisos_mod):
     report_status("watcher", "STARTED", stage="dadosend_changed")
     _log("STARTED", "dadosend_changed", "Alteração detectada em dadosend.json")
@@ -181,6 +194,8 @@ def watcher_thread(dadosend_path, analises_mod, avisos_mod, poll=POLL_INTERVAL, 
     _log("OK", "watcher_started", f"Watcher iniciado para {dadosend_path} e {ENCOMENDASEND}")
     last_mtime_dadosend = None
     last_mtime_encomendas = None
+    last_fp_dadosend = None
+    last_fp_encomendas = None
     pending_events = deque()
     pending_map = {}
     while True:
@@ -190,17 +205,25 @@ def watcher_thread(dadosend_path, analises_mod, avisos_mod, poll=POLL_INTERVAL, 
                 m_dados = os.path.getmtime(dadosend_path)
                 if last_mtime_dadosend is None:
                     last_mtime_dadosend = m_dados
+                    last_fp_dadosend = _file_fingerprint(dadosend_path)
                 elif m_dados != last_mtime_dadosend:
                     last_mtime_dadosend = m_dados
-                    pending_map["dadosend"] = now
+                    fp_dados = _file_fingerprint(dadosend_path)
+                    if fp_dados is None or fp_dados != last_fp_dadosend:
+                        last_fp_dadosend = fp_dados
+                        pending_map["dadosend"] = now
 
             if os.path.exists(ENCOMENDASEND):
                 m_encomendas = os.path.getmtime(ENCOMENDASEND)
                 if last_mtime_encomendas is None:
                     last_mtime_encomendas = m_encomendas
+                    last_fp_encomendas = _file_fingerprint(ENCOMENDASEND)
                 elif m_encomendas != last_mtime_encomendas:
                     last_mtime_encomendas = m_encomendas
-                    pending_map["encomendas"] = now
+                    fp_encomendas = _file_fingerprint(ENCOMENDASEND)
+                    if fp_encomendas is None or fp_encomendas != last_fp_encomendas:
+                        last_fp_encomendas = fp_encomendas
+                        pending_map["encomendas"] = now
 
             for event_name, last_change_ts in list(pending_map.items()):
                 if now - last_change_ts >= debounce_window:
