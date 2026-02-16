@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import re
 from typing import Any, Callable, Dict
 
 
@@ -25,9 +26,15 @@ def _has_strong_people_signal(parsed: dict | None) -> bool:
 
 
 def _has_strong_encomenda_signal(destino_base: str, decision: dict, has_encomenda_signal: bool) -> bool:
-    # Sinal forte de encomenda é delegado à heurística especializada
-    # is_encomenda_fn (mantida em interfaceone.py).
-    return bool(has_encomenda_signal)
+    if not has_encomenda_signal:
+        return False
+    scores = decision.get("scores") if isinstance(decision.get("scores"), dict) else {}
+    enc_score = float(scores.get("encomendas") or 0.0)
+    text = str(decision.get("_texto_raw") or "")
+    has_tracking_like = bool(re.search(r"\b(?=[A-Z0-9]{8,}\b)(?=[A-Z0-9]*\d)[A-Z0-9]+\b", text.upper()))
+    if destino_base in ("encomendas", "dados"):
+        return True
+    return enc_score >= 1.8 or has_tracking_like
 
 
 def decidir_destino(texto: str, parsed: dict | None, *,
@@ -38,6 +45,8 @@ def decidir_destino(texto: str, parsed: dict | None, *,
         "ambiguo": False, "confianca": 0.0, "versao_regras": "v1"
     }
     destino_base = str(decision.get("destino") or "dados")
+    decision = dict(decision)
+    decision["_texto_raw"] = texto
     has_encomenda_signal = bool(is_encomenda_fn(texto, parsed))
     strong_people = _has_strong_people_signal(parsed)
     strong_encomenda = _has_strong_encomenda_signal(destino_base, decision, has_encomenda_signal)
@@ -54,6 +63,8 @@ def decidir_destino(texto: str, parsed: dict | None, *,
     # 5) Ambíguo -> revisão
     if strong_people:
         destino = "dados"
+    elif destino_base in ("orientacoes", "observacoes") and not ambiguo and confianca >= 0.60 and not strong_encomenda:
+        destino = destino_base
     elif strong_encomenda:
         destino = "encomendas"
     elif destino_base == "orientacoes":
@@ -65,7 +76,7 @@ def decidir_destino(texto: str, parsed: dict | None, *,
     else:
         destino = "dados"
 
-    decision = dict(decision)
+    decision.pop("_texto_raw", None)
     decision["destino_final"] = destino
     decision["strong_people_signal"] = strong_people
     decision["strong_encomenda_signal"] = strong_encomenda

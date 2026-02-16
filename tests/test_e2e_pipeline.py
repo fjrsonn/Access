@@ -117,6 +117,19 @@ class E2EPipelineTests(unittest.TestCase):
             fila = json.load(f)
         self.assertEqual(len(fila.get("registros", [])), 1)
 
+    def test_e2e_observacao_nao_cai_em_encomendas(self):
+        entry = _Entry("Avisar o morador do bloco A apartamento 101 quando chegar a entrega da farmacia.")
+        with self._patch_interface_paths(), \
+             mock.patch.object(interfaceone, "classificar_destino_texto", return_value={"destino": "observacoes", "score": 4.1, "ambiguo": False, "confianca": 0.9, "scores": {"encomendas": 0.8}}), \
+             mock.patch.object(interfaceone, "_save_encomenda_init") as m_save_enc, \
+             mock.patch.object(interfaceone, "HAS_IA_MODULE", False):
+            interfaceone.save_text(entry_widget=entry)
+
+        self.assertFalse(m_save_enc.called)
+        with open(self.paths["ENCOMENDAS_IN_FILE"], "r", encoding="utf-8") as f:
+            encomendas_init = json.load(f)
+        self.assertEqual(len(encomendas_init["registros"]), 0)
+
     def test_e2e_encomenda_dispara_pipeline_mesmo_com_chat_ativo(self):
         entry = _Entry("PACOTE SHOPEE BLOCO A AP 101")
         fake_thread = mock.Mock()

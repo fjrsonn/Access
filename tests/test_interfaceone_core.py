@@ -30,7 +30,7 @@ class InterfaceOneCoreTests(unittest.TestCase):
 
     def test_decidir_destino_forca_encomendas_quando_heuristica_detecta(self):
         def fake_classifier(_txt, _parsed):
-            return {"destino": "orientacoes", "score": 3.2, "confianca": 0.9, "ambiguo": False}
+            return {"destino": "orientacoes", "score": 3.2, "confianca": 0.9, "ambiguo": False, "scores": {"encomendas": 2.4}}
 
         out = core.decidir_destino(
             "ENVELOP RIACHUELO BLO13 APARTAMEN109 JOAO",
@@ -39,6 +39,18 @@ class InterfaceOneCoreTests(unittest.TestCase):
             is_encomenda_fn=lambda *_: True,
         )
         self.assertEqual(out.get("destino_final"), "encomendas")
+
+    def test_decidir_destino_preserva_observacoes_confiavel_sem_sinal_forte_encomenda(self):
+        def fake_classifier(_txt, _parsed):
+            return {"destino": "observacoes", "score": 4.0, "confianca": 0.85, "ambiguo": False, "scores": {"encomendas": 0.8}}
+
+        out = core.decidir_destino(
+            "Avisar o morador do bloco A apartamento 101 quando chegar a entrega da farmacia.",
+            {},
+            classificar_fn=fake_classifier,
+            is_encomenda_fn=lambda *_: True,
+        )
+        self.assertEqual(out.get("destino_final"), "observacoes")
 
     def test_decidir_destino_prioriza_pessoas_com_sinal_forte(self):
         def fake_classifier(_txt, _parsed):
