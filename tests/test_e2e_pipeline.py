@@ -93,6 +93,18 @@ class E2EPipelineTests(unittest.TestCase):
             interfaceone.save_text(entry_widget=entry)
             self.assertTrue(m_save_enc.called)
 
+    def test_e2e_texto_orientacao_usuario_nao_vai_para_encomendas(self):
+        entry = _Entry("Registrando ocorrencia de clamacao de barulho vindo do bloco 10 aparamneto 10, morador Flavio Junior foi orientado.")
+        with self._patch_interface_paths(), \
+             mock.patch.object(interfaceone, "_save_encomenda_init") as m_save_enc, \
+             mock.patch.object(interfaceone, "HAS_IA_MODULE", False):
+            interfaceone.save_text(entry_widget=entry)
+
+        self.assertFalse(m_save_enc.called)
+        with open(self.paths["ENCOMENDAS_IN_FILE"], "r", encoding="utf-8") as f:
+            encomendas_init = json.load(f)
+        self.assertEqual(len(encomendas_init["registros"]), 0)
+
     def test_e2e_encomenda_dispara_pipeline_mesmo_com_chat_ativo(self):
         entry = _Entry("PACOTE SHOPEE BLOCO A AP 101")
         fake_thread = mock.Mock()

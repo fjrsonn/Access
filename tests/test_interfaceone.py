@@ -52,6 +52,10 @@ class InterfaceOneTests(unittest.TestCase):
         txt = "Registrando ocorrencia de clamacao de barulho vindo do bloco 10 aparamneto 10, morador Flavio Junior foi orientado"
         self.assertFalse(interfaceone._is_encomenda_text(txt, parsed={}))
 
+    def test_orientacao_texto_livre_do_usuario_com_pontuacao_nao_deve_virar_encomenda(self):
+        txt = "Registrando ocorrencia de clamacao de barulho vindo do bloco 10 aparamneto 10, morador Flavio Junior foi orientado."
+        self.assertFalse(interfaceone._is_encomenda_text(txt, parsed={}))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -354,6 +354,7 @@ def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
     has_nf = _has_encomenda_identificacao(toks, toks_up)
     has_bloco, has_ap = _has_bloco_ap_indicador(toks_up)
     has_endereco = has_bloco and has_ap
+    has_orientacao_context = any(t in {"OCORRENCIA", "ORIENTADO", "ORIENTACAO", "BARULHO", "RECLAMACAO", "CLAMACAO", "PORTARIA"} for t in toks_up)
 
     # Regra operacional: qualquer sinal de TIPO, IDENTIFICACAO ou EMPRESA/LOJA
     # classifica o texto como encomenda.
@@ -365,6 +366,11 @@ def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
 
     if has_tipo_weak and (has_loja or has_nf or has_endereco):
         return True
+
+    # guarda anti-conflito: texto narrativo de orientação não deve virar encomenda
+    # na ausência de sinais fortes de encomenda.
+    if has_orientacao_context:
+        return False
 
     for pattern in _ENCOMENDA_LOJA_PATTERNS:
         p = _norm(pattern)

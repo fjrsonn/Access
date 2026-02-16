@@ -69,6 +69,12 @@ class IAModuleTests(unittest.TestCase):
         self.assertEqual(out["APARTAMENTO"], "86")
         self.assertEqual(out["IDENTIFICACAO"], "9C3R4DUHASD")
 
+    def test_parse_encomenda_texto_orientacao_nao_inventa_loja_tipo(self):
+        txt = "Registrando ocorrencia de clamacao de barulho vindo do bloco 10 aparamneto 10, morador Flavio Junior foi orientado"
+        out = ia._parse_encomenda_text(txt)
+        self.assertEqual(out["LOJA"], "-")
+        self.assertEqual(out["TIPO"], "-")
+
     def test_append_or_update_encomendas_falha_quando_save_falha(self):
         with mock.patch.object(ia, "_load_encomendas_saida", return_value=[]), \
             mock.patch.object(ia, "_save_encomendas_saida", return_value=False):
