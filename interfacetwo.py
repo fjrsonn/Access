@@ -171,6 +171,20 @@ def _bind_focus_ring(widget):
     except Exception:
         pass
 
+UI_THEME = {
+    "bg": "#0F1115",
+    "surface": "#151A22",
+    "surface_alt": "#1B2430",
+    "border": "#2B3442",
+    "text": "#E6EDF3",
+    "muted_text": "#9AA4B2",
+    "primary": "#2F81F7",
+    "primary_active": "#1F6FEB",
+    "success": "#2DA44E",
+    "danger": "#DA3633",
+    "warning": "#D29922",
+}
+
 # ---------- inferência MODELO/COR (fallback a partir de 'texto') ----------
 _STATUS_WORDS = set(["MORADOR","MORADORES","VISITANTE","VISITA","VISIT","PRESTADOR","PRESTADORES","SERVICO","SERVIÇO","TECNICO","DESCONHECIDO","FUNCIONARIO","FUNCIONÁRIO"])
 
