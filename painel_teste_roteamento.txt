@@ -1,0 +1,29 @@
+VISITANTE JOAO SILVA BLOCO A AP 101 PLACA ABC1234 ONIX PRETO
+MORADOR MARIA SOUZA BLOCO B AP 202 PLACA QWE1A23 HB20 BRANCO
+PRESTADOR CARLOS LIMA BLOCO C AP 303 PLACA XYZ9K87 FIORINO PRATA
+VISITANTE ANA PEREIRA BLOCO D AP 404 PLACA BRA2E19 COROLLA CINZA
+ENTRADA DE MORADOR FLAVIO JUNIOR BLOCO 10 AP 10 PLACA FLA0J10 JETTA PRETO
+
+PACOTE AMAZON BLOCO A AP 101 CODIGO BR123456789XYZ
+ENVELOPE SHOPEE BLOCO B AP 202 RASTREIO QWERTY12345BR
+CAIXA MERCADO LIVRE BLOCO C AP 303 IDENTIFICACAO ML99887766
+ENTREGA CORREIOS BLOCO D AP 404 CODIGO AB123456789CD
+PACOTE RIACHUELO BLO13 APARTAMEN109 CODIGO ZXCVB987654BR
+
+Registrando ocorrencia de barulho no bloco 10 apartamento 10, morador Flavio Junior foi orientado.
+Relato de conduta inadequada no bloco B apartamento 202 e orientacao formal ao morador.
+Ocorrencia registrada na portaria sobre discussao no bloco C ap 303, com orientacao aplicada.
+Registro de reclamacao por som alto no bloco D ap 404, moradora orientada pela equipe.
+Orientacao de procedimento de acesso repassada ao morador do bloco A apartamento 101.
+
+Avisar o morador do bloco A apartamento 101 quando chegar a entrega da farmácia.
+Guardar na portaria o documento da unidade 202 e avisar a moradora Maria quando chegar.
+Receber encomenda do apartamento 303 e entregar ao morador apenas no periodo da noite.
+Anotar recado para o bloco D ap 404 e avisar assim que o prestador retornar.
+Aviso operacional: informar ao morador do bloco 10 ap 10 sobre manutencao amanhã.
+
+Texto livre sem contexto claro para classificar agora.
+Mensagem curta com poucos detalhes e sem destino definido.
+Anotacao generica para verificar depois com mais informacoes.
+Registro incompleto sem bloco, sem apartamento e sem acao objetiva.
+Conteudo vago que exige revisao manual da portaria.

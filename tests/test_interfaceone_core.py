@@ -40,6 +40,31 @@ class InterfaceOneCoreTests(unittest.TestCase):
         )
         self.assertEqual(out.get("destino_final"), "encomendas")
 
+    def test_decidir_destino_prioriza_pessoas_com_sinal_forte(self):
+        def fake_classifier(_txt, _parsed):
+            return {"destino": "encomendas", "score": 3.0, "confianca": 0.9, "ambiguo": False, "scores": {"encomendas": 3.0}}
+
+        parsed = {"PLACA": "ABC1234", "MODELOS": ["ONIX"], "STATUS": "VISITANTE", "BLOCO": "A", "APARTAMENTO": "101"}
+        out = core.decidir_destino(
+            "VISITANTE JOAO ABC1234 ONIX BLOCO A AP 101",
+            parsed,
+            classificar_fn=fake_classifier,
+            is_encomenda_fn=lambda *_: True,
+        )
+        self.assertEqual(out.get("destino_final"), "dados")
+
+    def test_decidir_destino_ambiguo_vai_para_revisao(self):
+        def fake_classifier(_txt, _parsed):
+            return {"destino": "dados", "score": 0.5, "confianca": 0.2, "ambiguo": True, "scores": {"encomendas": 0.4}}
+
+        out = core.decidir_destino(
+            "texto confuso",
+            {},
+            classificar_fn=fake_classifier,
+            is_encomenda_fn=lambda *_: False,
+        )
+        self.assertEqual(out.get("destino_final"), "revisao")
+
     def test_montar_registro_acesso(self):
         parsed = {
             "NOME_RAW": "joao silva",

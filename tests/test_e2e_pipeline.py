@@ -43,6 +43,7 @@ class E2EPipelineTests(unittest.TestCase):
             "DB_FILE": os.path.join(self.td.name, "dadosend.json"),
             "ENCOMENDAS_IN_FILE": os.path.join(self.td.name, "encomendasinit.json"),
             "ENCOMENDAS_DB_FILE": os.path.join(self.td.name, "encomendasend.json"),
+            "REVIEW_QUEUE_FILE": os.path.join(self.td.name, "fila_revisao.json"),
         }
         for p in self.paths.values():
             with open(p, "w", encoding="utf-8") as f:
@@ -104,6 +105,17 @@ class E2EPipelineTests(unittest.TestCase):
         with open(self.paths["ENCOMENDAS_IN_FILE"], "r", encoding="utf-8") as f:
             encomendas_init = json.load(f)
         self.assertEqual(len(encomendas_init["registros"]), 0)
+
+    def test_e2e_texto_ambiguo_vai_para_fila_revisao(self):
+        entry = _Entry("texto livre extremamente ambiguo")
+        with self._patch_interface_paths(), \
+             mock.patch.object(interfaceone, "classificar_destino_texto", return_value={"destino": "dados", "score": 0.4, "ambiguo": True, "confianca": 0.2, "scores": {"encomendas": 0.3}}), \
+             mock.patch.object(interfaceone, "HAS_IA_MODULE", False):
+            interfaceone.save_text(entry_widget=entry)
+
+        with open(self.paths["REVIEW_QUEUE_FILE"], "r", encoding="utf-8") as f:
+            fila = json.load(f)
+        self.assertEqual(len(fila.get("registros", [])), 1)
 
     def test_e2e_encomenda_dispara_pipeline_mesmo_com_chat_ativo(self):
         entry = _Entry("PACOTE SHOPEE BLOCO A AP 101")

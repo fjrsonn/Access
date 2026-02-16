@@ -146,6 +146,7 @@ ENCOMENDAS_IN_FILE = os.path.join(BASE, "encomendasinit.json")
 ENCOMENDAS_DB_FILE = os.path.join(BASE, "encomendasend.json")
 ORIENTACOES_FILE = os.path.join(BASE, "orientacoes.json")
 OBSERVACOES_FILE = os.path.join(BASE, "observacoes.json")
+REVIEW_QUEUE_FILE = os.path.join(BASE, "fila_revisao.json")
 AVISOS_FILE = os.path.join(BASE, "avisos.json")
 ANALISES_FILE = os.path.join(BASE, "analises.json")
 _DB_LOCKFILE = DB_FILE + ".lock"
@@ -496,6 +497,34 @@ def _save_structured_text(path: str, txt: str, now_str: str, tipo: str, decision
     atomic_save(path, {"registros": regs})
     if log_audit_event:
         log_audit_event("texto_persistido", tipo, txt, confianca=rec.get("confianca_classificacao"), ambiguo=rec.get("ambiguo"))
+
+
+def _save_for_review(txt: str, now_str: str, decision_meta: dict = None) -> None:
+    try:
+        fila = _read_json(REVIEW_QUEUE_FILE)
+        if not isinstance(fila, dict) or "registros" not in fila:
+            fila = {"registros": []}
+    except Exception:
+        fila = {"registros": []}
+
+    regs = fila.get("registros") or []
+    nid = _compute_next_in_id(regs)
+    regs.append(
+        {
+            "id": nid,
+            "tipo": "REVISAO",
+            "texto": txt,
+            "data_hora": now_str,
+            "processado": False,
+            "motivo_roteamento": (decision_meta or {}).get("motivo", ""),
+            "scores": (decision_meta or {}).get("scores", {}),
+            "confianca_classificacao": (decision_meta or {}).get("confianca", 0.0),
+            "ambiguo": bool((decision_meta or {}).get("ambiguo", False)),
+            "destino_sugerido": (decision_meta or {}).get("destino", "dados"),
+        }
+    )
+    fila["registros"] = regs
+    atomic_save(REVIEW_QUEUE_FILE, fila)
 
 
 # ---------- util ----------
@@ -2032,6 +2061,16 @@ def save_text(entry_widget=None, btn=None):
     report_status("user_input", "OK", stage="classification", details={"destino": destino, "score": decision.get("score"), "ambiguo": decision.get("ambiguo")})
     if log_audit_event:
         log_audit_event("texto_classificado", destino, txt, motivo=decision.get("motivo"), score=decision.get("score"), confianca=decision.get("confianca"), ambiguo=decision.get("ambiguo"))
+
+    if destino == "revisao":
+        _save_for_review(txt, now_str, decision_meta=decision)
+        report_status("user_input", "OK", stage="saved_for_review", details={"path": REVIEW_QUEUE_FILE})
+        try:
+            entry_widget.delete(0, "end")
+        except Exception as e:
+            _log_ui("WARNING", "entry_clear_failed", "Falha ao limpar entrada", error=str(e))
+        _report_save_metric("save_completed", destino="revisao")
+        return
 
     if destino == "orientacoes":
         _save_structured_text(ORIENTACOES_FILE, txt, now_str, "ORIENTACAO", decision_meta=decision)

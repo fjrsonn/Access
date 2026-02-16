@@ -6,6 +6,30 @@ from datetime import datetime
 from typing import Any, Callable, Dict
 
 
+def _has_strong_people_signal(parsed: dict | None) -> bool:
+    if not isinstance(parsed, dict):
+        return False
+    placa = str(parsed.get("PLACA") or "").strip()
+    modelos = parsed.get("MODELOS") or []
+    if isinstance(modelos, str):
+        modelos = [modelos]
+    status = str(parsed.get("STATUS") or "").strip().upper()
+    bloco = str(parsed.get("BLOCO") or "").strip()
+    ap = str(parsed.get("APARTAMENTO") or "").strip()
+    nome = str(parsed.get("NOME_RAW") or "").strip()
+
+    has_vehicle = bool(placa) or bool([m for m in modelos if str(m).strip()])
+    has_identity = bool(nome) or (bool(bloco) and bool(ap))
+    has_status = status not in ("", "-", "DESCONHECIDO")
+    return has_vehicle and (has_identity or has_status)
+
+
+def _has_strong_encomenda_signal(destino_base: str, decision: dict, has_encomenda_signal: bool) -> bool:
+    # Sinal forte de encomenda é delegado à heurística especializada
+    # is_encomenda_fn (mantida em interfaceone.py).
+    return bool(has_encomenda_signal)
+
+
 def decidir_destino(texto: str, parsed: dict | None, *,
                    classificar_fn: Callable[[str, dict | None], dict] | None,
                    is_encomenda_fn: Callable[[str, dict | None], bool]) -> dict:
@@ -13,17 +37,38 @@ def decidir_destino(texto: str, parsed: dict | None, *,
         "destino": "dados", "motivo": "fallback", "score": 0.0,
         "ambiguo": False, "confianca": 0.0, "versao_regras": "v1"
     }
-    destino_base = decision.get("destino") or "dados"
+    destino_base = str(decision.get("destino") or "dados")
     has_encomenda_signal = bool(is_encomenda_fn(texto, parsed))
+    strong_people = _has_strong_people_signal(parsed)
+    strong_encomenda = _has_strong_encomenda_signal(destino_base, decision, has_encomenda_signal)
+    ambiguo = bool(decision.get("ambiguo"))
+    conf_raw = decision.get("confianca")
+    has_confianca = conf_raw is not None
+    confianca = float(conf_raw or 0.0)
 
-    # Regra operacional:
-    # - se classificador já escolheu encomendas, preserva;
-    # - se heurística de encomenda detectou sinal, força encomendas.
-    # A proteção contra falso positivo fica concentrada na própria
-    # _is_encomenda_text, que é mais especializada.
-    destino = "encomendas" if (destino_base == "encomendas" or has_encomenda_signal) else destino_base
+    # Prioridade operacional (determinística):
+    # 1) Pessoas (sinal forte)
+    # 2) Encomendas (somente sinal forte)
+    # 3) Orientações
+    # 4) Observações
+    # 5) Ambíguo -> revisão
+    if strong_people:
+        destino = "dados"
+    elif strong_encomenda:
+        destino = "encomendas"
+    elif destino_base == "orientacoes":
+        destino = "orientacoes"
+    elif destino_base == "observacoes":
+        destino = "observacoes"
+    elif ambiguo or (destino_base == "dados" and has_confianca and confianca < 0.45):
+        destino = "revisao"
+    else:
+        destino = "dados"
+
     decision = dict(decision)
     decision["destino_final"] = destino
+    decision["strong_people_signal"] = strong_people
+    decision["strong_encomenda_signal"] = strong_encomenda
     return decision
 
 
