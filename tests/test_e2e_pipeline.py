@@ -83,6 +83,16 @@ class E2EPipelineTests(unittest.TestCase):
             interfaceone.save_text(entry_widget=entry)
             self.assertTrue(m_save_enc.called)
 
+    def test_e2e_encomenda_com_classificador_confiante_em_orientacoes_ainda_vai_para_encomendas(self):
+        entry = _Entry("ENVELOP RIACHUELO BLO13 APARTAMEN109 JOAO")
+        with self._patch_interface_paths(), \
+             mock.patch.object(interfaceone, "classificar_destino_texto", return_value={"destino": "orientacoes", "score": 3.0, "ambiguo": False, "confianca": 0.92}), \
+             mock.patch.object(interfaceone, "extrair_tudo_consumo", return_value={}), \
+             mock.patch.object(interfaceone, "_save_encomenda_init") as m_save_enc, \
+             mock.patch.object(interfaceone, "HAS_IA_MODULE", False):
+            interfaceone.save_text(entry_widget=entry)
+            self.assertTrue(m_save_enc.called)
+
     def test_e2e_encomenda_dispara_pipeline_mesmo_com_chat_ativo(self):
         entry = _Entry("PACOTE SHOPEE BLOCO A AP 101")
         fake_thread = mock.Mock()

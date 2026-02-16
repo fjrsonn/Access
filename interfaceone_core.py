@@ -14,20 +14,14 @@ def decidir_destino(texto: str, parsed: dict | None, *,
         "ambiguo": False, "confianca": 0.0, "versao_regras": "v1"
     }
     destino_base = decision.get("destino") or "dados"
-    confianca = float(decision.get("confianca") or 0.0)
-    ambiguo = bool(decision.get("ambiguo"))
     has_encomenda_signal = bool(is_encomenda_fn(texto, parsed))
 
-    force_encomenda = False
-    if destino_base == "encomendas":
-        force_encomenda = True
-    elif has_encomenda_signal:
-        if destino_base in ("dados", ""):
-            force_encomenda = True
-        elif destino_base in ("orientacoes", "observacoes") and (ambiguo or confianca < 0.55):
-            force_encomenda = True
-
-    destino = "encomendas" if force_encomenda else destino_base
+    # Regra operacional:
+    # - se classificador já escolheu encomendas, preserva;
+    # - se heurística de encomenda detectou sinal, força encomendas.
+    # A proteção contra falso positivo fica concentrada na própria
+    # _is_encomenda_text, que é mais especializada.
+    destino = "encomendas" if (destino_base == "encomendas" or has_encomenda_signal) else destino_base
     decision = dict(decision)
     decision["destino_final"] = destino
     return decision
