@@ -14,6 +14,16 @@ from tkinter import messagebox, ttk
 import re
 import hashlib
 
+from ui_theme import (
+    UI_THEME,
+    build_card_frame,
+    build_primary_button,
+    build_secondary_button,
+    build_filter_input,
+    bind_focus_ring,
+    bind_button_states,
+)
+
 try:
     from text_classifier import build_structured_fields, log_audit_event
 except Exception:
@@ -55,135 +65,9 @@ _text_edit_lock = set()
 _filter_controls = {}
 _control_table_map = {}
 _control_details_var = {}
+_control_sort_state = {}
+_control_selection_state = {}
 
-UI_THEME = {
-    "bg": "#0F1115",
-    "surface": "#151A22",
-    "surface_alt": "#1B2430",
-    "border": "#2B3442",
-    "text": "#E6EDF3",
-    "muted_text": "#9AA4B2",
-    "primary": "#2F81F7",
-    "primary_active": "#1F6FEB",
-    "success": "#2DA44E",
-    "danger": "#DA3633",
-    "warning": "#D29922",
-    "focus_bg": "#F0F6FC",
-    "focus_text": "#111827",
-    "edit_badge_bg": "#F8E3A3",
-    "edit_badge_text": "#111111",
-    "status_avisado_text": "#6EE7B7",
-    "status_sem_contato_text": "#FCA5A5",
-}
-
-
-
-def build_card_frame(parent):
-    frame = tk.Frame(parent, bg=UI_THEME["surface"], highlightbackground=UI_THEME["border"], highlightthickness=1)
-    return frame
-
-
-def _bind_button_states(btn, base_bg, hover_bg):
-    def _on_enter(_):
-        try:
-            btn.configure(bg=hover_bg)
-        except Exception:
-            pass
-
-    def _on_leave(_):
-        try:
-            btn.configure(bg=base_bg)
-        except Exception:
-            pass
-
-    try:
-        btn.bind("<Enter>", _on_enter, add="+")
-        btn.bind("<Leave>", _on_leave, add="+")
-    except Exception:
-        pass
-
-
-def build_primary_button(parent, text, command, padx=12):
-    btn = tk.Button(
-        parent,
-        text=text,
-        command=command,
-        bg=UI_THEME["primary"],
-        fg=UI_THEME["text"],
-        activebackground=UI_THEME["primary_active"],
-        activeforeground=UI_THEME["text"],
-        relief="flat",
-        padx=padx,
-    )
-    _bind_focus_ring(btn)
-    _bind_button_states(btn, UI_THEME["primary"], UI_THEME["primary_active"])
-    return btn
-
-
-def build_secondary_button(parent, text, command, padx=12):
-    btn = tk.Button(
-        parent,
-        text=text,
-        command=command,
-        bg=UI_THEME["surface_alt"],
-        fg=UI_THEME["text"],
-        activebackground=UI_THEME["border"],
-        activeforeground=UI_THEME["text"],
-        relief="flat",
-        padx=padx,
-    )
-    _bind_focus_ring(btn)
-    _bind_button_states(btn, UI_THEME["surface_alt"], UI_THEME["border"])
-    return btn
-
-
-def build_filter_input(parent, textvariable=None, width=12):
-    return tk.Entry(
-        parent,
-        textvariable=textvariable,
-        bg=UI_THEME["surface_alt"],
-        fg=UI_THEME["text"],
-        insertbackground=UI_THEME["text"],
-        relief="flat",
-        width=width,
-        highlightthickness=1,
-        highlightbackground=UI_THEME["border"],
-        highlightcolor=UI_THEME["primary"],
-    )
-
-
-def _bind_focus_ring(widget):
-    def _on_focus_in(_):
-        try:
-            widget.configure(highlightbackground=UI_THEME["primary"], highlightcolor=UI_THEME["primary"], highlightthickness=2)
-        except Exception:
-            pass
-
-    def _on_focus_out(_):
-        try:
-            widget.configure(highlightbackground=UI_THEME["border"], highlightcolor=UI_THEME["border"], highlightthickness=1)
-        except Exception:
-            pass
-
-    try:
-        widget.bind("<FocusIn>", _on_focus_in, add="+")
-        widget.bind("<FocusOut>", _on_focus_out, add="+")
-    except Exception:
-        pass
-
-UI_THEME = {
-    "bg": "#0F1115",
-    "surface": "#151A22",
-    "surface_alt": "#1B2430",
-    "border": "#2B3442",
-    "text": "#E6EDF3",
-    "muted_text": "#9AA4B2",
-    "primary": "#2F81F7",
-    "primary_active": "#1F6FEB",
-    "success": "#2DA44E",
-    "danger": "#DA3633",
-    "warning": "#D29922",
-}
 
 # ---------- inferência MODELO/COR (fallback a partir de 'texto') ----------
 _STATUS_WORDS = set(["MORADOR","MORADORES","VISITANTE","VISITA","VISIT","PRESTADOR","PRESTADORES","SERVICO","SERVIÇO","TECNICO","DESCONHECIDO","FUNCIONARIO","FUNCIONÁRIO"])
@@ -496,6 +380,8 @@ def _apply_filters(registros, filters):
     time_mode = filters.get("time_mode", "Mais recentes")
     time_value = filters.get("time_value", "")
     query = filters.get("query", "")
+    status_filter = (filters.get("status", "Todos") or "Todos").strip().upper()
+    bloco_filter = (filters.get("bloco", "Todos") or "Todos").strip().upper()
 
     normalized_date = _normalize_date_value(date_value) if date_mode == "Específica" else None
     normalized_time = _normalize_time_value(time_value) if time_mode == "Específica" else None
@@ -512,6 +398,12 @@ def _apply_filters(registros, filters):
         if normalized_time and record_time != normalized_time:
             continue
         if not _record_matches_query(r, query):
+            continue
+        record_status = (safe(r.get("STATUS") if r.get("STATUS") is not None else r.get("STATUS_ENCOMENDA")) or "-").strip().upper()
+        record_bloco = (safe(r.get("BLOCO")) or "-").strip().upper()
+        if status_filter != "TODOS" and record_status != status_filter:
+            continue
+        if bloco_filter != "TODOS" and record_bloco != bloco_filter:
             continue
         filtrados.append(r)
 
@@ -586,6 +478,22 @@ def _format_control_row(record: dict):
     )
 
 
+
+
+def _control_sort_value(record: dict, sort_key: str):
+    if sort_key == "data_hora":
+        return _parse_data_hora(record.get("DATA_HORA", "")) or datetime.min
+    if sort_key == "nome":
+        return _title_name(record.get("NOME", ""), record.get("SOBRENOME", "")).upper()
+    if sort_key == "bloco_ap":
+        return f"{safe(record.get('BLOCO'))}/{safe(record.get('APARTAMENTO'))}"
+    if sort_key == "placa":
+        return safe(record.get("PLACA")).upper()
+    if sort_key == "status":
+        return safe(record.get("STATUS")).upper()
+    return str(record.get(sort_key, ""))
+
+
 def _update_control_details(tree_widget, selection):
     details_var = _control_details_var.get(tree_widget)
     record_map = _control_table_map.get(tree_widget, {})
@@ -595,6 +503,7 @@ def _update_control_details(tree_widget, selection):
         details_var.set("Selecione um registro para ver detalhes.")
         return
     rec = record_map.get(selection[0])
+    _control_selection_state[tree_widget] = str((rec or {}).get("ID") or (rec or {}).get("_entrada_id") or "")
     if not rec:
         details_var.set("Selecione um registro para ver detalhes.")
         return
@@ -615,22 +524,39 @@ def _populate_control_table(tree_widget, info_label):
     filter_key = source.get("filter_key", tree_widget)
     filters = _filter_state.get(filter_key, {})
     filtrados = _apply_filters(registros, filters)
+
+    sort_state = _control_sort_state.get(tree_widget, {"key": "data_hora", "reverse": True})
+    sort_key = sort_state.get("key", "data_hora")
+    reverse = bool(sort_state.get("reverse", True))
+    filtrados = sorted(filtrados, key=lambda rec: _control_sort_value(rec, sort_key), reverse=reverse)
+
     last = get_last_status()
     status_hint = ""
     if last:
         status_hint = f" | último status: {last.get('action','-')}:{last.get('status','-')}"
     info_label.config(text=f"Arquivo: {arquivo} — registros: {len(filtrados)} (de {len(registros)}){status_hint}")
 
+    selected_record = _control_selection_state.get(tree_widget)
     for iid in tree_widget.get_children():
         tree_widget.delete(iid)
 
     record_map = {}
+    selected_iid = None
     for idx, rec in enumerate(filtrados):
         iid = f"row_{idx}"
         tree_widget.insert("", tk.END, iid=iid, values=_format_control_row(rec))
         record_map[iid] = rec
+        if selected_record and str(rec.get("ID") or rec.get("_entrada_id") or "") == selected_record:
+            selected_iid = iid
 
     _control_table_map[tree_widget] = record_map
+    if selected_iid:
+        try:
+            tree_widget.selection_set(selected_iid)
+            tree_widget.focus(selected_iid)
+            tree_widget.see(selected_iid)
+        except Exception:
+            pass
     _update_control_details(tree_widget, tree_widget.selection())
 
 def _populate_text(text_widget, info_label):
@@ -818,6 +744,8 @@ def _default_filters():
         "time_mode": "Mais recentes",
         "time_value": "",
         "query": "",
+        "status": "Todos",
+        "bloco": "Todos",
     }
 
 def _build_filter_bar(parent, text_widget, info_label):
@@ -828,6 +756,8 @@ def _build_filter_bar(parent, text_widget, info_label):
     date_mode_var = tk.StringVar(value="Mais recentes")
     time_mode_var = tk.StringVar(value="Mais recentes")
     query_var = tk.StringVar(value="")
+    status_var = tk.StringVar(value="Todos")
+    bloco_var = tk.StringVar(value="Todos")
 
     date_entry = build_filter_input(bar, width=12)
     time_entry = build_filter_input(bar, width=10)
@@ -847,7 +777,10 @@ def _build_filter_bar(parent, text_widget, info_label):
             "time_mode": time_mode_var.get(),
             "time_value": time_entry.get().strip(),
             "query": query_entry.get().strip(),
+            "status": status_var.get().strip() or "Todos",
+            "bloco": bloco_var.get().strip() or "Todos",
         }
+        report_status("ux_metrics", "OK", stage="filter_apply", details={"source": str(text_widget), "query_len": len(query_entry.get().strip())})
         _populate_text(text_widget, info_label)
 
     def clear_filters():
@@ -855,10 +788,13 @@ def _build_filter_bar(parent, text_widget, info_label):
         date_mode_var.set("Mais recentes")
         time_mode_var.set("Mais recentes")
         query_var.set("")
+        status_var.set("Todos")
+        bloco_var.set("Todos")
         date_entry.delete(0, tk.END)
         time_entry.delete(0, tk.END)
         update_entry_state()
         _filter_state[text_widget] = _default_filters()
+        report_status("ux_metrics", "OK", stage="filter_clear", details={"source": str(text_widget)})
         _populate_text(text_widget, info_label)
 
     tk.Label(bar, text="Ordem", bg=UI_THEME["surface"], fg=UI_THEME["text"]).grid(row=0, column=0, padx=(10, 6), pady=8, sticky="w")
@@ -890,8 +826,16 @@ def _build_filter_bar(parent, text_widget, info_label):
     tk.Label(bar, text="Buscar", bg=UI_THEME["surface"], fg=UI_THEME["text"]).grid(row=0, column=8, padx=(0, 6), pady=8, sticky="w")
     query_entry.grid(row=0, column=9, padx=(0, 12), pady=8, sticky="w")
 
-    build_primary_button(bar, "Aplicar", apply_filters).grid(row=0, column=10, padx=(0, 6), pady=8)
-    build_secondary_button(bar, "Limpar", clear_filters).grid(row=0, column=11, padx=(0, 10), pady=8)
+    tk.Label(bar, text="Status", bg=UI_THEME["surface"], fg=UI_THEME["text"]).grid(row=0, column=10, padx=(0, 6), pady=8, sticky="w")
+    status_combo = ttk.Combobox(bar, textvariable=status_var, values=["Todos", "MORADOR", "VISITANTE", "PRESTADOR", "AVISADO", "SEM CONTATO"], width=14, state="readonly")
+    status_combo.grid(row=0, column=11, padx=(0, 12), pady=8, sticky="w")
+
+    tk.Label(bar, text="Bloco", bg=UI_THEME["surface"], fg=UI_THEME["text"]).grid(row=0, column=12, padx=(0, 6), pady=8, sticky="w")
+    bloco_combo = ttk.Combobox(bar, textvariable=bloco_var, values=["Todos"] + [str(i) for i in range(1, 31)], width=8, state="readonly")
+    bloco_combo.grid(row=0, column=13, padx=(0, 12), pady=8, sticky="w")
+
+    build_primary_button(bar, "Aplicar", apply_filters).grid(row=0, column=14, padx=(0, 6), pady=8)
+    build_secondary_button(bar, "Limpar", clear_filters).grid(row=0, column=15, padx=(0, 10), pady=8)
 
     _filter_controls[text_widget] = [
         order_combo,
@@ -900,10 +844,12 @@ def _build_filter_bar(parent, text_widget, info_label):
         time_mode_combo,
         time_entry,
         query_entry,
+        status_combo,
+        bloco_combo,
     ]
     for control in _filter_controls[text_widget]:
-        _bind_focus_ring(control)
-    bar.grid_columnconfigure(12, weight=1)
+        bind_focus_ring(control)
+    bar.grid_columnconfigure(16, weight=1)
     date_mode_var.trace_add("write", lambda *_: update_entry_state())
     time_mode_var.trace_add("write", lambda *_: update_entry_state())
     update_entry_state()
@@ -1479,8 +1425,8 @@ def _build_monitor_ui(container):
 
     notebook.add(controle_frame, text="CONTROLE")
     notebook.add(encomendas_frame, text="ENCOMENDAS")
-    notebook.add(orientacoes_frame, text="ORIENTACOES")
-    notebook.add(observacoes_frame, text="OBSERVACOES")
+    notebook.add(orientacoes_frame, text="ORIENTAÇÕES")
+    notebook.add(observacoes_frame, text="OBSERVAÇÕES")
 
     monitor_widgets = []
     tab_configs = [
@@ -1500,11 +1446,31 @@ def _build_monitor_ui(container):
             tree.heading("bloco_ap", text="Bloco/AP")
             tree.heading("placa", text="Placa")
             tree.heading("status", text="Status")
+            _control_sort_state[tree] = {"key": "data_hora", "reverse": True}
+
+            def _sort_by(col, tw=tree):
+                st = _control_sort_state.get(tw, {"key": col, "reverse": False})
+                reverse = not st.get("reverse", False) if st.get("key") == col else False
+                _control_sort_state[tw] = {"key": col, "reverse": reverse}
+                _populate_text(tw, info_label)
+
+            for _col in columns:
+                tree.heading(_col, command=lambda c=_col: _sort_by(c))
             tree.column("data_hora", width=160, anchor="w")
             tree.column("nome", width=220, anchor="w")
             tree.column("bloco_ap", width=110, anchor="center")
             tree.column("placa", width=120, anchor="center")
             tree.column("status", width=160, anchor="w")
+
+            def _on_resize(event, tw=tree):
+                total = max(event.width - 24, 300)
+                tw.column("data_hora", width=max(120, int(total * 0.22)))
+                tw.column("nome", width=max(180, int(total * 0.30)))
+                tw.column("bloco_ap", width=max(90, int(total * 0.14)))
+                tw.column("placa", width=max(90, int(total * 0.14)))
+                tw.column("status", width=max(120, int(total * 0.20)))
+
+            table_wrap.bind("<Configure>", _on_resize, add="+")
             _build_filter_bar(frame, tree, info_label)
             yscroll = ttk.Scrollbar(table_wrap, orient=tk.VERTICAL, command=tree.yview)
             tree.configure(yscrollcommand=yscroll.set)
@@ -1514,8 +1480,11 @@ def _build_monitor_ui(container):
             details = tk.Label(frame, textvariable=details_var, bg=UI_THEME["surface_alt"], fg=UI_THEME["text"], anchor="w", justify="left", padx=10, pady=8)
             details.pack(fill=tk.X, padx=10, pady=(0, 10))
             _control_details_var[tree] = details_var
-            tree.bind("<<TreeviewSelect>>", lambda _e, tw=tree: _update_control_details(tw, tw.selection()), add="+")
-            _bind_focus_ring(tree)
+            def _on_select(_e, tw=tree):
+                _update_control_details(tw, tw.selection())
+                report_status("ux_metrics", "OK", stage="control_row_selected", details={"selection_count": len(tw.selection())})
+            tree.bind("<<TreeviewSelect>>", _on_select, add="+")
+            bind_focus_ring(tree)
             monitor_widgets.append(tree)
             _monitor_sources[tree] = {"path": arquivo, "formatter": formatter, "view": "table", "filter_key": tree}
             continue

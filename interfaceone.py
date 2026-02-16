@@ -80,6 +80,31 @@ except Exception:
     montar_entrada_bruta = None
 
 try:
+    from ui_theme import UI_THEME, bind_focus_ring, bind_button_states, build_primary_button, build_secondary_button
+except Exception:
+    UI_THEME = {
+        "light_bg": "#F5F7FA",
+        "light_border": "#D1D5DB",
+        "focus_bg": "#DBEAFE",
+        "focus_text": "#111827",
+        "primary": "#1F6FEB",
+        "primary_active": "#215DB0",
+        "surface_alt": "#E5E7EB",
+        "border": "#D1D5DB",
+        "text": "#111827",
+        "muted_text": "#6B7280",
+        "surface": "#FFFFFF",
+    }
+    def bind_focus_ring(*args, **kwargs):
+        return None
+    def bind_button_states(*args, **kwargs):
+        return None
+    def build_primary_button(parent, text, command, padx=12):
+        return tk.Button(parent, text=text, command=command)
+    def build_secondary_button(parent, text, command, padx=12):
+        return tk.Button(parent, text=text, command=command)
+
+try:
     from runtime_status import report_status, report_log
 except Exception:
     def report_status(*args, **kwargs):
@@ -1219,18 +1244,25 @@ class SuggestEntry(tk.Frame):
         # overlay (completar token)
         self.overlay = tk.Label(self, text="", anchor="w", font=self.entry["font"], fg="gray65", bg=self._orig_entry_bg, bd=0); self.overlay_visible=False
         # suggestion list
-        self.frame = tk.Frame(self, bg="#F5F7FA", highlightbackground="#D1D5DB", highlightthickness=1, bd=0); self.sbar = tk.Scrollbar(self.frame, orient=tk.VERTICAL)
+        self.frame = tk.Frame(self, bg=UI_THEME.get("light_bg", "#F5F7FA"), highlightbackground=UI_THEME.get("light_border", "#D1D5DB"), highlightthickness=1, bd=0); self.sbar = tk.Scrollbar(self.frame, orient=tk.VERTICAL)
         self.tree = ttk.Treeview(self.frame, columns=("nome","detalhes"), show="headings", height=8); self.tree.heading("nome", text="Nome"); self.tree.heading("detalhes", text="Detalhes")
         self.tree.column("nome", width=220, anchor="w"); self.tree.column("detalhes", width=620, anchor="w")
         self.tree.configure(yscrollcommand=self.sbar.set); self.sbar.config(command=self.tree.yview); self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,0), pady=6); self.sbar.pack(side=tk.RIGHT, fill=tk.Y, pady=6, padx=(0,6))
         try:
             style = ttk.Style(self)
-            style.configure("Suggest.Treeview", rowheight=26, font=("Segoe UI", 10), background="#FFFFFF", fieldbackground="#FFFFFF", foreground="#111827")
+            style.configure("Suggest.Treeview", rowheight=28, font=("Segoe UI", 10), background=UI_THEME.get("surface", "#FFFFFF"), fieldbackground=UI_THEME.get("surface", "#FFFFFF"), foreground=UI_THEME.get("text", "#111827"))
             style.configure("Suggest.Treeview.Heading", font=("Segoe UI", 10, "bold"))
-            style.map("Suggest.Treeview", background=[("selected", "#DBEAFE")], foreground=[("selected", "#111827")])
+            style.map("Suggest.Treeview", background=[("selected", UI_THEME.get("focus_bg", "#DBEAFE"))], foreground=[("selected", UI_THEME.get("focus_text", "#111827"))])
             self.tree.configure(style="Suggest.Treeview")
         except Exception:
             pass
+        try:
+            self.entry.configure(highlightthickness=1, highlightbackground=UI_THEME.get("light_border", "#D1D5DB"), highlightcolor=UI_THEME.get("primary", "#1F6FEB"))
+            bind_focus_ring(self.entry)
+            bind_focus_ring(self.tree)
+        except Exception:
+            pass
+        self.shortcuts_hint = tk.Label(self, text="Atalhos: ↑/↓ navegar • Enter salvar • Tab completar", anchor="w", fg=UI_THEME.get("muted_text", "#6B7280"), bg=UI_THEME.get("light_bg", "#F5F7FA"), font=("Segoe UI", 9))
 
         self.ia_mode=False; self.ia_waiting_for_query=False; self.list_visible=False; self.suggestions=[]; self.correction=""; self.curr=None
         self.steps=[]; self.step_idx=0; self._has_user_navigated=False; self._just_accepted=False
@@ -1793,12 +1825,17 @@ class SuggestEntry(tk.Frame):
             except Exception:
                 pass
         if not self.list_visible:
-            self.frame.pack(side=tk.TOP, fill=tk.X, pady=(4,0)); self.list_visible=True
+            self.frame.pack(side=tk.TOP, fill=tk.X, pady=(4,0));
+            self.shortcuts_hint.pack(side=tk.TOP, fill=tk.X, pady=(2,0));
+            self.list_visible=True
         self._has_user_navigated=False; self._just_accepted=False
 
     def hide_list(self):
         if self.list_visible:
-            self.frame.pack_forget(); self.list_visible=False
+            self.frame.pack_forget();
+            try: self.shortcuts_hint.pack_forget()
+            except Exception: pass
+            self.list_visible=False
         for it in self.tree.get_children(): self.tree.delete(it)
         self._has_user_navigated=False; self._just_accepted=False
 
@@ -1865,12 +1902,20 @@ def _compute_next_in_id(regs):
     return max_id + 1
 
 def save_text(entry_widget=None, btn=None):
+    started_at = time.time()
+
+    def _report_save_metric(stage: str, **extra):
+        elapsed_ms = int((time.time() - started_at) * 1000)
+        details = {"elapsed_ms": elapsed_ms}
+        details.update(extra)
+        report_status("ux_metrics", "OK", stage=stage, details=details)
     if entry_widget is None:
         return
     txt = entry_widget.get().strip()
     if not txt:
         return
     report_status("user_input", "STARTED", stage="save_text", details={"text_len": len(txt)})
+    report_status("ux_metrics", "STARTED", stage="save_attempt", details={"text_len": len(txt)})
     parsed = None
     if extrair_tudo_consumo:
         try:
@@ -1902,6 +1947,7 @@ def save_text(entry_widget=None, btn=None):
             entry_widget.delete(0, "end")
         except Exception as e:
             _log_ui("WARNING", "entry_clear_failed", "Falha ao limpar entrada", error=str(e))
+        _report_save_metric("save_completed", destino="orientacoes")
         return
     if destino == "observacoes":
         _save_structured_text(OBSERVACOES_FILE, txt, now_str, "OBSERVACAO", decision_meta=decision)
@@ -1910,6 +1956,7 @@ def save_text(entry_widget=None, btn=None):
             entry_widget.delete(0, "end")
         except Exception as e:
             _log_ui("WARNING", "entry_clear_failed", "Falha ao limpar entrada", error=str(e))
+        _report_save_metric("save_completed", destino="observacoes")
         return
 
     if destino == "encomendas" or _is_encomenda_text(txt, parsed):
@@ -1935,6 +1982,7 @@ def save_text(entry_widget=None, btn=None):
             except Exception as e:
                 report_status("ia_pipeline", "ERROR", stage="thread_start_failed", details={"error": str(e), "source": "save_text_encomenda"})
                 _log_ui("ERROR", "ia_thread_start_failed", "Falha ao iniciar processamento IA para encomendas", error=str(e))
+        _report_save_metric("save_completed", destino="encomendas")
         return
 
     is_orientacao = _contains_keywords(txt, _ORIENTACOES_KEYWORDS)
@@ -1945,6 +1993,7 @@ def save_text(entry_widget=None, btn=None):
             entry_widget.delete(0, "end")
         except Exception as e:
             _log_ui("WARNING", "entry_clear_failed", "Falha ao limpar entrada", error=str(e))
+        _report_save_metric("save_completed", destino="orientacoes_keywords")
         return
     if is_observacao and not is_orientacao:
         _save_structured_text(OBSERVACOES_FILE, txt, now_str, "OBSERVACAO")
@@ -1952,6 +2001,7 @@ def save_text(entry_widget=None, btn=None):
             entry_widget.delete(0, "end")
         except Exception as e:
             _log_ui("WARNING", "entry_clear_failed", "Falha ao limpar entrada", error=str(e))
+        _report_save_metric("save_completed", destino="observacoes_keywords")
         return
     rec = None
     fields_for_flags = {}
@@ -2058,6 +2108,8 @@ def save_text(entry_widget=None, btn=None):
             report_status("ia_pipeline", "ERROR", stage="thread_start_failed", details={"error": str(e), "source": "save_text_dados"})
             _log_ui("ERROR", "ia_thread_start_failed", "Falha ao iniciar processamento IA em background", error=str(e))
 
+    _report_save_metric("save_completed", destino="dados", missing_fields=len(missing_fields))
+
     # ----------------------
     # OTIMISTIC APPEND (melhorado): usa preprocessor.extrair_tudo_consumo se disponível
     # e inclui _entrada_id no registro para que IA.processar faça merge em vez de duplicar.
@@ -2130,6 +2182,8 @@ class AvisoBar(tk.Frame):
         self.msg_var = tk.StringVar()
         self.lbl = tk.Label(self, textvariable=self.msg_var, anchor="w", font=self.font, bd=0)
         self.lbl.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=(2,2))
+        self.btn_detail = tk.Button(self, text="Detalhes", width=9, command=self._open_alert_center, relief="flat")
+        self.btn_detail.pack(side=tk.RIGHT, padx=(0,4), pady=(2,2))
         self.btn_close = tk.Button(self, text="Fechar", width=8, command=self._on_close_click, relief="flat")
         self.btn_close.pack(side=tk.RIGHT, padx=(0,6), pady=(2,2))
         self._active_avisos = []
@@ -2227,6 +2281,7 @@ class AvisoBar(tk.Frame):
             self.config(bg=blended)
             self.lbl.config(bg=blended, fg=ui.get("text_color", "#111111"))
             self.lbl_counter.config(bg=blended, fg="#333333")
+            self.btn_detail.config(bg=blended, fg="#111111", activebackground=blended)
             self.btn_close.config(bg=blended, fg="#111111", activebackground=blended)
         except:
             pass
@@ -2289,6 +2344,100 @@ class AvisoBar(tk.Frame):
             self._after_id = self.after(self.CYCLE_INTERVAL_MS, self._schedule_cycle)
         except Exception:
             self._after_id = None
+
+    def _open_alert_center(self):
+        try:
+            top = tk.Toplevel(self)
+            top.title("Central de Alertas")
+            top.geometry("980x520")
+            top.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
+
+            search_var = tk.StringVar()
+            header = tk.Frame(top, bg=UI_THEME.get("light_bg", "#F5F7FA"))
+            header.pack(fill=tk.X, padx=10, pady=10)
+            tk.Label(header, text="Buscar:", bg=UI_THEME.get("light_bg", "#F5F7FA"), fg=UI_THEME.get("text", "#111827")).pack(side=tk.LEFT)
+            ent = tk.Entry(header, textvariable=search_var, width=36)
+            ent.pack(side=tk.LEFT, padx=(6, 10))
+
+            tree = ttk.Treeview(top, columns=("nivel", "tipo", "identidade", "mensagem", "gerado", "ativo"), show="headings")
+            for c, t, w in (
+                ("nivel", "Nível", 90),
+                ("tipo", "Tipo", 210),
+                ("identidade", "Identidade", 220),
+                ("mensagem", "Mensagem", 320),
+                ("gerado", "Gerado em", 130),
+                ("ativo", "Ativo", 80),
+            ):
+                tree.heading(c, text=t)
+                tree.column(c, width=w, anchor="w")
+            tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
+
+            actions = tk.Frame(top, bg=UI_THEME.get("light_bg", "#F5F7FA"))
+            actions.pack(fill=tk.X, padx=10, pady=(0, 10))
+
+            def _load_all():
+                data = _read_json(AVISOS_FILE) or {"registros": []}
+                rows = data.get("registros", []) or []
+                q = (search_var.get() or "").strip().lower()
+                for iid in tree.get_children():
+                    tree.delete(iid)
+                for idx, a in enumerate(rows):
+                    payload = " ".join(str(a.get(k, "")) for k in ("tipo", "identidade", "mensagem"))
+                    if q and q not in payload.lower():
+                        continue
+                    status = a.get("status") or {}
+                    ativo = bool(status.get("ativo", True) and not status.get("fechado_pelo_usuario", False))
+                    ts = a.get("timestamps") or {}
+                    tree.insert("", tk.END, iid=f"a_{idx}", values=(
+                        (a.get("nivel") or "info").upper(),
+                        a.get("tipo") or "-",
+                        a.get("identidade") or "-",
+                        (a.get("mensagem") or "-")[:120],
+                        ts.get("gerado_em") or "-",
+                        "SIM" if ativo else "NÃO",
+                    ))
+
+            def _mark_handled():
+                sel = tree.selection()
+                if not sel:
+                    return
+                iid = sel[0]
+                idx = int(str(iid).split("_", 1)[1])
+                data = _read_json(AVISOS_FILE) or {"registros": []}
+                rows = data.get("registros", []) or []
+                if idx < 0 or idx >= len(rows):
+                    return
+                st = rows[idx].get("status") or {}
+                st["ativo"] = False
+                st["fechado_pelo_usuario"] = True
+                rows[idx]["status"] = st
+                ts = rows[idx].get("timestamps") or {}
+                ts["fechado_em"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                rows[idx]["timestamps"] = ts
+                data["registros"] = rows
+                try:
+                    atomic_save(AVISOS_FILE, data)
+                except Exception:
+                    with open(AVISOS_FILE, "w", encoding="utf-8") as f:
+                        json.dump(data, f, ensure_ascii=False, indent=2)
+                _load_all()
+
+            def _open_monitor():
+                try:
+                    import interfacetwo
+                    root = self.winfo_toplevel()
+                    interfacetwo.create_monitor_toplevel(root)
+                except Exception:
+                    pass
+
+            build_secondary_button(actions, "Atualizar", _load_all, padx=14).pack(side=tk.LEFT, padx=(0, 8))
+            build_secondary_button(actions, "Abrir monitor", _open_monitor, padx=14).pack(side=tk.LEFT, padx=(0, 8))
+            build_primary_button(actions, "Marcar como tratado", _mark_handled, padx=14).pack(side=tk.LEFT)
+            ent.bind("<Return>", lambda _e: _load_all(), add="+")
+            _load_all()
+            ent.focus_set()
+        except Exception as e:
+            _log_ui("ERROR", "alert_center_open_failed", "Falha ao abrir central de alertas", error=str(e))
 
     def _on_close_click(self):
         if not self._active_avisos:
@@ -2419,26 +2568,18 @@ def start_ui():
     global _warning_bar
     _start_analises_watcher()
     root = tk.Tk(); root.title("Controle de Acesso")
-    root.configure(bg="#F5F7FA")
-    container = tk.Frame(root, bg="#F5F7FA"); container.pack(padx=14, pady=14, fill=tk.X)
+    root.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
+    container = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); container.pack(padx=14, pady=14, fill=tk.X)
 
     s = SuggestEntry(container)
     aviso_bar = AvisoBar(container, s.entry)
     _warning_bar = WarningBar(container, s.entry, aviso_bar=aviso_bar)
     s.pack(fill=tk.X)
 
-    btn_frame = tk.Frame(root, bg="#F5F7FA"); btn_frame.pack(padx=14, pady=(12,12))
-    btn_save = tk.Button(
-        btn_frame,
-        text="Salvar",
-        width=14,
-        bg="#1F6FEB",
-        fg="#FFFFFF",
-        activebackground="#215DB0",
-        activeforeground="#FFFFFF",
-        relief="flat",
-        command=lambda: save_text(entry_widget=s.entry, btn=btn_save),
-    ); btn_save.pack(side=tk.LEFT, padx=(0,10))
+    btn_frame = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); btn_frame.pack(padx=14, pady=(12,12))
+    btn_save = build_primary_button(btn_frame, "Salvar", lambda: save_text(entry_widget=s.entry, btn=btn_save), padx=18)
+    btn_save.config(width=14)
+    btn_save.pack(side=tk.LEFT, padx=(0,10))
     def open_monitor_embedded():
         try:
             import interfacetwo
@@ -2450,17 +2591,11 @@ def start_ui():
             interfacetwo.create_monitor_toplevel(root)
         except Exception as e:
             print("Falha ao embutir monitor (abrindo fallback):", e); open_monitor_fallback_subprocess()
-    btn_dados = tk.Button(
-        btn_frame,
-        text="Monitor de Dados",
-        width=16,
-        bg="#E5E7EB",
-        fg="#111827",
-        activebackground="#D1D5DB",
-        activeforeground="#111827",
-        relief="flat",
-        command=open_monitor_embedded,
-    ); btn_dados.pack(side=tk.LEFT)
+    btn_dados = build_secondary_button(btn_frame, "Monitor de Dados", open_monitor_embedded, padx=18)
+    btn_dados.config(width=16)
+    bind_button_states(btn_save, UI_THEME.get("primary", "#1F6FEB"), UI_THEME.get("primary_active", "#215DB0"))
+    bind_button_states(btn_dados, UI_THEME.get("surface_alt", "#E5E7EB"), UI_THEME.get("light_border", "#D1D5DB"))
+    btn_dados.pack(side=tk.LEFT)
     def ctrl_enter(ev):
         if s.list_visible:
             sel = s.tree.selection()
