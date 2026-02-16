@@ -54,6 +54,20 @@ _record_tag_map_generic = {}
 _text_edit_lock = set()
 _filter_controls = {}
 
+UI_THEME = {
+    "bg": "#0F1115",
+    "surface": "#151A22",
+    "surface_alt": "#1B2430",
+    "border": "#2B3442",
+    "text": "#E6EDF3",
+    "muted_text": "#9AA4B2",
+    "primary": "#2F81F7",
+    "primary_active": "#1F6FEB",
+    "success": "#2DA44E",
+    "danger": "#DA3633",
+    "warning": "#D29922",
+}
+
 # ---------- inferência MODELO/COR (fallback a partir de 'texto') ----------
 _STATUS_WORDS = set(["MORADOR","MORADORES","VISITANTE","VISITA","VISIT","PRESTADOR","PRESTADORES","SERVICO","SERVIÇO","TECNICO","DESCONHECIDO","FUNCIONARIO","FUNCIONÁRIO"])
 
@@ -282,7 +296,14 @@ def format_encomenda_entry(r: dict) -> str:
         identificacao=identificacao,
     )
     if status not in ("-", ""):
-        return f"{base_text} — {status} {status_dh}"
+        status_up = status.strip().upper()
+        if status_up == "AVISADO":
+            prefix = "[AVISADO ✅]"
+        elif status_up == "SEM CONTATO":
+            prefix = "[SEM CONTATO ⚠]"
+        else:
+            prefix = f"[{status_up}]"
+        return f"{base_text} — {prefix} {status_dh}"
     return base_text
 
 # ---------- UI helpers (embutido) ----------
@@ -897,7 +918,7 @@ def _update_encomenda_status(record, status):
         return False
 
 def _build_encomenda_actions(frame, text_widget, info_label):
-    action_frame = tk.Frame(frame, bg="white")
+    action_frame = tk.Frame(frame, bg=UI_THEME["surface"])
     action_frame.pack_forget()
 
     # manter estado por widget dentro do mapa global
@@ -933,10 +954,10 @@ def _build_encomenda_actions(frame, text_widget, info_label):
         action_frame,
         text="AVISADO",
         command=lambda: apply_status("AVISADO"),
-        bg="white",
-        fg="black",
-        activebackground="#e6e6e6",
-        activeforeground="black",
+        bg=UI_THEME["surface_alt"],
+        fg=UI_THEME["text"],
+        activebackground=UI_THEME["primary"],
+        activeforeground=UI_THEME["text"],
         relief="flat",
         padx=18,
     ).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
@@ -944,10 +965,10 @@ def _build_encomenda_actions(frame, text_widget, info_label):
         action_frame,
         text="SEM CONTATO",
         command=lambda: apply_status("SEM CONTATO"),
-        bg="white",
-        fg="black",
-        activebackground="#e6e6e6",
-        activeforeground="black",
+        bg=UI_THEME["surface_alt"],
+        fg=UI_THEME["text"],
+        activebackground=UI_THEME["primary"],
+        activeforeground=UI_THEME["text"],
         relief="flat",
         padx=18,
     ).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
@@ -1038,17 +1059,17 @@ def _apply_dark_theme(widget):
 
 def _apply_light_theme(widget):
     try:
-        widget.configure(bg="white")
+        widget.configure(bg=UI_THEME["bg"])
     except Exception:
         pass
 
 def _build_text_actions(frame, text_widget, info_label, path):
-    action_frame = tk.Frame(frame, bg="white")
+    action_frame = tk.Frame(frame, bg=UI_THEME["surface"])
     action_frame.pack_forget()
     current = {"record": None, "rec_tag": None}
     edit_state = {"active": False, "tag": None, "dirty": False}
 
-    edit_badge = tk.Label(action_frame, text="MODO EDIÇÃO ATIVO", bg="#ffef99", fg="black", padx=10, pady=4)
+    edit_badge = tk.Label(action_frame, text="MODO EDIÇÃO ATIVO", bg="#F8E3A3", fg="#111111", padx=10, pady=4)
     edit_badge.pack_forget()
 
     def _set_filters_enabled(enabled: bool):
@@ -1207,9 +1228,9 @@ def _build_text_actions(frame, text_widget, info_label, path):
 
         _finish_editing(reload_text=True)
 
-    tk.Button(action_frame, text="Editar", command=enable_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
-    tk.Button(action_frame, text="Salvar", command=save_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
-    tk.Button(action_frame, text="Cancelar", command=cancel_edit, bg="white", fg="black", relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+    tk.Button(action_frame, text="Editar", command=enable_edit, bg=UI_THEME["surface_alt"], fg=UI_THEME["text"], activebackground=UI_THEME["primary"], activeforeground=UI_THEME["text"], relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+    tk.Button(action_frame, text="Salvar", command=save_edit, bg=UI_THEME["primary"], fg=UI_THEME["text"], activebackground=UI_THEME["primary_active"], activeforeground=UI_THEME["text"], relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+    tk.Button(action_frame, text="Cancelar", command=cancel_edit, bg=UI_THEME["surface_alt"], fg=UI_THEME["text"], activebackground=UI_THEME["border"], activeforeground=UI_THEME["text"], relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
 
     _text_action_ui[text_widget] = {
         "frame": action_frame,
@@ -1271,25 +1292,25 @@ def _build_monitor_ui(container):
         style.theme_use("clam")
     except Exception:
         pass
-    style.configure("Dark.TNotebook", background="white", borderwidth=0)
-    style.configure("Dark.TNotebook.Tab", background="black", foreground="white", padding=(16, 6))
+    style.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0)
+    style.configure("Dark.TNotebook.Tab", background=UI_THEME["surface"], foreground=UI_THEME["text"], padding=(16, 6))
     style.map(
         "Dark.TNotebook.Tab",
-        background=[("selected", "black"), ("active", "#222222")],
-        foreground=[("selected", "white"), ("active", "white")],
+        background=[("selected", UI_THEME["primary"]), ("active", UI_THEME["surface_alt"])],
+        foreground=[("selected", UI_THEME["text"]), ("active", UI_THEME["text"])],
     )
-    style.configure("Encomenda.Text", background="black", foreground="white")
+    style.configure("Encomenda.Text", background=UI_THEME["surface"], foreground=UI_THEME["text"])
 
-    info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg="white", fg="black")
+    info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg=UI_THEME["bg"], fg=UI_THEME["muted_text"])
     info_label.pack(padx=10, pady=(6, 0), anchor="w")
 
     notebook = ttk.Notebook(container, style="Dark.TNotebook")
     notebook.pack(padx=10, pady=(8, 10), fill=tk.BOTH, expand=True)
 
-    controle_frame = tk.Frame(notebook, bg="black")
-    encomendas_frame = tk.Frame(notebook, bg="black")
-    orientacoes_frame = tk.Frame(notebook, bg="black")
-    observacoes_frame = tk.Frame(notebook, bg="black")
+    controle_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
+    encomendas_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
+    orientacoes_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
+    observacoes_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
 
     notebook.add(controle_frame, text="CONTROLE")
     notebook.add(encomendas_frame, text="ENCOMENDAS")
@@ -1307,17 +1328,17 @@ def _build_monitor_ui(container):
         text_widget = tk.Text(
             frame,
             wrap="word",
-            bg="black",
-            fg="white",
-            insertbackground="white",
+            bg=UI_THEME["surface"],
+            fg=UI_THEME["text"],
+            insertbackground=UI_THEME["text"],
             relief="flat",
             undo=True,
             autoseparators=True,
             maxundo=-1,
         )
         if formatter == format_encomenda_entry:
-            text_widget.tag_configure("status_avisado", foreground="#2ecc71")
-            text_widget.tag_configure("status_sem_contato", foreground="#ff5c5c")
+            text_widget.tag_configure("status_avisado", foreground="#6EE7B7")
+            text_widget.tag_configure("status_sem_contato", foreground="#FCA5A5")
             text_widget.tag_configure("encomenda_selected", background="#f0f0f0", foreground="black")
         _build_filter_bar(frame, text_widget, info_label)
         text_widget.pack(padx=10, pady=(0, 8), fill=tk.BOTH, expand=True)
@@ -1330,25 +1351,25 @@ def _build_monitor_ui(container):
         text_widgets.append(text_widget)
         _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter}
 
-    btn_frame = tk.Frame(container, bg="white")
+    btn_frame = tk.Frame(container, bg=UI_THEME["bg"])
     btn_frame.pack(padx=10, pady=(0, 10))
     tk.Button(
         btn_frame,
-        text="Load",
+        text="Recarregar",
         command=lambda: forcar_recarregar(text_widgets, info_label),
-        bg="white",
-        fg="black",
-        activebackground="#e6e6e6",
-        activeforeground="black",
+        bg=UI_THEME["surface_alt"],
+        fg=UI_THEME["text"],
+        activebackground=UI_THEME["primary"],
+        activeforeground=UI_THEME["text"],
     ).pack(side=tk.LEFT, padx=6)
     tk.Button(
         btn_frame,
-        text="Beckup",
+        text="Backup e Limpar",
         command=lambda: limpar_dados(text_widgets, info_label),
-        bg="white",
-        fg="black",
-        activebackground="#e6e6e6",
-        activeforeground="black",
+        bg=UI_THEME["surface_alt"],
+        fg=UI_THEME["text"],
+        activebackground=UI_THEME["primary"],
+        activeforeground=UI_THEME["text"],
     ).pack(side=tk.LEFT, padx=6)
 
     return text_widgets, info_label

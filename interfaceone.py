@@ -2033,8 +2033,8 @@ def save_text(entry_widget=None, btn=None):
 
     if missing_fields and _warning_bar:
         try:
-            msgs = [f"AVISO: SALVO SEM O DADO {field}!" for field in missing_fields]
-            _warning_bar.show_messages(msgs)
+            msgs = [f"⚠ Campo ausente: {field}. Revise e corrija agora." for field in missing_fields]
+            _warning_bar.show_messages(msgs, level="warn")
         except Exception:
             pass
 
@@ -2122,12 +2122,22 @@ class AvisoBar(tk.Frame):
         self.msg_var = tk.StringVar()
         self.lbl = tk.Label(self, textvariable=self.msg_var, anchor="w", font=self.font, bd=0)
         self.lbl.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=(2,2))
-        self.btn_close = tk.Button(self, text="X", width=3, command=self._on_close_click)
+        self.btn_close = tk.Button(self, text="Fechar", width=8, command=self._on_close_click, relief="flat")
         self.btn_close.pack(side=tk.RIGHT, padx=(0,6), pady=(2,2))
         self._active_avisos = []
         self._idx = 0
         self._after_id = None
         self._visible = False
+        self._paused = False
+        self._counter_var = tk.StringVar(value="")
+        self.lbl_counter = tk.Label(self, textvariable=self._counter_var, anchor="e", font=("Segoe UI", 9), bd=0)
+        self.lbl_counter.pack(side=tk.RIGHT, padx=(0, 4))
+        for w in (self, self.lbl, self.lbl_counter):
+            try:
+                w.bind("<Enter>", lambda _e: self._set_paused(True), add="+")
+                w.bind("<Leave>", lambda _e: self._set_paused(False), add="+")
+            except Exception:
+                pass
         try:
             self.pack_forget()
         except:
@@ -2169,10 +2179,12 @@ class AvisoBar(tk.Frame):
 
     def _format_display_text(self, aviso):
         txt = aviso.get("mensagem") or ""
-        txt = str(txt).strip().upper()
+        txt = str(txt).strip()
         if not txt:
             return ""
-        return f"⚠ AVISO: {txt}    "
+        if len(txt) > 140:
+            txt = f"{txt[:137].rstrip()}... (ver detalhes no painel)"
+        return f"⚠ Aviso: {txt}"
 
     def _show_current(self):
         if not self._active_avisos:
@@ -2184,11 +2196,14 @@ class AvisoBar(tk.Frame):
         blended = self._blend_with_white(bg, alpha=0.7)
         try:
             self.config(bg=blended)
-            self.lbl.config(bg=blended, fg=ui.get("text_color", "#000000"))
-            self.btn_close.config(bg=blended)
+            self.lbl.config(bg=blended, fg=ui.get("text_color", "#111111"))
+            self.lbl_counter.config(bg=blended, fg="#333333")
+            self.btn_close.config(bg=blended, fg="#111111", activebackground=blended)
         except:
             pass
         disp = self._format_display_text(aviso)
+        total = max(1, len(self._active_avisos))
+        self._counter_var.set(f"{(self._idx % total) + 1}/{total}")
         self.msg_var.set(disp)
         try:
             parent_frame = getattr(self.entry_widget, "master", None)
@@ -2223,6 +2238,9 @@ class AvisoBar(tk.Frame):
         else:
             self._idx = (self._idx + 1) % len(self._active_avisos)
 
+    def _set_paused(self, paused: bool):
+        self._paused = bool(paused)
+
     def _schedule_cycle(self):
         try:
             self._load_avisos_active()
@@ -2237,7 +2255,8 @@ class AvisoBar(tk.Frame):
                 try: self.after_cancel(self._after_id)
                 except Exception:
                     pass
-            self._advance_index()
+            if not self._paused:
+                self._advance_index()
             self._after_id = self.after(self.CYCLE_INTERVAL_MS, self._schedule_cycle)
         except Exception:
             self._after_id = None
@@ -2289,9 +2308,14 @@ class WarningBar(tk.Frame):
             self.font = tkfont.Font(font=self.entry_widget["font"])
         except Exception:
             self.font = tkfont.Font(family="Segoe UI", size=11)
-        self.config(bg="#FF0000")
+        self._styles = {
+            "info": {"bg": "#DCEBFF", "fg": "#102A43"},
+            "warn": {"bg": "#FFE69C", "fg": "#3D2B00"},
+            "error": {"bg": "#F8B4B4", "fg": "#4A0F0F"},
+        }
+        self.config(bg=self._styles["warn"]["bg"])
         self.msg_var = tk.StringVar()
-        self.lbl = tk.Label(self, textvariable=self.msg_var, anchor="w", font=self.font, bd=0, bg="#FF0000", fg="#000000")
+        self.lbl = tk.Label(self, textvariable=self.msg_var, anchor="w", font=self.font, bd=0, bg=self._styles["warn"]["bg"], fg=self._styles["warn"]["fg"])
         self.lbl.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=(2,2))
         self._visible = False
         self._queue = []
@@ -2301,8 +2325,11 @@ class WarningBar(tk.Frame):
         except Exception:
             pass
 
-    def show_messages(self, messages: List[str]):
-        self._queue = [m for m in messages if m]
+    def show_messages(self, messages: List[str], level: str = "warn"):
+        level = (level or "warn").strip().lower()
+        if level not in self._styles:
+            level = "warn"
+        self._queue = [(m, level) for m in messages if m]
         if not self._queue:
             self._hide()
             return
@@ -2312,7 +2339,10 @@ class WarningBar(tk.Frame):
         if not self._queue:
             self._hide()
             return
-        msg = self._queue.pop(0)
+        msg, level = self._queue.pop(0)
+        style = self._styles.get(level, self._styles["warn"])
+        self.config(bg=style["bg"])
+        self.lbl.config(bg=style["bg"], fg=style["fg"])
         self.msg_var.set(msg)
         try:
             parent_frame = getattr(self.entry_widget, "master", None)
@@ -2360,15 +2390,26 @@ def start_ui():
     global _warning_bar
     _start_analises_watcher()
     root = tk.Tk(); root.title("Controle de Acesso")
-    container = tk.Frame(root); container.pack(padx=10, pady=10, fill=tk.X)
+    root.configure(bg="#F5F7FA")
+    container = tk.Frame(root, bg="#F5F7FA"); container.pack(padx=14, pady=14, fill=tk.X)
 
     s = SuggestEntry(container)
     aviso_bar = AvisoBar(container, s.entry)
     _warning_bar = WarningBar(container, s.entry, aviso_bar=aviso_bar)
     s.pack(fill=tk.X)
 
-    btn_frame = tk.Frame(root); btn_frame.pack(padx=10, pady=(8,10))
-    btn_save = tk.Button(btn_frame, text="SALVAR", width=12, command=lambda: save_text(entry_widget=s.entry, btn=btn_save)); btn_save.pack(side=tk.LEFT, padx=(0,8))
+    btn_frame = tk.Frame(root, bg="#F5F7FA"); btn_frame.pack(padx=14, pady=(12,12))
+    btn_save = tk.Button(
+        btn_frame,
+        text="Salvar",
+        width=14,
+        bg="#1F6FEB",
+        fg="#FFFFFF",
+        activebackground="#215DB0",
+        activeforeground="#FFFFFF",
+        relief="flat",
+        command=lambda: save_text(entry_widget=s.entry, btn=btn_save),
+    ); btn_save.pack(side=tk.LEFT, padx=(0,10))
     def open_monitor_embedded():
         try:
             import interfacetwo
@@ -2380,7 +2421,17 @@ def start_ui():
             interfacetwo.create_monitor_toplevel(root)
         except Exception as e:
             print("Falha ao embutir monitor (abrindo fallback):", e); open_monitor_fallback_subprocess()
-    btn_dados = tk.Button(btn_frame, text="DADOS", width=12, command=open_monitor_embedded); btn_dados.pack(side=tk.LEFT)
+    btn_dados = tk.Button(
+        btn_frame,
+        text="Monitor de Dados",
+        width=16,
+        bg="#E5E7EB",
+        fg="#111827",
+        activebackground="#D1D5DB",
+        activeforeground="#111827",
+        relief="flat",
+        command=open_monitor_embedded,
+    ); btn_dados.pack(side=tk.LEFT)
     def ctrl_enter(ev):
         if s.list_visible:
             sel = s.tree.selection()
