@@ -22,6 +22,10 @@ from ui_theme import (
     build_filter_input,
     bind_focus_ring,
     bind_button_states,
+    apply_theme,
+    available_theme_names,
+    get_active_theme_name,
+    validate_theme_contrast,
 )
 
 try:
@@ -48,6 +52,7 @@ ANALISES_ARQUIVO = os.path.join(BASE_DIR, "analises.json")
 AVISOS_ARQUIVO = os.path.join(BASE_DIR, "avisos.json")
 LOCK_FILE = os.path.join(BASE_DIR, "monitor.lock")
 REFRESH_MS = 2000  # 2s
+PREFS_FILE = os.path.join(BASE_DIR, "config", "ui_monitor_prefs.json")
 
 # internal reference to Toplevel (quando embutido)
 _monitor_toplevel = None
@@ -67,7 +72,69 @@ _control_table_map = {}
 _control_details_var = {}
 _control_sort_state = {}
 _control_selection_state = {}
+_restored_control_sort_state = {}
+_pending_focus_identity = None
 
+
+def _load_prefs():
+    try:
+        with open(PREFS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _save_prefs(payload: dict):
+    try:
+        os.makedirs(os.path.dirname(PREFS_FILE), exist_ok=True)
+        with open(PREFS_FILE, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
+def _serialize_filter_state():
+    out = {}
+    for key, val in _filter_state.items():
+        out[str(key)] = dict(val or {})
+    return out
+
+
+def _restore_filter_state(snapshot: dict):
+    if not isinstance(snapshot, dict):
+        return
+    for key, val in snapshot.items():
+        _filter_state[key] = dict(val or {})
+
+
+def _persist_ui_state(extra: dict | None = None):
+    payload = _load_prefs()
+    payload["theme"] = get_active_theme_name()
+    payload["filter_state"] = _serialize_filter_state()
+    payload["control_sort_state"] = {
+        str(k): dict(v or {}) for k, v in _control_sort_state.items()
+    }
+    if extra:
+        payload.update(extra)
+    _save_prefs(payload)
+
+
+def _restore_ui_state():
+    global _restored_control_sort_state
+    prefs = _load_prefs()
+    apply_theme(prefs.get("theme") or get_active_theme_name())
+    _restore_filter_state(prefs.get("filter_state") or {})
+    restored_sort = prefs.get("control_sort_state") or {}
+    _restored_control_sort_state = dict(restored_sort) if isinstance(restored_sort, dict) else {}
+    return prefs
+
+
+
+
+def set_monitor_focus_identity(identidade: str):
+    global _pending_focus_identity
+    _pending_focus_identity = (identidade or "").strip().upper()
 
 # ---------- inferência MODELO/COR (fallback a partir de 'texto') ----------
 _STATUS_WORDS = set(["MORADOR","MORADORES","VISITANTE","VISITA","VISIT","PRESTADOR","PRESTADORES","SERVICO","SERVIÇO","TECNICO","DESCONHECIDO","FUNCIONARIO","FUNCIONÁRIO"])
@@ -525,7 +592,8 @@ def _populate_control_table(tree_widget, info_label):
     filters = _filter_state.get(filter_key, {})
     filtrados = _apply_filters(registros, filters)
 
-    sort_state = _control_sort_state.get(tree_widget, {"key": "data_hora", "reverse": True})
+    sort_key_name = source.get("sort_key", "controle")
+    sort_state = _control_sort_state.get(sort_key_name, {"key": "data_hora", "reverse": True})
     sort_key = sort_state.get("key", "data_hora")
     reverse = bool(sort_state.get("reverse", True))
     filtrados = sorted(filtrados, key=lambda rec: _control_sort_value(rec, sort_key), reverse=reverse)
@@ -537,6 +605,8 @@ def _populate_control_table(tree_widget, info_label):
     info_label.config(text=f"Arquivo: {arquivo} — registros: {len(filtrados)} (de {len(registros)}){status_hint}")
 
     selected_record = _control_selection_state.get(tree_widget)
+    global _pending_focus_identity
+    focus_ident = _pending_focus_identity
     for iid in tree_widget.get_children():
         tree_widget.delete(iid)
 
@@ -548,9 +618,14 @@ def _populate_control_table(tree_widget, info_label):
         record_map[iid] = rec
         if selected_record and str(rec.get("ID") or rec.get("_entrada_id") or "") == selected_record:
             selected_iid = iid
+        if focus_ident:
+            ident = f"{(rec.get('NOME') or '').strip().upper()}|{(rec.get('SOBRENOME') or '').strip().upper()}|{(rec.get('BLOCO') or '').strip().upper()}|{(rec.get('APARTAMENTO') or '').strip().upper()}"
+            if ident == focus_ident:
+                selected_iid = iid
 
     _control_table_map[tree_widget] = record_map
     if selected_iid:
+        _pending_focus_identity = None
         try:
             tree_widget.selection_set(selected_iid)
             tree_widget.focus(selected_iid)
@@ -748,7 +823,8 @@ def _default_filters():
         "bloco": "Todos",
     }
 
-def _build_filter_bar(parent, text_widget, info_label):
+def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
+    target_widget = target_widget or filter_key
     bar = build_card_frame(parent)
     bar.pack(fill=tk.X, padx=10, pady=(10, 6))
 
@@ -762,6 +838,10 @@ def _build_filter_bar(parent, text_widget, info_label):
     date_entry = build_filter_input(bar, width=12)
     time_entry = build_filter_input(bar, width=10)
     query_entry = build_filter_input(bar, textvariable=query_var, width=18)
+    try:
+        parent.bind("<Control-f>", lambda _e: (query_entry.focus_set(), "break"), add="+")
+    except Exception:
+        pass
 
     def update_entry_state():
         date_state = "normal" if date_mode_var.get() == "Específica" else "disabled"
@@ -770,7 +850,7 @@ def _build_filter_bar(parent, text_widget, info_label):
         time_entry.configure(state=time_state)
 
     def apply_filters():
-        _filter_state[text_widget] = {
+        _filter_state[filter_key] = {
             "order": order_var.get(),
             "date_mode": date_mode_var.get(),
             "date_value": date_entry.get().strip(),
@@ -780,8 +860,9 @@ def _build_filter_bar(parent, text_widget, info_label):
             "status": status_var.get().strip() or "Todos",
             "bloco": bloco_var.get().strip() or "Todos",
         }
-        report_status("ux_metrics", "OK", stage="filter_apply", details={"source": str(text_widget), "query_len": len(query_entry.get().strip())})
-        _populate_text(text_widget, info_label)
+        report_status("ux_metrics", "OK", stage="filter_apply", details={"source": str(filter_key), "query_len": len(query_entry.get().strip())})
+        _persist_ui_state()
+        _populate_text(target_widget, info_label)
 
     def clear_filters():
         order_var.set("Mais recentes")
@@ -793,9 +874,10 @@ def _build_filter_bar(parent, text_widget, info_label):
         date_entry.delete(0, tk.END)
         time_entry.delete(0, tk.END)
         update_entry_state()
-        _filter_state[text_widget] = _default_filters()
-        report_status("ux_metrics", "OK", stage="filter_clear", details={"source": str(text_widget)})
-        _populate_text(text_widget, info_label)
+        _filter_state[filter_key] = _default_filters()
+        report_status("ux_metrics", "OK", stage="filter_clear", details={"source": str(filter_key)})
+        _persist_ui_state()
+        _populate_text(target_widget, info_label)
 
     tk.Label(bar, text="Ordem", bg=UI_THEME["surface"], fg=UI_THEME["text"]).grid(row=0, column=0, padx=(10, 6), pady=8, sticky="w")
     order_combo = ttk.Combobox(bar, textvariable=order_var, values=["Mais recentes", "Mais antigas"], width=12, state="readonly")
@@ -837,7 +919,7 @@ def _build_filter_bar(parent, text_widget, info_label):
     build_primary_button(bar, "Aplicar", apply_filters).grid(row=0, column=14, padx=(0, 6), pady=8)
     build_secondary_button(bar, "Limpar", clear_filters).grid(row=0, column=15, padx=(0, 10), pady=8)
 
-    _filter_controls[text_widget] = [
+    _filter_controls[filter_key] = [
         order_combo,
         date_mode_combo,
         date_entry,
@@ -847,13 +929,14 @@ def _build_filter_bar(parent, text_widget, info_label):
         status_combo,
         bloco_combo,
     ]
-    for control in _filter_controls[text_widget]:
+    for control in _filter_controls[filter_key]:
         bind_focus_ring(control)
     bar.grid_columnconfigure(16, weight=1)
     date_mode_var.trace_add("write", lambda *_: update_entry_state())
     time_mode_var.trace_add("write", lambda *_: update_entry_state())
     update_entry_state()
-    _filter_state[text_widget] = _default_filters()
+    if filter_key not in _filter_state:
+        _filter_state[filter_key] = _default_filters()
 
 def _apply_hover_line(text_widget, line, hover_tag):
     if text_widget in _text_edit_lock:
@@ -1394,6 +1477,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
         pass
 
 def _build_monitor_ui(container):
+    prefs = _restore_ui_state()
     _apply_light_theme(container)
     style = ttk.Style(container)
     try:
@@ -1408,11 +1492,36 @@ def _build_monitor_ui(container):
         foreground=[("selected", UI_THEME["text"]), ("active", UI_THEME["text"])],
     )
     style.configure("Encomenda.Text", background=UI_THEME["surface"], foreground=UI_THEME["text"])
+    report_status("ux_metrics", "OK", stage="theme_contrast_check", details=validate_theme_contrast())
     style.configure("Control.Treeview", background=UI_THEME["surface"], fieldbackground=UI_THEME["surface"], foreground=UI_THEME["text"], bordercolor=UI_THEME["border"], rowheight=28)
     style.configure("Control.Treeview.Heading", background=UI_THEME["surface_alt"], foreground=UI_THEME["text"], relief="flat")
     style.map("Control.Treeview", background=[("selected", UI_THEME["primary"])], foreground=[("selected", UI_THEME["text"])])
 
     info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg=UI_THEME["bg"], fg=UI_THEME["muted_text"])
+    theme_bar = tk.Frame(container, bg=UI_THEME["bg"])
+    theme_bar.pack(fill=tk.X, padx=10, pady=(6, 0))
+    tk.Label(theme_bar, text="Tema:", bg=UI_THEME["bg"], fg=UI_THEME["muted_text"]).pack(side=tk.LEFT)
+    theme_var = tk.StringVar(value=get_active_theme_name())
+    theme_combo = ttk.Combobox(theme_bar, textvariable=theme_var, values=available_theme_names(), width=16, state="readonly")
+    theme_combo.pack(side=tk.LEFT, padx=(6, 0))
+
+    def _on_theme_change(_event=None):
+        selected = apply_theme(theme_var.get())
+        _persist_ui_state({"theme": selected})
+        try:
+            root = container.winfo_toplevel()
+            for child in root.winfo_children():
+                try:
+                    child.destroy()
+                except Exception:
+                    pass
+            widgets, info = _build_monitor_ui(root)
+            _schedule_update(widgets, info)
+        except Exception:
+            pass
+
+    theme_combo.bind("<<ComboboxSelected>>", _on_theme_change, add="+")
+
     info_label.pack(padx=10, pady=(6, 0), anchor="w")
 
     notebook = ttk.Notebook(container, style="Dark.TNotebook")
@@ -1446,12 +1555,13 @@ def _build_monitor_ui(container):
             tree.heading("bloco_ap", text="Bloco/AP")
             tree.heading("placa", text="Placa")
             tree.heading("status", text="Status")
-            _control_sort_state[tree] = {"key": "data_hora", "reverse": True}
+            _control_sort_state["controle"] = dict(_restored_control_sort_state.get("controle") or {"key": "data_hora", "reverse": True})
 
             def _sort_by(col, tw=tree):
-                st = _control_sort_state.get(tw, {"key": col, "reverse": False})
+                st = _control_sort_state.get("controle", {"key": col, "reverse": False})
                 reverse = not st.get("reverse", False) if st.get("key") == col else False
-                _control_sort_state[tw] = {"key": col, "reverse": reverse}
+                _control_sort_state["controle"] = {"key": col, "reverse": reverse}
+                _persist_ui_state()
                 _populate_text(tw, info_label)
 
             for _col in columns:
@@ -1461,6 +1571,14 @@ def _build_monitor_ui(container):
             tree.column("bloco_ap", width=110, anchor="center")
             tree.column("placa", width=120, anchor="center")
             tree.column("status", width=160, anchor="w")
+            saved_cols = (prefs.get("control_columns") if isinstance(prefs, dict) else {}) or {}
+            for c in columns:
+                try:
+                    w = int(saved_cols.get(c) or 0)
+                    if w > 0:
+                        tree.column(c, width=w)
+                except Exception:
+                    pass
 
             def _on_resize(event, tw=tree):
                 total = max(event.width - 24, 300)
@@ -1469,9 +1587,10 @@ def _build_monitor_ui(container):
                 tw.column("bloco_ap", width=max(90, int(total * 0.14)))
                 tw.column("placa", width=max(90, int(total * 0.14)))
                 tw.column("status", width=max(120, int(total * 0.20)))
+                _persist_ui_state({"control_columns": {c: tw.column(c).get("width") for c in columns}})
 
             table_wrap.bind("<Configure>", _on_resize, add="+")
-            _build_filter_bar(frame, tree, info_label)
+            _build_filter_bar(frame, "controle", info_label, target_widget=tree)
             yscroll = ttk.Scrollbar(table_wrap, orient=tk.VERTICAL, command=tree.yview)
             tree.configure(yscrollcommand=yscroll.set)
             tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -1486,7 +1605,7 @@ def _build_monitor_ui(container):
             tree.bind("<<TreeviewSelect>>", _on_select, add="+")
             bind_focus_ring(tree)
             monitor_widgets.append(tree)
-            _monitor_sources[tree] = {"path": arquivo, "formatter": formatter, "view": "table", "filter_key": tree}
+            _monitor_sources[tree] = {"path": arquivo, "formatter": formatter, "view": "table", "filter_key": "controle", "sort_key": "controle", "widget": tree}
             continue
 
         text_widget = tk.Text(
@@ -1500,7 +1619,8 @@ def _build_monitor_ui(container):
             autoseparators=True,
             maxundo=-1,
         )
-        _build_filter_bar(frame, text_widget, info_label)
+        filter_key = "encomendas" if formatter == format_encomenda_entry else ("orientacoes" if formatter == format_orientacao_entry else "observacoes")
+        _build_filter_bar(frame, filter_key, info_label, target_widget=text_widget)
         if formatter == format_encomenda_entry:
             text_widget.tag_configure("status_avisado", foreground=UI_THEME["status_avisado_text"])
             text_widget.tag_configure("status_sem_contato", foreground=UI_THEME["status_sem_contato_text"])
@@ -1513,7 +1633,7 @@ def _build_monitor_ui(container):
         elif formatter in (format_orientacao_entry, format_observacao_entry):
             _build_text_actions(frame, text_widget, info_label, arquivo)
         monitor_widgets.append(text_widget)
-        _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter, "filter_key": text_widget}
+        _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter, "filter_key": filter_key, "widget": text_widget}
 
     btn_frame = tk.Frame(container, bg=UI_THEME["bg"])
     btn_frame.pack(padx=10, pady=(0, 10))

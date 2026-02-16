@@ -12,7 +12,7 @@ import time
 import unicodedata
 import threading
 import subprocess
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import Counter
 from typing import List, Iterable
 
@@ -80,7 +80,17 @@ except Exception:
     montar_entrada_bruta = None
 
 try:
-    from ui_theme import UI_THEME, bind_focus_ring, bind_button_states, build_primary_button, build_secondary_button
+    from ui_theme import (
+        UI_THEME,
+        bind_focus_ring,
+        bind_button_states,
+        build_primary_button,
+        build_secondary_button,
+        apply_theme,
+        available_theme_names,
+        get_active_theme_name,
+        validate_theme_contrast,
+    )
 except Exception:
     UI_THEME = {
         "light_bg": "#F5F7FA",
@@ -103,6 +113,14 @@ except Exception:
         return tk.Button(parent, text=text, command=command)
     def build_secondary_button(parent, text, command, padx=12):
         return tk.Button(parent, text=text, command=command)
+    def apply_theme(name):
+        return name
+    def available_theme_names():
+        return ["escuro"]
+    def get_active_theme_name():
+        return "escuro"
+    def validate_theme_contrast(theme=None):
+        return {"ratios": {}, "warnings": {}}
 
 try:
     from runtime_status import report_status, report_log
@@ -1268,6 +1286,7 @@ class SuggestEntry(tk.Frame):
         self.steps=[]; self.step_idx=0; self._has_user_navigated=False; self._just_accepted=False
         self._stop_monitor=False; self._alert_cycle_idx=0; self._alert_cycle_ts=0.0
         self._db_panel_windows = {}
+        self._last_query_token = ""
 
         self.entry.bind("<KeyRelease>", self.on_key)
         self.entry.bind("<Tab>", self.on_tab, add="+")
@@ -1332,6 +1351,7 @@ class SuggestEntry(tk.Frame):
         typed = self.entry_var.get()
         if not typed.strip(): self.hide_list(); self._hide_overlay(); return
         tok_list = tokens(typed); last_token = tok_list[-1] if tok_list else typed.strip()
+        self._last_query_token = last_token
         suggestions = spelling_suggestions_for_token(last_token, max_results=4)
         if suggestions:
             best = suggestions[0]; self._show_overlay_for_last_token(best, last_token); self.correction = best
@@ -1773,11 +1793,38 @@ class SuggestEntry(tk.Frame):
 
     def show_list(self, matches):
         if not self.entry_var.get().strip(): self.hide_list(); self._hide_overlay(); return
+
+        def _highlight_match(text, query):
+            txt = str(text or "")
+            q = str(query or "").strip()
+            if not q:
+                return txt
+            idx = txt.lower().find(q.lower())
+            if idx < 0:
+                return txt
+            end = idx + len(q)
+            return f"{txt[:idx]}⟪{txt[idx:end]}⟫{txt[end:]}"
+
+        def _build_badges(rec):
+            badges = []
+            bloco = clean_whitespace(rec.get("BLOCO") or "")
+            ap = clean_whitespace(rec.get("APARTAMENTO") or "")
+            status = clean_whitespace(rec.get("STATUS") or "")
+            if bloco and bloco != "-": badges.append(f"BL {bloco}")
+            if ap and ap != "-": badges.append(f"AP {ap}")
+            if status and status != "-": badges.append(status)
+            return " • ".join(badges)
+
         for it in self.tree.get_children(): self.tree.delete(it)
         rows=[]
         max_nome_w = 0; max_det_w = 0
         for i,(disp,rec) in enumerate(matches):
             nome = clean_whitespace(full_name(rec)); det = clean_whitespace(details_only(rec));
+            badges = _build_badges(rec)
+            if badges:
+                det = f"{badges}  |  {det}"
+            nome = _highlight_match(nome, self._last_query_token)
+            det = _highlight_match(det, self._last_query_token)
             rows.append((nome,det,rec))
             try:
                 w_nome = self.font.measure(nome)
@@ -2234,8 +2281,19 @@ class AvisoBar(tk.Frame):
             status = (a.get("status") or {})
             ativo = status.get("ativo", True) if isinstance(status, dict) else True
             fechado = status.get("fechado_pelo_usuario", False) if isinstance(status, dict) else False
+            ts = a.get("timestamps") or {}
+            snooze_until_raw = ts.get("snooze_until")
+            snoozed = False
+            if snooze_until_raw:
+                for fmt in ("%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M"):
+                    try:
+                        snoozed = datetime.now() < datetime.strptime(str(snooze_until_raw), fmt)
+                        break
+                    except Exception:
+                        continue
             if ativo and not fechado:
-                ativos.append(a)
+                if not snoozed:
+                    ativos.append(a)
 
         grouped = {}
         for aviso in ativos:
@@ -2359,18 +2417,36 @@ class AvisoBar(tk.Frame):
             ent = tk.Entry(header, textvariable=search_var, width=36)
             ent.pack(side=tk.LEFT, padx=(6, 10))
 
-            tree = ttk.Treeview(top, columns=("nivel", "tipo", "identidade", "mensagem", "gerado", "ativo"), show="headings")
+            body = tk.Frame(top, bg=UI_THEME.get("light_bg", "#F5F7FA"))
+            body.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
+
+            tree = ttk.Treeview(body, columns=("nivel", "grupo", "tipo", "identidade", "mensagem", "gerado", "ativo"), show="headings")
             for c, t, w in (
                 ("nivel", "Nível", 90),
-                ("tipo", "Tipo", 210),
-                ("identidade", "Identidade", 220),
-                ("mensagem", "Mensagem", 320),
+                ("grupo", "Grupo", 150),
+                ("tipo", "Tipo", 140),
+                ("identidade", "Identidade", 160),
+                ("mensagem", "Mensagem", 260),
                 ("gerado", "Gerado em", 130),
-                ("ativo", "Ativo", 80),
+                ("ativo", "Ativo", 70),
             ):
                 tree.heading(c, text=t)
                 tree.column(c, width=w, anchor="w")
-            tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
+            tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+            history_var = tk.StringVar(value="Selecione um alerta para ver histórico.")
+            side = tk.Label(
+                body,
+                textvariable=history_var,
+                justify="left",
+                anchor="nw",
+                width=42,
+                bg=UI_THEME.get("surface", "#FFFFFF"),
+                fg=UI_THEME.get("text", "#111827"),
+                padx=10,
+                pady=8,
+            )
+            side.pack(side=tk.RIGHT, fill=tk.Y, padx=(10, 0))
 
             actions = tk.Frame(top, bg=UI_THEME.get("light_bg", "#F5F7FA"))
             actions.pack(fill=tk.X, padx=10, pady=(0, 10))
@@ -2388,8 +2464,10 @@ class AvisoBar(tk.Frame):
                     status = a.get("status") or {}
                     ativo = bool(status.get("ativo", True) and not status.get("fechado_pelo_usuario", False))
                     ts = a.get("timestamps") or {}
+                    group = f"{(a.get('identidade') or '-').split('|')[0]} / {(a.get('tipo') or '-')}"
                     tree.insert("", tk.END, iid=f"a_{idx}", values=(
                         (a.get("nivel") or "info").upper(),
+                        group,
                         a.get("tipo") or "-",
                         a.get("identidade") or "-",
                         (a.get("mensagem") or "-")[:120],
@@ -2422,17 +2500,68 @@ class AvisoBar(tk.Frame):
                         json.dump(data, f, ensure_ascii=False, indent=2)
                 _load_all()
 
-            def _open_monitor():
-                try:
-                    import interfacetwo
-                    root = self.winfo_toplevel()
-                    interfacetwo.create_monitor_toplevel(root)
-                except Exception:
-                    pass
+            def _snooze(minutes: int):
+                sel = tree.selection()
+                if not sel:
+                    return
+                idx = int(str(sel[0]).split("_", 1)[1])
+                data = _read_json(AVISOS_FILE) or {"registros": []}
+                rows = data.get("registros", []) or []
+                if 0 <= idx < len(rows):
+                    ts = rows[idx].get("timestamps") or {}
+                    ts["snooze_until"] = (datetime.now() + timedelta(minutes=minutes)).strftime("%d/%m/%Y %H:%M:%S")
+                    rows[idx]["timestamps"] = ts
+                    data["registros"] = rows
+                    atomic_save(AVISOS_FILE, data)
+                    _load_all()
+
+            def _open_selected_in_monitor():
+                sel = tree.selection()
+                if not sel:
+                    return
+                idx = int(str(sel[0]).split("_", 1)[1])
+                data = _read_json(AVISOS_FILE) or {"registros": []}
+                rows = data.get("registros", []) or []
+                if 0 <= idx < len(rows):
+                    ident = rows[idx].get("identidade") or ""
+                    try:
+                        import interfacetwo
+                        interfacetwo.set_monitor_focus_identity(ident)
+                        root = self.winfo_toplevel()
+                        interfacetwo.create_monitor_toplevel(root)
+                    except Exception:
+                        pass
+
+            def _on_select_detail(_event=None):
+                sel = tree.selection()
+                if not sel:
+                    history_var.set("Selecione um alerta para ver histórico.")
+                    return
+                idx = int(str(sel[0]).split("_", 1)[1])
+                data = _read_json(AVISOS_FILE) or {"registros": []}
+                rows = data.get("registros", []) or []
+                if 0 <= idx < len(rows):
+                    a = rows[idx]
+                    ts = a.get("timestamps") or {}
+                    st = a.get("status") or {}
+                    history_var.set(
+                        f"ID: {a.get('id_aviso','-')}\n"
+                        f"Tipo: {a.get('tipo','-')}\n"
+                        f"Identidade: {a.get('identidade','-')}\n"
+                        f"Gerado: {ts.get('gerado_em','-')}\n"
+                        f"Exibido: {ts.get('exibido_em','-')}\n"
+                        f"Fechado: {ts.get('fechado_em','-')}\n"
+                        f"Snooze até: {ts.get('snooze_until','-')}\n"
+                        f"Ativo: {st.get('ativo', True)}"
+                    )
 
             build_secondary_button(actions, "Atualizar", _load_all, padx=14).pack(side=tk.LEFT, padx=(0, 8))
-            build_secondary_button(actions, "Abrir monitor", _open_monitor, padx=14).pack(side=tk.LEFT, padx=(0, 8))
+            build_secondary_button(actions, "Ir para registro", _open_selected_in_monitor, padx=14).pack(side=tk.LEFT, padx=(0, 8))
+            build_secondary_button(actions, "Snooze 5m", lambda: _snooze(5), padx=14).pack(side=tk.LEFT, padx=(0, 8))
+            build_secondary_button(actions, "Snooze 10m", lambda: _snooze(10), padx=14).pack(side=tk.LEFT, padx=(0, 8))
+            build_secondary_button(actions, "Snooze 30m", lambda: _snooze(30), padx=14).pack(side=tk.LEFT, padx=(0, 8))
             build_primary_button(actions, "Marcar como tratado", _mark_handled, padx=14).pack(side=tk.LEFT)
+            tree.bind("<<TreeviewSelect>>", _on_select_detail, add="+")
             ent.bind("<Return>", lambda _e: _load_all(), add="+")
             _load_all()
             ent.focus_set()
@@ -2567,6 +2696,7 @@ def start_ui():
         return
     global _warning_bar
     _start_analises_watcher()
+    report_status("ux_metrics", "OK", stage="theme_contrast_check", details=validate_theme_contrast())
     root = tk.Tk(); root.title("Controle de Acesso")
     root.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
     container = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); container.pack(padx=14, pady=14, fill=tk.X)
@@ -2577,6 +2707,11 @@ def start_ui():
     s.pack(fill=tk.X)
 
     btn_frame = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); btn_frame.pack(padx=14, pady=(12,12))
+    theme_frame = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); theme_frame.pack(padx=14, pady=(0, 8), fill=tk.X)
+    tk.Label(theme_frame, text="Tema:", bg=UI_THEME.get("light_bg", "#F5F7FA"), fg=UI_THEME.get("text", "#111827")).pack(side=tk.LEFT)
+    theme_var = tk.StringVar(value=get_active_theme_name())
+    theme_combo = ttk.Combobox(theme_frame, textvariable=theme_var, values=available_theme_names(), state="readonly", width=16)
+    theme_combo.pack(side=tk.LEFT, padx=(6, 0))
     btn_save = build_primary_button(btn_frame, "Salvar", lambda: save_text(entry_widget=s.entry, btn=btn_save), padx=18)
     btn_save.config(width=14)
     btn_save.pack(side=tk.LEFT, padx=(0,10))
@@ -2591,6 +2726,17 @@ def start_ui():
             interfacetwo.create_monitor_toplevel(root)
         except Exception as e:
             print("Falha ao embutir monitor (abrindo fallback):", e); open_monitor_fallback_subprocess()
+
+    def _on_theme_change(_event=None):
+        apply_theme(theme_var.get())
+        try:
+            root.destroy()
+        except Exception:
+            return
+        start_ui()
+
+    theme_combo.bind("<<ComboboxSelected>>", _on_theme_change, add="+")
+
     btn_dados = build_secondary_button(btn_frame, "Monitor de Dados", open_monitor_embedded, padx=18)
     btn_dados.config(width=16)
     bind_button_states(btn_save, UI_THEME.get("primary", "#1F6FEB"), UI_THEME.get("primary_active", "#215DB0"))
@@ -2607,6 +2753,8 @@ def start_ui():
                 save_text(entry_widget=s.entry, btn=btn_save); return "break"
         save_text(entry_widget=s.entry, btn=btn_save); return "break"
     root.bind("<Control-Return>", ctrl_enter)
+    root.bind("<Control-m>", lambda _e: (open_monitor_embedded(), "break"), add="+")
+    root.bind("<Control-l>", lambda _e: (aviso_bar._open_alert_center(), "break"), add="+")
     root.bind("<Escape>", lambda e: (s.hide_list(), s._hide_overlay()))
     try: sync_suggestions()
     except Exception:
