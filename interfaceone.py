@@ -146,6 +146,7 @@ ENCOMENDAS_IN_FILE = os.path.join(BASE, "encomendasinit.json")
 ENCOMENDAS_DB_FILE = os.path.join(BASE, "encomendasend.json")
 ORIENTACOES_FILE = os.path.join(BASE, "orientacoes.json")
 OBSERVACOES_FILE = os.path.join(BASE, "observacoes.json")
+REVIEW_QUEUE_FILE = os.path.join(BASE, "fila_revisao.json")
 AVISOS_FILE = os.path.join(BASE, "avisos.json")
 ANALISES_FILE = os.path.join(BASE, "analises.json")
 _DB_LOCKFILE = DB_FILE + ".lock"
@@ -188,6 +189,16 @@ _ENCOMENDA_TIPO_TOKENS = {
     "SCOLA",
     "SAOLA",
 }
+_ENCOMENDA_TIPO_EXPLICITO = {
+    "ENCOMENDA",
+    "PACOTE",
+    "ENTREGA",
+    "ENVELOPE",
+    "CAIXA",
+    "SACOLA",
+    "CARTA",
+}
+_ENCOMENDA_TIPO_WEAK = {"PA", "SA", "EV", "CX"}
 _ENCOMENDA_LOJA_TOKENS = {
     "SHOPEE",
     "SHOPE",
@@ -336,19 +347,38 @@ def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
     if parsed:
         if parsed.get("PLACA") or parsed.get("MODELOS"):
             return False
-    has_tipo = any(t in _ENCOMENDA_TIPO_TOKENS for t in toks_up)
+    tipo_tokens = [t for t in toks_up if t in _ENCOMENDA_TIPO_TOKENS]
+    has_tipo_explicito = any(t in _ENCOMENDA_TIPO_EXPLICITO for t in tipo_tokens)
+    has_tipo_contextual = any((len(t) >= 3 and t not in _ENCOMENDA_TIPO_WEAK) for t in tipo_tokens)
+    has_tipo_weak = any(t in _ENCOMENDA_TIPO_WEAK for t in tipo_tokens)
     has_loja = any(t in _ENCOMENDA_LOJA_TOKENS for t in toks_up)
     has_nf = _has_encomenda_identificacao(toks, toks_up)
     has_bloco, has_ap = _has_bloco_ap_indicador(toks_up)
     has_endereco = has_bloco and has_ap
+    has_orientacao_context = any(t in {"OCORRENCIA", "ORIENTADO", "ORIENTACAO", "BARULHO", "RECLAMACAO", "CLAMACAO", "PORTARIA"} for t in toks_up)
 
     # Regra operacional: qualquer sinal de TIPO, IDENTIFICACAO ou EMPRESA/LOJA
     # classifica o texto como encomenda.
-    if has_loja or has_tipo or has_nf:
+    if has_loja or has_nf or has_tipo_explicito:
         return True
 
+    if has_tipo_contextual and has_endereco:
+        return True
+
+    if has_tipo_weak and (has_loja or has_nf or has_endereco):
+        return True
+
+    # guarda anti-conflito: texto narrativo de orientação não deve virar encomenda
+    # na ausência de sinais fortes de encomenda.
+    if has_orientacao_context:
+        return False
+
     for pattern in _ENCOMENDA_LOJA_PATTERNS:
-        if pattern.replace(" ", "") in normalized.replace(" ", ""):
+        p = _norm(pattern)
+        if not p:
+            continue
+        p_regex = r"\\b" + r"\\s+".join(re.escape(part) for part in p.split()) + r"\\b"
+        if re.search(p_regex, normalized):
             return True
     if _match_encomenda_store_token(toks_up):
         return True
@@ -378,6 +408,23 @@ def _save_encomenda_init(txt: str, now_str: str) -> None:
         atomic_save(ENCOMENDAS_IN_FILE, {"registros": regs})
     except Exception as e:
         print("Erro save (ENCOMENDAS_IN_FILE):", e)
+
+
+def _start_ia_pipeline(source: str) -> None:
+    """
+    Dispara o pipeline da IA em background.
+
+    Observação operacional: registros de dados/encomendas devem seguir o fluxo
+    normalmente mesmo com chat ativo.
+    """
+    if not (HAS_IA_MODULE and hasattr(ia_module, "processar")):
+        return
+    try:
+        threading.Thread(target=ia_module.processar, daemon=True).start()
+        report_status("ia_pipeline", "STARTED", stage="thread_started", details={"source": source})
+    except Exception as e:
+        report_status("ia_pipeline", "ERROR", stage="thread_start_failed", details={"error": str(e), "source": source})
+        _log_ui("ERROR", "ia_thread_start_failed", "Falha ao iniciar processamento IA em background", error=str(e), source=source)
 
 
 _loaded_rules = load_rules() if load_rules else {}
@@ -450,6 +497,34 @@ def _save_structured_text(path: str, txt: str, now_str: str, tipo: str, decision
     atomic_save(path, {"registros": regs})
     if log_audit_event:
         log_audit_event("texto_persistido", tipo, txt, confianca=rec.get("confianca_classificacao"), ambiguo=rec.get("ambiguo"))
+
+
+def _save_for_review(txt: str, now_str: str, decision_meta: dict = None) -> None:
+    try:
+        fila = _read_json(REVIEW_QUEUE_FILE)
+        if not isinstance(fila, dict) or "registros" not in fila:
+            fila = {"registros": []}
+    except Exception:
+        fila = {"registros": []}
+
+    regs = fila.get("registros") or []
+    nid = _compute_next_in_id(regs)
+    regs.append(
+        {
+            "id": nid,
+            "tipo": "REVISAO",
+            "texto": txt,
+            "data_hora": now_str,
+            "processado": False,
+            "motivo_roteamento": (decision_meta or {}).get("motivo", ""),
+            "scores": (decision_meta or {}).get("scores", {}),
+            "confianca_classificacao": (decision_meta or {}).get("confianca", 0.0),
+            "ambiguo": bool((decision_meta or {}).get("ambiguo", False)),
+            "destino_sugerido": (decision_meta or {}).get("destino", "dados"),
+        }
+    )
+    fila["registros"] = regs
+    atomic_save(REVIEW_QUEUE_FILE, fila)
 
 
 # ---------- util ----------
@@ -1987,6 +2062,16 @@ def save_text(entry_widget=None, btn=None):
     if log_audit_event:
         log_audit_event("texto_classificado", destino, txt, motivo=decision.get("motivo"), score=decision.get("score"), confianca=decision.get("confianca"), ambiguo=decision.get("ambiguo"))
 
+    if destino == "revisao":
+        _save_for_review(txt, now_str, decision_meta=decision)
+        report_status("user_input", "OK", stage="saved_for_review", details={"path": REVIEW_QUEUE_FILE})
+        try:
+            entry_widget.delete(0, "end")
+        except Exception as e:
+            _log_ui("WARNING", "entry_clear_failed", "Falha ao limpar entrada", error=str(e))
+        _report_save_metric("save_completed", destino="revisao")
+        return
+
     if destino == "orientacoes":
         _save_structured_text(ORIENTACOES_FILE, txt, now_str, "ORIENTACAO", decision_meta=decision)
         report_status("user_input", "OK", stage="saved_orientacao", details={"path": ORIENTACOES_FILE})
@@ -2021,14 +2106,7 @@ def save_text(entry_widget=None, btn=None):
                 entry_widget.after(500, lambda: btn.config(state="normal"))
             except Exception as e:
                 _log_ui("WARNING", "button_toggle_failed", "Falha ao atualizar estado do botão", error=str(e))
-        if HAS_IA_MODULE and hasattr(ia_module, "processar"):
-            try:
-                if not (hasattr(ia_module, "is_chat_mode_active") and ia_module.is_chat_mode_active()):
-                    threading.Thread(target=ia_module.processar, daemon=True).start()
-                    report_status("ia_pipeline", "STARTED", stage="thread_started", details={"source": "save_text_encomenda"})
-            except Exception as e:
-                report_status("ia_pipeline", "ERROR", stage="thread_start_failed", details={"error": str(e), "source": "save_text_encomenda"})
-                _log_ui("ERROR", "ia_thread_start_failed", "Falha ao iniciar processamento IA para encomendas", error=str(e))
+        _start_ia_pipeline("save_text_encomenda")
         _report_save_metric("save_completed", destino="encomendas")
         return
 
@@ -2144,16 +2222,7 @@ def save_text(entry_widget=None, btn=None):
             pass
 
     # disparar processamento IA em background (se módulo ia disponível)
-    if HAS_IA_MODULE and hasattr(ia_module, "processar"):
-        try:
-            if hasattr(ia_module, "is_chat_mode_active") and ia_module.is_chat_mode_active():
-                pass
-            else:
-                threading.Thread(target=ia_module.processar, daemon=True).start()
-                report_status("ia_pipeline", "STARTED", stage="thread_started", details={"source": "save_text_dados"})
-        except Exception as e:
-            report_status("ia_pipeline", "ERROR", stage="thread_start_failed", details={"error": str(e), "source": "save_text_dados"})
-            _log_ui("ERROR", "ia_thread_start_failed", "Falha ao iniciar processamento IA em background", error=str(e))
+    _start_ia_pipeline("save_text_dados")
 
     _report_save_metric("save_completed", destino="dados", missing_fields=len(missing_fields))
 

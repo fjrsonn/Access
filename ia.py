@@ -6,6 +6,7 @@ import os
 import sys
 import tempfile
 import time
+import threading
 import traceback
 import unicodedata
 from typing import Optional, Tuple, Any, Dict, Iterable
@@ -107,6 +108,10 @@ ENCOMENDAS_SAIDA = os.path.join(BASE_DIR, "encomendasend.json")
 PROMPT_PATH = os.path.join(BASE_DIR, "prompts", "prompt_llm.txt")
 AGENT_PROMPT_PATH = os.path.join(BASE_DIR, "prompts", "prompt_agente.txt")
 LOCK_FILE = os.path.join(BASE_DIR, "process.lock")
+RETRY_DELAY_SECONDS = 1.0
+LOCK_STALE_SECONDS = 30.0
+_RETRY_STATE_LOCK = threading.Lock()
+_RETRY_SCHEDULED = False
 
 _AGENT_PROMPT_ATIVO = ""
 CHAT_MODE_ACTIVE = False
@@ -246,9 +251,22 @@ def acquire_lock(timeout: int = 10) -> bool:
     while True:
         try:
             fd = os.open(LOCK_FILE, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            try:
+                os.write(fd, str(os.getpid()).encode("utf-8"))
+            except Exception:
+                pass
             os.close(fd)
             return True
         except FileExistsError:
+            try:
+                age = time.time() - os.path.getmtime(LOCK_FILE)
+                if age >= LOCK_STALE_SECONDS:
+                    os.remove(LOCK_FILE)
+                    continue
+            except FileNotFoundError:
+                continue
+            except Exception:
+                pass
             if (time.time() - start) > timeout:
                 return False
             time.sleep(0.1)
@@ -259,6 +277,27 @@ def release_lock():
             os.remove(LOCK_FILE)
     except Exception:
         pass
+
+
+def _schedule_process_retry(reason: str = "lock_not_acquired") -> bool:
+    """Agenda uma nova tentativa única de processamento para evitar perda de gatilho."""
+    global _RETRY_SCHEDULED
+    with _RETRY_STATE_LOCK:
+        if _RETRY_SCHEDULED:
+            return False
+        _RETRY_SCHEDULED = True
+
+    def _retry_runner():
+        global _RETRY_SCHEDULED
+        with _RETRY_STATE_LOCK:
+            _RETRY_SCHEDULED = False
+        processar()
+
+    timer = threading.Timer(RETRY_DELAY_SECONDS, _retry_runner)
+    timer.daemon = True
+    timer.start()
+    report_status("ia_pipeline", "STARTED", stage="retry_scheduled", details={"reason": reason, "delay_s": RETRY_DELAY_SECONDS})
+    return True
 
 # =========================
 # Helpers para SAIDA (dadosend.json)
@@ -454,6 +493,11 @@ def _build_loja_ignore_tokens():
     return tokens_set
 
 _ENCOMENDA_LOJA_IGNORE_TOKENS = _build_loja_ignore_tokens()
+_ENCOMENDA_FUZZY_STOPWORDS = {
+    "REGISTRANDO", "REGISTRO", "OCORRENCIA", "OCORRENCIAS", "CLAMACAO", "RECLAMACAO",
+    "BARULHO", "MORADOR", "ORIENTADO", "ORIENTADA", "ORIENTACAO", "PORTARIA",
+    "VINDO", "BLOCO", "APARTAMENTO", "APARAMNETO", "FOI",
+}
 
 _ENCOMENDA_NOME_CORRECOES = {
     "JOAO": "JOÃO",
@@ -487,7 +531,10 @@ def _match_encomenda_store(texto: str, tokens_up):
     normalized = _normalize_encomenda_text(texto)
     for key, value in _ENCOMENDA_LOJA_MAP.items():
         key_norm = _normalize_encomenda_text(key)
-        if key_norm and key_norm in normalized:
+        if not key_norm:
+            continue
+        key_regex = r"\\b" + r"\\s+".join(re.escape(part) for part in key_norm.split()) + r"\\b"
+        if re.search(key_regex, normalized):
             return value
     for tok in tokens_up:
         if tok in _ENCOMENDA_LOJA_MAP:
@@ -495,6 +542,8 @@ def _match_encomenda_store(texto: str, tokens_up):
     if rf_process and rf_fuzz:
         candidates = list(_ENCOMENDA_LOJA_MAP.keys())
         for tok in tokens_up:
+            if tok in _ENCOMENDA_FUZZY_STOPWORDS:
+                continue
             best = rf_process.extractOne(tok, candidates, scorer=rf_fuzz.WRatio)
             if best and best[1] >= 88:
                 return _ENCOMENDA_LOJA_MAP.get(best[0], "")
@@ -507,6 +556,8 @@ def _match_encomenda_tipo(tokens_up):
     if rf_process and rf_fuzz:
         candidates = list(_ENCOMENDA_TIPO_MAP.keys())
         for tok in tokens_up:
+            if tok in _ENCOMENDA_FUZZY_STOPWORDS:
+                continue
             best = rf_process.extractOne(tok, candidates, scorer=rf_fuzz.WRatio)
             if best and best[1] >= 88:
                 return _ENCOMENDA_TIPO_MAP.get(best[0], "")
@@ -541,7 +592,7 @@ def _parse_bloco_ap_tokens(tokens_up):
             break
     return bloco, ap
 
-def _extract_identificacao(tokens_up, ignore_tokens=None):
+def _extract_identificacao(tokens_raw, tokens_up, ignore_tokens=None):
     skip_prefixes = ("AP", "APT", "APART", "APTA", "APARTAMEN", "APARTAMENTO", "BL", "BLO", "BLOCO", "BLCO", "BLC")
     ignore_tokens = set(ignore_tokens or [])
 
@@ -557,12 +608,12 @@ def _extract_identificacao(tokens_up, ignore_tokens=None):
             return tok
 
     # 2) fallback: aceita código único alfanumérico mesmo sem dígitos (sem "tratar" valor)
-    for tok in reversed(tokens_up):
+    for tok_raw, tok in reversed(list(zip(tokens_raw, tokens_up))):
         if tok.startswith(skip_prefixes):
             continue
         if tok in ignore_tokens:
             continue
-        if re.match(r"^[A-Z0-9]{8,}$", tok):
+        if tok.isalpha() and len(tok) >= 10 and str(tok_raw or "").isupper():
             return tok
     return ""
 
@@ -575,7 +626,7 @@ def _parse_encomenda_text(texto: str) -> dict:
 
     ident_ignore_tokens = set(_ENCOMENDA_TIPO_MAP.keys()) | set(_ENCOMENDA_LOJA_MAP.keys())
     ident_ignore_tokens.update(_ENCOMENDA_LOJA_IGNORE_TOKENS)
-    identificacao = _extract_identificacao(toks_up, ignore_tokens=ident_ignore_tokens)
+    identificacao = _extract_identificacao(toks, toks_up, ignore_tokens=ident_ignore_tokens)
     if not tipo:
         tipo = "ENCOMENDA" if loja or identificacao else ""
 
@@ -936,6 +987,7 @@ def processar():
     if not acquire_lock(timeout=5):
         report_status("ia_pipeline", "SKIPPED", stage="lock_not_acquired")
         _log_ia("WARNING", "lock_not_acquired", "Outro processo em execução. Abortando.")
+        _schedule_process_retry("lock_not_acquired")
         return
 
     try:
