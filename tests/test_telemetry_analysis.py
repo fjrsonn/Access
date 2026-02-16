@@ -51,7 +51,9 @@ class TelemetryAnalysisTests(unittest.TestCase):
             with open(os.path.join(td, "dadosinit.json"), "w", encoding="utf-8") as f:
                 json.dump({"registros": [{"id": 1, "processado": True}]}, f)
             with open(os.path.join(td, "dadosend.json"), "w", encoding="utf-8") as f:
-                json.dump({"registros": [{"_entrada_id": 2}]}, f)
+                json.dump({"registros": [{"_entrada_id": 2, "NOME": "ONIX", "MODELO": "ONIX", "ID": 99}]}, f)
+            with open(os.path.join(td, "encomendasend.json"), "w", encoding="utf-8") as f:
+                json.dump({"registros": [{"ID": 5, "STATUS_ENCOMENDA": "INVALIDO"}]}, f)
             with open(os.path.join(td, "analises.json"), "w", encoding="utf-8") as f:
                 json.dump({"registros": [{"identidade": "ANA|SILVA|A|1"}], "encomendas_multiplas_bloco_apartamento": []}, f)
             with open(os.path.join(td, "avisos.json"), "w", encoding="utf-8") as f:
@@ -64,6 +66,8 @@ class TelemetryAnalysisTests(unittest.TestCase):
             conflitos = runtime_status.detectar_conflitos_dados(td)
             self.assertIn(1, conflitos["processed_without_saida"])
             self.assertTrue(conflitos["avisos_sem_analise"])
+            self.assertTrue(conflitos["nome_modelo_conflicts"])
+            self.assertTrue(conflitos["status_encomenda_conflicts"])
 
             rel = runtime_status.gerar_relatorio_diagnostico_diario(td, events)
             self.assertIn("suggestions", rel)

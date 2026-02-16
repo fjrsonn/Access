@@ -6,6 +6,18 @@ from datetime import datetime
 from typing import Any, Callable, Dict
 
 
+def _has_explicit_access_fields(parsed: dict | None) -> bool:
+    if not isinstance(parsed, dict):
+        return False
+    return bool(
+        str(parsed.get("PLACA") or "").strip()
+        or str(parsed.get("BLOCO") or "").strip()
+        or str(parsed.get("APARTAMENTO") or "").strip()
+        or (parsed.get("MODELOS") or [])
+        or str(parsed.get("NOME_RAW") or "").strip()
+    )
+
+
 def decidir_destino(texto: str, parsed: dict | None, *,
                    classificar_fn: Callable[[str, dict | None], dict] | None,
                    is_encomenda_fn: Callable[[str, dict | None], bool]) -> dict:
@@ -16,6 +28,8 @@ def decidir_destino(texto: str, parsed: dict | None, *,
     destino = decision.get("destino")
     if destino == "encomendas" or is_encomenda_fn(texto, parsed):
         destino = "encomendas"
+    if destino in {"encomendas", "observacoes", "orientacoes"} and _has_explicit_access_fields(parsed):
+        destino = "dados"
     decision = dict(decision)
     decision["destino_final"] = destino
     return decision
@@ -38,7 +52,7 @@ def montar_registro_acesso(parsed: dict, *, corrigir_nome_fn: Callable[[str], st
 
     rec: Dict[str, Any] = {
         "NOME": (nome or "").upper(),
-        "SOBRENOME": (sobrenome or "").upper() or "-",
+        "SOBRENOME": (sobrenome or "").upper(),
         "BLOCO": str(parsed.get("BLOCO") or "").strip(),
         "APARTAMENTO": str(parsed.get("APARTAMENTO") or "").strip(),
         "PLACA": (parsed.get("PLACA") or "").upper() or "-",

@@ -16,6 +16,18 @@ class InterfaceOneCoreTests(unittest.TestCase):
         )
         self.assertEqual(out.get("destino_final"), "encomendas")
 
+    def test_decidir_destino_com_campos_acesso_forca_dados(self):
+        def fake_classifier(_txt, _parsed):
+            return {"destino": "encomendas", "score": 0.9}
+
+        out = core.decidir_destino(
+            "ENTREGA AP 101",
+            {"PLACA": "ABC1234", "BLOCO": "A"},
+            classificar_fn=fake_classifier,
+            is_encomenda_fn=lambda *_: True,
+        )
+        self.assertEqual(out.get("destino_final"), "dados")
+
     def test_montar_registro_acesso(self):
         parsed = {
             "NOME_RAW": "joao silva",

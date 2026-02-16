@@ -289,6 +289,12 @@ def _find_by_entrada_id(regs, entrada_id):
             return r
     return None
 
+
+
+def _full_record_identity_key(rec: dict) -> str:
+    keys = ("NOME", "SOBRENOME", "BLOCO", "APARTAMENTO", "PLACA", "MODELO", "COR", "STATUS")
+    return "|".join(str(rec.get(k, "") or "").strip().upper() for k in keys)
+
 def _next_saida_id(regs):
     maxid = 0
     for r in regs:
@@ -307,6 +313,12 @@ def append_or_update_saida(dados: dict, entrada_id=None):
     """
     regs = _load_saida()
     found = _find_by_entrada_id(regs, entrada_id)
+    if not found:
+        incoming_fp = _full_record_identity_key(dados)
+        for rec in regs:
+            if _full_record_identity_key(rec) == incoming_fp:
+                found = rec
+                break
     if found:
         for k in ("MODELO","COR","PLACA","NOME","SOBRENOME","BLOCO","APARTAMENTO","STATUS"):
             incoming = dados.get(k)
@@ -891,13 +903,16 @@ def post_validate_and_clean_record(rec: dict, modelos_hint: Iterable[str]=None, 
     # reconstruct nome / sobrenome
     if cleaned:
         rec["NOME"] = cleaned[0].upper()
-        rec["SOBRENOME"] = " ".join(cleaned[1:]).upper() if len(cleaned) > 1 else "-"
+        rec["SOBRENOME"] = " ".join(cleaned[1:]).upper() if len(cleaned) > 1 else ""
     else:
-        # fallback: keep original if nothing left, but ensure '-' values
-        if not rec.get("NOME") or rec.get("NOME") in ("", "-"):
-            rec["NOME"] = "-"
-        if not rec.get("SOBRENOME") or rec.get("SOBRENOME") in ("", "-"):
-            rec["SOBRENOME"] = "-"
+        rec["NOME"] = ""
+        rec["SOBRENOME"] = ""
+
+    modelo_clean = str(rec.get("MODELO") or "").strip().upper()
+    if modelo_clean and rec.get("NOME") and str(rec.get("NOME")).strip().upper() == modelo_clean:
+        rec["NOME"] = ""
+    if modelo_clean and rec.get("SOBRENOME") and str(rec.get("SOBRENOME")).strip().upper() == modelo_clean:
+        rec["SOBRENOME"] = ""
 
     # force MODEL/PLACA/COR uppercase and ensure not empty
     for k in ("MODELO","PLACA","COR","STATUS","BLOCO","APARTAMENTO"):
