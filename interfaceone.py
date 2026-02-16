@@ -1219,10 +1219,18 @@ class SuggestEntry(tk.Frame):
         # overlay (completar token)
         self.overlay = tk.Label(self, text="", anchor="w", font=self.entry["font"], fg="gray65", bg=self._orig_entry_bg, bd=0); self.overlay_visible=False
         # suggestion list
-        self.frame = tk.Frame(self); self.sbar = tk.Scrollbar(self.frame, orient=tk.VERTICAL)
-        self.tree = ttk.Treeview(self.frame, columns=("nome","detalhes"), show="headings"); self.tree.heading("nome", text="Nome"); self.tree.heading("detalhes", text="Detalhes")
+        self.frame = tk.Frame(self, bg="#F5F7FA", highlightbackground="#D1D5DB", highlightthickness=1, bd=0); self.sbar = tk.Scrollbar(self.frame, orient=tk.VERTICAL)
+        self.tree = ttk.Treeview(self.frame, columns=("nome","detalhes"), show="headings", height=8); self.tree.heading("nome", text="Nome"); self.tree.heading("detalhes", text="Detalhes")
         self.tree.column("nome", width=220, anchor="w"); self.tree.column("detalhes", width=620, anchor="w")
-        self.tree.configure(yscrollcommand=self.sbar.set); self.sbar.config(command=self.tree.yview); self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True); self.sbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.tree.configure(yscrollcommand=self.sbar.set); self.sbar.config(command=self.tree.yview); self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,0), pady=6); self.sbar.pack(side=tk.RIGHT, fill=tk.Y, pady=6, padx=(0,6))
+        try:
+            style = ttk.Style(self)
+            style.configure("Suggest.Treeview", rowheight=26, font=("Segoe UI", 10), background="#FFFFFF", fieldbackground="#FFFFFF", foreground="#111827")
+            style.configure("Suggest.Treeview.Heading", font=("Segoe UI", 10, "bold"))
+            style.map("Suggest.Treeview", background=[("selected", "#DBEAFE")], foreground=[("selected", "#111827")])
+            self.tree.configure(style="Suggest.Treeview")
+        except Exception:
+            pass
 
         self.ia_mode=False; self.ia_waiting_for_query=False; self.list_visible=False; self.suggestions=[]; self.correction=""; self.curr=None
         self.steps=[]; self.step_idx=0; self._has_user_navigated=False; self._just_accepted=False
@@ -2165,7 +2173,7 @@ class AvisoBar(tk.Frame):
     def _load_avisos_active(self):
         # Recarrega sempre para garantir que qualquer alteração recém-gravada
         # em avisos.json apareça sem depender de resolução de timestamp do FS.
-        self._active_avisos = []
+        ativos = []
         data = _read_json(AVISOS_FILE) or {}
         regs = data.get("registros", []) or []
         for a in regs:
@@ -2173,7 +2181,21 @@ class AvisoBar(tk.Frame):
             ativo = status.get("ativo", True) if isinstance(status, dict) else True
             fechado = status.get("fechado_pelo_usuario", False) if isinstance(status, dict) else False
             if ativo and not fechado:
-                self._active_avisos.append(a)
+                ativos.append(a)
+
+        grouped = {}
+        for aviso in ativos:
+            identidade = (aviso.get("identidade") or "SEM_IDENTIDADE").strip().upper()
+            tipo = (aviso.get("tipo") or "SEM_TIPO").strip().upper()
+            key = f"{identidade}|{tipo}"
+            grouped[key] = aviso
+
+        prio_map = {"critical": 0, "warn": 1, "info": 2}
+
+        def _prio(av):
+            return prio_map.get((av.get("nivel") or "info").strip().lower(), 3)
+
+        self._active_avisos = sorted(grouped.values(), key=lambda av: (_prio(av), (av.get("timestamps") or {}).get("gerado_em") or ""))
         if self._idx >= len(self._active_avisos):
             self._idx = 0
 
@@ -2182,9 +2204,16 @@ class AvisoBar(tk.Frame):
         txt = str(txt).strip()
         if not txt:
             return ""
+        nivel = (aviso.get("nivel") or "info").strip().lower()
+        if nivel == "critical":
+            tag = "🔴 Crítico"
+        elif nivel == "warn":
+            tag = "🟡 Atenção"
+        else:
+            tag = "🔵 Info"
         if len(txt) > 140:
             txt = f"{txt[:137].rstrip()}... (ver detalhes no painel)"
-        return f"⚠ Aviso: {txt}"
+        return f"{tag}: {txt}"
 
     def _show_current(self):
         if not self._active_avisos:
