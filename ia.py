@@ -533,7 +533,7 @@ def _match_encomenda_store(texto: str, tokens_up):
         key_norm = _normalize_encomenda_text(key)
         if not key_norm:
             continue
-        key_regex = r"\\b" + r"\\s+".join(re.escape(part) for part in key_norm.split()) + r"\\b"
+        key_regex = r"\b" + r"\s+".join(re.escape(part) for part in key_norm.split()) + r"\b"
         if re.search(key_regex, normalized):
             return value
     for tok in tokens_up:
