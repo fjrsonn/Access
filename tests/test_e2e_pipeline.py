@@ -161,6 +161,40 @@ class E2EPipelineTests(unittest.TestCase):
         self.assertEqual(len(registros), 1)
         self.assertEqual(str(registros[0].get("_entrada_id")), "77")
 
+    def test_e2e_encomenda_so_marca_processado_apos_saida(self):
+        entrada = os.path.join(self.td.name, "dadosinit_encomenda_fail.json")
+        saida = os.path.join(self.td.name, "dadosend_encomenda_fail.json")
+        encom_i = os.path.join(self.td.name, "encom_i_fail.json")
+        encom_o = os.path.join(self.td.name, "encom_o_fail.json")
+
+        with open(entrada, "w", encoding="utf-8") as f:
+            json.dump({"registros": []}, f)
+        with open(saida, "w", encoding="utf-8") as f:
+            json.dump({"registros": []}, f)
+        with open(encom_o, "w", encoding="utf-8") as f:
+            json.dump({"registros": []}, f)
+        with open(encom_i, "w", encoding="utf-8") as f:
+            json.dump({"registros": [{"id": 99, "texto": "PACOTE SHOPEE BLOCO A AP 101", "processado": False, "data_hora": "10/01/2026 10:00:00"}]}, f)
+
+        with mock.patch.multiple(
+            ia,
+            ENTRADA=entrada,
+            SAIDA=saida,
+            ENCOMENDAS_ENTRADA=encom_i,
+            ENCOMENDAS_SAIDA=encom_o,
+            LOCK_FILE=os.path.join(self.td.name, "lock_encomenda_fail"),
+        ),             mock.patch.object(ia, "append_or_update_encomendas", return_value=False),             mock.patch.object(ia, "acquire_lock", return_value=True),             mock.patch.object(ia, "release_lock", return_value=None):
+            ia.processar()
+
+        with open(encom_i, "r", encoding="utf-8") as f:
+            init_regs = (json.load(f) or {}).get("registros") or []
+        self.assertEqual(len(init_regs), 1)
+        self.assertFalse(bool(init_regs[0].get("processado")))
+
+        events = runtime_status.read_runtime_events(self.events)
+        stages = [e.get("stage") for e in events]
+        self.assertIn("save_encomendas_saida_failed", stages)
+
     def test_e2e_evento_atrasado_nao_quebra_ordem_temporal(self):
         saida = os.path.join(self.td.name, "dadosend_temporal.json")
         with open(saida, "w", encoding="utf-8") as f:
