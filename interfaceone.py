@@ -188,6 +188,16 @@ _ENCOMENDA_TIPO_TOKENS = {
     "SCOLA",
     "SAOLA",
 }
+_ENCOMENDA_TIPO_EXPLICITO = {
+    "ENCOMENDA",
+    "PACOTE",
+    "ENTREGA",
+    "ENVELOPE",
+    "CAIXA",
+    "SACOLA",
+    "CARTA",
+}
+_ENCOMENDA_TIPO_WEAK = {"PA", "SA", "EV", "CX"}
 _ENCOMENDA_LOJA_TOKENS = {
     "SHOPEE",
     "SHOPE",
@@ -336,7 +346,10 @@ def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
     if parsed:
         if parsed.get("PLACA") or parsed.get("MODELOS"):
             return False
-    has_tipo = any(t in _ENCOMENDA_TIPO_TOKENS for t in toks_up)
+    tipo_tokens = [t for t in toks_up if t in _ENCOMENDA_TIPO_TOKENS]
+    has_tipo_explicito = any(t in _ENCOMENDA_TIPO_EXPLICITO for t in tipo_tokens)
+    has_tipo_contextual = any((len(t) >= 3 and t not in _ENCOMENDA_TIPO_WEAK) for t in tipo_tokens)
+    has_tipo_weak = any(t in _ENCOMENDA_TIPO_WEAK for t in tipo_tokens)
     has_loja = any(t in _ENCOMENDA_LOJA_TOKENS for t in toks_up)
     has_nf = _has_encomenda_identificacao(toks, toks_up)
     has_bloco, has_ap = _has_bloco_ap_indicador(toks_up)
@@ -344,11 +357,21 @@ def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
 
     # Regra operacional: qualquer sinal de TIPO, IDENTIFICACAO ou EMPRESA/LOJA
     # classifica o texto como encomenda.
-    if has_loja or has_tipo or has_nf:
+    if has_loja or has_nf or has_tipo_explicito:
+        return True
+
+    if has_tipo_contextual and has_endereco:
+        return True
+
+    if has_tipo_weak and (has_loja or has_nf or has_endereco):
         return True
 
     for pattern in _ENCOMENDA_LOJA_PATTERNS:
-        if pattern.replace(" ", "") in normalized.replace(" ", ""):
+        p = _norm(pattern)
+        if not p:
+            continue
+        p_regex = r"\\b" + r"\\s+".join(re.escape(part) for part in p.split()) + r"\\b"
+        if re.search(p_regex, normalized):
             return True
     if _match_encomenda_store_token(toks_up):
         return True
@@ -378,6 +401,23 @@ def _save_encomenda_init(txt: str, now_str: str) -> None:
         atomic_save(ENCOMENDAS_IN_FILE, {"registros": regs})
     except Exception as e:
         print("Erro save (ENCOMENDAS_IN_FILE):", e)
+
+
+def _start_ia_pipeline(source: str) -> None:
+    """
+    Dispara o pipeline da IA em background.
+
+    Observação operacional: registros de dados/encomendas devem seguir o fluxo
+    normalmente mesmo com chat ativo.
+    """
+    if not (HAS_IA_MODULE and hasattr(ia_module, "processar")):
+        return
+    try:
+        threading.Thread(target=ia_module.processar, daemon=True).start()
+        report_status("ia_pipeline", "STARTED", stage="thread_started", details={"source": source})
+    except Exception as e:
+        report_status("ia_pipeline", "ERROR", stage="thread_start_failed", details={"error": str(e), "source": source})
+        _log_ui("ERROR", "ia_thread_start_failed", "Falha ao iniciar processamento IA em background", error=str(e), source=source)
 
 
 _loaded_rules = load_rules() if load_rules else {}
@@ -2021,14 +2061,7 @@ def save_text(entry_widget=None, btn=None):
                 entry_widget.after(500, lambda: btn.config(state="normal"))
             except Exception as e:
                 _log_ui("WARNING", "button_toggle_failed", "Falha ao atualizar estado do botão", error=str(e))
-        if HAS_IA_MODULE and hasattr(ia_module, "processar"):
-            try:
-                if not (hasattr(ia_module, "is_chat_mode_active") and ia_module.is_chat_mode_active()):
-                    threading.Thread(target=ia_module.processar, daemon=True).start()
-                    report_status("ia_pipeline", "STARTED", stage="thread_started", details={"source": "save_text_encomenda"})
-            except Exception as e:
-                report_status("ia_pipeline", "ERROR", stage="thread_start_failed", details={"error": str(e), "source": "save_text_encomenda"})
-                _log_ui("ERROR", "ia_thread_start_failed", "Falha ao iniciar processamento IA para encomendas", error=str(e))
+        _start_ia_pipeline("save_text_encomenda")
         _report_save_metric("save_completed", destino="encomendas")
         return
 
@@ -2144,16 +2177,7 @@ def save_text(entry_widget=None, btn=None):
             pass
 
     # disparar processamento IA em background (se módulo ia disponível)
-    if HAS_IA_MODULE and hasattr(ia_module, "processar"):
-        try:
-            if hasattr(ia_module, "is_chat_mode_active") and ia_module.is_chat_mode_active():
-                pass
-            else:
-                threading.Thread(target=ia_module.processar, daemon=True).start()
-                report_status("ia_pipeline", "STARTED", stage="thread_started", details={"source": "save_text_dados"})
-        except Exception as e:
-            report_status("ia_pipeline", "ERROR", stage="thread_start_failed", details={"error": str(e), "source": "save_text_dados"})
-            _log_ui("ERROR", "ia_thread_start_failed", "Falha ao iniciar processamento IA em background", error=str(e))
+    _start_ia_pipeline("save_text_dados")
 
     _report_save_metric("save_completed", destino="dados", missing_fields=len(missing_fields))
 
