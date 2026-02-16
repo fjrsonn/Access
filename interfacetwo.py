@@ -38,6 +38,7 @@ ANALISES_ARQUIVO = os.path.join(BASE_DIR, "analises.json")
 AVISOS_ARQUIVO = os.path.join(BASE_DIR, "avisos.json")
 LOCK_FILE = os.path.join(BASE_DIR, "monitor.lock")
 REFRESH_MS = 2000  # 2s
+EDIT_LOG_FILE = os.path.join(BASE_DIR, "EDITADO.TXT")
 
 # internal reference to Toplevel (quando embutido)
 _monitor_toplevel = None
@@ -142,6 +143,7 @@ def format_line(r: dict) -> str:
             cor = inf_cor
 
     return (
+        f"{_record_id_prefix(r)}"
         f"{safe(r.get('DATA_HORA'))} | "
         f"{safe(r.get('NOME'))} {safe(r.get('SOBRENOME'))} | "
         f"BLOCO {safe(r.get('BLOCO'))} APARTAMENTO {safe(r.get('APARTAMENTO'))} | "
@@ -220,7 +222,7 @@ def format_creative_entry(r: dict) -> str:
     ]
     key = _record_hash_key(r)
     idx = int(key[:2], 16) % len(templates)
-    return templates[idx].format(
+    body = templates[idx].format(
         hora=hora or "-",
         data=data or "-",
         nome=nome,
@@ -231,6 +233,7 @@ def format_creative_entry(r: dict) -> str:
         modelo=modelo_fmt or "-",
         cor=cor_fmt or "-",
     )
+    return f"{_record_id_prefix(r)}{body}"
 
 def _record_hash_key_encomenda(r: dict) -> str:
     raw = "|".join([
@@ -282,8 +285,28 @@ def format_encomenda_entry(r: dict) -> str:
         identificacao=identificacao,
     )
     if status not in ("-", ""):
-        return f"{base_text} — {status} {status_dh}"
-    return base_text
+        base_text = f"{base_text} — {status} {status_dh}"
+    return f"{_record_id_prefix(r)}{base_text}"
+
+
+
+def _record_id_prefix(r: dict) -> str:
+    rid = r.get("ID") if r.get("ID") is not None else r.get("id")
+    return f"[ID {rid}] " if rid not in (None, "", "-") else "[ID ?] "
+
+
+def _append_edit_history(section: str, before: str, after: str) -> None:
+    if before == after:
+        return
+    stamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    payload = (
+        f"[{stamp}] {section}\n"
+        f"ANTIGO: {before}\n"
+        f"ATUAL: {after}\n"
+        f"{'-' * 80}\n"
+    )
+    with open(EDIT_LOG_FILE, "a", encoding="utf-8") as f:
+        f.write(payload)
 
 # ---------- UI helpers (embutido) ----------
 
@@ -300,10 +323,12 @@ def _extract_multi_fields(text: str) -> dict:
 
 
 def format_orientacao_entry(r: dict) -> str:
-    return str(r.get("texto") or r.get("texto_original") or "")
+    text = str(r.get("texto") or r.get("texto_original") or "")
+    return f"{_record_id_prefix(r)}{text}"
 
 def format_observacao_entry(r: dict) -> str:
-    return str(r.get("texto") or r.get("texto_original") or "")
+    text = str(r.get("texto") or r.get("texto_original") or "")
+    return f"{_record_id_prefix(r)}{text}"
 
 def _normalize_date_value(value: str):
     if not value:
@@ -1195,12 +1220,18 @@ def _build_text_actions(frame, text_widget, info_label, path):
         if not target:
             return
 
+        before_text = str(target.get("texto") or target.get("texto_original") or "")
         target["texto"] = new_text
         strict, inferred = build_structured_fields(new_text) if build_structured_fields else ({}, {})
         target["campos_extraidos_confirmados"] = strict
         target["campos_extraidos_inferidos"] = inferred
         target["campos_extraidos"] = _extract_multi_fields(new_text)
         _atomic_write(path, {"registros": registros})
+        try:
+            section = "OBSERVACOES" if os.path.basename(path).lower() == "observacoes.json" else "ORIENTACOES"
+            _append_edit_history(section, before_text, new_text)
+        except Exception:
+            pass
         if log_audit_event:
             log_audit_event("texto_editado", os.path.basename(path), new_text)
             log_audit_event("campos_reextraidos", os.path.basename(path), new_text)
