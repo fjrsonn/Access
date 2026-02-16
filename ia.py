@@ -109,6 +109,7 @@ PROMPT_PATH = os.path.join(BASE_DIR, "prompts", "prompt_llm.txt")
 AGENT_PROMPT_PATH = os.path.join(BASE_DIR, "prompts", "prompt_agente.txt")
 LOCK_FILE = os.path.join(BASE_DIR, "process.lock")
 RETRY_DELAY_SECONDS = 1.0
+LOCK_STALE_SECONDS = 30.0
 _RETRY_STATE_LOCK = threading.Lock()
 _RETRY_SCHEDULED = False
 
@@ -250,9 +251,22 @@ def acquire_lock(timeout: int = 10) -> bool:
     while True:
         try:
             fd = os.open(LOCK_FILE, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            try:
+                os.write(fd, str(os.getpid()).encode("utf-8"))
+            except Exception:
+                pass
             os.close(fd)
             return True
         except FileExistsError:
+            try:
+                age = time.time() - os.path.getmtime(LOCK_FILE)
+                if age >= LOCK_STALE_SECONDS:
+                    os.remove(LOCK_FILE)
+                    continue
+            except FileNotFoundError:
+                continue
+            except Exception:
+                pass
             if (time.time() - start) > timeout:
                 return False
             time.sleep(0.1)

@@ -1,4 +1,5 @@
 import os
+import tempfile
 import unittest
 from unittest import mock
 
@@ -91,6 +92,20 @@ class IAModuleTests(unittest.TestCase):
         self.assertFalse(second)
         m_timer.assert_called_once()
         fake_timer.start.assert_called_once()
+
+    def test_acquire_lock_remove_stale_lock_e_adquire(self):
+        with tempfile.TemporaryDirectory() as td:
+            lock_path = os.path.join(td, "process.lock")
+            with open(lock_path, "w", encoding="utf-8") as f:
+                f.write("stale")
+            old_ts = 1000.0
+            os.utime(lock_path, (old_ts, old_ts))
+
+            with mock.patch.object(ia, "LOCK_FILE", lock_path), \
+                 mock.patch.object(ia, "LOCK_STALE_SECONDS", 0.01):
+                ok = ia.acquire_lock(timeout=0.2)
+                self.assertTrue(ok)
+                ia.release_lock()
 
 
 
