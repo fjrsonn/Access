@@ -6,6 +6,7 @@ import os
 import sys
 import tempfile
 import time
+import threading
 import traceback
 import unicodedata
 from typing import Optional, Tuple, Any, Dict, Iterable
@@ -107,6 +108,9 @@ ENCOMENDAS_SAIDA = os.path.join(BASE_DIR, "encomendasend.json")
 PROMPT_PATH = os.path.join(BASE_DIR, "prompts", "prompt_llm.txt")
 AGENT_PROMPT_PATH = os.path.join(BASE_DIR, "prompts", "prompt_agente.txt")
 LOCK_FILE = os.path.join(BASE_DIR, "process.lock")
+RETRY_DELAY_SECONDS = 1.0
+_RETRY_STATE_LOCK = threading.Lock()
+_RETRY_SCHEDULED = False
 
 _AGENT_PROMPT_ATIVO = ""
 CHAT_MODE_ACTIVE = False
@@ -259,6 +263,27 @@ def release_lock():
             os.remove(LOCK_FILE)
     except Exception:
         pass
+
+
+def _schedule_process_retry(reason: str = "lock_not_acquired") -> bool:
+    """Agenda uma nova tentativa única de processamento para evitar perda de gatilho."""
+    global _RETRY_SCHEDULED
+    with _RETRY_STATE_LOCK:
+        if _RETRY_SCHEDULED:
+            return False
+        _RETRY_SCHEDULED = True
+
+    def _retry_runner():
+        global _RETRY_SCHEDULED
+        with _RETRY_STATE_LOCK:
+            _RETRY_SCHEDULED = False
+        processar()
+
+    timer = threading.Timer(RETRY_DELAY_SECONDS, _retry_runner)
+    timer.daemon = True
+    timer.start()
+    report_status("ia_pipeline", "STARTED", stage="retry_scheduled", details={"reason": reason, "delay_s": RETRY_DELAY_SECONDS})
+    return True
 
 # =========================
 # Helpers para SAIDA (dadosend.json)
@@ -936,6 +961,7 @@ def processar():
     if not acquire_lock(timeout=5):
         report_status("ia_pipeline", "SKIPPED", stage="lock_not_acquired")
         _log_ia("WARNING", "lock_not_acquired", "Outro processo em execução. Abortando.")
+        _schedule_process_retry("lock_not_acquired")
         return
 
     try:
