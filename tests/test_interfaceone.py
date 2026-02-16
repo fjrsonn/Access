@@ -44,6 +44,10 @@ class InterfaceOneTests(unittest.TestCase):
         txt = "JOAO PEREIRA BLOCO 13 AP 111"
         self.assertFalse(interfaceone._is_encomenda_text(txt, parsed={}))
 
+    def test_non_encomenda_lowercase_long_word_not_identificacao(self):
+        txt = "texto qualquer"
+        self.assertFalse(interfaceone._is_encomenda_text(txt, parsed={}))
+
 
 if __name__ == "__main__":
     unittest.main()

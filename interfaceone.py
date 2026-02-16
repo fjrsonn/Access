@@ -253,14 +253,17 @@ def _match_encomenda_store_token(tokens_up):
             return True
     return False
 
-def _has_encomenda_identificacao(tokens_up):
-    for tok in tokens_up:
+def _has_encomenda_identificacao(tokens_raw, tokens_up):
+    for tok_raw, tok in zip(tokens_raw, tokens_up):
         if re.match(r"^[A-Z]{3}\d{4}$", tok) or re.match(r"^[A-Z]{3}\d[A-Z]\d{2}$", tok):
             continue
         if re.match(r"^(?=.*\d)[A-Z0-9]{8,}$", tok):
             return True
-    for tok in tokens_up:
-        if re.match(r"^[A-Z0-9]{8,}$", tok):
+
+        # fallback mais conservador para códigos sem dígitos:
+        # exige token longo e digitado totalmente em maiúsculas no texto original,
+        # evitando classificar palavras comuns (ex.: "qualquer") como identificação.
+        if tok.isalpha() and len(tok) >= 10 and str(tok_raw or "").isupper():
             return True
     return False
 
@@ -292,7 +295,7 @@ def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
             return False
     has_tipo = any(t in _ENCOMENDA_TIPO_TOKENS for t in toks_up)
     has_loja = any(t in _ENCOMENDA_LOJA_TOKENS for t in toks_up)
-    has_nf = _has_encomenda_identificacao(toks_up)
+    has_nf = _has_encomenda_identificacao(toks, toks_up)
     has_bloco, has_ap = _has_bloco_ap_indicador(toks_up)
     has_endereco = has_bloco and has_ap
 
