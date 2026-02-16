@@ -83,6 +83,24 @@ class E2EPipelineTests(unittest.TestCase):
             interfaceone.save_text(entry_widget=entry)
             self.assertTrue(m_save_enc.called)
 
+    def test_e2e_encomenda_dispara_pipeline_mesmo_com_chat_ativo(self):
+        entry = _Entry("PACOTE SHOPEE BLOCO A AP 101")
+        fake_thread = mock.Mock()
+        fake_ia = mock.Mock()
+        fake_ia.processar = mock.Mock()
+        fake_ia.is_chat_mode_active = mock.Mock(return_value=True)
+        with self._patch_interface_paths(), \
+             mock.patch.object(interfaceone, "classificar_destino_texto", return_value={"destino": "encomendas", "score": 3.0, "ambiguo": False}), \
+             mock.patch.object(interfaceone, "_save_encomenda_init") as m_save_enc, \
+             mock.patch.object(interfaceone, "HAS_IA_MODULE", True), \
+             mock.patch.object(interfaceone, "ia_module", fake_ia), \
+             mock.patch.object(interfaceone.threading, "Thread", return_value=fake_thread) as m_thread:
+            interfaceone.save_text(entry_widget=entry)
+
+        self.assertTrue(m_save_enc.called)
+        m_thread.assert_called_once_with(target=fake_ia.processar, daemon=True)
+        fake_thread.start.assert_called_once()
+
     def test_e2e_erro_preprocess_ainda_salva(self):
         entry = _Entry("texto qualquer")
         with self._patch_interface_paths(), \

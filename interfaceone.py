@@ -380,6 +380,23 @@ def _save_encomenda_init(txt: str, now_str: str) -> None:
         print("Erro save (ENCOMENDAS_IN_FILE):", e)
 
 
+def _start_ia_pipeline(source: str) -> None:
+    """
+    Dispara o pipeline da IA em background.
+
+    Observação operacional: registros de dados/encomendas devem seguir o fluxo
+    normalmente mesmo com chat ativo.
+    """
+    if not (HAS_IA_MODULE and hasattr(ia_module, "processar")):
+        return
+    try:
+        threading.Thread(target=ia_module.processar, daemon=True).start()
+        report_status("ia_pipeline", "STARTED", stage="thread_started", details={"source": source})
+    except Exception as e:
+        report_status("ia_pipeline", "ERROR", stage="thread_start_failed", details={"error": str(e), "source": source})
+        _log_ui("ERROR", "ia_thread_start_failed", "Falha ao iniciar processamento IA em background", error=str(e), source=source)
+
+
 _loaded_rules = load_rules() if load_rules else {}
 _ORIENTACOES_KEYWORDS = set(k.upper() for k in _loaded_rules.get("keywords_orientacoes", [
     "RELATO", "RELATOS", "RELATADO", "OCORRENCIA", "OCORRIDO", "REGISTRO", "REGISTRADO",
@@ -2021,14 +2038,7 @@ def save_text(entry_widget=None, btn=None):
                 entry_widget.after(500, lambda: btn.config(state="normal"))
             except Exception as e:
                 _log_ui("WARNING", "button_toggle_failed", "Falha ao atualizar estado do botão", error=str(e))
-        if HAS_IA_MODULE and hasattr(ia_module, "processar"):
-            try:
-                if not (hasattr(ia_module, "is_chat_mode_active") and ia_module.is_chat_mode_active()):
-                    threading.Thread(target=ia_module.processar, daemon=True).start()
-                    report_status("ia_pipeline", "STARTED", stage="thread_started", details={"source": "save_text_encomenda"})
-            except Exception as e:
-                report_status("ia_pipeline", "ERROR", stage="thread_start_failed", details={"error": str(e), "source": "save_text_encomenda"})
-                _log_ui("ERROR", "ia_thread_start_failed", "Falha ao iniciar processamento IA para encomendas", error=str(e))
+        _start_ia_pipeline("save_text_encomenda")
         _report_save_metric("save_completed", destino="encomendas")
         return
 
@@ -2144,16 +2154,7 @@ def save_text(entry_widget=None, btn=None):
             pass
 
     # disparar processamento IA em background (se módulo ia disponível)
-    if HAS_IA_MODULE and hasattr(ia_module, "processar"):
-        try:
-            if hasattr(ia_module, "is_chat_mode_active") and ia_module.is_chat_mode_active():
-                pass
-            else:
-                threading.Thread(target=ia_module.processar, daemon=True).start()
-                report_status("ia_pipeline", "STARTED", stage="thread_started", details={"source": "save_text_dados"})
-        except Exception as e:
-            report_status("ia_pipeline", "ERROR", stage="thread_start_failed", details={"error": str(e), "source": "save_text_dados"})
-            _log_ui("ERROR", "ia_thread_start_failed", "Falha ao iniciar processamento IA em background", error=str(e))
+    _start_ia_pipeline("save_text_dados")
 
     _report_save_metric("save_completed", destino="dados", missing_fields=len(missing_fields))
 
