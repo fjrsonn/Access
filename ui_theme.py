@@ -15,15 +15,28 @@ UI_THEME = {
     "muted_text": "#9AA4B2",
     "primary": "#2F81F7",
     "primary_active": "#1F6FEB",
+    "on_primary": "#0B1117",
+    "on_surface": "#E6EDF3",
     "success": "#2DA44E",
+    "on_success": "#08120C",
     "danger": "#DA3633",
+    "on_danger": "#FFFFFF",
     "warning": "#D29922",
+    "on_warning": "#111827",
     "focus_bg": "#F0F6FC",
     "focus_text": "#111827",
     "edit_badge_bg": "#F8E3A3",
     "edit_badge_text": "#111111",
     "status_avisado_text": "#6EE7B7",
     "status_sem_contato_text": "#FCA5A5",
+    "editor_bg": "#0B0F14",
+    "editor_text": "#E6EDF3",
+    "editor_insert": "#E6EDF3",
+    "overlay_text": "#6B7280",
+    "banner_success_bg": "#2DA44E",
+    "banner_success_text": "#08120C",
+    "banner_error_bg": "#DA3633",
+    "banner_error_text": "#FFFFFF",
     "light_bg": "#F5F7FA",
     "light_border": "#D1D5DB",
 }
@@ -39,15 +52,28 @@ THEME_PRESETS = {
         "muted_text": "#6B7280",
         "primary": "#2563EB",
         "primary_active": "#1D4ED8",
+        "on_primary": "#FFFFFF",
+        "on_surface": "#111827",
         "success": "#15803D",
+        "on_success": "#FFFFFF",
         "danger": "#B91C1C",
+        "on_danger": "#FFFFFF",
         "warning": "#B45309",
+        "on_warning": "#FFFFFF",
         "focus_bg": "#DBEAFE",
         "focus_text": "#111827",
         "edit_badge_bg": "#FEF3C7",
         "edit_badge_text": "#111827",
         "status_avisado_text": "#166534",
         "status_sem_contato_text": "#B91C1C",
+        "editor_bg": "#FFFFFF",
+        "editor_text": "#111827",
+        "editor_insert": "#111827",
+        "overlay_text": "#6B7280",
+        "banner_success_bg": "#15803D",
+        "banner_success_text": "#FFFFFF",
+        "banner_error_bg": "#B91C1C",
+        "banner_error_text": "#FFFFFF",
         "light_bg": "#F5F7FA",
         "light_border": "#D1D5DB",
     },
@@ -60,15 +86,28 @@ THEME_PRESETS = {
         "muted_text": "#E5E7EB",
         "primary": "#00A3FF",
         "primary_active": "#0077CC",
+        "on_primary": "#000000",
+        "on_surface": "#FFFFFF",
         "success": "#00FF7F",
+        "on_success": "#000000",
         "danger": "#FF4D4D",
+        "on_danger": "#000000",
         "warning": "#FFD700",
+        "on_warning": "#000000",
         "focus_bg": "#FFFFFF",
         "focus_text": "#000000",
         "edit_badge_bg": "#FFD700",
         "edit_badge_text": "#000000",
         "status_avisado_text": "#00FF7F",
         "status_sem_contato_text": "#FF4D4D",
+        "editor_bg": "#000000",
+        "editor_text": "#FFFFFF",
+        "editor_insert": "#FFFFFF",
+        "overlay_text": "#E5E7EB",
+        "banner_success_bg": "#00FF7F",
+        "banner_success_text": "#000000",
+        "banner_error_bg": "#FF4D4D",
+        "banner_error_text": "#000000",
         "light_bg": "#000000",
         "light_border": "#FFFFFF",
     },
@@ -123,8 +162,8 @@ def contrast_ratio(hex_a: str, hex_b: str) -> float:
 def validate_theme_contrast(theme: dict | None = None) -> dict:
     th = theme or UI_THEME
     checks = {
-        "text_on_surface": contrast_ratio(th.get("text", "#fff"), th.get("surface", "#000")),
-        "text_on_primary": contrast_ratio(th.get("text", "#fff"), th.get("primary", "#000")),
+        "text_on_surface": contrast_ratio(th.get("on_surface", th.get("text", "#fff")), th.get("surface", "#000")),
+        "text_on_primary": contrast_ratio(th.get("on_primary", th.get("text", "#fff")), th.get("primary", "#000")),
         "text_on_surface_alt": contrast_ratio(th.get("text", "#fff"), th.get("surface_alt", "#000")),
     }
     warnings = {k: round(v, 2) for k, v in checks.items() if v < 4.5}
@@ -182,9 +221,9 @@ def build_primary_button(parent, text, command, padx=12):
         text=text,
         command=command,
         bg=UI_THEME["primary"],
-        fg=UI_THEME["text"],
+        fg=UI_THEME.get("on_primary", UI_THEME["text"]),
         activebackground=UI_THEME["primary_active"],
-        activeforeground=UI_THEME["text"],
+        activeforeground=UI_THEME.get("on_primary", UI_THEME["text"]),
         disabledforeground=UI_THEME["muted_text"],
         relief="flat",
         padx=padx,
@@ -203,9 +242,9 @@ def build_secondary_button(parent, text, command, padx=12):
         text=text,
         command=command,
         bg=UI_THEME["surface_alt"],
-        fg=UI_THEME["text"],
+        fg=UI_THEME.get("on_surface", UI_THEME["text"]),
         activebackground=UI_THEME["border"],
-        activeforeground=UI_THEME["text"],
+        activeforeground=UI_THEME.get("on_surface", UI_THEME["text"]),
         disabledforeground=UI_THEME["muted_text"],
         relief="flat",
         padx=padx,
@@ -235,3 +274,29 @@ def build_filter_input(parent, textvariable=None, width=12):
     )
     bind_focus_ring(ent)
     return ent
+
+
+def build_label(parent, text, muted=False, **kwargs):
+    return tk.Label(
+        parent,
+        text=text,
+        bg=kwargs.pop("bg", UI_THEME["surface"]),
+        fg=kwargs.pop("fg", UI_THEME["muted_text"] if muted else UI_THEME.get("on_surface", UI_THEME["text"])),
+        **kwargs,
+    )
+
+
+def build_badge(parent, text, tone="warning", **kwargs):
+    tone_bg = UI_THEME.get(f"{tone}", UI_THEME["warning"])
+    tone_fg = UI_THEME.get(f"on_{tone}", UI_THEME["text"])
+    return tk.Label(parent, text=text, bg=tone_bg, fg=tone_fg, padx=10, pady=4, **kwargs)
+
+
+def build_banner(parent, tone="success", **kwargs):
+    if tone == "error":
+        bg = UI_THEME.get("banner_error_bg", UI_THEME["danger"])
+        fg = UI_THEME.get("banner_error_text", UI_THEME.get("on_danger", UI_THEME["text"]))
+    else:
+        bg = UI_THEME.get("banner_success_bg", UI_THEME["success"])
+        fg = UI_THEME.get("banner_success_text", UI_THEME.get("on_success", UI_THEME["text"]))
+    return tk.Label(parent, text="", bg=bg, fg=fg, **kwargs)
