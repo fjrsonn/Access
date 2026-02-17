@@ -89,6 +89,32 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertEqual(registros[0].get('NOME'), 'CARLA')
         self.assertEqual(registros[0].get('APARTAMENTO'), '303')
 
+    def test_load_safe_accepts_utf8_bom_payload(self):
+        import json, tempfile, os
+        payload = [{"nome": "DANIEL", "bloco": "7", "apartamento": "707", "status": "MORADOR", "data_hora": "18/02/2026 12:00:00"}]
+        with tempfile.NamedTemporaryFile('w', encoding='utf-8-sig', suffix='.json', delete=False) as tf:
+            json.dump(payload, tf, ensure_ascii=False)
+            path = tf.name
+        try:
+            registros = interfacetwo._load_safe(path)
+        finally:
+            os.remove(path)
+        self.assertEqual(len(registros), 1)
+        self.assertEqual(registros[0].get('NOME'), 'DANIEL')
+
+    def test_load_safe_accepts_latin1_payload(self):
+        import os, tempfile
+        raw = '[{"nome":"JOSÉ","bloco":"8","apartamento":"808","status":"VISITANTE","data_hora":"18/02/2026 12:10:00"}]'
+        with tempfile.NamedTemporaryFile('wb', suffix='.json', delete=False) as tf:
+            tf.write(raw.encode('latin-1'))
+            path = tf.name
+        try:
+            registros = interfacetwo._load_safe(path)
+        finally:
+            os.remove(path)
+        self.assertEqual(len(registros), 1)
+        self.assertEqual(registros[0].get('NOME'), 'JOSÉ')
+
 
 if __name__ == "__main__":
     unittest.main()

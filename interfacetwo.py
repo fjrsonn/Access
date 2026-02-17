@@ -262,21 +262,38 @@ def _infer_model_color_from_text(text: str):
     return (modelo or "", cor or "")
 
 # ---------- safe IO ----------
+def _read_json_flexible(path: str):
+    # Robustez para ambientes Windows/produção: arquivos podem chegar com BOM
+    # ou codificação ANSI/latin-1 e ainda assim devem aparecer no monitor.
+    for enc in ("utf-8", "utf-8-sig", "latin-1"):
+        try:
+            with open(path, "r", encoding=enc) as f:
+                raw = f.read()
+            if not str(raw).strip():
+                return []
+            return json.loads(raw)
+        except UnicodeDecodeError:
+            continue
+        except json.JSONDecodeError:
+            # tenta próxima codificação antes de desistir
+            continue
+    raise json.JSONDecodeError("invalid json for known encodings", "", 0)
+
+
 def _load_safe(path: str):
     if not os.path.exists(path):
         return []
     try:
-        with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            if isinstance(data, dict) and "registros" in data:
-                return _normalize_records_for_monitor(data.get("registros", []))
-            if isinstance(data, list):
-                return _normalize_records_for_monitor(data)
-            if isinstance(data, dict):
-                # tolera formatos legados/heterogêneos onde o JSON vem como
-                # objeto-mapa (id -> registro) ou wrappers diferentes de "registros"
-                return _extract_records_from_dict_payload(data)
-            return []
+        data = _read_json_flexible(path)
+        if isinstance(data, dict) and "registros" in data:
+            return _normalize_records_for_monitor(data.get("registros", []))
+        if isinstance(data, list):
+            return _normalize_records_for_monitor(data)
+        if isinstance(data, dict):
+            # tolera formatos legados/heterogêneos onde o JSON vem como
+            # objeto-mapa (id -> registro) ou wrappers diferentes de "registros"
+            return _extract_records_from_dict_payload(data)
+        return []
     except json.JSONDecodeError:
         print(f"[interfacetwo] JSON inválido em {path}; usando fallback sem criar .corrupted")
         return []
