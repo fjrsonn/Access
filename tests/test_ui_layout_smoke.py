@@ -35,6 +35,7 @@ class UILayoutSmokeTests(unittest.TestCase):
         self.assertIn("Hoje", src)
         self.assertIn("Sem contato", src)
         self.assertIn("_apply_payload(_filter_state.get(filter_key)", src)
+        self.assertIn("filters_auto_reset", src)
 
 
 if __name__ == "__main__":

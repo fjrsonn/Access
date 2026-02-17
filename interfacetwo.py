@@ -524,6 +524,18 @@ def _record_matches_query(record: dict, query: str) -> bool:
     haystack = " ".join(haystack_parts).lower()
     return needle in haystack
 
+
+
+def _filters_are_active(filters: dict | None) -> bool:
+    f = filters or {}
+    return any([
+        str(f.get("query") or "").strip() != "",
+        str(f.get("status") or "Todos").strip().upper() != "TODOS",
+        str(f.get("bloco") or "Todos").strip().upper() != "TODOS",
+        str(f.get("date_mode") or "Mais recentes") == "Específica",
+        str(f.get("time_mode") or "Mais recentes") == "Específica",
+    ])
+
 def _apply_filters(registros, filters):
     if not filters:
         return registros
@@ -677,6 +689,11 @@ def _populate_control_table(tree_widget, info_label):
     filter_key = source.get("filter_key", tree_widget)
     filters = _filter_state.get(filter_key, {})
     filtrados = _apply_filters(registros, filters)
+    if registros and not filtrados and _filters_are_active(filters):
+        _filter_state[filter_key] = _default_filters()
+        filters = _filter_state[filter_key]
+        filtrados = _apply_filters(registros, filters)
+        report_status("ux_metrics", "OK", stage="filters_auto_reset", details={"source": str(filter_key), "reason": "empty_result"})
 
     sort_key_name = source.get("sort_key", "controle")
     sort_state = _control_sort_state.get(sort_key_name, {"key": "data_hora", "reverse": True})
@@ -741,6 +758,11 @@ def _populate_text(text_widget, info_label):
     filter_key = source.get("filter_key", text_widget)
     filters = _filter_state.get(filter_key, {})
     filtrados = _apply_filters(registros, filters)
+    if registros and not filtrados and _filters_are_active(filters):
+        _filter_state[filter_key] = _default_filters()
+        filters = _filter_state[filter_key]
+        filtrados = _apply_filters(registros, filters)
+        report_status("ux_metrics", "OK", stage="filters_auto_reset", details={"source": str(filter_key), "reason": "empty_result"})
     last = get_last_status()
     status_hint = ""
     if last:
