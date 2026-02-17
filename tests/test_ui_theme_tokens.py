@@ -32,5 +32,22 @@ class UIThemeTokensTests(unittest.TestCase):
         self.assertIn("acessivel", ui_theme.TYPOGRAPHY_PRESETS)
 
 
+    def test_combobox_focus_map_includes_primary_indicator(self):
+        import inspect
+        source = inspect.getsource(ui_theme.apply_ttk_theme_styles)
+        self.assertIn('bordercolor=[("focus", UI_THEME.get("primary"', source)
+        self.assertIn('lightcolor=[("focus", UI_THEME.get("primary"', source)
+
+    def test_state_system_priority_and_helpers_exist(self):
+        self.assertEqual(ui_theme.STATE_PRIORITY.get("danger"), 4)
+        self.assertTrue(callable(ui_theme.state_colors))
+        self.assertEqual(ui_theme.normalize_tone("error"), "danger")
+
+    def test_semantic_secondary_button_builders_exist(self):
+        self.assertTrue(callable(ui_theme.build_secondary_warning_button))
+        self.assertTrue(callable(ui_theme.build_secondary_danger_button))
+
+
+
 if __name__ == "__main__":
     unittest.main()
