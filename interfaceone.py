@@ -86,6 +86,12 @@ try:
         bind_button_states,
         build_primary_button,
         build_secondary_button,
+        build_banner,
+        theme_font,
+        theme_space,
+        refresh_theme,
+        apply_ttk_theme_styles,
+        attach_tooltip,
         apply_theme,
         available_theme_names,
         get_active_theme_name,
@@ -113,6 +119,18 @@ except Exception:
         return tk.Button(parent, text=text, command=command)
     def build_secondary_button(parent, text, command, padx=12):
         return tk.Button(parent, text=text, command=command)
+    def build_banner(parent, tone="success", **kwargs):
+        return tk.Label(parent, text="", **kwargs)
+    def theme_font(size_key="font_md", weight="normal"):
+        return ("Segoe UI", 10, weight)
+    def theme_space(key="space_2", fallback=8):
+        return fallback
+    def refresh_theme(widget_tree, context="default"):
+        return None
+    def apply_ttk_theme_styles(root=None):
+        return None
+    def attach_tooltip(widget, text):
+        return None
     def apply_theme(name):
         return name
     def available_theme_names():
@@ -1386,7 +1404,7 @@ class SuggestEntry(tk.Frame):
     MAX_VISIBLE = 8
     def __init__(self, master):
         super().__init__(master)
-        self.entry_var = tk.StringVar(); self.entry = tk.Entry(self, textvariable=self.entry_var, width=80, font=("Segoe UI",11)); self.entry.pack(side=tk.TOP, fill=tk.X); self.entry.focus_set()
+        self.entry_var = tk.StringVar(); self.entry = tk.Entry(self, textvariable=self.entry_var, font=theme_font("font_lg")); self.entry.pack(side=tk.TOP, fill=tk.X); self.entry.focus_set()
         self.font = tkfont.Font(font=self.entry["font"]); self._orig_entry_bg = self.entry.cget("bg")
         try: self._orig_entry_fg = self.entry.cget("fg")
         except: self._orig_entry_fg = "black"
@@ -1394,17 +1412,27 @@ class SuggestEntry(tk.Frame):
         except: self._orig_insert_bg = self._orig_entry_fg
 
         # overlay (completar token)
-        self.overlay = tk.Label(self, text="", anchor="w", font=self.entry["font"], fg="gray65", bg=self._orig_entry_bg, bd=0); self.overlay_visible=False
+        self.overlay = tk.Label(self, text="", anchor="w", font=self.entry["font"], fg=UI_THEME.get("overlay_text", "gray65"), bg=self._orig_entry_bg, bd=0); self.overlay_visible=False
         # suggestion list
         self.frame = tk.Frame(self, bg=UI_THEME.get("light_bg", "#F5F7FA"), highlightbackground=UI_THEME.get("light_border", "#D1D5DB"), highlightthickness=1, bd=0); self.sbar = tk.Scrollbar(self.frame, orient=tk.VERTICAL)
         self.tree = ttk.Treeview(self.frame, columns=("nome","detalhes"), show="headings", height=8); self.tree.heading("nome", text="Nome"); self.tree.heading("detalhes", text="Detalhes")
         self.tree.column("nome", width=220, anchor="w"); self.tree.column("detalhes", width=620, anchor="w")
+
+        def _on_suggest_resize(event=None):
+            try:
+                total = max(int(self.frame.winfo_width()) - 24, 300)
+                self.tree.column("nome", width=max(120, int(total * 0.30)), minwidth=100)
+                self.tree.column("detalhes", width=max(180, int(total * 0.70)), minwidth=140)
+            except Exception:
+                pass
+
+        self.frame.bind("<Configure>", lambda _e: _on_suggest_resize(), add="+")
         self.tree.configure(yscrollcommand=self.sbar.set); self.sbar.config(command=self.tree.yview); self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,0), pady=6); self.sbar.pack(side=tk.RIGHT, fill=tk.Y, pady=6, padx=(0,6))
         try:
             style = ttk.Style(self)
-            style.configure("Suggest.Treeview", rowheight=28, font=("Segoe UI", 10), background=UI_THEME.get("surface", "#FFFFFF"), fieldbackground=UI_THEME.get("surface", "#FFFFFF"), foreground=UI_THEME.get("text", "#111827"))
-            style.configure("Suggest.Treeview.Heading", font=("Segoe UI", 10, "bold"))
-            style.map("Suggest.Treeview", background=[("selected", UI_THEME.get("focus_bg", "#DBEAFE"))], foreground=[("selected", UI_THEME.get("focus_text", "#111827"))])
+            style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background=UI_THEME.get("surface", "#FFFFFF"), fieldbackground=UI_THEME.get("surface", "#FFFFFF"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
+            style.configure("Suggest.Treeview.Heading", font=theme_font("font_md", "bold"))
+            style.map("Suggest.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME.get("focus_bg", "#DBEAFE")))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("focus_text", "#111827")))])
             self.tree.configure(style="Suggest.Treeview")
         except Exception:
             pass
@@ -1414,7 +1442,7 @@ class SuggestEntry(tk.Frame):
             bind_focus_ring(self.tree)
         except Exception:
             pass
-        self.shortcuts_hint = tk.Label(self, text="Atalhos: ↑/↓ navegar • Enter salvar • Tab completar", anchor="w", fg=UI_THEME.get("muted_text", "#6B7280"), bg=UI_THEME.get("light_bg", "#F5F7FA"), font=("Segoe UI", 9))
+        self.shortcuts_hint = tk.Label(self, text="Atalhos: ↑/↓ navegar • Enter salvar • Tab completar", anchor="w", fg=UI_THEME.get("muted_text", "#6B7280"), bg=UI_THEME.get("light_bg", "#F5F7FA"), font=theme_font("font_sm"))
 
         self.ia_mode=False; self.ia_waiting_for_query=False; self.list_visible=False; self.suggestions=[]; self.correction=""; self.curr=None
         self.steps=[]; self.step_idx=0; self._has_user_navigated=False; self._just_accepted=False
@@ -1433,6 +1461,25 @@ class SuggestEntry(tk.Frame):
         # Não há thread de avisos; mantemos apenas sugestões/sync se necessário.
         try:
             threading.Thread(target=lambda: sync_suggestions(force=False), daemon=True).start()
+        except Exception:
+            pass
+
+    def refresh_theme(self):
+        try:
+            self.frame.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"), highlightbackground=UI_THEME.get("light_border", "#D1D5DB"))
+            self.shortcuts_hint.configure(fg=UI_THEME.get("muted_text", "#6B7280"), bg=UI_THEME.get("light_bg", "#F5F7FA"))
+            self.entry.configure(
+                highlightbackground=UI_THEME.get("light_border", "#D1D5DB"),
+                highlightcolor=UI_THEME.get("primary", "#1F6FEB"),
+                bg=UI_THEME.get("surface", "#FFFFFF"),
+                fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")),
+                insertbackground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")),
+            )
+            self.overlay.configure(fg=UI_THEME.get("overlay_text", "gray65"), bg=self.entry.cget("bg"))
+            style = ttk.Style(self)
+            style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background=UI_THEME.get("surface", "#FFFFFF"), fieldbackground=UI_THEME.get("surface", "#FFFFFF"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
+            style.configure("Suggest.Treeview.Heading", font=theme_font("font_md", "bold"), background=UI_THEME.get("surface_alt", "#E5E7EB"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
+            style.map("Suggest.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME.get("focus_bg", "#DBEAFE")))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("focus_text", "#111827")))])
         except Exception:
             pass
 
@@ -1718,8 +1765,8 @@ class SuggestEntry(tk.Frame):
 
         top.protocol("WM_DELETE_WINDOW", on_close)
 
-        top_banner = tk.Label(top, text="", bg="#4CAF50", fg="black")
-        bottom_banner = tk.Label(top, text="", bg="#F44336", fg="black")
+        top_banner = build_banner(top, tone="success")
+        bottom_banner = build_banner(top, tone="error")
 
         def hide_banners():
             try:
@@ -1754,9 +1801,9 @@ class SuggestEntry(tk.Frame):
         text_area = scrolledtext.ScrolledText(
             top,
             wrap=tk.WORD,
-            bg="black",
-            fg="white",
-            insertbackground="white",
+            bg=UI_THEME.get("editor_bg", UI_THEME.get("surface", "#151A22")),
+            fg=UI_THEME.get("editor_text", UI_THEME.get("text", "#E6EDF3")),
+            insertbackground=UI_THEME.get("editor_insert", UI_THEME.get("text", "#E6EDF3")),
         )
         text_area.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
         text_area.insert(tk.END, original_text)
@@ -2371,7 +2418,7 @@ class AvisoBar(tk.Frame):
         self._visible = False
         self._paused = False
         self._counter_var = tk.StringVar(value="")
-        self.lbl_counter = tk.Label(self, textvariable=self._counter_var, anchor="e", font=("Segoe UI", 9), bd=0)
+        self.lbl_counter = tk.Label(self, textvariable=self._counter_var, anchor="e", font=theme_font("font_sm"), bd=0)
         self.lbl_counter.pack(side=tk.RIGHT, padx=(0, 4))
         for w in (self, self.lbl, self.lbl_counter):
             try:
@@ -2830,22 +2877,22 @@ def start_ui():
     _start_analises_watcher()
     report_status("ux_metrics", "OK", stage="theme_contrast_check", details=validate_theme_contrast())
     root = tk.Tk(); root.title("Controle de Acesso")
+    apply_ttk_theme_styles(root)
     root.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
-    container = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); container.pack(padx=14, pady=14, fill=tk.X)
+    container = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); container.pack(padx=theme_space("space_4", 14), pady=theme_space("space_4", 14), fill=tk.X)
 
     s = SuggestEntry(container)
     aviso_bar = AvisoBar(container, s.entry)
     _warning_bar = WarningBar(container, s.entry, aviso_bar=aviso_bar)
     s.pack(fill=tk.X)
 
-    btn_frame = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); btn_frame.pack(padx=14, pady=(12,12))
-    theme_frame = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); theme_frame.pack(padx=14, pady=(0, 8), fill=tk.X)
-    tk.Label(theme_frame, text="Tema:", bg=UI_THEME.get("light_bg", "#F5F7FA"), fg=UI_THEME.get("text", "#111827")).pack(side=tk.LEFT)
+    btn_frame = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); btn_frame.pack(padx=theme_space("space_4", 14), pady=(theme_space("space_3", 12),theme_space("space_3", 12)))
+    theme_frame = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); theme_frame.pack(padx=theme_space("space_4", 14), pady=(0, theme_space("space_2", 8)), fill=tk.X)
+    theme_label = tk.Label(theme_frame, text="Tema:", bg=UI_THEME.get("light_bg", "#F5F7FA"), fg=UI_THEME.get("text", "#111827")); theme_label.pack(side=tk.LEFT)
     theme_var = tk.StringVar(value=get_active_theme_name())
-    theme_combo = ttk.Combobox(theme_frame, textvariable=theme_var, values=available_theme_names(), state="readonly", width=16)
+    theme_combo = ttk.Combobox(theme_frame, textvariable=theme_var, values=available_theme_names(), state="readonly")
     theme_combo.pack(side=tk.LEFT, padx=(6, 0))
     btn_save = build_primary_button(btn_frame, "Salvar", lambda: save_text(entry_widget=s.entry, btn=btn_save), padx=18)
-    btn_save.config(width=14)
     btn_save.pack(side=tk.LEFT, padx=(0,10))
     def open_monitor_embedded():
         try:
@@ -2859,21 +2906,55 @@ def start_ui():
         except Exception as e:
             print("Falha ao embutir monitor (abrindo fallback):", e); open_monitor_fallback_subprocess()
 
+    def _refresh_theme():
+        apply_ttk_theme_styles(root)
+        refresh_theme(root, context="interfaceone")
+        root.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
+        container.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
+        btn_frame.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
+        theme_frame.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
+        try:
+            theme_label.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"), fg=UI_THEME.get("text", "#111827"))
+        except Exception:
+            pass
+        try:
+            s.refresh_theme()
+        except Exception:
+            pass
+        try:
+            btn_save.configure(
+                bg=UI_THEME.get("primary", "#1F6FEB"),
+                fg=UI_THEME.get("on_primary", UI_THEME.get("text", "#E6EDF3")),
+                activebackground=UI_THEME.get("primary_active", "#215DB0"),
+                activeforeground=UI_THEME.get("on_primary", UI_THEME.get("text", "#E6EDF3")),
+                highlightbackground=UI_THEME.get("border", "#D1D5DB"),
+                highlightcolor=UI_THEME.get("primary", "#1F6FEB"),
+            )
+        except Exception:
+            pass
+        try:
+            btn_dados.configure(
+                bg=UI_THEME.get("surface_alt", "#E5E7EB"),
+                fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")),
+                activebackground=UI_THEME.get("border", "#D1D5DB"),
+                activeforeground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")),
+                highlightbackground=UI_THEME.get("border", "#D1D5DB"),
+                highlightcolor=UI_THEME.get("primary", "#1F6FEB"),
+            )
+        except Exception:
+            pass
+
     def _on_theme_change(_event=None):
         apply_theme(theme_var.get())
-        try:
-            root.destroy()
-        except Exception:
-            return
-        start_ui()
+        _refresh_theme()
 
     theme_combo.bind("<<ComboboxSelected>>", _on_theme_change, add="+")
 
     btn_dados = build_secondary_button(btn_frame, "Monitor de Dados", open_monitor_embedded, padx=18)
-    btn_dados.config(width=16)
     bind_button_states(btn_save, UI_THEME.get("primary", "#1F6FEB"), UI_THEME.get("primary_active", "#215DB0"))
     bind_button_states(btn_dados, UI_THEME.get("surface_alt", "#E5E7EB"), UI_THEME.get("light_border", "#D1D5DB"))
     btn_dados.pack(side=tk.LEFT)
+    attach_tooltip(btn_dados, "Abre o monitor de dados em janela separada")
     def ctrl_enter(ev):
         if s.list_visible:
             sel = s.tree.selection()

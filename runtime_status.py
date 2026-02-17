@@ -202,6 +202,66 @@ def analisar_saude_pipeline(events_path: str = EVENTS_FILE) -> Dict[str, Any]:
     }
 
 
+
+UX_METRICS_FILE = os.path.join(LOG_DIR, "ux_metrics_dashboard.json")
+
+
+def analisar_metricas_ux(events_path: str = EVENTS_FILE) -> Dict[str, Any]:
+    events = read_runtime_events(events_path)
+    out: Dict[str, Any] = {
+        "time_to_apply_filter_ms": {"count": 0, "avg": 0.0, "p95": 0.0},
+        "edit_save_success_rate": 0.0,
+        "theme_switch_count": 0,
+        "keyboard_shortcut_adoption": 0,
+    }
+
+    apply_times = []
+    started_ts = {}
+    save_ok = 0
+    save_total = 0
+
+    for ev in events:
+        action = str(ev.get("action") or "")
+        stage = str(ev.get("stage") or "")
+        status = str(ev.get("status") or "")
+        ts = _parse_ts(ev.get("timestamp"))
+        details = ev.get("details") or {}
+
+        if action == "ux_metrics" and stage == "filter_apply_started" and ts:
+            started_ts["filter_apply"] = ts
+        if action == "ux_metrics" and stage == "filter_apply" and ts and "filter_apply" in started_ts:
+            diff = (ts - started_ts.pop("filter_apply")).total_seconds() * 1000.0
+            if diff >= 0:
+                apply_times.append(diff)
+
+        if action == "ux_metrics" and stage in {"edit_save", "edit_save_error"}:
+            save_total += 1
+            if stage == "edit_save" and status == "OK":
+                save_ok += 1
+
+        if action == "ux_metrics" and stage == "theme_switch":
+            out["theme_switch_count"] += 1
+
+        if action == "ux_metrics" and stage == "shortcut_used":
+            out["keyboard_shortcut_adoption"] += 1
+
+    if apply_times:
+        arr = sorted(apply_times)
+        idx = int(max(0, min(len(arr) - 1, round(0.95 * (len(arr) - 1)))))
+        out["time_to_apply_filter_ms"] = {
+            "count": len(arr),
+            "avg": round(sum(arr) / len(arr), 2),
+            "p95": round(arr[idx], 2),
+        }
+    if save_total:
+        out["edit_save_success_rate"] = round(save_ok / save_total, 4)
+
+    try:
+        _write_atomic_json(UX_METRICS_FILE, out)
+    except Exception:
+        pass
+    return out
+
 def detectar_conflitos_dados(base_dir: str = BASE_DIR) -> Dict[str, Any]:
     """Procura inconsistências entre dadosinit/dadosend/analises/avisos."""
     dadosinit = _to_records(_read_json(os.path.join(base_dir, "dadosinit.json")))
