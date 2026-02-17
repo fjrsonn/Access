@@ -1430,9 +1430,9 @@ class SuggestEntry(tk.Frame):
         self.tree.configure(yscrollcommand=self.sbar.set); self.sbar.config(command=self.tree.yview); self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,0), pady=6); self.sbar.pack(side=tk.RIGHT, fill=tk.Y, pady=6, padx=(0,6))
         try:
             style = ttk.Style(self)
-            style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background=UI_THEME.get("surface", "#FFFFFF"), fieldbackground=UI_THEME.get("surface", "#FFFFFF"), foreground=UI_THEME.get("text", "#111827"))
+            style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background=UI_THEME.get("surface", "#FFFFFF"), fieldbackground=UI_THEME.get("surface", "#FFFFFF"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
             style.configure("Suggest.Treeview.Heading", font=theme_font("font_md", "bold"))
-            style.map("Suggest.Treeview", background=[("selected", UI_THEME.get("focus_bg", "#DBEAFE"))], foreground=[("selected", UI_THEME.get("focus_text", "#111827"))])
+            style.map("Suggest.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME.get("focus_bg", "#DBEAFE")))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("focus_text", "#111827")))])
             self.tree.configure(style="Suggest.Treeview")
         except Exception:
             pass
@@ -1479,7 +1479,7 @@ class SuggestEntry(tk.Frame):
             style = ttk.Style(self)
             style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background=UI_THEME.get("surface", "#FFFFFF"), fieldbackground=UI_THEME.get("surface", "#FFFFFF"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
             style.configure("Suggest.Treeview.Heading", font=theme_font("font_md", "bold"), background=UI_THEME.get("surface_alt", "#E5E7EB"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
-            style.map("Suggest.Treeview", background=[("selected", UI_THEME.get("focus_bg", "#DBEAFE"))], foreground=[("selected", UI_THEME.get("focus_text", "#111827"))])
+            style.map("Suggest.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME.get("focus_bg", "#DBEAFE")))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("focus_text", "#111827")))])
         except Exception:
             pass
 
@@ -2890,10 +2890,9 @@ def start_ui():
     theme_frame = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); theme_frame.pack(padx=theme_space("space_4", 14), pady=(0, theme_space("space_2", 8)), fill=tk.X)
     theme_label = tk.Label(theme_frame, text="Tema:", bg=UI_THEME.get("light_bg", "#F5F7FA"), fg=UI_THEME.get("text", "#111827")); theme_label.pack(side=tk.LEFT)
     theme_var = tk.StringVar(value=get_active_theme_name())
-    theme_combo = ttk.Combobox(theme_frame, textvariable=theme_var, values=available_theme_names(), state="readonly", width=16)
+    theme_combo = ttk.Combobox(theme_frame, textvariable=theme_var, values=available_theme_names(), state="readonly")
     theme_combo.pack(side=tk.LEFT, padx=(6, 0))
     btn_save = build_primary_button(btn_frame, "Salvar", lambda: save_text(entry_widget=s.entry, btn=btn_save), padx=18)
-    btn_save.config(width=14)
     btn_save.pack(side=tk.LEFT, padx=(0,10))
     def open_monitor_embedded():
         try:
@@ -2952,7 +2951,6 @@ def start_ui():
     theme_combo.bind("<<ComboboxSelected>>", _on_theme_change, add="+")
 
     btn_dados = build_secondary_button(btn_frame, "Monitor de Dados", open_monitor_embedded, padx=18)
-    btn_dados.config(width=16)
     bind_button_states(btn_save, UI_THEME.get("primary", "#1F6FEB"), UI_THEME.get("primary_active", "#215DB0"))
     bind_button_states(btn_dados, UI_THEME.get("surface_alt", "#E5E7EB"), UI_THEME.get("light_border", "#D1D5DB"))
     btn_dados.pack(side=tk.LEFT)

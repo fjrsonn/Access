@@ -391,6 +391,12 @@ def refresh_theme(widget_tree, context="default"):
         return
     apply_ttk_theme_styles(widget_tree)
 
+    ctx = str(context or "default").lower()
+    if ctx in {"interfacetwo", "monitor"}:
+        container_bg = UI_THEME.get("bg", "#0F1115")
+    else:
+        container_bg = UI_THEME.get("light_bg", UI_THEME.get("bg", "#0F1115"))
+
     def _walk(w):
         yield w
         try:
@@ -403,9 +409,15 @@ def refresh_theme(widget_tree, context="default"):
         klass = str(getattr(w, "winfo_class", lambda: "")() or "")
         try:
             if klass in {"Frame", "Labelframe", "Toplevel"}:
-                w.configure(bg=UI_THEME.get("light_bg", UI_THEME.get("bg", "#0F1115")))
+                w.configure(bg=container_bg)
             elif klass == "Label":
-                w.configure(bg=UI_THEME.get("light_bg", UI_THEME.get("bg", "#0F1115")), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+                cur_bg = None
+                try:
+                    cur_bg = w.cget("bg")
+                except Exception:
+                    cur_bg = container_bg
+                base_bg = cur_bg if cur_bg in {UI_THEME.get("surface"), UI_THEME.get("surface_alt"), UI_THEME.get("primary")} else container_bg
+                w.configure(bg=base_bg, fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
             elif klass == "Text":
                 w.configure(bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), insertbackground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
             elif klass == "Entry":
