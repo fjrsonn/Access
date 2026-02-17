@@ -18,6 +18,7 @@ def main() -> int:
     steps = [
         [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"],
         [sys.executable, "tools/coverage_gate.py"],
+        [sys.executable, "tools/contrast_gate.py"],
         [sys.executable, "tests/regression/run_regression.py", "--check"],
         [sys.executable, "tools/mutation_smoke.py"],
     ]
