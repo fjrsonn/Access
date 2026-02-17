@@ -171,6 +171,13 @@ THEME_PRESETS = {
 }
 
 _ACTIVE_THEME = "escuro"
+_ACTIVE_TYPOGRAPHY = "padrao"
+
+TYPOGRAPHY_PRESETS = {
+    "compacto": {"font_sm": 8, "font_md": 9, "font_lg": 10, "font_xl": 11},
+    "padrao": {"font_sm": 9, "font_md": 10, "font_lg": 11, "font_xl": 12},
+    "acessivel": {"font_sm": 11, "font_md": 12, "font_lg": 13, "font_xl": 15},
+}
 
 
 def available_theme_names():
@@ -181,6 +188,14 @@ def get_active_theme_name():
     return _ACTIVE_THEME
 
 
+def available_typography_names():
+    return list(TYPOGRAPHY_PRESETS.keys())
+
+
+def get_active_typography_name():
+    return _ACTIVE_TYPOGRAPHY
+
+
 def apply_theme(name: str):
     global _ACTIVE_THEME
     key = (name or "").strip().lower()
@@ -189,6 +204,16 @@ def apply_theme(name: str):
     UI_THEME.clear()
     UI_THEME.update(THEME_PRESETS[key])
     _ACTIVE_THEME = key
+    return key
+
+
+def apply_typography(name: str):
+    global _ACTIVE_TYPOGRAPHY
+    key = (name or "").strip().lower()
+    if key not in TYPOGRAPHY_PRESETS:
+        key = "padrao"
+    UI_THEME.update(TYPOGRAPHY_PRESETS[key])
+    _ACTIVE_TYPOGRAPHY = key
     return key
 
 

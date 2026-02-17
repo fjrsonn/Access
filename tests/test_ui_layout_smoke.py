@@ -30,6 +30,10 @@ class UILayoutSmokeTests(unittest.TestCase):
         self.assertIn("Preset (opcional)", src)
         self.assertIn("AppMetricCard", src)
         self.assertIn("AppStatusBar", src)
+        self.assertIn("Modo Operação", src)
+        self.assertIn("Desfazer", src)
+        self.assertIn("Hoje", src)
+        self.assertIn("Sem contato", src)
 
 
 if __name__ == "__main__":

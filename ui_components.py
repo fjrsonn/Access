@@ -30,6 +30,45 @@ def build_form_row(parent, label_text: str, control):
     return row
 
 
+class AppFeedbackBanner(tk.Frame):
+    def __init__(self, parent, text: str = ""):
+        super().__init__(parent, bg=UI_THEME.get("surface_alt", "#1B2430"), highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"))
+        self.var = tk.StringVar(value=text)
+        self.lbl = tk.Label(self, textvariable=self.var, anchor="w", bg=self.cget("bg"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), font=theme_font("font_sm"))
+        self.lbl.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=theme_space("space_1", 4))
+        self._after_id = None
+
+    def show(self, text: str, tone: str = "info", icon: str = "ℹ", timeout_ms: int = 2200):
+        self.var.set(f"{icon} {text}".strip())
+        bg = UI_THEME.get(tone, UI_THEME.get("surface_alt", "#1B2430"))
+        fg = UI_THEME.get(f"on_{tone}", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+        self.configure(bg=bg)
+        self.lbl.configure(bg=bg, fg=fg)
+        try:
+            self.pack_forget()
+            self.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
+        except Exception:
+            pass
+        if self._after_id:
+            try:
+                self.after_cancel(self._after_id)
+            except Exception:
+                pass
+        self._after_id = self.after(timeout_ms, self.hide)
+
+    def hide(self):
+        if self._after_id:
+            try:
+                self.after_cancel(self._after_id)
+            except Exception:
+                pass
+        self._after_id = None
+        try:
+            self.pack_forget()
+        except Exception:
+            pass
+
+
 class AppStatusBar(tk.Frame):
     def __init__(self, parent, text: str = ""):
         super().__init__(parent, bg=UI_THEME.get("surface_alt", "#1B2430"), highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"))
@@ -50,13 +89,30 @@ class AppMetricCard(tk.Frame):
         super().__init__(parent, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"))
         self.title_var = tk.StringVar(value=title)
         self.value_var = tk.StringVar(value=value)
+        self.meta_var = tk.StringVar(value="Atualizado agora")
+        self.trend_var = tk.StringVar(value="→ estável")
         self.title_lbl = tk.Label(self, textvariable=self.title_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm"))
         self.value_lbl = tk.Label(self, textvariable=self.value_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get(f"on_{tone}", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))), font=theme_font("font_xl", "bold"))
+        self.trend_lbl = tk.Label(self, textvariable=self.trend_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm"))
+        self.meta_lbl = tk.Label(self, textvariable=self.meta_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm"))
         self.title_lbl.pack(anchor="w", padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
-        self.value_lbl.pack(anchor="w", padx=theme_space("space_2", 8), pady=(0, theme_space("space_2", 8)))
+        self.value_lbl.pack(anchor="w", padx=theme_space("space_2", 8), pady=(0, 0))
+        self.trend_lbl.pack(anchor="w", padx=theme_space("space_2", 8), pady=(0, 0))
+        self.meta_lbl.pack(anchor="w", padx=theme_space("space_2", 8), pady=(0, theme_space("space_2", 8)))
 
     def set_value(self, value: str):
         self.value_var.set(str(value))
+
+    def set_trend(self, delta: int):
+        if delta > 0:
+            self.trend_var.set(f"↑ +{delta} vs último ciclo")
+        elif delta < 0:
+            self.trend_var.set(f"↓ {delta} vs último ciclo")
+        else:
+            self.trend_var.set("→ estável")
+
+    def set_meta(self, text: str):
+        self.meta_var.set(str(text))
 
 
 
