@@ -1,0 +1,10 @@
+{
+  "time_to_apply_filter_ms": {
+    "count": 0,
+    "avg": 0.0,
+    "p95": 0.0
+  },
+  "edit_save_success_rate": 0.0,
+  "theme_switch_count": 1,
+  "keyboard_shortcut_adoption": 0
+}

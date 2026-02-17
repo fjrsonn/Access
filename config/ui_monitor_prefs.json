@@ -1,0 +1,58 @@
+{
+  "theme": "escuro",
+  "filter_state": {
+    "controle": {
+      "order": "Mais recentes",
+      "date_mode": "Mais recentes",
+      "date_value": "",
+      "time_mode": "Mais recentes",
+      "time_value": "",
+      "query": "",
+      "status": "Todos",
+      "bloco": "Todos"
+    },
+    "encomendas": {
+      "order": "Mais recentes",
+      "date_mode": "Mais recentes",
+      "date_value": "",
+      "time_mode": "Mais recentes",
+      "time_value": "",
+      "query": "",
+      "status": "Todos",
+      "bloco": "Todos"
+    },
+    "orientacoes": {
+      "order": "Mais recentes",
+      "date_mode": "Mais recentes",
+      "date_value": "",
+      "time_mode": "Mais recentes",
+      "time_value": "",
+      "query": "",
+      "status": "Todos",
+      "bloco": "Todos"
+    },
+    "observacoes": {
+      "order": "Mais recentes",
+      "date_mode": "Mais recentes",
+      "date_value": "",
+      "time_mode": "Mais recentes",
+      "time_value": "",
+      "query": "",
+      "status": "Todos",
+      "bloco": "Todos"
+    }
+  },
+  "control_sort_state": {
+    "controle": {
+      "key": "data_hora",
+      "reverse": false
+    }
+  },
+  "control_columns": {
+    "data_hora": 405,
+    "nome": 553,
+    "bloco_ap": 258,
+    "placa": 258,
+    "status": 368
+  }
+}

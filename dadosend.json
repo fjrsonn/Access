@@ -1,0 +1,87 @@
+{
+    "registros": [
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "17/02/2026 09:08:14",
+            "_entrada_id": 1,
+            "MORADOR SEM TAG": "SIM",
+            "ID": 1
+        },
+        {
+            "NOME": "REGIANE",
+            "SOBRENOME": "MENEZES",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FJS0701",
+            "MODELO": "NIVUS",
+            "COR": "CINZA",
+            "STATUS": "VISITANTE",
+            "DATA_HORA": "17/02/2026 09:08:16",
+            "_entrada_id": 2,
+            "ID": 2
+        },
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "17/02/2026 09:08:18",
+            "_entrada_id": 3,
+            "MORADOR SEM TAG": "SIM",
+            "ID": 1
+        },
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "17/02/2026 09:08:20",
+            "_entrada_id": 4,
+            "MORADOR SEM TAG": "SIM",
+            "ID": 1
+        },
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "17/02/2026 09:08:22",
+            "_entrada_id": 5,
+            "MORADOR SEM TAG": "SIM",
+            "ID": 1
+        },
+        {
+            "NOME": "FLAVIO",
+            "SOBRENOME": "JUNIOR",
+            "BLOCO": "10",
+            "APARTAMENTO": "10",
+            "PLACA": "FEU3C84",
+            "MODELO": "JETTA",
+            "COR": "PRETO",
+            "STATUS": "MORADOR",
+            "DATA_HORA": "17/02/2026 09:08:24",
+            "_entrada_id": 6,
+            "MORADOR SEM TAG": "SIM",
+            "ID": 1
+        }
+    ]
+}
