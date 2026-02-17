@@ -184,7 +184,7 @@ class InterfaceTwoTests(unittest.TestCase):
             if path == interfacetwo.ARQUIVO:
                 return [{"STATUS": "SEM CONTATO"}, {"STATUS": "AVISADO"}]
             if path == interfacetwo.ENCOMENDAS_ARQUIVO:
-                return [{"STATUS": "SEM CONTATO"}]
+                return [{"STATUS_ENCOMENDA": "SEM CONTATO"}, {"STATUS_ENCOMENDA": "AVISADO"}, {"STATUS_ENCOMENDA": "PENDENTE"}]
             return []
 
         interfacetwo._load_safe = fake_load_safe
@@ -194,9 +194,9 @@ class InterfaceTwoTests(unittest.TestCase):
             interfacetwo._load_safe = original_load_safe
 
         self.assertEqual(out.get('ativos'), 2)
-        self.assertEqual(out.get('pendentes'), 2)
+        self.assertEqual(out.get('pendentes'), 5)
         self.assertEqual(out.get('sem_contato'), 2)
-        self.assertEqual(out.get('avisado'), 1)
+        self.assertEqual(out.get('avisado'), 2)
         self.assertEqual(out.get('alta_severidade'), 1)
 
     def test_filter_bar_defines_save_preset_before_button_binding(self):

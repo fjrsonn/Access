@@ -243,6 +243,17 @@ def _collect_status_cards_data() -> dict:
     avisado = 0
     alta_severidade = 0
 
+    def _status_text(rec: dict) -> str:
+        if not isinstance(rec, dict):
+            return ""
+        return str(
+            rec.get("STATUS_ENCOMENDA")
+            or rec.get("status_encomenda")
+            or rec.get("STATUS")
+            or rec.get("status")
+            or ""
+        ).upper().strip()
+
     for r in analises if isinstance(analises, list) else []:
         sev = str((r or {}).get("severidade") or (r or {}).get("SEVERIDADE") or "").lower()
         if sev in {"alta", "crítica", "critica"}:
@@ -261,12 +272,16 @@ def _collect_status_cards_data() -> dict:
             if any(k in txt for k in ("PEND", "ABERTO", "ATIVO")):
                 pendentes += 1
 
-    for r in (controle if isinstance(controle, list) else []) + (encomendas if isinstance(encomendas, list) else []):
-        st = str((r or {}).get("STATUS") or (r or {}).get("status") or "").upper()
+    monitor_rows = (controle if isinstance(controle, list) else []) + (encomendas if isinstance(encomendas, list) else [])
+    for r in monitor_rows:
+        st = _status_text(r)
         if "SEM CONTATO" in st:
             sem_contato += 1
-        if "AVISADO" in st:
+            pendentes += 1
+        elif "AVISADO" in st:
             avisado += 1
+        elif "PEND" in st:
+            pendentes += 1
 
     return {
         "ativos": len(avisos) if isinstance(avisos, list) else 0,
