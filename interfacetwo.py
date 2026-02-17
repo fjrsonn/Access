@@ -262,17 +262,87 @@ def _infer_model_color_from_text(text: str):
     return (modelo or "", cor or "")
 
 # ---------- safe IO ----------
+def _parse_json_lenient(raw: str):
+    text = str(raw or "").strip()
+    if not text:
+        return []
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # fallback 1: JSON por linha (ndjson/jsonl)
+    items = []
+    for line in text.splitlines():
+        candidate = line.strip().rstrip(",")
+        if not candidate:
+            continue
+        try:
+            items.append(json.loads(candidate))
+        except Exception:
+            continue
+    if items:
+        return items
+
+    # fallback 2: múltiplos objetos JSON concatenados sem vírgula
+    decoder = json.JSONDecoder()
+    pos = 0
+    length = len(text)
+    recovered = []
+    while pos < length:
+        while pos < length and text[pos] not in "[{":
+            pos += 1
+        if pos >= length:
+            break
+        try:
+            obj, end = decoder.raw_decode(text, pos)
+            recovered.append(obj)
+            pos = end
+        except Exception:
+            pos += 1
+    if recovered:
+        if len(recovered) == 1:
+            return recovered[0]
+        return recovered
+
+    raise json.JSONDecodeError("invalid json for known encodings", text, 0)
+
+
+def _read_json_flexible(path: str):
+    # Robustez para ambientes Windows/produção: arquivos podem chegar com BOM,
+    # codificação ANSI/latin-1 ou serializações não estritamente válidas.
+    for enc in ("utf-8", "utf-8-sig", "latin-1"):
+        try:
+            with open(path, "r", encoding=enc) as f:
+                raw = f.read()
+            return _parse_json_lenient(raw)
+        except UnicodeDecodeError:
+            continue
+        except json.JSONDecodeError:
+            continue
+    raise json.JSONDecodeError("invalid json for known encodings", "", 0)
+
+
 def _load_safe(path: str):
     if not os.path.exists(path):
         return []
     try:
-        with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            if isinstance(data, dict) and "registros" in data:
-                return data.get("registros", [])
-            if isinstance(data, list):
-                return data
-            return data.get("registros", []) if isinstance(data, dict) else []
+        data = _read_json_flexible(path)
+        if isinstance(data, dict) and "registros" in data:
+            registros_payload = data.get("registros", [])
+            if isinstance(registros_payload, list):
+                return _normalize_records_for_monitor(registros_payload)
+            if isinstance(registros_payload, dict):
+                # caso comum em produção: "registros" como mapa id -> registro
+                return _extract_records_from_dict_payload(registros_payload)
+            return []
+        if isinstance(data, list):
+            return _normalize_records_for_monitor(data)
+        if isinstance(data, dict):
+            # tolera formatos legados/heterogêneos onde o JSON vem como
+            # objeto-mapa (id -> registro) ou wrappers diferentes de "registros"
+            return _extract_records_from_dict_payload(data)
+        return []
     except json.JSONDecodeError:
         print(f"[interfacetwo] JSON inválido em {path}; usando fallback sem criar .corrupted")
         return []
@@ -297,6 +367,119 @@ def _atomic_write(path: str, obj):
 
 def safe(v):
     return v if v and v != "-" else "-"
+
+
+def _normalize_records_for_monitor(records):
+    if not isinstance(records, list):
+        return []
+    normalized = []
+    for r in records:
+        if isinstance(r, dict):
+            normalized.append(_normalize_record_for_monitor(r))
+        elif isinstance(r, (str, int, float, bool)):
+            text = str(r)
+            normalized.append({
+                "texto": text,
+                "texto_original": text,
+                "DATA_HORA": "",
+                "NOME": "",
+                "SOBRENOME": "",
+                "BLOCO": "",
+                "APARTAMENTO": "",
+                "PLACA": "",
+                "MODELO": "",
+                "COR": "",
+                "STATUS": "",
+                "STATUS_ENCOMENDA": "",
+                "TIPO": "",
+                "LOJA": "",
+                "IDENTIFICACAO": "",
+            })
+    return normalized
+
+
+def _looks_like_monitor_record(payload: dict) -> bool:
+    if not isinstance(payload, dict):
+        return False
+    keyset = {str(k).upper() for k in payload.keys()}
+    canonical_hint = {
+        "NOME", "SOBRENOME", "BLOCO", "APARTAMENTO", "PLACA", "STATUS", "STATUS_ENCOMENDA", "DATA_HORA", "TIPO", "LOJA"
+    }
+    if keyset.intersection(canonical_hint):
+        return True
+    alias_hint = {"nome", "sobrenome", "bloco", "apartamento", "ap", "placa", "status", "status_encomenda", "data_hora", "tipo", "loja"}
+    return bool(set(payload.keys()).intersection(alias_hint))
+
+
+def _extract_records_from_dict_payload(payload: dict):
+    if not isinstance(payload, dict):
+        return []
+
+    # Caso 1: o próprio dict já é um único registro
+    if _looks_like_monitor_record(payload):
+        return _normalize_records_for_monitor([payload])
+
+    # Caso 2: wrappers conhecidos com coleção de registros
+    for key in ("dados", "data", "items", "rows", "entries"):
+        candidate = payload.get(key)
+        if isinstance(candidate, list):
+            return _normalize_records_for_monitor(candidate)
+        if isinstance(candidate, dict):
+            nested = _extract_records_from_dict_payload(candidate)
+            if nested:
+                return nested
+
+    # Caso 3: dict-mapa (id -> registro)
+    dict_values = [v for v in payload.values() if isinstance(v, dict)]
+    if dict_values and all(_looks_like_monitor_record(v) for v in dict_values):
+        return _normalize_records_for_monitor(dict_values)
+
+    # Caso 4: procurar recursivamente em qualquer sub-estrutura
+    for value in payload.values():
+        if isinstance(value, list):
+            normalized = _normalize_records_for_monitor(value)
+            if normalized:
+                return normalized
+        elif isinstance(value, dict):
+            nested = _extract_records_from_dict_payload(value)
+            if nested:
+                return nested
+
+    return []
+
+
+def _normalize_record_for_monitor(record: dict) -> dict:
+    normalized = dict(record or {})
+
+    def pick(*keys):
+        for key in keys:
+            value = record.get(key)
+            if value not in (None, ""):
+                return value
+        return ""
+
+    aliases = {
+        "NOME": ("NOME", "nome"),
+        "SOBRENOME": ("SOBRENOME", "sobrenome"),
+        "BLOCO": ("BLOCO", "bloco"),
+        "APARTAMENTO": ("APARTAMENTO", "apartamento", "ap"),
+        "PLACA": ("PLACA", "placa"),
+        "MODELO": ("MODELO", "modelo", "veiculo_modelo"),
+        "COR": ("COR", "cor", "veiculo_cor"),
+        "STATUS": ("STATUS", "status"),
+        "STATUS_ENCOMENDA": ("STATUS_ENCOMENDA", "status_encomenda"),
+        "TIPO": ("TIPO", "tipo"),
+        "LOJA": ("LOJA", "loja"),
+        "IDENTIFICACAO": ("IDENTIFICACAO", "identificacao", "identificação"),
+        "DATA_HORA": ("DATA_HORA", "data_hora", "datahora", "timestamp"),
+    }
+
+    for canonical, keys in aliases.items():
+        value = pick(*keys)
+        if value not in (None, ""):
+            normalized[canonical] = value
+
+    return normalized
 
 def format_line(r: dict) -> str:
     modelo = r.get("MODELO") or ""
@@ -882,7 +1065,11 @@ def _schedule_update(text_widgets, info_label):
     for tw in text_widgets:
         if tw in _text_edit_lock:
             continue
-        _populate_text(tw, info_label)
+        try:
+            _populate_text(tw, info_label)
+        except Exception as e:
+            report_status("monitor", "ERROR", stage="populate_text_failed", details={"error": str(e)})
+            continue
     # schedule next update
     try:
         _monitor_after_id = text_widgets[0].after(
@@ -1111,8 +1298,6 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
     presets = _get_filter_presets()
     preset_combo = ttk.Combobox(bar, textvariable=preset_var, values=["Preset (opcional)"] + sorted(presets.keys()), state="readonly")
     preset_combo.grid(row=0, column=4, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8), sticky="ew")
-    preset_combo.bind("<<ComboboxSelected>>", _load_preset, add="+")
-
     btn_save_preset = build_secondary_button(bar, "Salvar preset", _save_preset)
     btn_undo_filter = build_secondary_button(bar, "Desfazer", _undo_last_filter)
     btn_save_preset.grid(row=0, column=5, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
@@ -1190,6 +1375,8 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
         presets = _get_filter_presets()
         _apply_payload(presets.get(name) or {})
         apply_filters()
+
+    preset_combo.bind("<<ComboboxSelected>>", _load_preset, add="+")
 
     _filter_controls[filter_key] = [order_combo, date_mode_combo, date_entry, time_mode_combo, time_entry, query_entry, status_combo, bloco_combo, preset_combo]
     for control in _filter_controls[filter_key]:
