@@ -115,6 +115,25 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertEqual(len(registros), 1)
         self.assertEqual(registros[0].get('NOME'), 'JOSÉ')
 
+    def test_load_safe_accepts_plain_string_list_payload(self):
+        import json, tempfile, os
+        payload = ["Visitante sem estrutura", "Entregador aguardando"]
+        with tempfile.NamedTemporaryFile('w', encoding='utf-8', suffix='.json', delete=False) as tf:
+            json.dump(payload, tf, ensure_ascii=False)
+            path = tf.name
+        try:
+            registros = interfacetwo._load_safe(path)
+        finally:
+            os.remove(path)
+        self.assertEqual(len(registros), 2)
+        self.assertEqual(registros[0].get('texto'), 'Visitante sem estrutura')
+
+    def test_normalize_records_includes_primitive_entries(self):
+        records = interfacetwo._normalize_records_for_monitor([{"nome": "ANA"}, "texto livre", 123])
+        self.assertEqual(len(records), 3)
+        self.assertEqual(records[1].get('texto_original'), 'texto livre')
+        self.assertEqual(records[2].get('texto'), '123')
+
 
 if __name__ == "__main__":
     unittest.main()

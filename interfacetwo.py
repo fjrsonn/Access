@@ -323,7 +323,30 @@ def safe(v):
 def _normalize_records_for_monitor(records):
     if not isinstance(records, list):
         return []
-    return [_normalize_record_for_monitor(r) for r in records if isinstance(r, dict)]
+    normalized = []
+    for r in records:
+        if isinstance(r, dict):
+            normalized.append(_normalize_record_for_monitor(r))
+        elif isinstance(r, (str, int, float, bool)):
+            text = str(r)
+            normalized.append({
+                "texto": text,
+                "texto_original": text,
+                "DATA_HORA": "",
+                "NOME": "",
+                "SOBRENOME": "",
+                "BLOCO": "",
+                "APARTAMENTO": "",
+                "PLACA": "",
+                "MODELO": "",
+                "COR": "",
+                "STATUS": "",
+                "STATUS_ENCOMENDA": "",
+                "TIPO": "",
+                "LOJA": "",
+                "IDENTIFICACAO": "",
+            })
+    return normalized
 
 
 def _looks_like_monitor_record(payload: dict) -> bool:
@@ -993,7 +1016,11 @@ def _schedule_update(text_widgets, info_label):
     for tw in text_widgets:
         if tw in _text_edit_lock:
             continue
-        _populate_text(tw, info_label)
+        try:
+            _populate_text(tw, info_label)
+        except Exception as e:
+            report_status("monitor", "ERROR", stage="populate_text_failed", details={"error": str(e)})
+            continue
     # schedule next update
     try:
         _monitor_after_id = text_widgets[0].after(
