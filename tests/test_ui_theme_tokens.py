@@ -31,6 +31,11 @@ class UIThemeTokensTests(unittest.TestCase):
         self.assertIn("padrao", ui_theme.TYPOGRAPHY_PRESETS)
         self.assertIn("acessivel", ui_theme.TYPOGRAPHY_PRESETS)
 
+    def test_semantic_secondary_button_builders_exist(self):
+        self.assertTrue(callable(ui_theme.build_secondary_warning_button))
+        self.assertTrue(callable(ui_theme.build_secondary_danger_button))
+
+
 
     def test_combobox_focus_map_includes_primary_indicator(self):
         import inspect

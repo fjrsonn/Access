@@ -1362,6 +1362,21 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
         _update_filter_badge()
         _set_apply_dirty_state()
 
+    def _apply_payload(payload: dict):
+        if not isinstance(payload, dict):
+            return
+        order_var.set(payload.get("order") or "Mais recentes")
+        date_mode_var.set(payload.get("date_mode") or "Mais recentes")
+        time_mode_var.set(payload.get("time_mode") or "Mais recentes")
+        query_var.set(payload.get("query") or "")
+        status_var.set(payload.get("status") or "Todos")
+        bloco_var.set(payload.get("bloco") or "Todos")
+        date_entry.delete(0, tk.END); date_entry.insert(0, payload.get("date_value") or "")
+        time_entry.delete(0, tk.END); time_entry.insert(0, payload.get("time_value") or "")
+        update_entry_state()
+        _update_filter_badge()
+        _set_apply_dirty_state()
+
     def apply_filters():
         global _last_filter_snapshot
         _last_filter_snapshot[filter_key] = _snapshot_current_filter(filter_key)
