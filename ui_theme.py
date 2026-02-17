@@ -247,22 +247,25 @@ def validate_theme_contrast(theme: dict | None = None) -> dict:
         "text_on_surface": contrast_ratio(th.get("on_surface", th.get("text", "#fff")), th.get("surface", "#000")),
         "text_on_primary": contrast_ratio(th.get("on_primary", th.get("text", "#fff")), th.get("primary", "#000")),
         "text_on_surface_alt": contrast_ratio(th.get("text", "#fff"), th.get("surface_alt", "#000")),
+        "text_on_warning": contrast_ratio(th.get("on_warning", th.get("on_surface", th.get("text", "#fff"))), th.get("warning", "#000")),
+        "text_on_danger": contrast_ratio(th.get("on_danger", th.get("on_surface", th.get("text", "#fff"))), th.get("danger", "#000")),
+        "text_on_success": contrast_ratio(th.get("on_success", th.get("on_surface", th.get("text", "#fff"))), th.get("success", "#000")),
     }
     warnings = {k: round(v, 2) for k, v in checks.items() if v < 4.5}
     return {"ratios": {k: round(v, 2) for k, v in checks.items()}, "warnings": warnings}
 
 
 
-def bind_focus_ring(widget):
+def bind_focus_ring(widget, focus_thickness=2, blur_thickness=1):
     def _on_focus_in(_):
         try:
-            widget.configure(highlightbackground=UI_THEME["primary"], highlightcolor=UI_THEME["primary"], highlightthickness=2)
+            widget.configure(highlightbackground=UI_THEME["primary"], highlightcolor=UI_THEME["primary"], highlightthickness=focus_thickness)
         except Exception:
             pass
 
     def _on_focus_out(_):
         try:
-            widget.configure(highlightbackground=UI_THEME["border"], highlightcolor=UI_THEME["border"], highlightthickness=1)
+            widget.configure(highlightbackground=UI_THEME["border"], highlightcolor=UI_THEME["border"], highlightthickness=blur_thickness)
         except Exception:
             pass
 
@@ -313,7 +316,7 @@ def build_primary_button(parent, text, command, padx=12):
         highlightbackground=UI_THEME["border"],
         highlightcolor=UI_THEME["primary"],
     )
-    bind_focus_ring(btn)
+    bind_focus_ring(btn, focus_thickness=3, blur_thickness=1)
     bind_button_states(btn, UI_THEME["primary"], UI_THEME["primary_active"])
     return btn
 
@@ -334,11 +337,42 @@ def build_secondary_button(parent, text, command, padx=12):
         highlightbackground=UI_THEME["border"],
         highlightcolor=UI_THEME["primary"],
     )
-    bind_focus_ring(btn)
+    bind_focus_ring(btn, focus_thickness=(3 if tone in {"danger", "warning"} else 2), blur_thickness=1)
     bind_button_states(btn, UI_THEME["surface_alt"], UI_THEME["border"])
     return btn
 
 
+
+
+def _build_semantic_secondary_button(parent, text, command, tone="warning", padx=12):
+    base_bg = UI_THEME.get("surface_alt", "#1B2430")
+    hover_bg = UI_THEME.get(tone, UI_THEME.get("border", "#2B3442"))
+    btn = tk.Button(
+        parent,
+        text=text,
+        command=command,
+        bg=base_bg,
+        fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
+        activebackground=hover_bg,
+        activeforeground=UI_THEME.get(f"on_{tone}", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))),
+        disabledforeground=UI_THEME.get("muted_text", "#9AA4B2"),
+        relief="flat",
+        padx=padx,
+        highlightthickness=1,
+        highlightbackground=UI_THEME.get("border", "#2B3442"),
+        highlightcolor=UI_THEME.get("primary", "#2F81F7"),
+    )
+    bind_focus_ring(btn, focus_thickness=2, blur_thickness=1)
+    bind_button_states(btn, base_bg, hover_bg)
+    return btn
+
+
+def build_secondary_warning_button(parent, text, command, padx=12):
+    return _build_semantic_secondary_button(parent, text, command, tone="warning", padx=padx)
+
+
+def build_secondary_danger_button(parent, text, command, padx=12):
+    return _build_semantic_secondary_button(parent, text, command, tone="danger", padx=padx)
 def build_filter_input(parent, textvariable=None, width=12):
     ent = tk.Entry(
         parent,
@@ -354,7 +388,7 @@ def build_filter_input(parent, textvariable=None, width=12):
         highlightbackground=UI_THEME["border"],
         highlightcolor=UI_THEME["primary"],
     )
-    bind_focus_ring(ent)
+    bind_focus_ring(ent, focus_thickness=3, blur_thickness=1)
     return ent
 
 
@@ -403,8 +437,8 @@ def apply_ttk_theme_styles(root=None):
     except Exception:
         style = ttk.Style(root)
     try:
-        style.configure("TCombobox", fieldbackground=UI_THEME.get("surface_alt", "#1B2430"), background=UI_THEME.get("surface_alt", "#1B2430"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
-        style.map("TCombobox", fieldbackground=[("readonly", UI_THEME.get("surface_alt", "#1B2430"))], foreground=[("readonly", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))])
+        style.configure("TCombobox", fieldbackground=UI_THEME.get("surface_alt", "#1B2430"), background=UI_THEME.get("surface_alt", "#1B2430"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), bordercolor=UI_THEME.get("border", "#2B3442"), lightcolor=UI_THEME.get("border", "#2B3442"), darkcolor=UI_THEME.get("border", "#2B3442"))
+        style.map("TCombobox", fieldbackground=[("readonly", UI_THEME.get("surface_alt", "#1B2430")), ("focus", UI_THEME.get("surface_alt", "#1B2430"))], foreground=[("readonly", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))), ("focus", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))], bordercolor=[("focus", UI_THEME.get("primary", "#2F81F7"))], lightcolor=[("focus", UI_THEME.get("primary", "#2F81F7"))], darkcolor=[("focus", UI_THEME.get("primary", "#2F81F7"))])
         style.configure("Vertical.TScrollbar", troughcolor=UI_THEME.get("surface", "#151A22"), background=UI_THEME.get("surface_alt", "#1B2430"), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
         style.configure("Horizontal.TScrollbar", troughcolor=UI_THEME.get("surface", "#151A22"), background=UI_THEME.get("surface_alt", "#1B2430"), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
     except Exception:
