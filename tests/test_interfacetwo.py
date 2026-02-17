@@ -273,6 +273,15 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('Registros filtrados:', source)
         self.assertIn('_runtime_refresh_ms = 1000', source)
 
+    def test_monitor_ui_has_analytic_table_and_focus_mode_controls(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_monitor_ui)
+        self.assertIn('Focus mode', source)
+        self.assertIn('selectmode="extended"', source)
+        self.assertIn('def _open_header_filter_menu', source)
+        self.assertIn('toolbar_batch_status', source)
+        self.assertIn('Alt+E exportar', source)
+
     def test_treeview_column_menu_controls_present(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_filter_bar)

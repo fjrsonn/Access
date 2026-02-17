@@ -241,6 +241,25 @@ def contrast_ratio(hex_a: str, hex_b: str) -> float:
     return (high + 0.05) / (low + 0.05)
 
 
+
+# Estado visual padronizado para evitar divergência entre componentes.
+# Prioridade de destaque (do mais crítico para o menos crítico):
+# danger > warning > success > info
+STATE_PRIORITY = {"danger": 4, "warning": 3, "success": 2, "info": 1}
+
+
+def normalize_tone(tone: str) -> str:
+    t = str(tone or "info").strip().lower()
+    aliases = {"error": "danger", "ok": "success"}
+    return aliases.get(t, t if t in {"info", "success", "warning", "danger"} else "info")
+
+
+def state_colors(tone: str) -> tuple[str, str]:
+    t = normalize_tone(tone)
+    bg = UI_THEME.get(t, UI_THEME.get("info", "#2563EB"))
+    fg = UI_THEME.get(f"on_{t}", UI_THEME.get("on_info", UI_THEME.get("text", "#E6EDF3")))
+    return bg, fg
+
 def validate_theme_contrast(theme: dict | None = None) -> dict:
     th = theme or UI_THEME
     checks = {
@@ -403,18 +422,18 @@ def build_label(parent, text, muted=False, **kwargs):
 
 
 def build_badge(parent, text, tone="warning", **kwargs):
-    tone_bg = UI_THEME.get(f"{tone}", UI_THEME["warning"])
-    tone_fg = UI_THEME.get(f"on_{tone}", UI_THEME["text"])
+    tone_bg, tone_fg = state_colors(tone)
     return tk.Label(parent, text=text, bg=tone_bg, fg=tone_fg, padx=10, pady=4, **kwargs)
 
 
 def build_banner(parent, tone="success", **kwargs):
-    if tone == "error":
-        bg = UI_THEME.get("banner_error_bg", UI_THEME["danger"])
-        fg = UI_THEME.get("banner_error_text", UI_THEME.get("on_danger", UI_THEME["text"]))
+    t = normalize_tone(tone)
+    if t == "danger":
+        bg = UI_THEME.get("banner_error_bg", state_colors("danger")[0])
+        fg = UI_THEME.get("banner_error_text", state_colors("danger")[1])
     else:
-        bg = UI_THEME.get("banner_success_bg", UI_THEME["success"])
-        fg = UI_THEME.get("banner_success_text", UI_THEME.get("on_success", UI_THEME["text"]))
+        bg = UI_THEME.get("banner_success_bg", state_colors(t)[0])
+        fg = UI_THEME.get("banner_success_text", state_colors(t)[1])
     return tk.Label(parent, text="", bg=bg, fg=fg, **kwargs)
 
 

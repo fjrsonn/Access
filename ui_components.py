@@ -8,7 +8,7 @@ except Exception:  # pragma: no cover
     tk = None
     ttk = None
 
-from ui_theme import UI_THEME, theme_font, theme_space, build_card_frame, build_label
+from ui_theme import UI_THEME, theme_font, theme_space, build_card_frame, build_label, state_colors, normalize_tone
 
 
 def build_section_title(parent, text: str):
@@ -40,8 +40,7 @@ class AppFeedbackBanner(tk.Frame):
 
     def show(self, text: str, tone: str = "info", icon: str = "ℹ", timeout_ms: int = 2200):
         self.var.set(f"{icon} {text}".strip())
-        bg = UI_THEME.get(tone, UI_THEME.get("surface_alt", "#1B2430"))
-        fg = UI_THEME.get(f"on_{tone}", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+        bg, fg = state_colors(tone)
         self.configure(bg=bg)
         self.lbl.configure(bg=bg, fg=fg)
         try:
@@ -78,8 +77,7 @@ class AppStatusBar(tk.Frame):
 
     def set(self, text: str, tone: str = "info"):
         self.var.set(text)
-        bg = UI_THEME.get(tone, UI_THEME.get("surface_alt", "#1B2430"))
-        fg = UI_THEME.get(f"on_{tone}", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+        bg, fg = state_colors(tone)
         self.configure(bg=bg)
         self.lbl.configure(bg=bg, fg=fg)
 
@@ -100,7 +98,7 @@ class AppMetricCard(tk.Frame):
         self.body = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"))
         self.body.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.title_lbl = tk.Label(self.body, textvariable=self.title_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
-        self.value_lbl = tk.Label(self.body, textvariable=self.value_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get(tone, UI_THEME.get(f"on_{tone}", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))), font=theme_font("font_xl", "bold"))
+        self.value_lbl = tk.Label(self.body, textvariable=self.value_var, bg=UI_THEME.get("surface", "#151A22"), fg=state_colors(tone)[0], font=theme_font("font_xl", "bold"))
         self.trend_lbl = tk.Label(self.body, textvariable=self.trend_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self.meta_lbl = tk.Label(self.body, textvariable=self.meta_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self._apply_density("confortavel")

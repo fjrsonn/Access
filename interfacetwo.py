@@ -38,6 +38,7 @@ from ui_theme import (
     apply_typography,
     available_typography_names,
     get_active_typography_name,
+    state_colors,
 )
 
 from ui_components import AppMetricCard, AppStatusBar, AppFeedbackBanner, build_section_title
@@ -102,6 +103,8 @@ _runtime_refresh_ms = REFRESH_MS
 _cards_last_update_at = None
 _control_filtered_count_var = None
 _control_toolbar = None
+_last_quick_filter_kind = None
+_metrics_accessibility_var = None
 
 
 def _load_prefs():
@@ -318,6 +321,13 @@ def _update_status_cards():
             except Exception:
                 pass
     _metrics_previous_cards = dict(data)
+    if _metrics_accessibility_var is not None:
+        try:
+            _metrics_accessibility_var.set(
+                f"Métricas: Ativos {data.get('ativos',0)}, Pendentes {data.get('pendentes',0)}, Sem contato {data.get('sem_contato',0)}, Avisado {data.get('avisado',0)}"
+            )
+        except Exception:
+            pass
     if _status_bar is not None and isinstance(ux, dict):
         try:
             p95 = ((ux.get("time_to_apply_filter_ms") or {}).get("p95") or 0)
@@ -996,6 +1006,18 @@ def _populate_control_table(tree_widget, info_label):
     filter_key = source.get("filter_key", tree_widget)
     filters = _filter_state.get(filter_key, {})
     filtrados = _apply_filters(registros, filters)
+    header_filters = source.get("header_filters") or {}
+    if isinstance(header_filters, dict) and header_filters:
+        def _match_header(rec):
+            for key, val in header_filters.items():
+                txt = str(val or "").strip().upper()
+                if not txt:
+                    continue
+                rv = str((rec or {}).get(key.upper()) or (rec or {}).get(key.lower()) or "").upper()
+                if txt not in rv:
+                    return False
+            return True
+        filtrados = [r for r in filtrados if _match_header(r)]
     if registros and not filtrados and _filters_are_active(filters):
         _filter_state[filter_key] = _default_filters()
         filters = _filter_state[filter_key]
@@ -1047,6 +1069,12 @@ def _populate_control_table(tree_widget, info_label):
                 selected_iid = iid
 
     _control_table_map[tree_widget] = record_map
+    if _operation_mode_enabled and not selected_iid:
+        for iid, rec in record_map.items():
+            st = str((rec or {}).get("STATUS") or (rec or {}).get("STATUS_ENCOMENDA") or "").upper()
+            if "SEM CONTATO" in st or "PEND" in st:
+                selected_iid = iid
+                break
     if selected_iid:
         _pending_focus_identity = None
         try:
@@ -1374,17 +1402,19 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
         active_count = _count_active_filters()
         if transient_msg:
             tone_key = "danger" if tone == "error" else tone
+            bg, fg = state_colors(tone_key)
             filtro_badge.configure(
                 text=f"{icon_map.get(tone, 'ℹ')} {transient_msg}",
-                bg=UI_THEME.get(tone_key, UI_THEME.get("info", "#2563EB")),
-                fg=UI_THEME.get(f"on_{tone_key}", UI_THEME.get("on_info", "#FFFFFF")),
+                bg=bg,
+                fg=fg,
             )
             return
         if active_count > 0:
+            bg, fg = state_colors("info")
             filtro_badge.configure(
                 text=f"🔎 {active_count} filtros ativos",
-                bg=UI_THEME.get("info", "#2563EB"),
-                fg=UI_THEME.get("on_info", "#FFFFFF"),
+                bg=bg,
+                fg=fg,
             )
         else:
             filtro_badge.configure(
@@ -1436,9 +1466,14 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
         _set_apply_dirty_state()
         _flash_feedback("Filtros aplicados", "success")
         _persist_ui_state({"last_filter_saved_at": datetime.now().isoformat()})
-        report_status("ux_metrics", "OK", stage="filter_apply", details={"source": str(filter_key), "query_len": len(query_entry.get().strip())})
+        details = {"source": str(filter_key), "query_len": len(query_entry.get().strip())}
+        if _last_quick_filter_kind:
+            details["quick_filter_conversion"] = _last_quick_filter_kind
+        report_status("ux_metrics", "OK", stage="filter_apply", details=details)
         _persist_ui_state()
         _populate_text(target_widget, info_label)
+        if _last_quick_filter_kind:
+            report_status("ux_metrics", "OK", stage="quick_filter_conversion", details={"source": str(filter_key), "kind": _last_quick_filter_kind})
 
     def clear_filters():
         global _last_filter_snapshot
@@ -1471,6 +1506,8 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
         _populate_text(target_widget, info_label)
 
     def _quick_filter(kind: str):
+        global _last_quick_filter_kind
+        _last_quick_filter_kind = kind
         payload = _current_payload()
         if kind == "today":
             payload["date_mode"] = "Específica"
@@ -2352,6 +2389,9 @@ def _build_monitor_ui(container):
     op_mode_var = tk.BooleanVar(value=op_mode_defaults)
     op_mode_chk = tk.Checkbutton(theme_bar, text="Modo Operação", variable=op_mode_var, bg=UI_THEME["bg"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), selectcolor=UI_THEME["surface"], activebackground=UI_THEME["bg"])
     op_mode_chk.pack(side=tk.LEFT, padx=(12, 0))
+    focus_mode_var = tk.BooleanVar(value=False)
+    focus_mode_chk = tk.Checkbutton(theme_bar, text="Focus mode", variable=focus_mode_var, bg=UI_THEME["bg"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), selectcolor=UI_THEME["surface"], activebackground=UI_THEME["bg"])
+    focus_mode_chk.pack(side=tk.LEFT, padx=(8, 0))
 
     def _refresh_theme_in_place():
         try:
@@ -2420,6 +2460,7 @@ def _build_monitor_ui(container):
 
     def _on_density_change(_event=None):
         _apply_density(density_var.get())
+        report_status("ux_metrics", "OK", stage="density_change", details={"density": _layout_density_mode})
 
     def _on_typography_change(_event=None):
         selected = apply_typography(typo_var.get())
@@ -2444,6 +2485,7 @@ def _build_monitor_ui(container):
             _runtime_refresh_ms = 1000
             theme_var.set(get_active_theme_name())
             typo_var.set(get_active_typography_name())
+            focus_mode_var.set(True)
             report_status("ux_metrics", "OK", stage="operation_mode_enabled", details={"theme": get_active_theme_name(), "typography": get_active_typography_name(), "refresh_ms": _runtime_refresh_ms})
             try:
                 hints.pack_forget()
@@ -2455,6 +2497,7 @@ def _build_monitor_ui(container):
                 pass
         else:
             _runtime_refresh_ms = REFRESH_MS
+            focus_mode_var.set(False)
             try:
                 hints.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
             except Exception:
@@ -2464,10 +2507,25 @@ def _build_monitor_ui(container):
         _refresh_theme_in_place()
         _apply_density(density_var.get())
 
+    def _toggle_focus_mode(*_args):
+        enabled = bool(focus_mode_var.get())
+        try:
+            if enabled:
+                hints.pack_forget()
+                info_label.pack_forget()
+            else:
+                info_label.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+                if not _operation_mode_enabled:
+                    hints.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+        except Exception:
+            pass
+        report_status("ux_metrics", "OK", stage="focus_mode_toggle", details={"enabled": enabled})
+
     theme_combo.bind("<<ComboboxSelected>>", _on_theme_change, add="+")
     typo_combo.bind("<<ComboboxSelected>>", _on_typography_change, add="+")
     density_combo.bind("<<ComboboxSelected>>", _on_density_change, add="+")
     op_mode_var.trace_add("write", _toggle_operation_mode)
+    focus_mode_var.trace_add("write", _toggle_focus_mode)
 
     title_row = tk.Frame(container, bg=UI_THEME["bg"])
     title_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
@@ -2502,7 +2560,13 @@ def _build_monitor_ui(container):
         cards_widgets.append(card)
         attach_tooltip(card, cards_tooltips.get(key, ""))
 
-    hints = build_label(container, "Atalhos: Ctrl+F buscar • Ctrl+Enter aplicar • Ctrl+Shift+L limpar • Alt+1..4 abas", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    global _metrics_accessibility_var
+    _metrics_accessibility_var = tk.StringVar(value="Métricas: carregando")
+    metrics_accessibility_label = build_label(container, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    metrics_accessibility_label.configure(textvariable=_metrics_accessibility_var)
+    metrics_accessibility_label.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+
+    hints = build_label(container, "Atalhos: Ctrl+F buscar • Ctrl+Enter aplicar • Ctrl+Shift+L limpar • Alt+1..4 abas • Alt+E exportar • Alt+R reset • Alt+V salvar visão", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
     hints.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
     info_label.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
 
@@ -2561,6 +2625,10 @@ def _build_monitor_ui(container):
             btn_export.pack(side=tk.LEFT, padx=(0, theme_space("space_1", 4)))
             btn_reset_cols.pack(side=tk.LEFT, padx=(0, theme_space("space_1", 4)))
             btn_save_view.pack(side=tk.LEFT, padx=(0, theme_space("space_1", 4)))
+            btn_mark_sem_contato = build_secondary_warning_button(toolbar, "Lote: Sem contato", lambda: None)
+            btn_mark_avisado = build_secondary_button(toolbar, "Lote: Avisado", lambda: None)
+            btn_mark_sem_contato.pack(side=tk.LEFT, padx=(0, theme_space("space_1", 4)))
+            btn_mark_avisado.pack(side=tk.LEFT, padx=(0, theme_space("space_1", 4)))
             toolbar_count.pack(side=tk.RIGHT)
             attach_tooltip(btn_export, "Exporta a tabela filtrada para CSV")
             attach_tooltip(btn_reset_cols, "Restaura ordem e visibilidade padrão das colunas")
@@ -2569,7 +2637,7 @@ def _build_monitor_ui(container):
             table_wrap = build_card_frame(frame)
             table_wrap.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)), fill=tk.BOTH, expand=True)
             columns = ("data_hora", "nome", "bloco_ap", "placa", "status")
-            tree = ttk.Treeview(table_wrap, columns=columns, show="headings", style="Control.Treeview")
+            tree = ttk.Treeview(table_wrap, columns=columns, show="headings", style="Control.Treeview", selectmode="extended")
             table_trees.append(tree)
             tree.heading("data_hora", text="Data/Hora")
             tree.heading("nome", text="Nome")
@@ -2583,15 +2651,27 @@ def _build_monitor_ui(container):
             tree.tag_configure("empty", foreground=UI_THEME.get("muted_text", "#9AA4B2"))
             _control_sort_state["controle"] = dict(_restored_control_sort_state.get("controle") or {"key": "data_hora", "reverse": True})
 
+            column_titles = {"data_hora": "Data/Hora", "nome": "Nome", "bloco_ap": "Bloco/AP", "placa": "Placa", "status": "Status"}
+
+            def _render_sort_heading():
+                st = _control_sort_state.get("controle", {"key": "data_hora", "reverse": True})
+                for c in columns:
+                    arrow = ""
+                    if st.get("key") == c:
+                        arrow = " ↓" if st.get("reverse") else " ↑"
+                    tree.heading(c, text=f"{column_titles.get(c, c)}{arrow}")
+
             def _sort_by(col, tw=tree):
                 st = _control_sort_state.get("controle", {"key": col, "reverse": False})
                 reverse = not st.get("reverse", False) if st.get("key") == col else False
                 _control_sort_state["controle"] = {"key": col, "reverse": reverse}
                 _persist_ui_state()
+                _render_sort_heading()
                 _populate_text(tw, info_label)
 
             for _col in columns:
                 tree.heading(_col, command=lambda c=_col: _sort_by(c))
+            _render_sort_heading()
             tree.column("data_hora", width=170, anchor="w")
             tree.column("nome", width=300, anchor="w")
             tree.column("bloco_ap", width=120, anchor="center")
@@ -2650,9 +2730,75 @@ def _build_monitor_ui(container):
                 except Exception as exc:
                     _announce_feedback(f"Falha ao salvar visão: {exc}", "danger")
 
-            btn_export.configure(command=_export_control_csv)
-            btn_reset_cols.configure(command=_reset_control_columns)
-            btn_save_view.configure(command=_save_control_view)
+            def _batch_set_status(new_status: str):
+                try:
+                    selected = list(tree.selection())
+                    for iid in selected:
+                        rec = _control_table_map.get(tree, {}).get(iid) or {}
+                        if isinstance(rec, dict):
+                            rec["STATUS"] = new_status
+                    _announce_feedback(f"Status em lote aplicado: {new_status}", "success")
+                    report_status("ux_metrics", "OK", stage="toolbar_batch_status", details={"status": new_status, "count": len(selected)})
+                    _populate_text(tree, info_label)
+                except Exception as exc:
+                    _announce_feedback(f"Falha em ação em lote: {exc}", "danger")
+
+            def _open_header_filter_menu(event=None):
+                try:
+                    reg = tree.identify_region(event.x, event.y) if event is not None else "heading"
+                    if reg != "heading":
+                        return
+                    col_id = tree.identify_column(event.x) if event is not None else ""
+                    if not col_id.startswith("#"):
+                        return
+                    idx = int(col_id.replace("#", "")) - 1
+                    if idx < 0 or idx >= len(columns):
+                        return
+                    key = columns[idx]
+                    menu = tk.Menu(tree, tearoff=0)
+                    source = _monitor_sources.get(tree, {})
+                    header_filters = dict(source.get("header_filters") or {})
+                    presets = []
+                    if key == "status":
+                        presets = ["SEM CONTATO", "AVISADO", "MORADOR", "VISITANTE"]
+                    elif key == "placa":
+                        presets = ["A", "B", "C"]
+                    else:
+                        presets = ["10", "11", "12"]
+                    for val in presets:
+                        menu.add_command(label=f"Filtrar {column_titles.get(key, key)}: {val}", command=lambda v=val, k=key: _apply_header_filter(k, v))
+                    menu.add_command(label="Limpar filtro desta coluna", command=lambda k=key: _apply_header_filter(k, ""))
+                    menu.add_command(label="Limpar todos filtros por coluna", command=lambda: _clear_header_filters())
+                    menu.tk_popup(event.x_root, event.y_root)
+                except Exception:
+                    return
+
+            def _apply_header_filter(key, value):
+                src = _monitor_sources.get(tree, {})
+                hf = dict(src.get("header_filters") or {})
+                if str(value).strip():
+                    hf[str(key)] = str(value)
+                else:
+                    hf.pop(str(key), None)
+                src["header_filters"] = hf
+                _monitor_sources[tree] = src
+                report_status("ux_metrics", "OK", stage="header_filter_apply", details={"column": key, "value": value})
+                _populate_text(tree, info_label)
+
+            def _clear_header_filters():
+                src = _monitor_sources.get(tree, {})
+                src["header_filters"] = {}
+                _monitor_sources[tree] = src
+                report_status("ux_metrics", "OK", stage="header_filter_clear", details={"source": "controle"})
+                _populate_text(tree, info_label)
+
+            tree.bind("<Button-3>", _open_header_filter_menu, add="+")
+
+            btn_export.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_export_csv", details={"source": "controle"}), _export_control_csv()))
+            btn_reset_cols.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_reset_columns", details={"source": "controle"}), _reset_control_columns()))
+            btn_save_view.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_save_view", details={"source": "controle"}), _save_control_view()))
+            btn_mark_sem_contato.configure(command=lambda: _batch_set_status("SEM CONTATO"))
+            btn_mark_avisado.configure(command=lambda: _batch_set_status("AVISADO"))
             if _control_filtered_count_var is not None:
                 def _sync_count(*_):
                     try:
@@ -2662,6 +2808,13 @@ def _build_monitor_ui(container):
                         pass
                 _control_filtered_count_var.trace_add("write", _sync_count)
                 _sync_count()
+
+            try:
+                root_win.bind("<Alt-e>", lambda _e: (btn_export.invoke(), "break")[1], add="+")
+                root_win.bind("<Alt-r>", lambda _e: (btn_reset_cols.invoke(), "break")[1], add="+")
+                root_win.bind("<Alt-v>", lambda _e: (btn_save_view.invoke(), "break")[1], add="+")
+            except Exception:
+                pass
 
             def _on_resize(event, tw=tree):
                 total = max(event.width - 24, 300)
