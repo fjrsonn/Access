@@ -26,6 +26,11 @@ class UIThemeTokensTests(unittest.TestCase):
         self.assertIn("claro", snapshots)
         self.assertIn("alto_contraste", snapshots)
 
+    def test_typography_presets_exist(self):
+        self.assertIn("compacto", ui_theme.TYPOGRAPHY_PRESETS)
+        self.assertIn("padrao", ui_theme.TYPOGRAPHY_PRESETS)
+        self.assertIn("acessivel", ui_theme.TYPOGRAPHY_PRESETS)
+
 
 if __name__ == "__main__":
     unittest.main()
