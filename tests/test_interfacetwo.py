@@ -186,6 +186,58 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('actions_row = tk.Frame(bar', source)
         self.assertIn('quick_group = tk.Frame(actions_row', source)
 
+
+    def test_filter_preset_lifecycle_helpers(self):
+        import json, os, tempfile
+        tmp = tempfile.NamedTemporaryFile('w', encoding='utf-8', suffix='.json', delete=False)
+        tmp.write('{}')
+        tmp.close()
+        old_prefs = interfacetwo.PREFS_FILE
+        interfacetwo.PREFS_FILE = tmp.name
+        try:
+            interfacetwo._save_filter_presets({'turno-a': {'query': 'ana'}})
+            self.assertEqual(interfacetwo._get_filter_presets().get('turno-a', {}).get('query'), 'ana')
+            self.assertTrue(interfacetwo._rename_filter_preset('turno-a', 'turno-b'))
+            self.assertIn('turno-b', interfacetwo._get_filter_presets())
+            interfacetwo._set_filter_default_preset('controle', 'turno-b')
+            self.assertEqual(interfacetwo._get_filter_default_preset('controle'), 'turno-b')
+            interfacetwo._delete_filter_preset('turno-b')
+            self.assertNotIn('turno-b', interfacetwo._get_filter_presets())
+            self.assertEqual(interfacetwo._get_filter_default_preset('controle'), '')
+        finally:
+            interfacetwo.PREFS_FILE = old_prefs
+            os.remove(tmp.name)
+
+    def test_filter_bar_has_auto_apply_and_preset_management(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_filter_bar)
+        self.assertIn('Aplicar automaticamente', source)
+        self.assertIn('auto_apply_var.trace_add("write", _save_auto_apply_pref)', source)
+        self.assertIn('Renomear preset', source)
+        self.assertIn('Excluir preset', source)
+        self.assertIn('Fixar preset da aba', source)
+
+    def test_filter_feedback_uses_banner_status_without_badge_flash(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_filter_bar)
+        self.assertIn('def _flash_feedback(msg, tone="info"):', source)
+        start = source.find('def _flash_feedback(msg, tone="info"):')
+        end = source.find('def _apply_payload', start)
+        flash_block = source[start:end]
+        self.assertNotIn('_update_filter_badge(transient_msg=', flash_block)
+
+    def test_monitor_binds_f1_shortcut_help(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_monitor_ui)
+        self.assertIn('root_win.bind("<F1>", _show_shortcuts, add="+")', source)
+
+    def test_treeview_column_menu_controls_present(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_filter_bar)
+        self.assertIn('if isinstance(target_widget, ttk.Treeview):', source)
+        self.assertIn('control_column_order', source)
+        self.assertIn('control_column_visible', source)
+
     def test_load_safe_accepts_concatenated_json_objects(self):
         import os, tempfile
         raw = '{"nome":"NINA","bloco":"3","apartamento":"33","status":"MORADOR","data_hora":"18/02/2026 14:10:00"}{"nome":"OTAVIO","bloco":"4","apartamento":"44","status":"VISITANTE","data_hora":"18/02/2026 14:15:00"}'

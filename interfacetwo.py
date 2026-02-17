@@ -95,6 +95,7 @@ _status_bar = None
 _feedback_banner = None
 _metrics_previous_cards = {}
 _last_filter_snapshot = {}
+_filter_auto_apply_after = {}
 
 
 def _load_prefs():
@@ -163,6 +164,68 @@ def _get_filter_presets() -> dict:
 def _save_filter_presets(presets: dict):
     payload = _load_prefs()
     payload["filter_presets"] = dict(presets or {})
+    _save_prefs(payload)
+
+
+def _get_filter_default_preset(filter_key: str) -> str:
+    prefs = _load_prefs()
+    defaults = prefs.get("filter_default_presets") or {}
+    if not isinstance(defaults, dict):
+        return ""
+    return str(defaults.get(str(filter_key)) or "").strip()
+
+
+def _set_filter_default_preset(filter_key: str, preset_name: str):
+    payload = _load_prefs()
+    defaults = payload.get("filter_default_presets") or {}
+    if not isinstance(defaults, dict):
+        defaults = {}
+    name = str(preset_name or "").strip()
+    if name:
+        defaults[str(filter_key)] = name
+    else:
+        defaults.pop(str(filter_key), None)
+    payload["filter_default_presets"] = defaults
+    _save_prefs(payload)
+
+
+def _rename_filter_preset(old_name: str, new_name: str) -> bool:
+    old_name = str(old_name or "").strip()
+    new_name = str(new_name or "").strip()
+    if not old_name or not new_name or old_name == new_name:
+        return False
+    payload = _load_prefs()
+    presets = payload.get("filter_presets") or {}
+    if not isinstance(presets, dict) or old_name not in presets:
+        return False
+    if new_name in presets:
+        return False
+    presets[new_name] = presets.pop(old_name)
+    payload["filter_presets"] = presets
+    defaults = payload.get("filter_default_presets") or {}
+    if isinstance(defaults, dict):
+        payload["filter_default_presets"] = {
+            str(k): (new_name if str(v) == old_name else v)
+            for k, v in defaults.items()
+        }
+    _save_prefs(payload)
+    return True
+
+
+def _delete_filter_preset(name: str):
+    name = str(name or "").strip()
+    if not name:
+        return
+    payload = _load_prefs()
+    presets = payload.get("filter_presets") or {}
+    if isinstance(presets, dict):
+        presets.pop(name, None)
+        payload["filter_presets"] = presets
+    defaults = payload.get("filter_default_presets") or {}
+    if isinstance(defaults, dict):
+        payload["filter_default_presets"] = {
+            str(k): v for k, v in defaults.items() if str(v) != name
+        }
     _save_prefs(payload)
 
 
@@ -1188,6 +1251,8 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
     bloco_var = tk.StringVar(value="Todos")
     advanced_visible = tk.BooleanVar(value=False)
     preset_var = tk.StringVar(value="Preset (opcional)")
+    auto_apply_defaults = (_load_prefs().get("filter_auto_apply") or {})
+    auto_apply_var = tk.BooleanVar(value=bool(auto_apply_defaults.get(str(filter_key), False)))
 
     advanced_frame = tk.Frame(bar, bg=UI_THEME["surface"])
     date_entry = build_filter_input(advanced_frame, width=10)
@@ -1275,9 +1340,27 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
             bind_button_states(btn_apply, UI_THEME["primary"], UI_THEME["primary_active"])
 
     def _flash_feedback(msg, tone="info"):
-        _update_filter_badge(transient_msg=msg, tone=tone)
-        bar.after(1400, _update_filter_badge)
         _announce_feedback(msg, tone)
+        if _status_bar is not None:
+            try:
+                _status_bar.set(str(msg), tone=("danger" if tone == "error" else tone))
+            except Exception:
+                pass
+
+    def _apply_payload(payload: dict):
+        if not isinstance(payload, dict):
+            return
+        order_var.set(payload.get("order") or "Mais recentes")
+        date_mode_var.set(payload.get("date_mode") or "Mais recentes")
+        time_mode_var.set(payload.get("time_mode") or "Mais recentes")
+        query_var.set(payload.get("query") or "")
+        status_var.set(payload.get("status") or "Todos")
+        bloco_var.set(payload.get("bloco") or "Todos")
+        date_entry.delete(0, tk.END); date_entry.insert(0, payload.get("date_value") or "")
+        time_entry.delete(0, tk.END); time_entry.insert(0, payload.get("time_value") or "")
+        update_entry_state()
+        _update_filter_badge()
+        _set_apply_dirty_state()
 
     def _apply_payload(payload: dict):
         if not isinstance(payload, dict):
@@ -1367,8 +1450,7 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
         presets = _get_filter_presets()
         presets[name] = _current_payload()
         _save_filter_presets(presets)
-        preset_combo.configure(values=["Preset (opcional)"] + sorted(presets.keys()))
-        preset_var.set(name)
+        _refresh_preset_combo(name)
         _flash_feedback("Preset salvo", "success")
 
     def _load_preset(_e=None):
@@ -1378,6 +1460,69 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
         presets = _get_filter_presets()
         _apply_payload(presets.get(name) or {})
         apply_filters()
+
+    def _refresh_preset_combo(selected="Preset (opcional)"):
+        presets_local = _get_filter_presets()
+        values = ["Preset (opcional)"] + sorted(presets_local.keys())
+        preset_combo.configure(values=values)
+        preset_var.set(selected if selected in values else "Preset (opcional)")
+
+    def _rename_selected_preset():
+        current = (preset_var.get() or "").strip()
+        if not current or current == "Preset (opcional)":
+            _flash_feedback("Selecione um preset para renomear", "warning")
+            return
+        novo = simpledialog.askstring("Renomear preset", f"Novo nome para '{current}':", parent=bar.winfo_toplevel())
+        if not novo:
+            return
+        if _rename_filter_preset(current, novo):
+            _refresh_preset_combo(novo.strip())
+            _flash_feedback("Preset renomeado", "success")
+        else:
+            _flash_feedback("Não foi possível renomear preset", "danger")
+
+    def _delete_selected_preset():
+        current = (preset_var.get() or "").strip()
+        if not current or current == "Preset (opcional)":
+            _flash_feedback("Selecione um preset para excluir", "warning")
+            return
+        if not messagebox.askyesno("Excluir preset", f"Excluir preset '{current}'?", parent=bar.winfo_toplevel()):
+            return
+        _delete_filter_preset(current)
+        _refresh_preset_combo("Preset (opcional)")
+        _flash_feedback("Preset excluído", "warning")
+
+    def _set_default_preset_for_tab():
+        current = (preset_var.get() or "").strip()
+        if not current or current == "Preset (opcional)":
+            _set_filter_default_preset(filter_key, "")
+            _flash_feedback("Preset padrão removido da aba", "info")
+            return
+        _set_filter_default_preset(filter_key, current)
+        _flash_feedback(f"Preset padrão da aba: {current}", "success")
+
+    def _schedule_auto_apply(*_):
+        global _filter_auto_apply_after
+        if not auto_apply_var.get():
+            return
+        prev = _filter_auto_apply_after.get(filter_key)
+        if prev:
+            try:
+                bar.after_cancel(prev)
+            except Exception:
+                pass
+        _filter_auto_apply_after[filter_key] = bar.after(380, lambda: (apply_filters(), _filter_auto_apply_after.pop(filter_key, None)))
+
+    def _save_auto_apply_pref(*_):
+        payload = _load_prefs()
+        auto_cfg = payload.get("filter_auto_apply") or {}
+        if not isinstance(auto_cfg, dict):
+            auto_cfg = {}
+        auto_cfg[str(filter_key)] = bool(auto_apply_var.get())
+        payload["filter_auto_apply"] = auto_cfg
+        _save_prefs(payload)
+        if auto_apply_var.get():
+            _schedule_auto_apply()
 
     build_label(top_row, "Buscar", font=theme_font("font_sm")).grid(row=0, column=0, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
     query_entry.grid(row=0, column=1, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_1", 4), sticky="ew")
@@ -1395,8 +1540,13 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
     btn_apply.grid(row=0, column=6, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="e")
     btn_clear = build_secondary_warning_button(top_row, "Limpar", clear_filters)
     btn_clear.grid(row=0, column=7, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="e")
+    auto_apply_chk = tk.Checkbutton(top_row, text="Aplicar automaticamente", variable=auto_apply_var, bg=UI_THEME["surface"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), activebackground=UI_THEME["surface"], activeforeground=UI_THEME.get("on_surface", UI_THEME["text"]), selectcolor=UI_THEME.get("surface_alt", UI_THEME["surface"]))
+    auto_apply_chk.grid(row=0, column=9, padx=(theme_space("space_1", 4), 0), pady=theme_space("space_1", 4), sticky="e")
 
     btn_save_preset = build_secondary_button(actions_row, "Salvar preset", _save_preset)
+    btn_rename_preset = build_secondary_button(actions_row, "Renomear preset", _rename_selected_preset)
+    btn_delete_preset = build_secondary_danger_button(actions_row, "Excluir preset", _delete_selected_preset)
+    btn_default_preset = build_secondary_button(actions_row, "Fixar preset da aba", _set_default_preset_for_tab)
     btn_undo_filter = build_secondary_button(actions_row, "Desfazer", _undo_last_filter)
     btn_advanced = build_secondary_button(actions_row, "Filtros avançados", _toggle_advanced)
     quick_today_btn = build_secondary_button(actions_row, "Hoje", lambda: _quick_filter("today"), padx=8)
@@ -1405,16 +1555,79 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
 
     build_label(actions_row, "Ações", font=theme_font("font_sm"), muted=True).grid(row=0, column=0, padx=(0, theme_space("space_1", 4)), sticky="w")
     btn_save_preset.grid(row=0, column=1, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
-    btn_undo_filter.grid(row=0, column=2, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
+    btn_rename_preset.grid(row=0, column=2, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
+    btn_delete_preset.grid(row=0, column=3, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
+    btn_default_preset.grid(row=0, column=4, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
+    btn_undo_filter.grid(row=0, column=5, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
 
     quick_group = tk.Frame(actions_row, bg=UI_THEME["surface_alt"], highlightbackground=UI_THEME["border"], highlightthickness=1)
-    quick_group.grid(row=0, column=3, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_1", 4), sticky="w")
+    quick_group.grid(row=0, column=6, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_1", 4), sticky="w")
     build_label(quick_group, "Rápidos", muted=True, bg=UI_THEME["surface_alt"], font=theme_font("font_sm")).pack(side=tk.LEFT, padx=(theme_space("space_1", 4), theme_space("space_1", 4)))
     quick_today_btn.pack(in_=quick_group, side=tk.LEFT, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4))
     quick_sem_contato_btn.pack(in_=quick_group, side=tk.LEFT, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4))
     quick_alta_btn.pack(in_=quick_group, side=tk.LEFT, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4))
-    btn_advanced.grid(row=0, column=4, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
+    btn_advanced.grid(row=0, column=7, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
 
+    if isinstance(target_widget, ttk.Treeview):
+        col_menu_btn = build_secondary_button(actions_row, "Colunas", lambda: None)
+        col_menu_btn.grid(row=0, column=8, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
+
+        def _get_tree_columns_state():
+            all_cols = list(target_widget["columns"])
+            prefs_local = _load_prefs()
+            order_saved = prefs_local.get("control_column_order") or []
+            order = [c for c in order_saved if c in all_cols] + [c for c in all_cols if c not in order_saved]
+            visible_saved = prefs_local.get("control_column_visible") or {}
+            visible = {c: bool(visible_saved.get(c, True)) for c in all_cols}
+            return all_cols, order, visible
+
+        def _save_tree_columns_state(order, visible):
+            _persist_ui_state({"control_column_order": list(order), "control_column_visible": {k: bool(v) for k, v in visible.items()}})
+
+        def _apply_tree_columns(order, visible):
+            shown = [c for c in order if visible.get(c, True)]
+            if not shown and order:
+                shown = [order[0]]
+            target_widget.configure(displaycolumns=tuple(shown or order))
+
+        def _toggle_column(col):
+            _all, order, visible = _get_tree_columns_state()
+            visible[col] = not visible.get(col, True)
+            _save_tree_columns_state(order, visible)
+            _apply_tree_columns(order, visible)
+
+        def _move_column(direction):
+            col_name = simpledialog.askstring("Reordenar coluna", f"Coluna atual ({direction}): {', '.join(target_widget['columns'])}", parent=bar.winfo_toplevel())
+            col_name = str(col_name or "").strip()
+            if not col_name:
+                return
+            _all, order, visible = _get_tree_columns_state()
+            if col_name not in order:
+                _flash_feedback("Coluna inválida", "warning")
+                return
+            idx = order.index(col_name)
+            tgt = idx - 1 if direction == "esquerda" else idx + 1
+            if tgt < 0 or tgt >= len(order):
+                return
+            order[idx], order[tgt] = order[tgt], order[idx]
+            _save_tree_columns_state(order, visible)
+            _apply_tree_columns(order, visible)
+
+        menu = tk.Menu(col_menu_btn, tearoff=0)
+        cols_all, cols_order, cols_visible = _get_tree_columns_state()
+        _apply_tree_columns(cols_order, cols_visible)
+        for col in cols_all:
+            menu.add_checkbutton(label=col, onvalue=True, offvalue=False, variable=tk.BooleanVar(value=cols_visible.get(col, True)), command=lambda c=col: _toggle_column(c))
+        menu.add_separator()
+        menu.add_command(label="Mover coluna para esquerda", command=lambda: _move_column("esquerda"))
+        menu.add_command(label="Mover coluna para direita", command=lambda: _move_column("direita"))
+        col_menu_btn.configure(command=lambda m=menu, b=col_menu_btn: m.tk_popup(b.winfo_rootx(), b.winfo_rooty() + b.winfo_height()))
+
+    attach_tooltip(btn_apply, "Aplica os filtros atuais")
+    attach_tooltip(btn_clear, "Limpa todos os filtros")
+    attach_tooltip(btn_save_preset, "Salva os filtros como preset")
+    attach_tooltip(btn_default_preset, "Define o preset selecionado como padrão da aba")
+    attach_tooltip(btn_undo_filter, "Restaura o último conjunto de filtros")
     attach_tooltip(quick_today_btn, "Filtra registros do dia atual")
     attach_tooltip(quick_sem_contato_btn, "Mostra apenas status sem contato")
     attach_tooltip(quick_alta_btn, "Busca ocorrências de alta severidade")
@@ -1439,11 +1652,11 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
 
     preset_combo.bind("<<ComboboxSelected>>", _load_preset, add="+")
 
-    _filter_controls[filter_key] = [order_combo, date_mode_combo, date_entry, time_mode_combo, time_entry, query_entry, status_combo, bloco_combo, preset_combo]
+    _filter_controls[filter_key] = [order_combo, date_mode_combo, date_entry, time_mode_combo, time_entry, query_entry, status_combo, bloco_combo, preset_combo, auto_apply_chk]
     for control in _filter_controls[filter_key]:
         bind_focus_ring(control)
 
-    tab_order = [query_entry, status_combo, preset_combo, btn_apply, btn_clear, btn_save_preset, btn_undo_filter, quick_today_btn, quick_sem_contato_btn, quick_alta_btn, btn_advanced, order_combo, date_mode_combo, date_entry, time_mode_combo, time_entry, bloco_combo]
+    tab_order = [query_entry, status_combo, preset_combo, btn_apply, btn_clear, auto_apply_chk, btn_save_preset, btn_rename_preset, btn_delete_preset, btn_default_preset, btn_undo_filter, quick_today_btn, quick_sem_contato_btn, quick_alta_btn, btn_advanced, order_combo, date_mode_combo, date_entry, time_mode_combo, time_entry, bloco_combo]
     for idx, widget in enumerate(tab_order):
         nxt = tab_order[(idx + 1) % len(tab_order)]
         widget.bind("<Tab>", lambda _e, w=nxt: (w.focus_set(), "break"), add="+")
@@ -1452,21 +1665,30 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
     top_row.grid_columnconfigure(3, weight=1)
     top_row.grid_columnconfigure(5, weight=1)
     top_row.grid_columnconfigure(8, weight=1)
+    top_row.grid_columnconfigure(9, weight=1)
 
     for c in (1, 3, 6, 9):
         advanced_frame.grid_columnconfigure(c, weight=1)
 
     date_mode_var.trace_add("write", lambda *_: (update_entry_state(), _set_apply_dirty_state()))
     time_mode_var.trace_add("write", lambda *_: (update_entry_state(), _set_apply_dirty_state()))
-    query_var.trace_add("write", lambda *_: (_update_filter_badge(), _set_apply_dirty_state()))
-    status_var.trace_add("write", lambda *_: (_update_filter_badge(), _set_apply_dirty_state()))
-    bloco_var.trace_add("write", lambda *_: (_update_filter_badge(), _set_apply_dirty_state()))
+    query_var.trace_add("write", lambda *_: (_update_filter_badge(), _set_apply_dirty_state(), _schedule_auto_apply()))
+    status_var.trace_add("write", lambda *_: (_update_filter_badge(), _set_apply_dirty_state(), _schedule_auto_apply()))
+    bloco_var.trace_add("write", lambda *_: (_update_filter_badge(), _set_apply_dirty_state(), _schedule_auto_apply()))
     preset_var.trace_add("write", lambda *_: _set_apply_dirty_state())
+    auto_apply_var.trace_add("write", _save_auto_apply_pref)
 
     update_entry_state()
     if filter_key not in _filter_state:
         _filter_state[filter_key] = _default_filters()
     _apply_payload(_filter_state.get(filter_key) or _default_filters())
+    default_preset = _get_filter_default_preset(filter_key)
+    if default_preset:
+        presets_now = _get_filter_presets()
+        if default_preset in presets_now:
+            preset_var.set(default_preset)
+            _apply_payload(presets_now.get(default_preset) or {})
+            apply_filters()
     _update_filter_badge()
     _set_apply_dirty_state()
 
@@ -2168,10 +2390,18 @@ def _build_monitor_ui(container):
 
     try:
         root_win = container.winfo_toplevel()
+        def _show_shortcuts(_e=None):
+            messagebox.showinfo(
+                "Atalhos do monitor",
+                "Ctrl+F: foco na busca\nCtrl+Enter: aplicar filtros\nCtrl+Shift+L: limpar filtros\nAlt+1..4: trocar abas\nF1: ajuda de atalhos",
+                parent=root_win,
+            )
+            return "break"
         root_win.bind("<Alt-Key-1>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+1"}), notebook.select(0), "break")[2], add="+")
         root_win.bind("<Alt-Key-2>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+2"}), notebook.select(1), "break")[2], add="+")
         root_win.bind("<Alt-Key-3>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+3"}), notebook.select(2), "break")[2], add="+")
         root_win.bind("<Alt-Key-4>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+4"}), notebook.select(3), "break")[2], add="+")
+        root_win.bind("<F1>", _show_shortcuts, add="+")
     except Exception:
         pass
 
@@ -2280,8 +2510,10 @@ def _build_monitor_ui(container):
 
     btn_frame = tk.Frame(container, bg=UI_THEME["bg"])
     btn_frame.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_3", 10)))
-    build_primary_button(btn_frame, "Recarregar", lambda: forcar_recarregar(monitor_widgets, info_label)).pack(side=tk.LEFT, padx=6)
+    btn_reload = build_primary_button(btn_frame, "Recarregar", lambda: forcar_recarregar(monitor_widgets, info_label))
+    btn_reload.pack(side=tk.LEFT, padx=6)
     btn_backup = build_secondary_danger_button(btn_frame, "Backup e Limpar", lambda: limpar_dados(monitor_widgets, info_label, btn_backup)); btn_backup.pack(side=tk.LEFT, padx=6)
+    attach_tooltip(btn_reload, "Recarrega todos os dados do monitor")
     attach_tooltip(btn_backup, "Cria backup e limpa os registros exibidos")
     if not prefs.get("onboarding_seen"):
         _announce_feedback("Use Ctrl+F para busca e Alt+1..4 para trocar abas", "info")
