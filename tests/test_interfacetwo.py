@@ -31,6 +31,27 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertTrue(interfacetwo._filters_are_active({"status": "SEM CONTATO"}))
         self.assertTrue(interfacetwo._filters_are_active({"date_mode": "Específica", "date_value": "01/01/2026"}))
 
+    def test_normalize_record_aliases_for_monitor(self):
+        raw = {
+            "nome": "Carlos",
+            "sobrenome": "Souza",
+            "bloco": "B",
+            "apartamento": "202",
+            "placa": "XYZ1234",
+            "modelo": "Civic",
+            "cor": "Prata",
+            "status": "VISITANTE",
+            "data_hora": "18/02/2026 11:22:33",
+        }
+        normalized = interfacetwo._normalize_record_for_monitor(raw)
+        self.assertEqual(normalized.get("NOME"), "Carlos")
+        self.assertEqual(normalized.get("SOBRENOME"), "Souza")
+        self.assertEqual(normalized.get("BLOCO"), "B")
+        self.assertEqual(normalized.get("APARTAMENTO"), "202")
+        self.assertEqual(normalized.get("PLACA"), "XYZ1234")
+        self.assertEqual(normalized.get("STATUS"), "VISITANTE")
+        self.assertEqual(normalized.get("DATA_HORA"), "18/02/2026 11:22:33")
+
 
 if __name__ == "__main__":
     unittest.main()

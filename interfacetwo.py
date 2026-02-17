@@ -269,10 +269,12 @@ def _load_safe(path: str):
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
             if isinstance(data, dict) and "registros" in data:
-                return data.get("registros", [])
+                return _normalize_records_for_monitor(data.get("registros", []))
             if isinstance(data, list):
-                return data
-            return data.get("registros", []) if isinstance(data, dict) else []
+                return _normalize_records_for_monitor(data)
+            if isinstance(data, dict):
+                return _normalize_records_for_monitor(data.get("registros", []))
+            return []
     except json.JSONDecodeError:
         print(f"[interfacetwo] JSON inválido em {path}; usando fallback sem criar .corrupted")
         return []
@@ -297,6 +299,46 @@ def _atomic_write(path: str, obj):
 
 def safe(v):
     return v if v and v != "-" else "-"
+
+
+def _normalize_records_for_monitor(records):
+    if not isinstance(records, list):
+        return []
+    return [_normalize_record_for_monitor(r) for r in records if isinstance(r, dict)]
+
+
+def _normalize_record_for_monitor(record: dict) -> dict:
+    normalized = dict(record or {})
+
+    def pick(*keys):
+        for key in keys:
+            value = record.get(key)
+            if value not in (None, ""):
+                return value
+        return ""
+
+    aliases = {
+        "NOME": ("NOME", "nome"),
+        "SOBRENOME": ("SOBRENOME", "sobrenome"),
+        "BLOCO": ("BLOCO", "bloco"),
+        "APARTAMENTO": ("APARTAMENTO", "apartamento", "ap"),
+        "PLACA": ("PLACA", "placa"),
+        "MODELO": ("MODELO", "modelo", "veiculo_modelo"),
+        "COR": ("COR", "cor", "veiculo_cor"),
+        "STATUS": ("STATUS", "status"),
+        "STATUS_ENCOMENDA": ("STATUS_ENCOMENDA", "status_encomenda"),
+        "TIPO": ("TIPO", "tipo"),
+        "LOJA": ("LOJA", "loja"),
+        "IDENTIFICACAO": ("IDENTIFICACAO", "identificacao", "identificação"),
+        "DATA_HORA": ("DATA_HORA", "data_hora", "datahora", "timestamp"),
+    }
+
+    for canonical, keys in aliases.items():
+        value = pick(*keys)
+        if value not in (None, ""):
+            normalized[canonical] = value
+
+    return normalized
 
 def format_line(r: dict) -> str:
     modelo = r.get("MODELO") or ""
