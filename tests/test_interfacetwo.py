@@ -153,6 +153,35 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertEqual(registros[0].get('NOME'), 'MARTA')
         self.assertEqual(registros[1].get('APARTAMENTO'), '902')
 
+    def test_load_safe_accepts_ndjson_payload(self):
+        import os, tempfile
+        raw = '\\n'.join([
+            '{"nome":"LUCAS","bloco":"1","apartamento":"11","status":"MORADOR","data_hora":"18/02/2026 14:00:00"}',
+            '{"nome":"RAFA","bloco":"2","apartamento":"22","status":"VISITANTE","data_hora":"18/02/2026 14:05:00"}'
+        ])
+        with tempfile.NamedTemporaryFile('w', encoding='utf-8', suffix='.json', delete=False) as tf:
+            tf.write(raw)
+            path = tf.name
+        try:
+            registros = interfacetwo._load_safe(path)
+        finally:
+            os.remove(path)
+        self.assertEqual(len(registros), 2)
+        self.assertEqual(registros[0].get('NOME'), 'LUCAS')
+
+    def test_load_safe_accepts_concatenated_json_objects(self):
+        import os, tempfile
+        raw = '{"nome":"NINA","bloco":"3","apartamento":"33","status":"MORADOR","data_hora":"18/02/2026 14:10:00"}{"nome":"OTAVIO","bloco":"4","apartamento":"44","status":"VISITANTE","data_hora":"18/02/2026 14:15:00"}'
+        with tempfile.NamedTemporaryFile('w', encoding='utf-8', suffix='.json', delete=False) as tf:
+            tf.write(raw)
+            path = tf.name
+        try:
+            registros = interfacetwo._load_safe(path)
+        finally:
+            os.remove(path)
+        self.assertEqual(len(registros), 2)
+        self.assertEqual(registros[1].get('NOME'), 'OTAVIO')
+
 
 if __name__ == "__main__":
     unittest.main()

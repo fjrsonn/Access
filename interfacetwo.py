@@ -262,20 +262,63 @@ def _infer_model_color_from_text(text: str):
     return (modelo or "", cor or "")
 
 # ---------- safe IO ----------
+def _parse_json_lenient(raw: str):
+    text = str(raw or "").strip()
+    if not text:
+        return []
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # fallback 1: JSON por linha (ndjson/jsonl)
+    items = []
+    for line in text.splitlines():
+        candidate = line.strip().rstrip(",")
+        if not candidate:
+            continue
+        try:
+            items.append(json.loads(candidate))
+        except Exception:
+            continue
+    if items:
+        return items
+
+    # fallback 2: múltiplos objetos JSON concatenados sem vírgula
+    decoder = json.JSONDecoder()
+    pos = 0
+    length = len(text)
+    recovered = []
+    while pos < length:
+        while pos < length and text[pos] not in "[{":
+            pos += 1
+        if pos >= length:
+            break
+        try:
+            obj, end = decoder.raw_decode(text, pos)
+            recovered.append(obj)
+            pos = end
+        except Exception:
+            pos += 1
+    if recovered:
+        if len(recovered) == 1:
+            return recovered[0]
+        return recovered
+
+    raise json.JSONDecodeError("invalid json for known encodings", text, 0)
+
+
 def _read_json_flexible(path: str):
-    # Robustez para ambientes Windows/produção: arquivos podem chegar com BOM
-    # ou codificação ANSI/latin-1 e ainda assim devem aparecer no monitor.
+    # Robustez para ambientes Windows/produção: arquivos podem chegar com BOM,
+    # codificação ANSI/latin-1 ou serializações não estritamente válidas.
     for enc in ("utf-8", "utf-8-sig", "latin-1"):
         try:
             with open(path, "r", encoding=enc) as f:
                 raw = f.read()
-            if not str(raw).strip():
-                return []
-            return json.loads(raw)
+            return _parse_json_lenient(raw)
         except UnicodeDecodeError:
             continue
         except json.JSONDecodeError:
-            # tenta próxima codificação antes de desistir
             continue
     raise json.JSONDecodeError("invalid json for known encodings", "", 0)
 
