@@ -273,7 +273,9 @@ def _load_safe(path: str):
             if isinstance(data, list):
                 return _normalize_records_for_monitor(data)
             if isinstance(data, dict):
-                return _normalize_records_for_monitor(data.get("registros", []))
+                # tolera formatos legados/heterogêneos onde o JSON vem como
+                # objeto-mapa (id -> registro) ou wrappers diferentes de "registros"
+                return _extract_records_from_dict_payload(data)
             return []
     except json.JSONDecodeError:
         print(f"[interfacetwo] JSON inválido em {path}; usando fallback sem criar .corrupted")
@@ -305,6 +307,56 @@ def _normalize_records_for_monitor(records):
     if not isinstance(records, list):
         return []
     return [_normalize_record_for_monitor(r) for r in records if isinstance(r, dict)]
+
+
+def _looks_like_monitor_record(payload: dict) -> bool:
+    if not isinstance(payload, dict):
+        return False
+    keyset = {str(k).upper() for k in payload.keys()}
+    canonical_hint = {
+        "NOME", "SOBRENOME", "BLOCO", "APARTAMENTO", "PLACA", "STATUS", "STATUS_ENCOMENDA", "DATA_HORA", "TIPO", "LOJA"
+    }
+    if keyset.intersection(canonical_hint):
+        return True
+    alias_hint = {"nome", "sobrenome", "bloco", "apartamento", "ap", "placa", "status", "status_encomenda", "data_hora", "tipo", "loja"}
+    return bool(set(payload.keys()).intersection(alias_hint))
+
+
+def _extract_records_from_dict_payload(payload: dict):
+    if not isinstance(payload, dict):
+        return []
+
+    # Caso 1: o próprio dict já é um único registro
+    if _looks_like_monitor_record(payload):
+        return _normalize_records_for_monitor([payload])
+
+    # Caso 2: wrappers conhecidos com coleção de registros
+    for key in ("dados", "data", "items", "rows", "entries"):
+        candidate = payload.get(key)
+        if isinstance(candidate, list):
+            return _normalize_records_for_monitor(candidate)
+        if isinstance(candidate, dict):
+            nested = _extract_records_from_dict_payload(candidate)
+            if nested:
+                return nested
+
+    # Caso 3: dict-mapa (id -> registro)
+    dict_values = [v for v in payload.values() if isinstance(v, dict)]
+    if dict_values and all(_looks_like_monitor_record(v) for v in dict_values):
+        return _normalize_records_for_monitor(dict_values)
+
+    # Caso 4: procurar recursivamente em qualquer sub-estrutura
+    for value in payload.values():
+        if isinstance(value, list):
+            normalized = _normalize_records_for_monitor(value)
+            if normalized:
+                return normalized
+        elif isinstance(value, dict):
+            nested = _extract_records_from_dict_payload(value)
+            if nested:
+                return nested
+
+    return []
 
 
 def _normalize_record_for_monitor(record: dict) -> dict:

@@ -52,6 +52,43 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertEqual(normalized.get("STATUS"), "VISITANTE")
         self.assertEqual(normalized.get("DATA_HORA"), "18/02/2026 11:22:33")
 
+    def test_load_safe_accepts_dict_map_payload(self):
+        import json, tempfile, os
+        payload = {
+            "1": {"nome": "ALICE", "bloco": "1", "apartamento": "101", "status": "MORADOR", "data_hora": "18/02/2026 10:00:00"},
+            "2": {"nome": "BRUNO", "bloco": "2", "apartamento": "202", "status": "VISITANTE", "data_hora": "18/02/2026 10:05:00"},
+        }
+        with tempfile.NamedTemporaryFile('w', encoding='utf-8', suffix='.json', delete=False) as tf:
+            json.dump(payload, tf, ensure_ascii=False)
+            path = tf.name
+        try:
+            registros = interfacetwo._load_safe(path)
+        finally:
+            os.remove(path)
+        self.assertEqual(len(registros), 2)
+        self.assertEqual(registros[0].get('NOME'), 'ALICE')
+        self.assertEqual(registros[1].get('STATUS'), 'VISITANTE')
+
+    def test_load_safe_accepts_wrapped_entries_payload(self):
+        import json, tempfile, os
+        payload = {
+            "payload": {
+                "entries": [
+                    {"nome": "CARLA", "bloco": "3", "apartamento": "303", "status": "PRESTADOR", "data_hora": "18/02/2026 11:00:00"}
+                ]
+            }
+        }
+        with tempfile.NamedTemporaryFile('w', encoding='utf-8', suffix='.json', delete=False) as tf:
+            json.dump(payload, tf, ensure_ascii=False)
+            path = tf.name
+        try:
+            registros = interfacetwo._load_safe(path)
+        finally:
+            os.remove(path)
+        self.assertEqual(len(registros), 1)
+        self.assertEqual(registros[0].get('NOME'), 'CARLA')
+        self.assertEqual(registros[0].get('APARTAMENTO'), '303')
+
 
 if __name__ == "__main__":
     unittest.main()
