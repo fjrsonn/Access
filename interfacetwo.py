@@ -20,6 +20,13 @@ from ui_theme import (
     build_primary_button,
     build_secondary_button,
     build_filter_input,
+    build_label,
+    build_badge,
+    theme_font,
+    theme_space,
+    refresh_theme,
+    apply_ttk_theme_styles,
+    attach_tooltip,
     bind_focus_ring,
     bind_button_states,
     apply_theme,
@@ -826,7 +833,7 @@ def _default_filters():
 def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
     target_widget = target_widget or filter_key
     bar = build_card_frame(parent)
-    bar.pack(fill=tk.X, padx=10, pady=(10, 6))
+    bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_3", 10), theme_space("space_2", 6)))
 
     order_var = tk.StringVar(value="Mais recentes")
     date_mode_var = tk.StringVar(value="Mais recentes")
@@ -834,12 +841,17 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
     query_var = tk.StringVar(value="")
     status_var = tk.StringVar(value="Todos")
     bloco_var = tk.StringVar(value="Todos")
+    advanced_visible = tk.BooleanVar(value=False)
 
     date_entry = build_filter_input(bar, width=12)
     time_entry = build_filter_input(bar, width=10)
-    query_entry = build_filter_input(bar, textvariable=query_var, width=18)
+    query_entry = build_filter_input(bar, textvariable=query_var, width=24)
+    filtro_badge = build_badge(bar, text="Filtros ativos", tone="info")
+    filtro_badge.grid_remove()
+
     try:
         parent.bind("<Control-f>", lambda _e: (query_entry.focus_set(), "break"), add="+")
+        parent.bind("<Control-Shift-L>", lambda _e: (clear_filters(), "break"), add="+")
     except Exception:
         pass
 
@@ -848,6 +860,13 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
         time_state = "normal" if time_mode_var.get() == "Específica" else "disabled"
         date_entry.configure(state=date_state)
         time_entry.configure(state=time_state)
+
+    def _update_filter_badge():
+        has_filter = bool(query_entry.get().strip()) or status_var.get() != "Todos" or bloco_var.get() != "Todos" or date_mode_var.get() == "Específica" or time_mode_var.get() == "Específica"
+        if has_filter:
+            filtro_badge.grid(row=0, column=9, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8), sticky="e")
+        else:
+            filtro_badge.grid_remove()
 
     def apply_filters():
         _filter_state[filter_key] = {
@@ -860,6 +879,7 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
             "status": status_var.get().strip() or "Todos",
             "bloco": bloco_var.get().strip() or "Todos",
         }
+        _update_filter_badge()
         report_status("ux_metrics", "OK", stage="filter_apply", details={"source": str(filter_key), "query_len": len(query_entry.get().strip())})
         _persist_ui_state()
         _populate_text(target_widget, info_label)
@@ -875,65 +895,67 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
         time_entry.delete(0, tk.END)
         update_entry_state()
         _filter_state[filter_key] = _default_filters()
+        _update_filter_badge()
         report_status("ux_metrics", "OK", stage="filter_clear", details={"source": str(filter_key)})
         _persist_ui_state()
         _populate_text(target_widget, info_label)
 
-    tk.Label(bar, text="Ordem", bg=UI_THEME["surface"], fg=UI_THEME["text"]).grid(row=0, column=0, padx=(10, 6), pady=8, sticky="w")
-    order_combo = ttk.Combobox(bar, textvariable=order_var, values=["Mais recentes", "Mais antigas"], width=12, state="readonly")
-    order_combo.grid(row=0, column=1, padx=(0, 12), pady=8, sticky="w")
+    def _toggle_advanced():
+        advanced_visible.set(not advanced_visible.get())
+        if advanced_visible.get():
+            advanced_frame.grid(row=1, column=0, columnspan=10, sticky="ew", padx=(theme_space("space_2", 8), theme_space("space_2", 8)), pady=(0, theme_space("space_2", 8)))
+            btn_advanced.configure(text="Ocultar filtros avançados")
+        else:
+            advanced_frame.grid_remove()
+            btn_advanced.configure(text="Filtros avançados")
 
-    tk.Label(bar, text="Data", bg=UI_THEME["surface"], fg=UI_THEME["text"]).grid(row=0, column=2, padx=(0, 6), pady=8, sticky="w")
-    date_mode_combo = ttk.Combobox(
-        bar,
-        textvariable=date_mode_var,
-        values=["Mais recentes", "Específica"],
-        width=10,
-        state="readonly",
-    )
-    date_mode_combo.grid(row=0, column=3, padx=(0, 6), pady=8, sticky="w")
-    date_entry.grid(row=0, column=4, padx=(0, 12), pady=8, sticky="w")
+    build_label(bar, "Buscar").grid(row=0, column=0, padx=(theme_space("space_3", 10), theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
+    query_entry.grid(row=0, column=1, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8), sticky="ew")
 
-    tk.Label(bar, text="Hora", bg=UI_THEME["surface"], fg=UI_THEME["text"]).grid(row=0, column=5, padx=(0, 6), pady=8, sticky="w")
-    time_mode_combo = ttk.Combobox(
-        bar,
-        textvariable=time_mode_var,
-        values=["Mais recentes", "Específica"],
-        width=10,
-        state="readonly",
-    )
-    time_mode_combo.grid(row=0, column=6, padx=(0, 6), pady=8, sticky="w")
-    time_entry.grid(row=0, column=7, padx=(0, 12), pady=8, sticky="w")
-
-    tk.Label(bar, text="Buscar", bg=UI_THEME["surface"], fg=UI_THEME["text"]).grid(row=0, column=8, padx=(0, 6), pady=8, sticky="w")
-    query_entry.grid(row=0, column=9, padx=(0, 12), pady=8, sticky="w")
-
-    tk.Label(bar, text="Status", bg=UI_THEME["surface"], fg=UI_THEME["text"]).grid(row=0, column=10, padx=(0, 6), pady=8, sticky="w")
+    build_label(bar, "Status").grid(row=0, column=2, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
     status_combo = ttk.Combobox(bar, textvariable=status_var, values=["Todos", "MORADOR", "VISITANTE", "PRESTADOR", "AVISADO", "SEM CONTATO"], width=14, state="readonly")
-    status_combo.grid(row=0, column=11, padx=(0, 12), pady=8, sticky="w")
+    status_combo.grid(row=0, column=3, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8), sticky="w")
 
-    tk.Label(bar, text="Bloco", bg=UI_THEME["surface"], fg=UI_THEME["text"]).grid(row=0, column=12, padx=(0, 6), pady=8, sticky="w")
-    bloco_combo = ttk.Combobox(bar, textvariable=bloco_var, values=["Todos"] + [str(i) for i in range(1, 31)], width=8, state="readonly")
-    bloco_combo.grid(row=0, column=13, padx=(0, 12), pady=8, sticky="w")
+    btn_advanced = build_secondary_button(bar, "Filtros avançados", _toggle_advanced)
+    btn_advanced.grid(row=0, column=4, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8), sticky="w")
+    build_primary_button(bar, "Aplicar", apply_filters).grid(row=0, column=5, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="e")
+    build_secondary_button(bar, "Limpar", clear_filters).grid(row=0, column=6, padx=(0, theme_space("space_3", 10)), pady=theme_space("space_2", 8), sticky="e")
 
-    build_primary_button(bar, "Aplicar", apply_filters).grid(row=0, column=14, padx=(0, 6), pady=8)
-    build_secondary_button(bar, "Limpar", clear_filters).grid(row=0, column=15, padx=(0, 10), pady=8)
+    advanced_frame = tk.Frame(bar, bg=UI_THEME["surface"])
+    build_label(advanced_frame, "Ordem").grid(row=0, column=0, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
+    order_combo = ttk.Combobox(advanced_frame, textvariable=order_var, values=["Mais recentes", "Mais antigas"], width=12, state="readonly")
+    order_combo.grid(row=0, column=1, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8), sticky="w")
 
-    _filter_controls[filter_key] = [
-        order_combo,
-        date_mode_combo,
-        date_entry,
-        time_mode_combo,
-        time_entry,
-        query_entry,
-        status_combo,
-        bloco_combo,
-    ]
+    build_label(advanced_frame, "Data").grid(row=0, column=2, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
+    date_mode_combo = ttk.Combobox(advanced_frame, textvariable=date_mode_var, values=["Mais recentes", "Específica"], width=10, state="readonly")
+    date_mode_combo.grid(row=0, column=3, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
+    date_entry.grid(in_=advanced_frame, row=0, column=4, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8), sticky="w")
+
+    build_label(advanced_frame, "Hora").grid(row=0, column=5, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
+    time_mode_combo = ttk.Combobox(advanced_frame, textvariable=time_mode_var, values=["Mais recentes", "Específica"], width=10, state="readonly")
+    time_mode_combo.grid(row=0, column=6, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
+    time_entry.grid(in_=advanced_frame, row=0, column=7, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8), sticky="w")
+
+    build_label(advanced_frame, "Bloco").grid(row=0, column=8, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
+    bloco_combo = ttk.Combobox(advanced_frame, textvariable=bloco_var, values=["Todos"] + [str(i) for i in range(1, 31)], width=8, state="readonly")
+    bloco_combo.grid(row=0, column=9, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8), sticky="w")
+
+    _filter_controls[filter_key] = [order_combo, date_mode_combo, date_entry, time_mode_combo, time_entry, query_entry, status_combo, bloco_combo]
     for control in _filter_controls[filter_key]:
         bind_focus_ring(control)
-    bar.grid_columnconfigure(16, weight=1)
+
+    tab_order = [query_entry, status_combo, btn_advanced, order_combo, date_mode_combo, date_entry, time_mode_combo, time_entry, bloco_combo]
+    for idx, widget in enumerate(tab_order):
+        nxt = tab_order[(idx + 1) % len(tab_order)]
+        widget.bind("<Tab>", lambda _e, w=nxt: (w.focus_set(), "break"), add="+")
+
+    bar.grid_columnconfigure(1, weight=1)
+    bar.grid_columnconfigure(9, weight=1)
     date_mode_var.trace_add("write", lambda *_: update_entry_state())
     time_mode_var.trace_add("write", lambda *_: update_entry_state())
+    query_var.trace_add("write", lambda *_: _update_filter_badge())
+    status_var.trace_add("write", lambda *_: _update_filter_badge())
+    bloco_var.trace_add("write", lambda *_: _update_filter_badge())
     update_entry_state()
     if filter_key not in _filter_state:
         _filter_state[filter_key] = _default_filters()
@@ -1260,7 +1282,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
     current = {"record": None, "rec_tag": None}
     edit_state = {"active": False, "tag": None, "dirty": False}
 
-    edit_badge = tk.Label(action_frame, text="MODO EDIÇÃO ATIVO", bg=UI_THEME["edit_badge_bg"], fg=UI_THEME["edit_badge_text"], padx=10, pady=4)
+    edit_badge = build_badge(action_frame, text="MODO EDIÇÃO ATIVO", tone="warning")
     edit_badge.pack_forget()
 
     def _set_filters_enabled(enabled: bool):
@@ -1419,9 +1441,9 @@ def _build_text_actions(frame, text_widget, info_label, path):
 
         _finish_editing(reload_text=True)
 
-    tk.Button(action_frame, text="Editar", command=enable_edit, bg=UI_THEME["surface_alt"], fg=UI_THEME["text"], activebackground=UI_THEME["primary"], activeforeground=UI_THEME["text"], relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
-    tk.Button(action_frame, text="Salvar", command=save_edit, bg=UI_THEME["primary"], fg=UI_THEME["text"], activebackground=UI_THEME["primary_active"], activeforeground=UI_THEME["text"], relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
-    tk.Button(action_frame, text="Cancelar", command=cancel_edit, bg=UI_THEME["surface_alt"], fg=UI_THEME["text"], activebackground=UI_THEME["border"], activeforeground=UI_THEME["text"], relief="flat", padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+    build_secondary_button(action_frame, "Editar", enable_edit, padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+    build_primary_button(action_frame, "Salvar", save_edit, padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+    build_secondary_button(action_frame, "Cancelar", cancel_edit, padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
 
     _text_action_ui[text_widget] = {
         "frame": action_frame,
@@ -1479,50 +1501,69 @@ def _build_text_actions(frame, text_widget, info_label, path):
 def _build_monitor_ui(container):
     prefs = _restore_ui_state()
     _apply_light_theme(container)
+    apply_ttk_theme_styles(container)
     style = ttk.Style(container)
     try:
         style.theme_use("clam")
     except Exception:
         pass
     style.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0)
-    style.configure("Dark.TNotebook.Tab", background=UI_THEME["surface"], foreground=UI_THEME["text"], padding=(16, 6))
+    style.configure("Dark.TNotebook.Tab", background=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), padding=(16, 6))
     style.map(
         "Dark.TNotebook.Tab",
         background=[("selected", UI_THEME["primary"]), ("active", UI_THEME["surface_alt"])],
-        foreground=[("selected", UI_THEME["text"]), ("active", UI_THEME["text"])],
+        foreground=[("selected", UI_THEME.get("on_primary", UI_THEME["text"])), ("active", UI_THEME.get("on_surface", UI_THEME["text"]))],
     )
-    style.configure("Encomenda.Text", background=UI_THEME["surface"], foreground=UI_THEME["text"])
+    style.configure("Encomenda.Text", background=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]))
     report_status("ux_metrics", "OK", stage="theme_contrast_check", details=validate_theme_contrast())
-    style.configure("Control.Treeview", background=UI_THEME["surface"], fieldbackground=UI_THEME["surface"], foreground=UI_THEME["text"], bordercolor=UI_THEME["border"], rowheight=28)
-    style.configure("Control.Treeview.Heading", background=UI_THEME["surface_alt"], foreground=UI_THEME["text"], relief="flat")
-    style.map("Control.Treeview", background=[("selected", UI_THEME["primary"])], foreground=[("selected", UI_THEME["text"])])
+    style.configure("Control.Treeview", background=UI_THEME["surface"], fieldbackground=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), bordercolor=UI_THEME["border"], rowheight=28)
+    style.configure("Control.Treeview.Heading", background=UI_THEME["surface_alt"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), relief="flat")
+    style.map("Control.Treeview", background=[("selected", UI_THEME["primary"])], foreground=[("selected", UI_THEME.get("on_primary", UI_THEME["text"]))])
 
     info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg=UI_THEME["bg"], fg=UI_THEME["muted_text"])
     theme_bar = tk.Frame(container, bg=UI_THEME["bg"])
     theme_bar.pack(fill=tk.X, padx=10, pady=(6, 0))
-    tk.Label(theme_bar, text="Tema:", bg=UI_THEME["bg"], fg=UI_THEME["muted_text"]).pack(side=tk.LEFT)
+    theme_label = build_label(theme_bar, "Tema:", muted=True, bg=UI_THEME["bg"]); theme_label.pack(side=tk.LEFT)
     theme_var = tk.StringVar(value=get_active_theme_name())
     theme_combo = ttk.Combobox(theme_bar, textvariable=theme_var, values=available_theme_names(), width=16, state="readonly")
     theme_combo.pack(side=tk.LEFT, padx=(6, 0))
 
+    def _refresh_theme_in_place():
+        try:
+            container.configure(bg=UI_THEME["bg"])
+            theme_bar.configure(bg=UI_THEME["bg"])
+            theme_label.configure(bg=UI_THEME["bg"], fg=UI_THEME["muted_text"])
+            info_label.configure(bg=UI_THEME["bg"], fg=UI_THEME["muted_text"])
+        except Exception:
+            pass
+        refresh_theme(container, context="interfacetwo")
+        apply_ttk_theme_styles(container)
+        try:
+            style_local = ttk.Style(container)
+            style_local.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0)
+            style_local.configure("Dark.TNotebook.Tab", background=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), padding=(16, 6))
+            style_local.map("Dark.TNotebook.Tab", background=[("selected", UI_THEME["primary"]), ("active", UI_THEME["surface_alt"])], foreground=[("selected", UI_THEME.get("on_primary", UI_THEME["text"])), ("active", UI_THEME.get("on_surface", UI_THEME["text"]))])
+            style_local.configure("Control.Treeview", background=UI_THEME["surface"], fieldbackground=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), bordercolor=UI_THEME["border"], rowheight=28)
+            style_local.configure("Control.Treeview.Heading", background=UI_THEME["surface_alt"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), relief="flat")
+            style_local.map("Control.Treeview", background=[("selected", UI_THEME["primary"])], foreground=[("selected", UI_THEME.get("on_primary", UI_THEME["text"]))])
+        except Exception:
+            pass
+        for target in list(_monitor_sources.keys()):
+            try:
+                _populate_text(target, info_label)
+            except Exception:
+                pass
+
     def _on_theme_change(_event=None):
         selected = apply_theme(theme_var.get())
         _persist_ui_state({"theme": selected})
-        try:
-            root = container.winfo_toplevel()
-            for child in root.winfo_children():
-                try:
-                    child.destroy()
-                except Exception:
-                    pass
-            widgets, info = _build_monitor_ui(root)
-            _schedule_update(widgets, info)
-        except Exception:
-            pass
+        _refresh_theme_in_place()
 
     theme_combo.bind("<<ComboboxSelected>>", _on_theme_change, add="+")
 
-    info_label.pack(padx=10, pady=(6, 0), anchor="w")
+    hints = build_label(container, "Atalhos: Ctrl+F buscar • Ctrl+Shift+L limpar filtros", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    hints.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+    info_label.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
 
     notebook = ttk.Notebook(container, style="Dark.TNotebook")
     notebook.pack(padx=10, pady=(8, 10), fill=tk.BOTH, expand=True)
@@ -1596,7 +1637,7 @@ def _build_monitor_ui(container):
             tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
             yscroll.pack(side=tk.RIGHT, fill=tk.Y)
             details_var = tk.StringVar(value="Selecione um registro para ver detalhes.")
-            details = tk.Label(frame, textvariable=details_var, bg=UI_THEME["surface_alt"], fg=UI_THEME["text"], anchor="w", justify="left", padx=10, pady=8)
+            details = tk.Label(frame, textvariable=details_var, bg=UI_THEME["surface_alt"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), anchor="w", justify="left", padx=theme_space("space_3", 10), pady=theme_space("space_2", 8), font=theme_font("font_md"))
             details.pack(fill=tk.X, padx=10, pady=(0, 10))
             _control_details_var[tree] = details_var
             def _on_select(_e, tw=tree):
@@ -1612,8 +1653,8 @@ def _build_monitor_ui(container):
             frame,
             wrap="word",
             bg=UI_THEME["surface"],
-            fg=UI_THEME["text"],
-            insertbackground=UI_THEME["text"],
+            fg=UI_THEME.get("on_surface", UI_THEME["text"]),
+            insertbackground=UI_THEME.get("on_surface", UI_THEME["text"]),
             relief="flat",
             undo=True,
             autoseparators=True,
@@ -1638,7 +1679,8 @@ def _build_monitor_ui(container):
     btn_frame = tk.Frame(container, bg=UI_THEME["bg"])
     btn_frame.pack(padx=10, pady=(0, 10))
     build_primary_button(btn_frame, "Recarregar", lambda: forcar_recarregar(monitor_widgets, info_label)).pack(side=tk.LEFT, padx=6)
-    build_secondary_button(btn_frame, "Backup e Limpar", lambda: limpar_dados(monitor_widgets, info_label)).pack(side=tk.LEFT, padx=6)
+    btn_backup = build_secondary_button(btn_frame, "Backup e Limpar", lambda: limpar_dados(monitor_widgets, info_label)); btn_backup.pack(side=tk.LEFT, padx=6)
+    attach_tooltip(btn_backup, "Cria backup e limpa os registros exibidos")
 
     return monitor_widgets, info_label
 

@@ -15,17 +15,49 @@ UI_THEME = {
     "muted_text": "#9AA4B2",
     "primary": "#2F81F7",
     "primary_active": "#1F6FEB",
+    "on_primary": "#0B1117",
+    "on_surface": "#E6EDF3",
     "success": "#2DA44E",
+    "on_success": "#08120C",
     "danger": "#DA3633",
+    "on_danger": "#FFFFFF",
     "warning": "#D29922",
+    "on_warning": "#111827",
     "focus_bg": "#F0F6FC",
     "focus_text": "#111827",
     "edit_badge_bg": "#F8E3A3",
     "edit_badge_text": "#111111",
     "status_avisado_text": "#6EE7B7",
     "status_sem_contato_text": "#FCA5A5",
+    "editor_bg": "#0B0F14",
+    "editor_text": "#E6EDF3",
+    "editor_insert": "#E6EDF3",
+    "overlay_text": "#6B7280",
+    "banner_success_bg": "#2DA44E",
+    "banner_success_text": "#08120C",
+    "banner_error_bg": "#DA3633",
+    "banner_error_text": "#FFFFFF",
     "light_bg": "#F5F7FA",
     "light_border": "#D1D5DB",
+    "font_family": "Segoe UI",
+    "font_sm": 9,
+    "font_md": 10,
+    "font_lg": 11,
+    "font_xl": 12,
+    "radius_sm": 4,
+    "radius_md": 8,
+    "space_1": 4,
+    "space_2": 8,
+    "space_3": 12,
+    "space_4": 16,
+    "space_5": 20,
+    "space_6": 24,
+    "disabled_bg": "#2B3442",
+    "disabled_fg": "#9AA4B2",
+    "info": "#2563EB",
+    "on_info": "#FFFFFF",
+    "selection_bg": "#1F6FEB",
+    "selection_fg": "#E6EDF3",
 }
 
 THEME_PRESETS = {
@@ -39,17 +71,49 @@ THEME_PRESETS = {
         "muted_text": "#6B7280",
         "primary": "#2563EB",
         "primary_active": "#1D4ED8",
+        "on_primary": "#FFFFFF",
+        "on_surface": "#111827",
         "success": "#15803D",
+        "on_success": "#FFFFFF",
         "danger": "#B91C1C",
+        "on_danger": "#FFFFFF",
         "warning": "#B45309",
+        "on_warning": "#FFFFFF",
         "focus_bg": "#DBEAFE",
         "focus_text": "#111827",
         "edit_badge_bg": "#FEF3C7",
         "edit_badge_text": "#111827",
         "status_avisado_text": "#166534",
         "status_sem_contato_text": "#B91C1C",
+        "editor_bg": "#FFFFFF",
+        "editor_text": "#111827",
+        "editor_insert": "#111827",
+        "overlay_text": "#6B7280",
+        "banner_success_bg": "#15803D",
+        "banner_success_text": "#FFFFFF",
+        "banner_error_bg": "#B91C1C",
+        "banner_error_text": "#FFFFFF",
         "light_bg": "#F5F7FA",
         "light_border": "#D1D5DB",
+        "font_family": "Segoe UI",
+        "font_sm": 9,
+        "font_md": 10,
+        "font_lg": 11,
+        "font_xl": 12,
+        "radius_sm": 4,
+        "radius_md": 8,
+        "space_1": 4,
+        "space_2": 8,
+        "space_3": 12,
+        "space_4": 16,
+        "space_5": 20,
+        "space_6": 24,
+        "disabled_bg": "#E5E7EB",
+        "disabled_fg": "#6B7280",
+        "info": "#2563EB",
+        "on_info": "#FFFFFF",
+        "selection_bg": "#2563EB",
+        "selection_fg": "#FFFFFF",
     },
     "alto_contraste": {
         "bg": "#000000",
@@ -60,17 +124,49 @@ THEME_PRESETS = {
         "muted_text": "#E5E7EB",
         "primary": "#00A3FF",
         "primary_active": "#0077CC",
+        "on_primary": "#000000",
+        "on_surface": "#FFFFFF",
         "success": "#00FF7F",
+        "on_success": "#000000",
         "danger": "#FF4D4D",
+        "on_danger": "#000000",
         "warning": "#FFD700",
+        "on_warning": "#000000",
         "focus_bg": "#FFFFFF",
         "focus_text": "#000000",
         "edit_badge_bg": "#FFD700",
         "edit_badge_text": "#000000",
         "status_avisado_text": "#00FF7F",
         "status_sem_contato_text": "#FF4D4D",
+        "editor_bg": "#000000",
+        "editor_text": "#FFFFFF",
+        "editor_insert": "#FFFFFF",
+        "overlay_text": "#E5E7EB",
+        "banner_success_bg": "#00FF7F",
+        "banner_success_text": "#000000",
+        "banner_error_bg": "#FF4D4D",
+        "banner_error_text": "#000000",
         "light_bg": "#000000",
         "light_border": "#FFFFFF",
+        "font_family": "Segoe UI",
+        "font_sm": 9,
+        "font_md": 10,
+        "font_lg": 11,
+        "font_xl": 12,
+        "radius_sm": 4,
+        "radius_md": 8,
+        "space_1": 4,
+        "space_2": 8,
+        "space_3": 12,
+        "space_4": 16,
+        "space_5": 20,
+        "space_6": 24,
+        "disabled_bg": "#111111",
+        "disabled_fg": "#E5E7EB",
+        "info": "#00A3FF",
+        "on_info": "#000000",
+        "selection_bg": "#00A3FF",
+        "selection_fg": "#000000",
     },
 }
 
@@ -123,8 +219,8 @@ def contrast_ratio(hex_a: str, hex_b: str) -> float:
 def validate_theme_contrast(theme: dict | None = None) -> dict:
     th = theme or UI_THEME
     checks = {
-        "text_on_surface": contrast_ratio(th.get("text", "#fff"), th.get("surface", "#000")),
-        "text_on_primary": contrast_ratio(th.get("text", "#fff"), th.get("primary", "#000")),
+        "text_on_surface": contrast_ratio(th.get("on_surface", th.get("text", "#fff")), th.get("surface", "#000")),
+        "text_on_primary": contrast_ratio(th.get("on_primary", th.get("text", "#fff")), th.get("primary", "#000")),
         "text_on_surface_alt": contrast_ratio(th.get("text", "#fff"), th.get("surface_alt", "#000")),
     }
     warnings = {k: round(v, 2) for k, v in checks.items() if v < 4.5}
@@ -182,9 +278,9 @@ def build_primary_button(parent, text, command, padx=12):
         text=text,
         command=command,
         bg=UI_THEME["primary"],
-        fg=UI_THEME["text"],
+        fg=UI_THEME.get("on_primary", UI_THEME["text"]),
         activebackground=UI_THEME["primary_active"],
-        activeforeground=UI_THEME["text"],
+        activeforeground=UI_THEME.get("on_primary", UI_THEME["text"]),
         disabledforeground=UI_THEME["muted_text"],
         relief="flat",
         padx=padx,
@@ -203,9 +299,9 @@ def build_secondary_button(parent, text, command, padx=12):
         text=text,
         command=command,
         bg=UI_THEME["surface_alt"],
-        fg=UI_THEME["text"],
+        fg=UI_THEME.get("on_surface", UI_THEME["text"]),
         activebackground=UI_THEME["border"],
-        activeforeground=UI_THEME["text"],
+        activeforeground=UI_THEME.get("on_surface", UI_THEME["text"]),
         disabledforeground=UI_THEME["muted_text"],
         relief="flat",
         padx=padx,
@@ -223,15 +319,138 @@ def build_filter_input(parent, textvariable=None, width=12):
         parent,
         textvariable=textvariable,
         bg=UI_THEME["surface_alt"],
-        fg=UI_THEME["text"],
-        insertbackground=UI_THEME["text"],
+        fg=UI_THEME.get("on_surface", UI_THEME["text"]),
+        insertbackground=UI_THEME.get("on_surface", UI_THEME["text"]),
         relief="flat",
         width=width,
-        disabledbackground=UI_THEME["surface"],
-        disabledforeground=UI_THEME["muted_text"],
+        disabledbackground=UI_THEME.get("disabled_bg", UI_THEME["surface"]),
+        disabledforeground=UI_THEME.get("disabled_fg", UI_THEME["muted_text"]),
         highlightthickness=1,
         highlightbackground=UI_THEME["border"],
         highlightcolor=UI_THEME["primary"],
     )
     bind_focus_ring(ent)
     return ent
+
+
+def build_label(parent, text, muted=False, **kwargs):
+    return tk.Label(
+        parent,
+        text=text,
+        bg=kwargs.pop("bg", UI_THEME["surface"]),
+        fg=kwargs.pop("fg", UI_THEME["muted_text"] if muted else UI_THEME.get("on_surface", UI_THEME["text"])),
+        **kwargs,
+    )
+
+
+def build_badge(parent, text, tone="warning", **kwargs):
+    tone_bg = UI_THEME.get(f"{tone}", UI_THEME["warning"])
+    tone_fg = UI_THEME.get(f"on_{tone}", UI_THEME["text"])
+    return tk.Label(parent, text=text, bg=tone_bg, fg=tone_fg, padx=10, pady=4, **kwargs)
+
+
+def build_banner(parent, tone="success", **kwargs):
+    if tone == "error":
+        bg = UI_THEME.get("banner_error_bg", UI_THEME["danger"])
+        fg = UI_THEME.get("banner_error_text", UI_THEME.get("on_danger", UI_THEME["text"]))
+    else:
+        bg = UI_THEME.get("banner_success_bg", UI_THEME["success"])
+        fg = UI_THEME.get("banner_success_text", UI_THEME.get("on_success", UI_THEME["text"]))
+    return tk.Label(parent, text="", bg=bg, fg=fg, **kwargs)
+
+
+def theme_font(size_key="font_md", weight="normal"):
+    return (UI_THEME.get("font_family", "Segoe UI"), UI_THEME.get(size_key, 10), weight)
+
+
+def theme_space(key="space_2", fallback=8):
+    return int(UI_THEME.get(key, fallback))
+
+
+def apply_ttk_theme_styles(root=None):
+    try:
+        from tkinter import ttk
+    except Exception:
+        return
+    try:
+        style = ttk.Style(root)
+        style.theme_use("clam")
+    except Exception:
+        style = ttk.Style(root)
+    try:
+        style.configure("TCombobox", fieldbackground=UI_THEME.get("surface_alt", "#1B2430"), background=UI_THEME.get("surface_alt", "#1B2430"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+        style.map("TCombobox", fieldbackground=[("readonly", UI_THEME.get("surface_alt", "#1B2430"))], foreground=[("readonly", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))])
+        style.configure("Vertical.TScrollbar", troughcolor=UI_THEME.get("surface", "#151A22"), background=UI_THEME.get("surface_alt", "#1B2430"), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+        style.configure("Horizontal.TScrollbar", troughcolor=UI_THEME.get("surface", "#151A22"), background=UI_THEME.get("surface_alt", "#1B2430"), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+    except Exception:
+        pass
+
+
+def refresh_theme(widget_tree, context="default"):
+    if widget_tree is None or tk is None:
+        return
+    apply_ttk_theme_styles(widget_tree)
+
+    def _walk(w):
+        yield w
+        try:
+            for ch in w.winfo_children():
+                yield from _walk(ch)
+        except Exception:
+            return
+
+    for w in _walk(widget_tree):
+        klass = str(getattr(w, "winfo_class", lambda: "")() or "")
+        try:
+            if klass in {"Frame", "Labelframe", "Toplevel"}:
+                w.configure(bg=UI_THEME.get("light_bg", UI_THEME.get("bg", "#0F1115")))
+            elif klass == "Label":
+                w.configure(bg=UI_THEME.get("light_bg", UI_THEME.get("bg", "#0F1115")), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+            elif klass == "Text":
+                w.configure(bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), insertbackground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+            elif klass == "Entry":
+                st = None
+                try:
+                    st = str(w.cget("state"))
+                except Exception:
+                    st = None
+                if st == "disabled":
+                    w.configure(disabledbackground=UI_THEME.get("disabled_bg", UI_THEME.get("surface", "#151A22")), disabledforeground=UI_THEME.get("disabled_fg", UI_THEME.get("muted_text", "#9AA4B2")))
+                else:
+                    w.configure(bg=UI_THEME.get("surface_alt", "#1B2430"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), insertbackground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+        except Exception:
+            pass
+
+
+def attach_tooltip(widget, text):
+    tip = {"win": None}
+
+    def _show(_e=None):
+        if not text or tip["win"] is not None:
+            return
+        try:
+            tw = tk.Toplevel(widget)
+            tw.wm_overrideredirect(True)
+            x = widget.winfo_rootx() + 10
+            y = widget.winfo_rooty() + widget.winfo_height() + 8
+            tw.wm_geometry(f"+{x}+{y}")
+            lbl = tk.Label(tw, text=text, bg=UI_THEME.get("surface_alt", "#1B2430"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), relief="solid", bd=1, padx=6, pady=4, font=theme_font("font_sm"))
+            lbl.pack()
+            tip["win"] = tw
+        except Exception:
+            tip["win"] = None
+
+    def _hide(_e=None):
+        try:
+            if tip["win"] is not None:
+                tip["win"].destroy()
+        except Exception:
+            pass
+        tip["win"] = None
+
+    try:
+        widget.bind("<Enter>", _show, add="+")
+        widget.bind("<Leave>", _hide, add="+")
+        widget.bind("<ButtonPress>", _hide, add="+")
+    except Exception:
+        pass
