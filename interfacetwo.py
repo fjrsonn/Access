@@ -1193,6 +1193,7 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
     update_entry_state()
     if filter_key not in _filter_state:
         _filter_state[filter_key] = _default_filters()
+    _apply_payload(_filter_state.get(filter_key) or _default_filters())
 
 def _apply_hover_line(text_widget, line, hover_tag):
     if text_widget in _text_edit_lock:
