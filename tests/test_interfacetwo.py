@@ -169,6 +169,23 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertEqual(len(registros), 2)
         self.assertEqual(registros[0].get('NOME'), 'LUCAS')
 
+    def test_filter_bar_defines_save_preset_before_button_binding(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_filter_bar)
+        save_def = source.find("def _save_preset")
+        save_button = source.find("build_secondary_button(actions_row, \"Salvar preset\", _save_preset)")
+        self.assertNotEqual(save_def, -1)
+        self.assertNotEqual(save_button, -1)
+        self.assertLess(save_def, save_button)
+
+
+    def test_filter_bar_uses_two_logical_rows_and_quick_group(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_filter_bar)
+        self.assertIn('top_row = tk.Frame(bar', source)
+        self.assertIn('actions_row = tk.Frame(bar', source)
+        self.assertIn('quick_group = tk.Frame(actions_row', source)
+
     def test_load_safe_accepts_concatenated_json_objects(self):
         import os, tempfile
         raw = '{"nome":"NINA","bloco":"3","apartamento":"33","status":"MORADOR","data_hora":"18/02/2026 14:10:00"}{"nome":"OTAVIO","bloco":"4","apartamento":"44","status":"VISITANTE","data_hora":"18/02/2026 14:15:00"}'
