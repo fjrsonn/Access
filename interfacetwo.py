@@ -933,6 +933,10 @@ def _populate_control_table(tree_widget, info_label):
 def _populate_text(text_widget, info_label):
     source = _monitor_sources.get(text_widget, {})
     report_status("monitor", "STARTED", stage="populate_text", details={"source": source.get("path")})
+    if isinstance(text_widget, ttk.Treeview):
+        _populate_control_table(text_widget, info_label)
+        report_status("monitor", "OK", stage="populate_text_done", details={"source": source.get("path"), "view": "table"})
+        return
     if source.get("view") == "table":
         _populate_control_table(text_widget, info_label)
         report_status("monitor", "OK", stage="populate_text_done", details={"source": source.get("path"), "view": "table"})
@@ -1185,8 +1189,9 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
     advanced_visible = tk.BooleanVar(value=False)
     preset_var = tk.StringVar(value="Preset (opcional)")
 
-    date_entry = build_filter_input(actions_row, width=10)
-    time_entry = build_filter_input(actions_row, width=8)
+    advanced_frame = tk.Frame(bar, bg=UI_THEME["surface"])
+    date_entry = build_filter_input(advanced_frame, width=10)
+    time_entry = build_filter_input(advanced_frame, width=8)
     query_entry = build_filter_input(top_row, textvariable=query_var, width=18)
     filtro_badge = build_badge(top_row, text="Nenhum filtro ativo", tone="info")
     filtro_badge.grid(row=0, column=8, padx=(theme_space("space_2", 8), 0), pady=theme_space("space_1", 4), sticky="e")
@@ -1414,7 +1419,6 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
     attach_tooltip(quick_sem_contato_btn, "Mostra apenas status sem contato")
     attach_tooltip(quick_alta_btn, "Busca ocorrências de alta severidade")
 
-    advanced_frame = tk.Frame(bar, bg=UI_THEME["surface"])
     build_label(advanced_frame, "Ordem", font=theme_font("font_sm")).grid(row=0, column=0, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
     order_combo = ttk.Combobox(advanced_frame, textvariable=order_var, values=["Mais recentes", "Mais antigas"], state="readonly")
     order_combo.grid(row=0, column=1, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8), sticky="ew")
