@@ -234,26 +234,47 @@ def _collect_status_cards_data() -> dict:
         analises = _load_safe(ANALISES_ARQUIVO)
         avisos = _load_safe(AVISOS_ARQUIVO)
         encomendas = _load_safe(ENCOMENDAS_ARQUIVO)
+        controle = _load_safe(ARQUIVO)
     except Exception:
-        analises, avisos, encomendas = [], [], []
+        analises, avisos, encomendas, controle = [], [], [], []
 
     pendentes = 0
     sem_contato = 0
     avisado = 0
     alta_severidade = 0
+
     for r in analises if isinstance(analises, list) else []:
-        sev = str((r or {}).get("severidade") or "").lower()
+        sev = str((r or {}).get("severidade") or (r or {}).get("SEVERIDADE") or "").lower()
         if sev in {"alta", "crítica", "critica"}:
             pendentes += 1
             alta_severidade += 1
-    for r in encomendas if isinstance(encomendas, list) else []:
-        st = str((r or {}).get("STATUS") or "").upper()
+
+    for aviso in avisos if isinstance(avisos, list) else []:
+        status_obj = (aviso or {}).get("status")
+        if isinstance(status_obj, dict):
+            ativo = bool(status_obj.get("ativo", False))
+            fechado = bool(status_obj.get("fechado_pelo_usuario", False))
+            if ativo and not fechado:
+                pendentes += 1
+        else:
+            txt = str(status_obj or (aviso or {}).get("STATUS") or "").upper()
+            if any(k in txt for k in ("PEND", "ABERTO", "ATIVO")):
+                pendentes += 1
+
+    for r in (controle if isinstance(controle, list) else []) + (encomendas if isinstance(encomendas, list) else []):
+        st = str((r or {}).get("STATUS") or (r or {}).get("status") or "").upper()
         if "SEM CONTATO" in st:
             sem_contato += 1
         if "AVISADO" in st:
             avisado += 1
 
-    return {"ativos": len(avisos) if isinstance(avisos, list) else 0, "pendentes": pendentes, "sem_contato": sem_contato, "avisado": avisado, "alta_severidade": alta_severidade}
+    return {
+        "ativos": len(avisos) if isinstance(avisos, list) else 0,
+        "pendentes": pendentes,
+        "sem_contato": sem_contato,
+        "avisado": avisado,
+        "alta_severidade": alta_severidade,
+    }
 
 
 def _update_status_cards():
@@ -1346,21 +1367,6 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
                 _status_bar.set(str(msg), tone=("danger" if tone == "error" else tone))
             except Exception:
                 pass
-
-    def _apply_payload(payload: dict):
-        if not isinstance(payload, dict):
-            return
-        order_var.set(payload.get("order") or "Mais recentes")
-        date_mode_var.set(payload.get("date_mode") or "Mais recentes")
-        time_mode_var.set(payload.get("time_mode") or "Mais recentes")
-        query_var.set(payload.get("query") or "")
-        status_var.set(payload.get("status") or "Todos")
-        bloco_var.set(payload.get("bloco") or "Todos")
-        date_entry.delete(0, tk.END); date_entry.insert(0, payload.get("date_value") or "")
-        time_entry.delete(0, tk.END); time_entry.insert(0, payload.get("time_value") or "")
-        update_entry_state()
-        _update_filter_badge()
-        _set_apply_dirty_state()
 
     def _apply_payload(payload: dict):
         if not isinstance(payload, dict):

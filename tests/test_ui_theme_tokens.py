@@ -49,5 +49,17 @@ class UIThemeTokensTests(unittest.TestCase):
 
 
 
+    def test_combobox_focus_map_includes_primary_indicator(self):
+        import inspect
+        source = inspect.getsource(ui_theme.apply_ttk_theme_styles)
+        self.assertIn('bordercolor=[("focus", UI_THEME.get("primary"', source)
+        self.assertIn('lightcolor=[("focus", UI_THEME.get("primary"', source)
+
+    def test_semantic_secondary_button_builders_exist(self):
+        self.assertTrue(callable(ui_theme.build_secondary_warning_button))
+        self.assertTrue(callable(ui_theme.build_secondary_danger_button))
+
+
+
 if __name__ == "__main__":
     unittest.main()

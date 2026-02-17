@@ -169,6 +169,36 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertEqual(len(registros), 2)
         self.assertEqual(registros[0].get('NOME'), 'LUCAS')
 
+
+    def test_collect_status_cards_data_counts_pending_sem_contato_avisado(self):
+        original_load_safe = interfacetwo._load_safe
+
+        def fake_load_safe(path):
+            if path == interfacetwo.ANALISES_ARQUIVO:
+                return [{"severidade": "alta"}]
+            if path == interfacetwo.AVISOS_ARQUIVO:
+                return [
+                    {"status": {"ativo": True, "fechado_pelo_usuario": False}},
+                    {"status": {"ativo": True, "fechado_pelo_usuario": True}},
+                ]
+            if path == interfacetwo.ARQUIVO:
+                return [{"STATUS": "SEM CONTATO"}, {"STATUS": "AVISADO"}]
+            if path == interfacetwo.ENCOMENDAS_ARQUIVO:
+                return [{"STATUS": "SEM CONTATO"}]
+            return []
+
+        interfacetwo._load_safe = fake_load_safe
+        try:
+            out = interfacetwo._collect_status_cards_data()
+        finally:
+            interfacetwo._load_safe = original_load_safe
+
+        self.assertEqual(out.get('ativos'), 2)
+        self.assertEqual(out.get('pendentes'), 2)
+        self.assertEqual(out.get('sem_contato'), 2)
+        self.assertEqual(out.get('avisado'), 1)
+        self.assertEqual(out.get('alta_severidade'), 1)
+
     def test_filter_bar_defines_save_preset_before_button_binding(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_filter_bar)
