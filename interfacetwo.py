@@ -1298,13 +1298,6 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
     presets = _get_filter_presets()
     preset_combo = ttk.Combobox(bar, textvariable=preset_var, values=["Preset (opcional)"] + sorted(presets.keys()), state="readonly")
     preset_combo.grid(row=0, column=4, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8), sticky="ew")
-    btn_save_preset = build_secondary_button(bar, "Salvar preset", _save_preset)
-    btn_undo_filter = build_secondary_button(bar, "Desfazer", _undo_last_filter)
-    btn_save_preset.grid(row=0, column=5, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
-    btn_undo_filter.grid(row=0, column=6, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
-    quick_today_btn.grid(row=0, column=7, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
-    quick_sem_contato_btn.grid(row=0, column=8, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
-    quick_alta_btn.grid(row=0, column=9, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
 
     btn_advanced = build_secondary_button(bar, "Filtros avançados", _toggle_advanced)
     btn_advanced.grid(row=0, column=10, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8), sticky="w")
@@ -1375,6 +1368,14 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
         presets = _get_filter_presets()
         _apply_payload(presets.get(name) or {})
         apply_filters()
+
+    btn_save_preset = build_secondary_button(bar, "Salvar preset", _save_preset)
+    btn_undo_filter = build_secondary_button(bar, "Desfazer", _undo_last_filter)
+    btn_save_preset.grid(row=0, column=5, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
+    btn_undo_filter.grid(row=0, column=6, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
+    quick_today_btn.grid(row=0, column=7, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
+    quick_sem_contato_btn.grid(row=0, column=8, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
+    quick_alta_btn.grid(row=0, column=9, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
 
     preset_combo.bind("<<ComboboxSelected>>", _load_preset, add="+")
 
