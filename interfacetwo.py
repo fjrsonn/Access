@@ -96,6 +96,12 @@ _feedback_banner = None
 _metrics_previous_cards = {}
 _last_filter_snapshot = {}
 _filter_auto_apply_after = {}
+_layout_density_mode = "confortavel"
+_operation_mode_enabled = False
+_runtime_refresh_ms = REFRESH_MS
+_cards_last_update_at = None
+_control_filtered_count_var = None
+_control_toolbar = None
 
 
 def _load_prefs():
@@ -293,10 +299,12 @@ def _collect_status_cards_data() -> dict:
 
 
 def _update_status_cards():
-    global _metrics_previous_cards
+    global _metrics_previous_cards, _cards_last_update_at
     data = _collect_status_cards_data()
     ux = analisar_metricas_ux() if callable(analisar_metricas_ux) else {}
-    now_label = datetime.now().strftime("%H:%M:%S")
+    now = datetime.now()
+    now_label = now.strftime("%H:%M:%S")
+    _cards_last_update_at = now
     for k in ("ativos", "pendentes", "sem_contato", "avisado"):
         card = _ux_cards.get(k)
         if card:
@@ -305,7 +313,8 @@ def _update_status_cards():
                 previous = int(_metrics_previous_cards.get(k, current))
                 card.set_value(str(current))
                 card.set_trend(current - previous)
-                card.set_meta(f"Atualizado às {now_label}")
+                card.set_meta(f"Atualizado às {now_label} • há 0s")
+                card.flash(260)
             except Exception:
                 pass
     _metrics_previous_cards = dict(data)
@@ -314,6 +323,20 @@ def _update_status_cards():
             p95 = ((ux.get("time_to_apply_filter_ms") or {}).get("p95") or 0)
             ok = ux.get("edit_save_success_rate") or 0
             _status_bar.set(f"UX: p95 filtro {p95}ms • sucesso edição {round(ok*100,1)}% • trocas de tema {ux.get('theme_switch_count',0)}", tone="info")
+        except Exception:
+            pass
+
+
+def _refresh_cards_relative_meta():
+    if _cards_last_update_at is None:
+        return
+    elapsed = max(int((datetime.now() - _cards_last_update_at).total_seconds()), 0)
+    for card in _ux_cards.values():
+        try:
+            base = str(card.meta_var.get() or "")
+            if "• há" in base:
+                base = base.split("• há", 1)[0].strip()
+            card.set_meta(f"{base} • há {elapsed}s")
         except Exception:
             pass
 
@@ -990,6 +1013,11 @@ def _populate_control_table(tree_widget, info_label):
     if last:
         status_hint = f" | último status: {last.get('action','-')}:{last.get('status','-')}"
     info_label.config(text=f"Arquivo: {arquivo} — registros: {len(filtrados)} (de {len(registros)}){status_hint}")
+    if _control_filtered_count_var is not None:
+        try:
+            _control_filtered_count_var.set(f"Registros filtrados: {len(filtrados)} / {len(registros)}")
+        except Exception:
+            pass
 
     selected_record = _control_selection_state.get(tree_widget)
     global _pending_focus_identity
@@ -1176,9 +1204,10 @@ def _schedule_update(text_widgets, info_label):
             report_status("monitor", "ERROR", stage="populate_text_failed", details={"error": str(e)})
             continue
     # schedule next update
+    _refresh_cards_relative_meta()
     try:
         _monitor_after_id = text_widgets[0].after(
-            REFRESH_MS, lambda: _schedule_update(text_widgets, info_label)
+            int(_runtime_refresh_ms), lambda: _schedule_update(text_widgets, info_label)
         )
     except Exception:
         _monitor_after_id = None
@@ -2303,18 +2332,24 @@ def _build_monitor_ui(container):
     style.configure("Control.Treeview.Heading", background=UI_THEME["surface_alt"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), relief="flat", font=theme_font("font_md", "bold"))
     style.map("Control.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME["primary"]))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("on_primary", UI_THEME["text"])))])
 
-    info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg=UI_THEME["bg"], fg=UI_THEME["muted_text"])
+    info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg=UI_THEME["bg"], fg=UI_THEME["muted_text"], font=theme_font("font_sm"))
     theme_bar = tk.Frame(container, bg=UI_THEME["bg"])
     theme_bar.pack(fill=tk.X, padx=10, pady=(6, 0))
-    theme_label = build_label(theme_bar, "Tema:", muted=True, bg=UI_THEME["bg"]); theme_label.pack(side=tk.LEFT)
+    theme_label = build_label(theme_bar, "Tema:", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm")); theme_label.pack(side=tk.LEFT)
     theme_var = tk.StringVar(value=get_active_theme_name())
     theme_combo = ttk.Combobox(theme_bar, textvariable=theme_var, values=available_theme_names(), state="readonly")
     theme_combo.pack(side=tk.LEFT, padx=(6, 0))
-    typo_label = build_label(theme_bar, "Tipografia:", muted=True, bg=UI_THEME["bg"]); typo_label.pack(side=tk.LEFT, padx=(12, 0))
+    typo_label = build_label(theme_bar, "Tipografia:", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm")); typo_label.pack(side=tk.LEFT, padx=(12, 0))
     typo_var = tk.StringVar(value=get_active_typography_name())
     typo_combo = ttk.Combobox(theme_bar, textvariable=typo_var, values=available_typography_names(), state="readonly", width=10)
     typo_combo.pack(side=tk.LEFT, padx=(6, 0))
-    op_mode_var = tk.BooleanVar(value=False)
+    density_label = build_label(theme_bar, "Densidade:", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm")); density_label.pack(side=tk.LEFT, padx=(12, 0))
+    density_defaults = (_load_prefs().get("layout_density") or "confortavel")
+    density_var = tk.StringVar(value=("Compacto" if str(density_defaults).lower().startswith("compact") else "Confortável"))
+    density_combo = ttk.Combobox(theme_bar, textvariable=density_var, values=["Compacto", "Confortável"], state="readonly", width=12)
+    density_combo.pack(side=tk.LEFT, padx=(6, 0))
+    op_mode_defaults = bool((_load_prefs().get("operation_mode") or False))
+    op_mode_var = tk.BooleanVar(value=op_mode_defaults)
     op_mode_chk = tk.Checkbutton(theme_bar, text="Modo Operação", variable=op_mode_var, bg=UI_THEME["bg"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), selectcolor=UI_THEME["surface"], activebackground=UI_THEME["bg"])
     op_mode_chk.pack(side=tk.LEFT, padx=(12, 0))
 
@@ -2345,47 +2380,127 @@ def _build_monitor_ui(container):
                 pass
         _update_status_cards()
 
+    table_trees = []
+    cards_widgets = []
+
+    def _apply_density(mode_label=None):
+        global _layout_density_mode
+        selected = str(mode_label or density_var.get() or "Confortável")
+        is_compact = selected.lower().startswith("compact")
+        _layout_density_mode = "compacto" if is_compact else "confortavel"
+        rowheight = 24 if is_compact else 30
+        gap = theme_space("space_1", 4) if is_compact else theme_space("space_2", 8)
+        try:
+            ttk.Style(container).configure("Control.Treeview", rowheight=rowheight)
+        except Exception:
+            pass
+        try:
+            cards_row.pack_configure(pady=(gap, 0))
+            hints.pack_configure(pady=(theme_space("space_1", 4), 0))
+            info_label.pack_configure(pady=(theme_space("space_1", 4), 0))
+            notebook.pack_configure(pady=(gap, theme_space("space_3", 10)))
+        except Exception:
+            pass
+        for card in cards_widgets:
+            try:
+                card.set_density(_layout_density_mode)
+            except Exception:
+                pass
+        for tree in table_trees:
+            try:
+                tree.configure(height=18 if is_compact else 14)
+            except Exception:
+                pass
+        for w in (btn_reload, btn_backup):
+            try:
+                w.configure(padx=(8 if is_compact else 12), pady=(2 if is_compact else 4))
+            except Exception:
+                pass
+        _persist_ui_state({"layout_density": _layout_density_mode})
+
+    def _on_density_change(_event=None):
+        _apply_density(density_var.get())
+
     def _on_typography_change(_event=None):
         selected = apply_typography(typo_var.get())
         report_status("ux_metrics", "OK", stage="typography_switch", details={"typography": selected})
         _persist_ui_state({"typography": selected})
         _refresh_theme_in_place()
+        _apply_density(density_var.get())
 
     def _on_theme_change(_event=None):
         selected = apply_theme(theme_var.get())
         report_status("ux_metrics", "OK", stage="theme_switch", details={"theme": selected})
         _persist_ui_state({"theme": selected})
         _refresh_theme_in_place()
+        _apply_density(density_var.get())
 
     def _toggle_operation_mode(*_args):
-        if op_mode_var.get():
+        global _operation_mode_enabled, _runtime_refresh_ms
+        _operation_mode_enabled = bool(op_mode_var.get())
+        if _operation_mode_enabled:
             apply_theme("alto_contraste")
             apply_typography("acessivel")
+            _runtime_refresh_ms = 1000
             theme_var.set(get_active_theme_name())
             typo_var.set(get_active_typography_name())
-            report_status("ux_metrics", "OK", stage="operation_mode_enabled", details={"theme": get_active_theme_name(), "typography": get_active_typography_name()})
+            report_status("ux_metrics", "OK", stage="operation_mode_enabled", details={"theme": get_active_theme_name(), "typography": get_active_typography_name(), "refresh_ms": _runtime_refresh_ms})
+            try:
+                hints.pack_forget()
+            except Exception:
+                pass
+            try:
+                _status_bar.set("Modo Operação: refresh acelerado e foco em alertas críticos", tone="warning")
+            except Exception:
+                pass
+        else:
+            _runtime_refresh_ms = REFRESH_MS
+            try:
+                hints.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+            except Exception:
+                pass
+            report_status("ux_metrics", "OK", stage="operation_mode_disabled", details={"refresh_ms": _runtime_refresh_ms})
+        _persist_ui_state({"operation_mode": _operation_mode_enabled})
         _refresh_theme_in_place()
+        _apply_density(density_var.get())
 
     theme_combo.bind("<<ComboboxSelected>>", _on_theme_change, add="+")
     typo_combo.bind("<<ComboboxSelected>>", _on_typography_change, add="+")
+    density_combo.bind("<<ComboboxSelected>>", _on_density_change, add="+")
     op_mode_var.trace_add("write", _toggle_operation_mode)
 
-    title = build_section_title(container, "Painel Operacional")
-    title.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
+    title_row = tk.Frame(container, bg=UI_THEME["bg"])
+    title_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
+    title = build_section_title(title_row, "Painel Operacional")
+    title.configure(font=theme_font("font_xl", "bold"))
+    title.pack(side=tk.LEFT, fill=tk.X, expand=True)
+    global _control_filtered_count_var
+    _control_filtered_count_var = tk.StringVar(value="Registros filtrados: 0 / 0")
+    filtered_label = build_label(title_row, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    filtered_label.configure(textvariable=_control_filtered_count_var)
+    filtered_label.pack(side=tk.RIGHT)
 
     cards_row = tk.Frame(container, bg=UI_THEME["bg"])
     cards_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), 0))
     global _ux_cards, _status_bar
     _ux_cards = {
-        "ativos": AppMetricCard(cards_row, "Ativos", tone="info"),
-        "pendentes": AppMetricCard(cards_row, "Pendentes", tone="warning"),
-        "sem_contato": AppMetricCard(cards_row, "Sem contato", tone="danger"),
-        "avisado": AppMetricCard(cards_row, "Avisado", tone="success"),
+        "ativos": AppMetricCard(cards_row, "Ativos", tone="info", icon="📦"),
+        "pendentes": AppMetricCard(cards_row, "Pendentes", tone="warning", icon="⏳"),
+        "sem_contato": AppMetricCard(cards_row, "Sem contato", tone="danger", icon="☎"),
+        "avisado": AppMetricCard(cards_row, "Avisado", tone="success", icon="✅"),
+    }
+    cards_tooltips = {
+        "ativos": "Total de avisos atualmente ativos no sistema.",
+        "pendentes": "Soma de alertas pendentes + sem contato + status pendente.",
+        "sem_contato": "Registros com status marcado como SEM CONTATO.",
+        "avisado": "Registros com status marcado como AVISADO.",
     }
     for idx, key in enumerate(["ativos", "pendentes", "sem_contato", "avisado"]):
         card = _ux_cards[key]
         card.grid(row=0, column=idx, padx=(0, theme_space("space_2", 8)), sticky="ew")
         cards_row.grid_columnconfigure(idx, weight=1)
+        cards_widgets.append(card)
+        attach_tooltip(card, cards_tooltips.get(key, ""))
 
     hints = build_label(container, "Atalhos: Ctrl+F buscar • Ctrl+Enter aplicar • Ctrl+Shift+L limpar • Alt+1..4 abas", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
     hints.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
@@ -2435,10 +2550,27 @@ def _build_monitor_ui(container):
     ]
     for frame, arquivo, formatter in tab_configs:
         if formatter == format_creative_entry:
+            toolbar = tk.Frame(frame, bg=UI_THEME["surface"])
+            toolbar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
+            btn_export = build_secondary_button(toolbar, "Exportar CSV", lambda: None)
+            btn_reset_cols = build_secondary_warning_button(toolbar, "Resetar colunas", lambda: None)
+            btn_save_view = build_secondary_button(toolbar, "Salvar visão", lambda: None)
+            toolbar_count_var = tk.StringVar(value="Itens filtrados: 0")
+            toolbar_count = build_label(toolbar, "", muted=True, bg=UI_THEME["surface"], font=theme_font("font_sm"))
+            toolbar_count.configure(textvariable=toolbar_count_var)
+            btn_export.pack(side=tk.LEFT, padx=(0, theme_space("space_1", 4)))
+            btn_reset_cols.pack(side=tk.LEFT, padx=(0, theme_space("space_1", 4)))
+            btn_save_view.pack(side=tk.LEFT, padx=(0, theme_space("space_1", 4)))
+            toolbar_count.pack(side=tk.RIGHT)
+            attach_tooltip(btn_export, "Exporta a tabela filtrada para CSV")
+            attach_tooltip(btn_reset_cols, "Restaura ordem e visibilidade padrão das colunas")
+            attach_tooltip(btn_save_view, "Salva filtros + layout atual da tabela")
+
             table_wrap = build_card_frame(frame)
             table_wrap.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)), fill=tk.BOTH, expand=True)
             columns = ("data_hora", "nome", "bloco_ap", "placa", "status")
             tree = ttk.Treeview(table_wrap, columns=columns, show="headings", style="Control.Treeview")
+            table_trees.append(tree)
             tree.heading("data_hora", text="Data/Hora")
             tree.heading("nome", text="Nome")
             tree.heading("bloco_ap", text="Bloco/AP")
@@ -2473,6 +2605,63 @@ def _build_monitor_ui(container):
                         tree.column(c, width=w)
                 except Exception:
                     pass
+
+            def _export_control_csv():
+                try:
+                    out = os.path.join(BASE_DIR, f"controle_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
+                    rows = []
+                    for iid in tree.get_children():
+                        vals = tree.item(iid).get("values") or []
+                        if vals and vals[0] == "—":
+                            continue
+                        rows.append(vals)
+                    with open(out, "w", encoding="utf-8") as f:
+                        f.write("data_hora,nome,bloco_ap,placa,status\n")
+                        for vals in rows:
+                            safe = [str(v).replace('"', "''") for v in vals]
+                            f.write(','.join(f'"{v}"' for v in safe) + "\n")
+                    _announce_feedback(f"CSV exportado: {os.path.basename(out)}", "success")
+                except Exception as exc:
+                    _announce_feedback(f"Falha ao exportar CSV: {exc}", "danger")
+
+            def _reset_control_columns():
+                try:
+                    tree.configure(displaycolumns=columns)
+                    tree.column("data_hora", width=170)
+                    tree.column("nome", width=300)
+                    tree.column("bloco_ap", width=120)
+                    tree.column("placa", width=120)
+                    tree.column("status", width=190)
+                    _persist_ui_state({"control_column_order": list(columns), "control_column_visible": {c: True for c in columns}})
+                    _announce_feedback("Colunas resetadas", "info")
+                except Exception as exc:
+                    _announce_feedback(f"Falha ao resetar colunas: {exc}", "danger")
+
+            def _save_control_view():
+                try:
+                    _persist_ui_state({
+                        "control_view_snapshot": {
+                            "columns": list(tree["displaycolumns"]),
+                            "widths": {c: tree.column(c).get("width") for c in columns},
+                            "filters": dict(_filter_state.get("controle") or {}),
+                        }
+                    })
+                    _announce_feedback("Visão da tabela salva", "success")
+                except Exception as exc:
+                    _announce_feedback(f"Falha ao salvar visão: {exc}", "danger")
+
+            btn_export.configure(command=_export_control_csv)
+            btn_reset_cols.configure(command=_reset_control_columns)
+            btn_save_view.configure(command=_save_control_view)
+            if _control_filtered_count_var is not None:
+                def _sync_count(*_):
+                    try:
+                        txt = str(_control_filtered_count_var.get() or "")
+                        toolbar_count_var.set(txt.replace("Registros", "Itens"))
+                    except Exception:
+                        pass
+                _control_filtered_count_var.trace_add("write", _sync_count)
+                _sync_count()
 
             def _on_resize(event, tw=tree):
                 total = max(event.width - 24, 300)
@@ -2540,6 +2729,9 @@ def _build_monitor_ui(container):
         _announce_feedback("Use Ctrl+F para busca e Alt+1..4 para trocar abas", "info")
         _persist_ui_state({"onboarding_seen": True})
 
+    _apply_density(density_var.get())
+    if op_mode_var.get():
+        _toggle_operation_mode()
     _update_status_cards()
     return monitor_widgets, info_label
 

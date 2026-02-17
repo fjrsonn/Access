@@ -247,6 +247,9 @@ def validate_theme_contrast(theme: dict | None = None) -> dict:
         "text_on_surface": contrast_ratio(th.get("on_surface", th.get("text", "#fff")), th.get("surface", "#000")),
         "text_on_primary": contrast_ratio(th.get("on_primary", th.get("text", "#fff")), th.get("primary", "#000")),
         "text_on_surface_alt": contrast_ratio(th.get("text", "#fff"), th.get("surface_alt", "#000")),
+        "text_on_warning": contrast_ratio(th.get("on_warning", th.get("on_surface", th.get("text", "#fff"))), th.get("warning", "#000")),
+        "text_on_danger": contrast_ratio(th.get("on_danger", th.get("on_surface", th.get("text", "#fff"))), th.get("danger", "#000")),
+        "text_on_success": contrast_ratio(th.get("on_success", th.get("on_surface", th.get("text", "#fff"))), th.get("success", "#000")),
     }
     warnings = {k: round(v, 2) for k, v in checks.items() if v < 4.5}
     return {"ratios": {k: round(v, 2) for k, v in checks.items()}, "warnings": warnings}
@@ -334,7 +337,7 @@ def build_secondary_button(parent, text, command, padx=12):
         highlightbackground=UI_THEME["border"],
         highlightcolor=UI_THEME["primary"],
     )
-    bind_focus_ring(btn, focus_thickness=2, blur_thickness=1)
+    bind_focus_ring(btn, focus_thickness=(3 if tone in {"danger", "warning"} else 2), blur_thickness=1)
     bind_button_states(btn, UI_THEME["surface_alt"], UI_THEME["border"])
     return btn
 

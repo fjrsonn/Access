@@ -261,6 +261,18 @@ class InterfaceTwoTests(unittest.TestCase):
         source = inspect.getsource(interfacetwo._build_monitor_ui)
         self.assertIn('root_win.bind("<F1>", _show_shortcuts, add="+")', source)
 
+
+    def test_monitor_ui_has_density_toolbar_and_operation_mode_hooks(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_monitor_ui)
+        self.assertIn('Densidade:', source)
+        self.assertIn('values=["Compacto", "Confortável"]', source)
+        self.assertIn('Exportar CSV', source)
+        self.assertIn('Resetar colunas', source)
+        self.assertIn('Salvar visão', source)
+        self.assertIn('Registros filtrados:', source)
+        self.assertIn('_runtime_refresh_ms = 1000', source)
+
     def test_treeview_column_menu_controls_present(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_filter_bar)
