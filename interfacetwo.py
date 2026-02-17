@@ -1298,8 +1298,6 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
     presets = _get_filter_presets()
     preset_combo = ttk.Combobox(bar, textvariable=preset_var, values=["Preset (opcional)"] + sorted(presets.keys()), state="readonly")
     preset_combo.grid(row=0, column=4, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8), sticky="ew")
-    preset_combo.bind("<<ComboboxSelected>>", _load_preset, add="+")
-
     btn_save_preset = build_secondary_button(bar, "Salvar preset", _save_preset)
     btn_undo_filter = build_secondary_button(bar, "Desfazer", _undo_last_filter)
     btn_save_preset.grid(row=0, column=5, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
@@ -1377,6 +1375,8 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
         presets = _get_filter_presets()
         _apply_payload(presets.get(name) or {})
         apply_filters()
+
+    preset_combo.bind("<<ComboboxSelected>>", _load_preset, add="+")
 
     _filter_controls[filter_key] = [order_combo, date_mode_combo, date_entry, time_mode_combo, time_entry, query_entry, status_combo, bloco_combo, preset_combo]
     for control in _filter_controls[filter_key]:
