@@ -85,6 +85,26 @@ class InterfaceOneCoreTests(unittest.TestCase):
         )
         self.assertEqual(out.get("destino_final"), "encomendas")
 
+    def test_decidir_destino_nao_prioriza_pessoa_sem_placa_valida_em_texto_de_encomenda(self):
+        def fake_classifier(_txt, _parsed):
+            return {"destino": "dados", "score": 1.0, "confianca": 0.6, "ambiguo": False, "scores": {"encomendas": 2.2}}
+
+        parsed = {
+            "PLACA": "APTA73",
+            "MODELOS": ["LIMA", "LIVRE"],
+            "STATUS": "MORADOR",
+            "BLOCO": "3",
+            "APARTAMENTO": "",
+            "NOME_RAW": "ENVELOPE MARIA",
+        }
+        out = core.decidir_destino(
+            "ENVELOPE 768853798203 MARIA LIMA APTA73 M LIVRE BLOCO3",
+            parsed,
+            classificar_fn=fake_classifier,
+            is_encomenda_fn=lambda *_: True,
+        )
+        self.assertEqual(out.get("destino_final"), "encomendas")
+
     def test_decidir_destino_ambiguo_vai_para_revisao(self):
         def fake_classifier(_txt, _parsed):
             return {"destino": "dados", "score": 0.5, "confianca": 0.2, "ambiguo": True, "scores": {"encomendas": 0.4}}

@@ -32,9 +32,8 @@ def _has_strong_people_signal(parsed: dict | None) -> bool:
 
     has_status = status not in ("", "-", "DESCONHECIDO")
     has_valid_plate = _looks_like_vehicle_plate(placa)
-    has_model = bool([m for m in modelos if str(m).strip()])
-    # modelo sem status confiável tende a ser ruído em registros de encomenda.
-    has_vehicle = has_valid_plate or (has_model and has_status)
+    # Para evitar falso positivo com encomendas, sinal forte de pessoa exige placa válida.
+    has_vehicle = has_valid_plate
     has_identity = bool(nome) or (bool(bloco) and bool(ap))
     return has_vehicle and (has_identity or has_status)
 
