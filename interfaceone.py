@@ -322,6 +322,25 @@ def _has_encomenda_identificacao(tokens_raw, tokens_up):
     return False
 
 
+def _looks_like_vehicle_plate(text: str) -> bool:
+    p = str(text or "").strip().upper()
+    if not p or p in {"-", "N/A"}:
+        return False
+    if re.match(r"^(AP|APT|APART|APTA|APARTAMEN|APARTAMENTO|A)\d+[A-Z]?$", p):
+        return False
+    if re.match(r"^(BL|BLO|BLOCO|BLCO|BLC|B)\d+$", p):
+        return False
+    return bool(re.match(r"^[A-Z]{3}\d{4}$", p) or re.match(r"^[A-Z]{3}\d[A-Z]\d{2}$", p))
+
+
+def _parsed_has_strong_people_signal(parsed: dict | None) -> bool:
+    if not isinstance(parsed, dict):
+        return False
+    placa = str(parsed.get("PLACA") or "").strip()
+    # Em heurística de encomenda, só bloqueamos quando há placa veicular válida.
+    # MODELO/STATUS podem vir contaminados em textos de encomendas.
+    return _looks_like_vehicle_plate(placa)
+
 def _has_bloco_ap_indicador(tokens_up):
     bloco_alias = {"BL", "BLO", "BLOCO", "BLCO", "BLC", "B"}
     ap_alias = {"AP", "APT", "APART", "APTA", "APARTAMEN", "APARTAMENTO", "A"}
@@ -344,9 +363,8 @@ def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
     toks = tokens(text)
     toks_up = [t.upper() for t in toks]
     normalized = _norm(text)
-    if parsed:
-        if parsed.get("PLACA") or parsed.get("MODELOS"):
-            return False
+    if _parsed_has_strong_people_signal(parsed):
+        return False
     tipo_tokens = [t for t in toks_up if t in _ENCOMENDA_TIPO_TOKENS]
     has_tipo_explicito = any(t in _ENCOMENDA_TIPO_EXPLICITO for t in tipo_tokens)
     has_tipo_contextual = any((len(t) >= 3 and t not in _ENCOMENDA_TIPO_WEAK) for t in tipo_tokens)
@@ -377,7 +395,7 @@ def _is_encomenda_text(text: str, parsed: dict = None) -> bool:
         p = _norm(pattern)
         if not p:
             continue
-        p_regex = r"\\b" + r"\\s+".join(re.escape(part) for part in p.split()) + r"\\b"
+        p_regex = r"\b" + r"\s+".join(re.escape(part) for part in p.split()) + r"\b"
         if re.search(p_regex, normalized):
             return True
     if _match_encomenda_store_token(toks_up):

@@ -7,6 +7,17 @@ import re
 from typing import Any, Callable, Dict
 
 
+def _looks_like_vehicle_plate(placa: str) -> bool:
+    p = str(placa or "").strip().upper()
+    if not p or p in {"-", "N/A"}:
+        return False
+    if re.match(r"^(AP|APT|APART|APTA|APARTAMEN|APARTAMENTO|A)\d+[A-Z]?$", p):
+        return False
+    if re.match(r"^(BL|BLO|BLOCO|BLCO|BLC|B)\d+$", p):
+        return False
+    return bool(re.match(r"^[A-Z]{3}\d{4}$", p) or re.match(r"^[A-Z]{3}\d[A-Z]\d{2}$", p))
+
+
 def _has_strong_people_signal(parsed: dict | None) -> bool:
     if not isinstance(parsed, dict):
         return False
@@ -19,9 +30,11 @@ def _has_strong_people_signal(parsed: dict | None) -> bool:
     ap = str(parsed.get("APARTAMENTO") or "").strip()
     nome = str(parsed.get("NOME_RAW") or "").strip()
 
-    has_vehicle = bool(placa) or bool([m for m in modelos if str(m).strip()])
-    has_identity = bool(nome) or (bool(bloco) and bool(ap))
     has_status = status not in ("", "-", "DESCONHECIDO")
+    has_valid_plate = _looks_like_vehicle_plate(placa)
+    # Para evitar falso positivo com encomendas, sinal forte de pessoa exige placa válida.
+    has_vehicle = has_valid_plate
+    has_identity = bool(nome) or (bool(bloco) and bool(ap))
     return has_vehicle and (has_identity or has_status)
 
 
@@ -95,7 +108,7 @@ def decidir_destino(texto: str, parsed: dict | None, *,
     # 5) Ambíguo -> revisão
     if strong_people:
         destino = "dados"
-    elif people_combo and destino_base == "dados":
+    elif people_combo and destino_base == "dados" and not strong_encomenda:
         destino = "dados"
     elif explicit_encomenda:
         destino = "encomendas"
