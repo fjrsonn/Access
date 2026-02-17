@@ -273,6 +273,13 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('Registros filtrados:', source)
         self.assertIn('_runtime_refresh_ms = 1000', source)
 
+    def test_monitor_ui_has_filter_banner_toggle_button(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_monitor_ui)
+        self.assertIn('def _build_filter_banner_toggle', source)
+        self.assertIn('⌄ Ocultar filtros', source)
+        self.assertIn('⌃ Mostrar filtros', source)
+
     def test_monitor_ui_has_analytic_table_and_focus_mode_controls(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_monitor_ui)

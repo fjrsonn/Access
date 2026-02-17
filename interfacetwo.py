@@ -1778,6 +1778,7 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
             apply_filters()
     _update_filter_badge()
     _set_apply_dirty_state()
+    return bar
 
 def _apply_hover_line(text_widget, line, hover_tag):
     if text_widget in _text_edit_lock:
@@ -2606,6 +2607,27 @@ def _build_monitor_ui(container):
         pass
 
     monitor_widgets = []
+
+    def _build_filter_banner_toggle(parent_frame, filter_bar, source_key: str):
+        toggle_row = tk.Frame(parent_frame, bg=UI_THEME["surface"])
+        toggle_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
+        state = {"visible": True, "pack_opts": dict(filter_bar.pack_info())}
+
+        def _toggle_filters():
+            state["visible"] = not state["visible"]
+            if state["visible"]:
+                filter_bar.pack(**state["pack_opts"])
+                btn_toggle.configure(text="⌄ Ocultar filtros")
+            else:
+                filter_bar.pack_forget()
+                btn_toggle.configure(text="⌃ Mostrar filtros")
+            report_status("ux_metrics", "OK", stage="filter_banner_toggle", details={"source": source_key, "visible": state["visible"]})
+
+        btn_toggle = build_secondary_button(toggle_row, "⌄ Ocultar filtros", _toggle_filters)
+        btn_toggle.pack(side=tk.RIGHT)
+        attach_tooltip(btn_toggle, "Mostra/oculta o banner de filtros desta aba")
+        bind_focus_ring(btn_toggle, focus_thickness=3, blur_thickness=1)
+
     tab_configs = [
         (controle_frame, ARQUIVO, format_creative_entry),
         (encomendas_frame, ENCOMENDAS_ARQUIVO, format_encomenda_entry),
@@ -2826,7 +2848,8 @@ def _build_monitor_ui(container):
                 _persist_ui_state({"control_columns": {c: tw.column(c).get("width") for c in columns}})
 
             table_wrap.bind("<Configure>", _on_resize, add="+")
-            _build_filter_bar(frame, "controle", info_label, target_widget=tree)
+            filter_bar = _build_filter_bar(frame, "controle", info_label, target_widget=tree)
+            _build_filter_banner_toggle(frame, filter_bar, "controle")
             yscroll = ttk.Scrollbar(table_wrap, orient=tk.VERTICAL, command=tree.yview)
             tree.configure(yscrollcommand=yscroll.set)
             tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -2856,7 +2879,8 @@ def _build_monitor_ui(container):
             maxundo=-1,
         )
         filter_key = "encomendas" if formatter == format_encomenda_entry else ("orientacoes" if formatter == format_orientacao_entry else "observacoes")
-        _build_filter_bar(frame, filter_key, info_label, target_widget=text_widget)
+        filter_bar = _build_filter_bar(frame, filter_key, info_label, target_widget=text_widget)
+        _build_filter_banner_toggle(frame, filter_bar, str(filter_key))
         if formatter == format_encomenda_entry:
             text_widget.tag_configure("status_avisado", foreground=UI_THEME["status_avisado_text"])
             text_widget.tag_configure("status_sem_contato", foreground=UI_THEME["status_sem_contato_text"])
