@@ -300,10 +300,13 @@ def _match_encomenda_store_token(tokens_up):
         return False
     candidates = list(_ENCOMENDA_LOJA_TOKENS) + [p.replace(" ", "") for p in _ENCOMENDA_LOJA_PATTERNS]
     for tok in tokens_up:
-        if not tok or tok.isdigit():
+        if not tok or tok.isdigit() or len(tok) < 4:
             continue
         best = rf_process.extractOne(tok, candidates, scorer=rf_fuzz.WRatio)
-        if best and best[1] >= 88:
+        if not best:
+            continue
+        best_token = str(best[0] or "")
+        if best[1] >= 90 and token_common_prefix_len(tok, best_token) >= 2:
             return True
     return False
 
