@@ -533,7 +533,7 @@ def _match_encomenda_store(texto: str, tokens_up):
         key_norm = _normalize_encomenda_text(key)
         if not key_norm:
             continue
-        key_regex = r"\\b" + r"\\s+".join(re.escape(part) for part in key_norm.split()) + r"\\b"
+        key_regex = r"\b" + r"\s+".join(re.escape(part) for part in key_norm.split()) + r"\b"
         if re.search(key_regex, normalized):
             return value
     for tok in tokens_up:
@@ -542,10 +542,13 @@ def _match_encomenda_store(texto: str, tokens_up):
     if rf_process and rf_fuzz:
         candidates = list(_ENCOMENDA_LOJA_MAP.keys())
         for tok in tokens_up:
-            if tok in _ENCOMENDA_FUZZY_STOPWORDS:
+            if tok in _ENCOMENDA_FUZZY_STOPWORDS or len(tok) < 4:
                 continue
             best = rf_process.extractOne(tok, candidates, scorer=rf_fuzz.WRatio)
-            if best and best[1] >= 88:
+            if not best:
+                continue
+            best_tok = str(best[0] or "")
+            if best[1] >= 90 and best_tok[:2] == tok[:2]:
                 return _ENCOMENDA_LOJA_MAP.get(best[0], "")
     return ""
 
@@ -627,6 +630,14 @@ def _parse_encomenda_text(texto: str) -> dict:
     ident_ignore_tokens = set(_ENCOMENDA_TIPO_MAP.keys()) | set(_ENCOMENDA_LOJA_MAP.keys())
     ident_ignore_tokens.update(_ENCOMENDA_LOJA_IGNORE_TOKENS)
     identificacao = _extract_identificacao(toks, toks_up, ignore_tokens=ident_ignore_tokens)
+
+    has_orientacao_context = any(t in {"REGISTRANDO", "OCORRENCIA", "ORIENTADO", "ORIENTADA", "ORIENTACAO", "BARULHO", "RECLAMACAO", "CLAMACAO", "PORTARIA", "MORADOR"} for t in toks_up)
+    has_loja_token = any(t in _ENCOMENDA_LOJA_MAP for t in toks_up)
+    has_tipo_token = any(t in _ENCOMENDA_TIPO_MAP for t in toks_up)
+    if has_orientacao_context and not identificacao and not has_loja_token and not has_tipo_token:
+        loja = ""
+        tipo = ""
+
     if not tipo:
         tipo = "ENCOMENDA" if loja or identificacao else ""
 
