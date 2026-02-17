@@ -173,10 +173,18 @@ class InterfaceTwoTests(unittest.TestCase):
         import inspect
         source = inspect.getsource(interfacetwo._build_filter_bar)
         save_def = source.find("def _save_preset")
-        save_button = source.find("build_secondary_button(bar, \"Salvar preset\", _save_preset)")
+        save_button = source.find("build_secondary_button(actions_row, \"Salvar preset\", _save_preset)")
         self.assertNotEqual(save_def, -1)
         self.assertNotEqual(save_button, -1)
         self.assertLess(save_def, save_button)
+
+
+    def test_filter_bar_uses_two_logical_rows_and_quick_group(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_filter_bar)
+        self.assertIn('top_row = tk.Frame(bar', source)
+        self.assertIn('actions_row = tk.Frame(bar', source)
+        self.assertIn('quick_group = tk.Frame(actions_row', source)
 
     def test_load_safe_accepts_concatenated_json_objects(self):
         import os, tempfile
