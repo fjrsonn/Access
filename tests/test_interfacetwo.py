@@ -134,6 +134,25 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertEqual(records[1].get('texto_original'), 'texto livre')
         self.assertEqual(records[2].get('texto'), '123')
 
+    def test_load_safe_accepts_registros_as_dict_map(self):
+        import json, tempfile, os
+        payload = {
+            "registros": {
+                "10": {"nome": "MARTA", "bloco": "9", "apartamento": "901", "status": "MORADOR", "data_hora": "18/02/2026 13:00:00"},
+                "11": {"nome": "PAULO", "bloco": "9", "apartamento": "902", "status": "VISITANTE", "data_hora": "18/02/2026 13:05:00"}
+            }
+        }
+        with tempfile.NamedTemporaryFile('w', encoding='utf-8', suffix='.json', delete=False) as tf:
+            json.dump(payload, tf, ensure_ascii=False)
+            path = tf.name
+        try:
+            registros = interfacetwo._load_safe(path)
+        finally:
+            os.remove(path)
+        self.assertEqual(len(registros), 2)
+        self.assertEqual(registros[0].get('NOME'), 'MARTA')
+        self.assertEqual(registros[1].get('APARTAMENTO'), '902')
+
 
 if __name__ == "__main__":
     unittest.main()

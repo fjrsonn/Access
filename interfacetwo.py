@@ -286,7 +286,13 @@ def _load_safe(path: str):
     try:
         data = _read_json_flexible(path)
         if isinstance(data, dict) and "registros" in data:
-            return _normalize_records_for_monitor(data.get("registros", []))
+            registros_payload = data.get("registros", [])
+            if isinstance(registros_payload, list):
+                return _normalize_records_for_monitor(registros_payload)
+            if isinstance(registros_payload, dict):
+                # caso comum em produção: "registros" como mapa id -> registro
+                return _extract_records_from_dict_payload(registros_payload)
+            return []
         if isinstance(data, list):
             return _normalize_records_for_monitor(data)
         if isinstance(data, dict):
