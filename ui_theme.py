@@ -337,7 +337,7 @@ def build_secondary_button(parent, text, command, padx=12):
         highlightbackground=UI_THEME["border"],
         highlightcolor=UI_THEME["primary"],
     )
-    bind_focus_ring(btn, focus_thickness=(3 if tone in {"danger", "warning"} else 2), blur_thickness=1)
+    bind_focus_ring(btn, focus_thickness=2, blur_thickness=1)
     bind_button_states(btn, UI_THEME["surface_alt"], UI_THEME["border"])
     return btn
 
