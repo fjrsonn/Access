@@ -39,6 +39,25 @@ UI_THEME = {
     "banner_error_text": "#FFFFFF",
     "light_bg": "#F5F7FA",
     "light_border": "#D1D5DB",
+    "font_family": "Segoe UI",
+    "font_sm": 9,
+    "font_md": 10,
+    "font_lg": 11,
+    "font_xl": 12,
+    "radius_sm": 4,
+    "radius_md": 8,
+    "space_1": 4,
+    "space_2": 8,
+    "space_3": 12,
+    "space_4": 16,
+    "space_5": 20,
+    "space_6": 24,
+    "disabled_bg": "#2B3442",
+    "disabled_fg": "#9AA4B2",
+    "info": "#2563EB",
+    "on_info": "#FFFFFF",
+    "selection_bg": "#1F6FEB",
+    "selection_fg": "#E6EDF3",
 }
 
 THEME_PRESETS = {
@@ -76,6 +95,25 @@ THEME_PRESETS = {
         "banner_error_text": "#FFFFFF",
         "light_bg": "#F5F7FA",
         "light_border": "#D1D5DB",
+        "font_family": "Segoe UI",
+        "font_sm": 9,
+        "font_md": 10,
+        "font_lg": 11,
+        "font_xl": 12,
+        "radius_sm": 4,
+        "radius_md": 8,
+        "space_1": 4,
+        "space_2": 8,
+        "space_3": 12,
+        "space_4": 16,
+        "space_5": 20,
+        "space_6": 24,
+        "disabled_bg": "#E5E7EB",
+        "disabled_fg": "#6B7280",
+        "info": "#2563EB",
+        "on_info": "#FFFFFF",
+        "selection_bg": "#2563EB",
+        "selection_fg": "#FFFFFF",
     },
     "alto_contraste": {
         "bg": "#000000",
@@ -110,6 +148,25 @@ THEME_PRESETS = {
         "banner_error_text": "#000000",
         "light_bg": "#000000",
         "light_border": "#FFFFFF",
+        "font_family": "Segoe UI",
+        "font_sm": 9,
+        "font_md": 10,
+        "font_lg": 11,
+        "font_xl": 12,
+        "radius_sm": 4,
+        "radius_md": 8,
+        "space_1": 4,
+        "space_2": 8,
+        "space_3": 12,
+        "space_4": 16,
+        "space_5": 20,
+        "space_6": 24,
+        "disabled_bg": "#111111",
+        "disabled_fg": "#E5E7EB",
+        "info": "#00A3FF",
+        "on_info": "#000000",
+        "selection_bg": "#00A3FF",
+        "selection_fg": "#000000",
     },
 }
 
@@ -262,12 +319,12 @@ def build_filter_input(parent, textvariable=None, width=12):
         parent,
         textvariable=textvariable,
         bg=UI_THEME["surface_alt"],
-        fg=UI_THEME["text"],
-        insertbackground=UI_THEME["text"],
+        fg=UI_THEME.get("on_surface", UI_THEME["text"]),
+        insertbackground=UI_THEME.get("on_surface", UI_THEME["text"]),
         relief="flat",
         width=width,
-        disabledbackground=UI_THEME["surface"],
-        disabledforeground=UI_THEME["muted_text"],
+        disabledbackground=UI_THEME.get("disabled_bg", UI_THEME["surface"]),
+        disabledforeground=UI_THEME.get("disabled_fg", UI_THEME["muted_text"]),
         highlightthickness=1,
         highlightbackground=UI_THEME["border"],
         highlightcolor=UI_THEME["primary"],
@@ -300,3 +357,100 @@ def build_banner(parent, tone="success", **kwargs):
         bg = UI_THEME.get("banner_success_bg", UI_THEME["success"])
         fg = UI_THEME.get("banner_success_text", UI_THEME.get("on_success", UI_THEME["text"]))
     return tk.Label(parent, text="", bg=bg, fg=fg, **kwargs)
+
+
+def theme_font(size_key="font_md", weight="normal"):
+    return (UI_THEME.get("font_family", "Segoe UI"), UI_THEME.get(size_key, 10), weight)
+
+
+def theme_space(key="space_2", fallback=8):
+    return int(UI_THEME.get(key, fallback))
+
+
+def apply_ttk_theme_styles(root=None):
+    try:
+        from tkinter import ttk
+    except Exception:
+        return
+    try:
+        style = ttk.Style(root)
+        style.theme_use("clam")
+    except Exception:
+        style = ttk.Style(root)
+    try:
+        style.configure("TCombobox", fieldbackground=UI_THEME.get("surface_alt", "#1B2430"), background=UI_THEME.get("surface_alt", "#1B2430"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+        style.map("TCombobox", fieldbackground=[("readonly", UI_THEME.get("surface_alt", "#1B2430"))], foreground=[("readonly", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))])
+        style.configure("Vertical.TScrollbar", troughcolor=UI_THEME.get("surface", "#151A22"), background=UI_THEME.get("surface_alt", "#1B2430"), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+        style.configure("Horizontal.TScrollbar", troughcolor=UI_THEME.get("surface", "#151A22"), background=UI_THEME.get("surface_alt", "#1B2430"), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+    except Exception:
+        pass
+
+
+def refresh_theme(widget_tree, context="default"):
+    if widget_tree is None or tk is None:
+        return
+    apply_ttk_theme_styles(widget_tree)
+
+    def _walk(w):
+        yield w
+        try:
+            for ch in w.winfo_children():
+                yield from _walk(ch)
+        except Exception:
+            return
+
+    for w in _walk(widget_tree):
+        klass = str(getattr(w, "winfo_class", lambda: "")() or "")
+        try:
+            if klass in {"Frame", "Labelframe", "Toplevel"}:
+                w.configure(bg=UI_THEME.get("light_bg", UI_THEME.get("bg", "#0F1115")))
+            elif klass == "Label":
+                w.configure(bg=UI_THEME.get("light_bg", UI_THEME.get("bg", "#0F1115")), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+            elif klass == "Text":
+                w.configure(bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), insertbackground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+            elif klass == "Entry":
+                st = None
+                try:
+                    st = str(w.cget("state"))
+                except Exception:
+                    st = None
+                if st == "disabled":
+                    w.configure(disabledbackground=UI_THEME.get("disabled_bg", UI_THEME.get("surface", "#151A22")), disabledforeground=UI_THEME.get("disabled_fg", UI_THEME.get("muted_text", "#9AA4B2")))
+                else:
+                    w.configure(bg=UI_THEME.get("surface_alt", "#1B2430"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), insertbackground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+        except Exception:
+            pass
+
+
+def attach_tooltip(widget, text):
+    tip = {"win": None}
+
+    def _show(_e=None):
+        if not text or tip["win"] is not None:
+            return
+        try:
+            tw = tk.Toplevel(widget)
+            tw.wm_overrideredirect(True)
+            x = widget.winfo_rootx() + 10
+            y = widget.winfo_rooty() + widget.winfo_height() + 8
+            tw.wm_geometry(f"+{x}+{y}")
+            lbl = tk.Label(tw, text=text, bg=UI_THEME.get("surface_alt", "#1B2430"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), relief="solid", bd=1, padx=6, pady=4, font=theme_font("font_sm"))
+            lbl.pack()
+            tip["win"] = tw
+        except Exception:
+            tip["win"] = None
+
+    def _hide(_e=None):
+        try:
+            if tip["win"] is not None:
+                tip["win"].destroy()
+        except Exception:
+            pass
+        tip["win"] = None
+
+    try:
+        widget.bind("<Enter>", _show, add="+")
+        widget.bind("<Leave>", _hide, add="+")
+        widget.bind("<ButtonPress>", _hide, add="+")
+    except Exception:
+        pass
