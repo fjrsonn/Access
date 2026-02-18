@@ -288,6 +288,19 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('"as_text": True', source)
         self.assertIn('Alt+E exportar', source)
 
+
+    def test_control_text_mode_keeps_details_and_selection_tags(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_monitor_ui)
+        self.assertIn('"controle_selected"', source)
+        self.assertIn('Selecione um registro para ver detalhes.', source)
+
+    def test_hover_supports_full_record_tag_highlight(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._bind_hover_highlight)
+        self.assertIn('"_record_" in t', source)
+        self.assertIn('tag:', source)
+
     def test_treeview_column_menu_controls_present(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_filter_bar)

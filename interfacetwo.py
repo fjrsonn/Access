@@ -947,18 +947,33 @@ def _encomenda_on_tag_click(text_widget, record, event=None, rec_tag=None):
 
 def _record_on_tag_click(text_widget, record, event=None, rec_tag=None):
     ui = _text_action_ui.get(text_widget) or _encomenda_action_ui.get(text_widget)
-    if not ui:
-        return
-    is_editing = ui.get("is_editing")
-    if callable(is_editing) and is_editing():
-        return
-    current = ui.get("current") or {"record": None, "rec_tag": None}
-    ui["current"] = current
-    current["record"] = record
-    current["rec_tag"] = rec_tag
-    show_fn = ui.get("show")
-    if callable(show_fn):
-        show_fn()
+    if ui:
+        is_editing = ui.get("is_editing")
+        if callable(is_editing) and is_editing():
+            return
+        current = ui.get("current") or {"record": None, "rec_tag": None}
+        ui["current"] = current
+        current["record"] = record
+        current["rec_tag"] = rec_tag
+        show_fn = ui.get("show")
+        if callable(show_fn):
+            show_fn()
+
+    try:
+        text_widget.config(state="normal")
+        text_widget.tag_remove("controle_selected", "1.0", tk.END)
+        if rec_tag:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if ranges and len(ranges) >= 2:
+                text_widget.tag_add("controle_selected", ranges[0], ranges[1])
+        text_widget.config(state="disabled")
+    except Exception:
+        pass
+
+    details_var = _control_details_var.get(text_widget)
+    if details_var is not None:
+        _control_selection_state[text_widget] = str((record or {}).get("ID") or (record or {}).get("_entrada_id") or "")
+        _set_control_details(details_var, record)
 
 def _format_control_row(record: dict):
     nome = _title_name(record.get("NOME", ""), record.get("SOBRENOME", ""))
@@ -987,16 +1002,9 @@ def _control_sort_value(record: dict, sort_key: str):
     return str(record.get(sort_key, ""))
 
 
-def _update_control_details(tree_widget, selection):
-    details_var = _control_details_var.get(tree_widget)
-    record_map = _control_table_map.get(tree_widget, {})
+def _set_control_details(details_var, rec):
     if details_var is None:
         return
-    if not selection:
-        details_var.set("Selecione um registro para ver detalhes.")
-        return
-    rec = record_map.get(selection[0])
-    _control_selection_state[tree_widget] = str((rec or {}).get("ID") or (rec or {}).get("_entrada_id") or "")
     if not rec:
         details_var.set("Selecione um registro para ver detalhes.")
         return
@@ -1008,6 +1016,19 @@ def _update_control_details(tree_widget, selection):
         f"Status: {safe(rec.get('STATUS'))}\n"
         f"Data/Hora: {safe(rec.get('DATA_HORA'))}"
     )
+
+
+def _update_control_details(tree_widget, selection):
+    details_var = _control_details_var.get(tree_widget)
+    record_map = _control_table_map.get(tree_widget, {})
+    if details_var is None:
+        return
+    if not selection:
+        _set_control_details(details_var, None)
+        return
+    rec = record_map.get(selection[0])
+    _control_selection_state[tree_widget] = str((rec or {}).get("ID") or (rec or {}).get("_entrada_id") or "")
+    _set_control_details(details_var, rec)
 
 
 def _populate_control_table(tree_widget, info_label):
@@ -1136,11 +1157,11 @@ def _populate_text(text_widget, info_label):
     text_widget.tag_configure("row_even", background=UI_THEME.get("surface", "#151A22"))
     text_widget.tag_configure("row_odd", background=UI_THEME.get("surface_alt", "#1B2430"))
     for idx, r in enumerate(filtrados):
-        is_clickable = formatter in (format_encomenda_entry, format_orientacao_entry, format_observacao_entry)
+        is_clickable = formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry)
         rec_tag = None
         if is_clickable:
             has_clickable_records = True
-            prefix = "encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else "observacao")
+            prefix = "controle" if formatter == format_creative_entry else ("encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else "observacao"))
             rec_tag = f"{prefix}_record_{idx}"
         linha = formatter(r)
         # Inserir já com a tag — isto garante que o tag cubra exatamente o texto
@@ -1228,7 +1249,7 @@ def _populate_text(text_widget, info_label):
         _encomenda_tag_map.pop(text_widget, None)
         _encomenda_line_map.pop(text_widget, None)
 
-    if has_clickable_records or formatter in (format_orientacao_entry, format_observacao_entry):
+    if has_clickable_records or formatter in (format_creative_entry, format_orientacao_entry, format_observacao_entry):
         _record_tag_map_generic[text_widget] = record_tag_map
     else:
         _record_tag_map_generic.pop(text_widget, None)
@@ -1810,6 +1831,21 @@ def _apply_hover_line(text_widget, line, hover_tag):
         except Exception:
             pass
 
+
+def _apply_hover_record(text_widget, rec_tag, hover_tag):
+    if text_widget in _text_edit_lock or not rec_tag:
+        return False
+    try:
+        ranges = text_widget.tag_ranges(rec_tag)
+        if not ranges or len(ranges) < 2:
+            return False
+        text_widget.config(state="normal")
+        text_widget.tag_add(hover_tag, ranges[0], ranges[1])
+        text_widget.config(state="disabled")
+        return True
+    except Exception:
+        return False
+
 def _clear_hover_line(text_widget, hover_tag):
     if text_widget in _text_edit_lock:
         return
@@ -1827,9 +1863,16 @@ def _clear_hover_line(text_widget, hover_tag):
 def _restore_hover_if_needed(text_widget, hover_tag):
     if text_widget in _text_edit_lock:
         return
-    line = _hover_state.get(text_widget)
-    if not line:
+    token = _hover_state.get(text_widget)
+    if not token:
         return
+    if isinstance(token, str) and token.startswith("tag:"):
+        rec_tag = token[4:]
+        if _apply_hover_record(text_widget, rec_tag, hover_tag):
+            return
+        _hover_state[text_widget] = None
+        return
+    line = token
     try:
         line_text = text_widget.get(f"{line}.0", f"{line}.end")
     except Exception:
@@ -1860,6 +1903,16 @@ def _bind_hover_highlight(text_widget):
         except Exception:
             return
         line = index.split(".")[0]
+        tag_names = text_widget.tag_names(index)
+        rec_tag = next((t for t in tag_names if "_record_" in t), None)
+        if rec_tag:
+            token = f"tag:{rec_tag}"
+            if _hover_state.get(text_widget) == token:
+                return
+            _clear_hover_line(text_widget, hover_tag)
+            if _apply_hover_record(text_widget, rec_tag, hover_tag):
+                _hover_state[text_widget] = token
+            return
         try:
             line_text = text_widget.get(f"{line}.0", f"{line}.end")
         except Exception:
@@ -2774,6 +2827,8 @@ def _build_monitor_ui(container):
             text_widget.tag_configure("status_avisado", foreground=UI_THEME["status_avisado_text"])
             text_widget.tag_configure("status_sem_contato", foreground=UI_THEME["status_sem_contato_text"])
             text_widget.tag_configure("encomenda_selected", background=UI_THEME.get("selection_bg", UI_THEME["focus_bg"]), foreground=UI_THEME.get("selection_fg", UI_THEME["focus_text"]))
+        if filter_key == "controle":
+            text_widget.tag_configure("controle_selected", background=UI_THEME.get("selection_bg", UI_THEME["focus_bg"]), foreground=UI_THEME.get("selection_fg", UI_THEME["focus_text"]))
         text_widget.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)), fill=tk.BOTH, expand=True)
         text_widget.config(state="disabled")
         _bind_hover_highlight(text_widget)
@@ -2781,6 +2836,11 @@ def _build_monitor_ui(container):
             _build_encomenda_actions(frame, text_widget, info_label)
         elif formatter in (format_orientacao_entry, format_observacao_entry):
             _build_text_actions(frame, text_widget, info_label, arquivo)
+        if filter_key == "controle":
+            details_var = tk.StringVar(value="Selecione um registro para ver detalhes.")
+            details = tk.Label(frame, textvariable=details_var, bg=UI_THEME["surface_alt"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), anchor="w", justify="left", padx=theme_space("space_3", 10), pady=theme_space("space_2", 8), font=theme_font("font_md"))
+            details.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_3", 10)))
+            _control_details_var[text_widget] = details_var
         monitor_widgets.append(text_widget)
         _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter, "filter_key": filter_key, "widget": text_widget}
 
