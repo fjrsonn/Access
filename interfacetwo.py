@@ -105,6 +105,9 @@ _control_filtered_count_var = None
 _control_toolbar = None
 _last_quick_filter_kind = None
 _metrics_accessibility_var = None
+_filter_bars = {}
+_filter_toggle_buttons = {}
+_filter_toggle_state = {"visible": False}
 
 
 def _load_prefs():
@@ -676,6 +679,10 @@ def _record_hash_key(r: dict) -> str:
     ])
     return hashlib.md5(raw.encode("utf-8")).hexdigest()
 
+
+def _record_original_id(r: dict) -> str:
+    return str(r.get("ID") or r.get("id") or r.get("_entrada_id") or "-")
+
 def format_creative_entry(r: dict) -> str:
     modelo = r.get("MODELO") or ""
     cor = r.get("COR") or ""
@@ -705,7 +712,7 @@ def format_creative_entry(r: dict) -> str:
     ]
     key = _record_hash_key(r)
     idx = int(key[:2], 16) % len(templates)
-    return templates[idx].format(
+    formatted = templates[idx].format(
         hora=hora or "-",
         data=data or "-",
         nome=nome,
@@ -716,6 +723,7 @@ def format_creative_entry(r: dict) -> str:
         modelo=modelo_fmt or "-",
         cor=cor_fmt or "-",
     )
+    return f"[ID {_record_original_id(r)}] {formatted}"
 
 def _record_hash_key_encomenda(r: dict) -> str:
     raw = "|".join([
@@ -792,10 +800,12 @@ def _extract_multi_fields(text: str) -> dict:
 
 
 def format_orientacao_entry(r: dict) -> str:
-    return str(r.get("texto") or r.get("texto_original") or "")
+    texto = str(r.get("texto") or r.get("texto_original") or "")
+    return f"[ID {_record_original_id(r)}] {texto}"
 
 def format_observacao_entry(r: dict) -> str:
-    return str(r.get("texto") or r.get("texto_original") or "")
+    texto = str(r.get("texto") or r.get("texto_original") or "")
+    return f"[ID {_record_original_id(r)}] {texto}"
 
 def _normalize_date_value(value: str):
     if not value:
@@ -1122,6 +1132,8 @@ def _populate_text(text_widget, info_label):
     record_line_map = {}
     has_clickable_records = False
 
+    text_widget.tag_configure("row_even", background=UI_THEME.get("surface", "#151A22"))
+    text_widget.tag_configure("row_odd", background=UI_THEME.get("surface_alt", "#1B2430"))
     for idx, r in enumerate(filtrados):
         is_clickable = formatter in (format_encomenda_entry, format_orientacao_entry, format_observacao_entry)
         rec_tag = None
@@ -2386,6 +2398,13 @@ def _build_monitor_ui(container):
     density_var = tk.StringVar(value=("Compacto" if str(density_defaults).lower().startswith("compact") else "Confortável"))
     density_combo = ttk.Combobox(theme_bar, textvariable=density_var, values=["Compacto", "Confortável"], state="readonly", width=12)
     density_combo.pack(side=tk.LEFT, padx=(6, 0))
+    btn_top_export = build_secondary_button(theme_bar, "Exportar CSV", lambda: None)
+    btn_top_export.pack(side=tk.LEFT, padx=(12, 0))
+    btn_top_save_view = build_secondary_button(theme_bar, "Salvar visão", lambda: None)
+    btn_top_save_view.pack(side=tk.LEFT, padx=(6, 0))
+    _legacy_reset_columns_label = "Resetar colunas"
+    btn_top_toggle_filters = build_secondary_button(theme_bar, "⌃ Mostrar filtros", lambda: None)
+    btn_top_toggle_filters.pack(side=tk.LEFT, padx=(6, 0))
     op_mode_defaults = bool((_load_prefs().get("operation_mode") or False))
     op_mode_var = tk.BooleanVar(value=op_mode_defaults)
     op_mode_chk = tk.Checkbutton(theme_bar, text="Modo Operação", variable=op_mode_var, bg=UI_THEME["bg"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), selectcolor=UI_THEME["surface"], activebackground=UI_THEME["bg"])
@@ -2567,7 +2586,7 @@ def _build_monitor_ui(container):
     metrics_accessibility_label.configure(textvariable=_metrics_accessibility_var)
     metrics_accessibility_label.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
 
-    hints = build_label(container, "Atalhos: Ctrl+F buscar • Ctrl+Enter aplicar • Ctrl+Shift+L limpar • Alt+1..4 abas • Alt+E exportar • Alt+R reset • Alt+V salvar visão", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    hints = build_label(container, "Atalhos: Ctrl+F buscar • Ctrl+Enter aplicar • Ctrl+Shift+L limpar • Alt+1..4 abas • Alt+E exportar • Alt+V salvar visão", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
     hints.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
     info_label.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
 
@@ -2608,25 +2627,49 @@ def _build_monitor_ui(container):
 
     monitor_widgets = []
 
-    def _build_filter_banner_toggle(parent_frame, filter_bar, source_key: str):
+    def _apply_filter_visibility(source_key: str):
+        filter_bar = _filter_bars.get(source_key)
+        if not filter_bar:
+            return
+        if _filter_toggle_state.get("visible", False):
+            try:
+                filter_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)), before=filter_bar._filter_target_widget)
+            except Exception:
+                try:
+                    filter_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)))
+                except Exception:
+                    return
+        else:
+            try:
+                filter_bar.pack_forget()
+            except Exception:
+                return
+
+    def _sync_filter_toggle_labels():
+        visible = _filter_toggle_state.get("visible", False)
+        label = "⌄ Ocultar filtros" if visible else "⌃ Mostrar filtros"
+        for btn in list(_filter_toggle_buttons.values()):
+            try:
+                btn.configure(text=label)
+            except Exception:
+                continue
+
+    def _toggle_filters(source_key: str = "global"):
+        _filter_toggle_state["visible"] = not _filter_toggle_state.get("visible", False)
+        for key in list(_filter_bars.keys()):
+            _apply_filter_visibility(key)
+        _sync_filter_toggle_labels()
+        report_status("ux_metrics", "OK", stage="filter_banner_toggle", details={"source": source_key, "visible": _filter_toggle_state["visible"]})
+
+    def _build_filter_banner_toggle(parent_frame, source_key: str):
         toggle_row = tk.Frame(parent_frame, bg=UI_THEME["surface"])
         toggle_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
-        state = {"visible": True, "pack_opts": dict(filter_bar.pack_info())}
-
-        def _toggle_filters():
-            state["visible"] = not state["visible"]
-            if state["visible"]:
-                filter_bar.pack(**state["pack_opts"])
-                btn_toggle.configure(text="⌄ Ocultar filtros")
-            else:
-                filter_bar.pack_forget()
-                btn_toggle.configure(text="⌃ Mostrar filtros")
-            report_status("ux_metrics", "OK", stage="filter_banner_toggle", details={"source": source_key, "visible": state["visible"]})
-
-        btn_toggle = build_secondary_button(toggle_row, "⌄ Ocultar filtros", _toggle_filters)
+        btn_toggle = build_secondary_button(toggle_row, "⌃ Mostrar filtros", lambda: _toggle_filters(source_key))
         btn_toggle.pack(side=tk.RIGHT)
-        attach_tooltip(btn_toggle, "Mostra/oculta o banner de filtros desta aba")
+        _filter_toggle_buttons[source_key] = btn_toggle
+        attach_tooltip(btn_toggle, "Mostra/oculta os filtros")
         bind_focus_ring(btn_toggle, focus_thickness=3, blur_thickness=1)
+        _sync_filter_toggle_labels()
 
     tab_configs = [
         (controle_frame, ARQUIVO, format_creative_entry),
@@ -2638,23 +2681,10 @@ def _build_monitor_ui(container):
         if formatter == format_creative_entry:
             toolbar = tk.Frame(frame, bg=UI_THEME["surface"])
             toolbar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
-            btn_export = build_secondary_button(toolbar, "Exportar CSV", lambda: None)
-            btn_reset_cols = build_secondary_warning_button(toolbar, "Resetar colunas", lambda: None)
-            btn_save_view = build_secondary_button(toolbar, "Salvar visão", lambda: None)
-            toolbar_count_var = tk.StringVar(value="Itens filtrados: 0")
+            toolbar_count_var = tk.StringVar(value="Registros filtrados: 0")
             toolbar_count = build_label(toolbar, "", muted=True, bg=UI_THEME["surface"], font=theme_font("font_sm"))
             toolbar_count.configure(textvariable=toolbar_count_var)
-            btn_export.pack(side=tk.LEFT, padx=(0, theme_space("space_1", 4)))
-            btn_reset_cols.pack(side=tk.LEFT, padx=(0, theme_space("space_1", 4)))
-            btn_save_view.pack(side=tk.LEFT, padx=(0, theme_space("space_1", 4)))
-            btn_mark_sem_contato = build_secondary_warning_button(toolbar, "Lote: Sem contato", lambda: None)
-            btn_mark_avisado = build_secondary_button(toolbar, "Lote: Avisado", lambda: None)
-            btn_mark_sem_contato.pack(side=tk.LEFT, padx=(0, theme_space("space_1", 4)))
-            btn_mark_avisado.pack(side=tk.LEFT, padx=(0, theme_space("space_1", 4)))
             toolbar_count.pack(side=tk.RIGHT)
-            attach_tooltip(btn_export, "Exporta a tabela filtrada para CSV")
-            attach_tooltip(btn_reset_cols, "Restaura ordem e visibilidade padrão das colunas")
-            attach_tooltip(btn_save_view, "Salva filtros + layout atual da tabela")
 
             table_wrap = build_card_frame(frame)
             table_wrap.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)), fill=tk.BOTH, expand=True)
@@ -2816,11 +2846,9 @@ def _build_monitor_ui(container):
 
             tree.bind("<Button-3>", _open_header_filter_menu, add="+")
 
-            btn_export.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_export_csv", details={"source": "controle"}), _export_control_csv()))
-            btn_reset_cols.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_reset_columns", details={"source": "controle"}), _reset_control_columns()))
-            btn_save_view.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_save_view", details={"source": "controle"}), _save_control_view()))
-            btn_mark_sem_contato.configure(command=lambda: _batch_set_status("SEM CONTATO"))
-            btn_mark_avisado.configure(command=lambda: _batch_set_status("AVISADO"))
+            btn_top_export.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_export_csv", details={"source": "controle"}), _export_control_csv()))
+            btn_top_save_view.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_save_view", details={"source": "controle"}), _save_control_view()))
+            btn_top_toggle_filters.configure(command=lambda: _toggle_filters("global"))
             if _control_filtered_count_var is not None:
                 def _sync_count(*_):
                     try:
@@ -2832,9 +2860,8 @@ def _build_monitor_ui(container):
                 _sync_count()
 
             try:
-                root_win.bind("<Alt-e>", lambda _e: (btn_export.invoke(), "break")[1], add="+")
-                root_win.bind("<Alt-r>", lambda _e: (btn_reset_cols.invoke(), "break")[1], add="+")
-                root_win.bind("<Alt-v>", lambda _e: (btn_save_view.invoke(), "break")[1], add="+")
+                root_win.bind("<Alt-e>", lambda _e: (btn_top_export.invoke(), "break")[1], add="+")
+                root_win.bind("<Alt-v>", lambda _e: (btn_top_save_view.invoke(), "break")[1], add="+")
             except Exception:
                 pass
 
@@ -2849,7 +2876,10 @@ def _build_monitor_ui(container):
 
             table_wrap.bind("<Configure>", _on_resize, add="+")
             filter_bar = _build_filter_bar(frame, "controle", info_label, target_widget=tree)
-            _build_filter_banner_toggle(frame, filter_bar, "controle")
+            filter_bar._filter_target_widget = table_wrap
+            _filter_bars["controle"] = filter_bar
+            _apply_filter_visibility("controle")
+            _build_filter_banner_toggle(frame, "controle")
             yscroll = ttk.Scrollbar(table_wrap, orient=tk.VERTICAL, command=tree.yview)
             tree.configure(yscrollcommand=yscroll.set)
             tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -2880,7 +2910,10 @@ def _build_monitor_ui(container):
         )
         filter_key = "encomendas" if formatter == format_encomenda_entry else ("orientacoes" if formatter == format_orientacao_entry else "observacoes")
         filter_bar = _build_filter_bar(frame, filter_key, info_label, target_widget=text_widget)
-        _build_filter_banner_toggle(frame, filter_bar, str(filter_key))
+        filter_bar._filter_target_widget = text_widget
+        _filter_bars[str(filter_key)] = filter_bar
+        _apply_filter_visibility(str(filter_key))
+        _build_filter_banner_toggle(frame, str(filter_key))
         if formatter == format_encomenda_entry:
             text_widget.tag_configure("status_avisado", foreground=UI_THEME["status_avisado_text"])
             text_widget.tag_configure("status_sem_contato", foreground=UI_THEME["status_sem_contato_text"])
