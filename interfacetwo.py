@@ -774,6 +774,7 @@ def format_encomenda_entry(r: dict) -> str:
         ap=ap,
         identificacao=identificacao,
     )
+    texto_final = base_text
     if status not in ("-", ""):
         status_up = status.strip().upper()
         if status_up == "AVISADO":
@@ -782,8 +783,8 @@ def format_encomenda_entry(r: dict) -> str:
             prefix = "[SEM CONTATO ⚠]"
         else:
             prefix = f"[{status_up}]"
-        return f"{base_text} — {prefix} {status_dh}"
-    return base_text
+        texto_final = f"{base_text} — {prefix} {status_dh}"
+    return f"[ID {_record_original_id(r)}] {texto_final}"
 
 # ---------- UI helpers (embutido) ----------
 
@@ -1145,18 +1146,18 @@ def _populate_text(text_widget, info_label):
         # Inserir já com a tag — isto garante que o tag cubra exatamente o texto
         try:
             if rec_tag and formatter in (format_orientacao_entry, format_observacao_entry):
-                text_widget.insert(tk.END, linha + "\n", (rec_tag,))
+                text_widget.insert(tk.END, linha + "\n", (rec_tag, "row_even" if idx % 2 == 0 else "row_odd"))
                 if idx < len(filtrados) - 1:
                     text_widget.insert(tk.END, "─" * 80 + "\n\n")
                 else:
                     text_widget.insert(tk.END, "\n")
             elif rec_tag:
-                text_widget.insert(tk.END, linha + "\n\n", (rec_tag,))
+                text_widget.insert(tk.END, linha + "\n\n", (rec_tag, "row_even" if idx % 2 == 0 else "row_odd"))
             else:
-                text_widget.insert(tk.END, linha + "\n\n")
+                text_widget.insert(tk.END, linha + "\n\n", ("row_even" if idx % 2 == 0 else "row_odd",))
         except Exception:
             # fallback simples
-            text_widget.insert(tk.END, linha + "\n\n")
+            text_widget.insert(tk.END, linha + "\n\n", ("row_even" if idx % 2 == 0 else "row_odd",))
 
         # calcular start/end com base nas ranges da tag (quando aplicável)
         if rec_tag:
@@ -2672,230 +2673,85 @@ def _build_monitor_ui(container):
         _sync_filter_toggle_labels()
 
     tab_configs = [
-        (controle_frame, ARQUIVO, format_creative_entry),
-        (encomendas_frame, ENCOMENDAS_ARQUIVO, format_encomenda_entry),
-        (orientacoes_frame, ORIENTACOES_ARQUIVO, format_orientacao_entry),
-        (observacoes_frame, OBSERVACOES_ARQUIVO, format_observacao_entry),
+        (controle_frame, ARQUIVO, format_creative_entry, "controle"),
+        (encomendas_frame, ENCOMENDAS_ARQUIVO, format_encomenda_entry, "encomendas"),
+        (orientacoes_frame, ORIENTACOES_ARQUIVO, format_orientacao_entry, "orientacoes"),
+        (observacoes_frame, OBSERVACOES_ARQUIVO, format_observacao_entry, "observacoes"),
     ]
-    for frame, arquivo, formatter in tab_configs:
-        if formatter == format_creative_entry:
+
+    def _control_filtered_records():
+        registros = _load_safe(ARQUIVO)
+        filters = _filter_state.get("controle", {})
+        return _apply_filters(registros, filters)
+
+    def _export_control_csv():
+        try:
+            out = os.path.join(BASE_DIR, f"controle_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
+            rows = _control_filtered_records()
+            with open(out, "w", encoding="utf-8") as f:
+                f.write("id,data_hora,nome,sobrenome,bloco,apartamento,placa,modelo,cor,status,texto\n")
+                for rec in rows:
+                    cols = [
+                        _record_original_id(rec),
+                        str(rec.get("DATA_HORA") or ""),
+                        str(rec.get("NOME") or ""),
+                        str(rec.get("SOBRENOME") or ""),
+                        str(rec.get("BLOCO") or ""),
+                        str(rec.get("APARTAMENTO") or ""),
+                        str(rec.get("PLACA") or ""),
+                        str(rec.get("MODELO") or ""),
+                        str(rec.get("COR") or ""),
+                        str(rec.get("STATUS") or ""),
+                        format_creative_entry(rec),
+                    ]
+                    safe_cols = [str(v).replace('"', "''") for v in cols]
+                    f.write(','.join(f'"{v}"' for v in safe_cols) + "\n")
+            _announce_feedback(f"CSV exportado: {os.path.basename(out)}", "success")
+        except Exception as exc:
+            _announce_feedback(f"Falha ao exportar CSV: {exc}", "danger")
+
+    def _save_control_view():
+        try:
+            _persist_ui_state({
+                "control_view": {
+                    "filters": dict(_filter_state.get("controle") or {}),
+                    "as_text": True,
+                }
+            })
+            _announce_feedback("Visão da aba CONTROLE salva", "success")
+        except Exception as exc:
+            _announce_feedback(f"Falha ao salvar visão: {exc}", "danger")
+
+    btn_top_export.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_export_csv", details={"source": "controle"}), _export_control_csv()))
+    btn_top_save_view.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_save_view", details={"source": "controle"}), _save_control_view()))
+    btn_top_toggle_filters.configure(command=lambda: _toggle_filters("global"))
+
+    try:
+        root_win.bind("<Alt-e>", lambda _e: (btn_top_export.invoke(), "break")[1], add="+")
+        root_win.bind("<Alt-v>", lambda _e: (btn_top_save_view.invoke(), "break")[1], add="+")
+    except Exception:
+        pass
+
+    for frame, arquivo, formatter, filter_key in tab_configs:
+        if filter_key == "controle":
             toolbar = tk.Frame(frame, bg=UI_THEME["surface"])
-            toolbar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
+            toolbar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)) )
             toolbar_count_var = tk.StringVar(value="Registros filtrados: 0")
             toolbar_count = build_label(toolbar, "", muted=True, bg=UI_THEME["surface"], font=theme_font("font_sm"))
             toolbar_count.configure(textvariable=toolbar_count_var)
             toolbar_count.pack(side=tk.RIGHT)
 
-            table_wrap = build_card_frame(frame)
-            table_wrap.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)), fill=tk.BOTH, expand=True)
-            columns = ("data_hora", "nome", "bloco_ap", "placa", "status")
-            tree = ttk.Treeview(table_wrap, columns=columns, show="headings", style="Control.Treeview", selectmode="extended")
-            table_trees.append(tree)
-            tree.heading("data_hora", text="Data/Hora")
-            tree.heading("nome", text="Nome")
-            tree.heading("bloco_ap", text="Bloco/AP")
-            tree.heading("placa", text="Placa")
-            tree.heading("status", text="Status")
-            tree.tag_configure("row_even", background=UI_THEME.get("surface", "#151A22"))
-            tree.tag_configure("row_odd", background=UI_THEME.get("surface_alt", "#1B2430"))
-            tree.tag_configure("status_sem_contato", foreground=UI_THEME.get("danger", "#DA3633"))
-            tree.tag_configure("status_avisado", foreground=UI_THEME.get("success", "#2DA44E"))
-            tree.tag_configure("empty", foreground=UI_THEME.get("muted_text", "#9AA4B2"))
-            _control_sort_state["controle"] = dict(_restored_control_sort_state.get("controle") or {"key": "data_hora", "reverse": True})
-
-            column_titles = {"data_hora": "Data/Hora", "nome": "Nome", "bloco_ap": "Bloco/AP", "placa": "Placa", "status": "Status"}
-
-            def _render_sort_heading():
-                st = _control_sort_state.get("controle", {"key": "data_hora", "reverse": True})
-                for c in columns:
-                    arrow = ""
-                    if st.get("key") == c:
-                        arrow = " ↓" if st.get("reverse") else " ↑"
-                    tree.heading(c, text=f"{column_titles.get(c, c)}{arrow}")
-
-            def _sort_by(col, tw=tree):
-                st = _control_sort_state.get("controle", {"key": col, "reverse": False})
-                reverse = not st.get("reverse", False) if st.get("key") == col else False
-                _control_sort_state["controle"] = {"key": col, "reverse": reverse}
-                _persist_ui_state()
-                _render_sort_heading()
-                _populate_text(tw, info_label)
-
-            for _col in columns:
-                tree.heading(_col, command=lambda c=_col: _sort_by(c))
-            _render_sort_heading()
-            tree.column("data_hora", width=170, anchor="w")
-            tree.column("nome", width=300, anchor="w")
-            tree.column("bloco_ap", width=120, anchor="center")
-            tree.column("placa", width=120, anchor="center")
-            tree.column("status", width=190, anchor="w")
-            saved_cols = (prefs.get("control_columns") if isinstance(prefs, dict) else {}) or {}
-            for c in columns:
+            def _sync_count(*_):
                 try:
-                    w = int(saved_cols.get(c) or 0)
-                    if w > 0:
-                        tree.column(c, width=w)
+                    current = len(_control_filtered_records())
+                    total = len(_load_safe(ARQUIVO))
+                    toolbar_count_var.set(f"Registros filtrados: {current} (de {total})")
                 except Exception:
                     pass
 
-            def _export_control_csv():
-                try:
-                    out = os.path.join(BASE_DIR, f"controle_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
-                    rows = []
-                    for iid in tree.get_children():
-                        vals = tree.item(iid).get("values") or []
-                        if vals and vals[0] == "—":
-                            continue
-                        rows.append(vals)
-                    with open(out, "w", encoding="utf-8") as f:
-                        f.write("data_hora,nome,bloco_ap,placa,status\n")
-                        for vals in rows:
-                            safe = [str(v).replace('"', "''") for v in vals]
-                            f.write(','.join(f'"{v}"' for v in safe) + "\n")
-                    _announce_feedback(f"CSV exportado: {os.path.basename(out)}", "success")
-                except Exception as exc:
-                    _announce_feedback(f"Falha ao exportar CSV: {exc}", "danger")
-
-            def _reset_control_columns():
-                try:
-                    tree.configure(displaycolumns=columns)
-                    tree.column("data_hora", width=170)
-                    tree.column("nome", width=300)
-                    tree.column("bloco_ap", width=120)
-                    tree.column("placa", width=120)
-                    tree.column("status", width=190)
-                    _persist_ui_state({"control_column_order": list(columns), "control_column_visible": {c: True for c in columns}})
-                    _announce_feedback("Colunas resetadas", "info")
-                except Exception as exc:
-                    _announce_feedback(f"Falha ao resetar colunas: {exc}", "danger")
-
-            def _save_control_view():
-                try:
-                    _persist_ui_state({
-                        "control_view_snapshot": {
-                            "columns": list(tree["displaycolumns"]),
-                            "widths": {c: tree.column(c).get("width") for c in columns},
-                            "filters": dict(_filter_state.get("controle") or {}),
-                        }
-                    })
-                    _announce_feedback("Visão da tabela salva", "success")
-                except Exception as exc:
-                    _announce_feedback(f"Falha ao salvar visão: {exc}", "danger")
-
-            def _batch_set_status(new_status: str):
-                try:
-                    selected = list(tree.selection())
-                    for iid in selected:
-                        rec = _control_table_map.get(tree, {}).get(iid) or {}
-                        if isinstance(rec, dict):
-                            rec["STATUS"] = new_status
-                    _announce_feedback(f"Status em lote aplicado: {new_status}", "success")
-                    report_status("ux_metrics", "OK", stage="toolbar_batch_status", details={"status": new_status, "count": len(selected)})
-                    _populate_text(tree, info_label)
-                except Exception as exc:
-                    _announce_feedback(f"Falha em ação em lote: {exc}", "danger")
-
-            def _open_header_filter_menu(event=None):
-                try:
-                    reg = tree.identify_region(event.x, event.y) if event is not None else "heading"
-                    if reg != "heading":
-                        return
-                    col_id = tree.identify_column(event.x) if event is not None else ""
-                    if not col_id.startswith("#"):
-                        return
-                    idx = int(col_id.replace("#", "")) - 1
-                    if idx < 0 or idx >= len(columns):
-                        return
-                    key = columns[idx]
-                    menu = tk.Menu(tree, tearoff=0)
-                    source = _monitor_sources.get(tree, {})
-                    header_filters = dict(source.get("header_filters") or {})
-                    presets = []
-                    if key == "status":
-                        presets = ["SEM CONTATO", "AVISADO", "MORADOR", "VISITANTE"]
-                    elif key == "placa":
-                        presets = ["A", "B", "C"]
-                    else:
-                        presets = ["10", "11", "12"]
-                    for val in presets:
-                        menu.add_command(label=f"Filtrar {column_titles.get(key, key)}: {val}", command=lambda v=val, k=key: _apply_header_filter(k, v))
-                    menu.add_command(label="Limpar filtro desta coluna", command=lambda k=key: _apply_header_filter(k, ""))
-                    menu.add_command(label="Limpar todos filtros por coluna", command=lambda: _clear_header_filters())
-                    menu.tk_popup(event.x_root, event.y_root)
-                except Exception:
-                    return
-
-            def _apply_header_filter(key, value):
-                src = _monitor_sources.get(tree, {})
-                hf = dict(src.get("header_filters") or {})
-                if str(value).strip():
-                    hf[str(key)] = str(value)
-                else:
-                    hf.pop(str(key), None)
-                src["header_filters"] = hf
-                _monitor_sources[tree] = src
-                report_status("ux_metrics", "OK", stage="header_filter_apply", details={"column": key, "value": value})
-                _populate_text(tree, info_label)
-
-            def _clear_header_filters():
-                src = _monitor_sources.get(tree, {})
-                src["header_filters"] = {}
-                _monitor_sources[tree] = src
-                report_status("ux_metrics", "OK", stage="header_filter_clear", details={"source": "controle"})
-                _populate_text(tree, info_label)
-
-            tree.bind("<Button-3>", _open_header_filter_menu, add="+")
-
-            btn_top_export.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_export_csv", details={"source": "controle"}), _export_control_csv()))
-            btn_top_save_view.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_save_view", details={"source": "controle"}), _save_control_view()))
-            btn_top_toggle_filters.configure(command=lambda: _toggle_filters("global"))
-            if _control_filtered_count_var is not None:
-                def _sync_count(*_):
-                    try:
-                        txt = str(_control_filtered_count_var.get() or "")
-                        toolbar_count_var.set(txt.replace("Registros", "Itens"))
-                    except Exception:
-                        pass
-                _control_filtered_count_var.trace_add("write", _sync_count)
-                _sync_count()
-
-            try:
-                root_win.bind("<Alt-e>", lambda _e: (btn_top_export.invoke(), "break")[1], add="+")
-                root_win.bind("<Alt-v>", lambda _e: (btn_top_save_view.invoke(), "break")[1], add="+")
-            except Exception:
-                pass
-
-            def _on_resize(event, tw=tree):
-                total = max(event.width - 24, 300)
-                tw.column("data_hora", width=max(130, int(total * 0.20)))
-                tw.column("nome", width=max(240, int(total * 0.38)))
-                tw.column("bloco_ap", width=max(100, int(total * 0.12)))
-                tw.column("placa", width=max(100, int(total * 0.12)))
-                tw.column("status", width=max(140, int(total * 0.18)))
-                _persist_ui_state({"control_columns": {c: tw.column(c).get("width") for c in columns}})
-
-            table_wrap.bind("<Configure>", _on_resize, add="+")
-            filter_bar = _build_filter_bar(frame, "controle", info_label, target_widget=tree)
-            filter_bar._filter_target_widget = table_wrap
-            _filter_bars["controle"] = filter_bar
-            _apply_filter_visibility("controle")
-            _build_filter_banner_toggle(frame, "controle")
-            yscroll = ttk.Scrollbar(table_wrap, orient=tk.VERTICAL, command=tree.yview)
-            tree.configure(yscrollcommand=yscroll.set)
-            tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-            yscroll.pack(side=tk.RIGHT, fill=tk.Y)
-            details_var = tk.StringVar(value="Selecione um registro para ver detalhes.")
-            details = tk.Label(frame, textvariable=details_var, bg=UI_THEME["surface_alt"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), anchor="w", justify="left", padx=theme_space("space_3", 10), pady=theme_space("space_2", 8), font=theme_font("font_md"))
-            details.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_3", 10)))
-            _control_details_var[tree] = details_var
-            def _on_select(_e, tw=tree):
-                _update_control_details(tw, tw.selection())
-                report_status("ux_metrics", "OK", stage="control_row_selected", details={"selection_count": len(tw.selection())})
-            tree.bind("<<TreeviewSelect>>", _on_select, add="+")
-            bind_focus_ring(tree)
-            monitor_widgets.append(tree)
-            _monitor_sources[tree] = {"path": arquivo, "formatter": formatter, "view": "table", "filter_key": "controle", "sort_key": "controle", "widget": tree}
-            continue
+            _sync_count()
+            _control_filtered_count_var = tk.StringVar(value=toolbar_count_var.get())
+            _control_filtered_count_var.trace_add("write", lambda *_: _sync_count())
 
         text_widget = tk.Text(
             frame,
@@ -2908,12 +2764,12 @@ def _build_monitor_ui(container):
             autoseparators=True,
             maxundo=-1,
         )
-        filter_key = "encomendas" if formatter == format_encomenda_entry else ("orientacoes" if formatter == format_orientacao_entry else "observacoes")
         filter_bar = _build_filter_bar(frame, filter_key, info_label, target_widget=text_widget)
         filter_bar._filter_target_widget = text_widget
         _filter_bars[str(filter_key)] = filter_bar
         _apply_filter_visibility(str(filter_key))
         _build_filter_banner_toggle(frame, str(filter_key))
+
         if formatter == format_encomenda_entry:
             text_widget.tag_configure("status_avisado", foreground=UI_THEME["status_avisado_text"])
             text_widget.tag_configure("status_sem_contato", foreground=UI_THEME["status_sem_contato_text"])

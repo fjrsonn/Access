@@ -284,9 +284,8 @@ class InterfaceTwoTests(unittest.TestCase):
         import inspect
         source = inspect.getsource(interfacetwo._build_monitor_ui)
         self.assertIn('Focus mode', source)
-        self.assertIn('selectmode="extended"', source)
-        self.assertIn('def _open_header_filter_menu', source)
-        self.assertIn('toolbar_batch_status', source)
+        self.assertIn('format_creative_entry', source)
+        self.assertIn('"as_text": True', source)
         self.assertIn('Alt+E exportar', source)
 
     def test_treeview_column_menu_controls_present(self):
