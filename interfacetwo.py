@@ -1018,6 +1018,34 @@ def _set_control_details(details_var, rec):
     )
 
 
+def _restore_control_text_selection(text_widget, record_tag_map):
+    selected_record = _control_selection_state.get(text_widget)
+    if not selected_record:
+        return
+    selected_tag = None
+    selected_rec = None
+    for rec_tag, rec in (record_tag_map or {}).items():
+        rec_id = str((rec or {}).get("ID") or (rec or {}).get("_entrada_id") or "")
+        if rec_id and rec_id == selected_record:
+            selected_tag = rec_tag
+            selected_rec = rec
+            break
+    if not selected_tag:
+        return
+    try:
+        text_widget.config(state="normal")
+        text_widget.tag_remove("controle_selected", "1.0", tk.END)
+        ranges = text_widget.tag_ranges(selected_tag)
+        if ranges and len(ranges) >= 2:
+            text_widget.tag_add("controle_selected", ranges[0], ranges[1])
+        text_widget.config(state="disabled")
+    except Exception:
+        pass
+    details_var = _control_details_var.get(text_widget)
+    if details_var is not None:
+        _set_control_details(details_var, selected_rec)
+
+
 def _update_control_details(tree_widget, selection):
     details_var = _control_details_var.get(tree_widget)
     record_map = _control_table_map.get(tree_widget, {})
@@ -1158,6 +1186,7 @@ def _populate_text(text_widget, info_label):
     text_widget.tag_configure("row_odd", background=UI_THEME.get("surface_alt", "#1B2430"))
     for idx, r in enumerate(filtrados):
         is_clickable = formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry)
+        row_tag = "row_even" if idx % 2 == 0 else "row_odd"
         rec_tag = None
         if is_clickable:
             has_clickable_records = True
@@ -1167,18 +1196,18 @@ def _populate_text(text_widget, info_label):
         # Inserir já com a tag — isto garante que o tag cubra exatamente o texto
         try:
             if rec_tag and formatter in (format_orientacao_entry, format_observacao_entry):
-                text_widget.insert(tk.END, linha + "\n", (rec_tag, "row_even" if idx % 2 == 0 else "row_odd"))
+                text_widget.insert(tk.END, linha + "\n", (rec_tag, row_tag))
                 if idx < len(filtrados) - 1:
-                    text_widget.insert(tk.END, "─" * 80 + "\n\n")
+                    text_widget.insert(tk.END, "─" * 80 + "\n\n", (row_tag,))
                 else:
-                    text_widget.insert(tk.END, "\n")
+                    text_widget.insert(tk.END, "\n", (row_tag,))
             elif rec_tag:
-                text_widget.insert(tk.END, linha + "\n\n", (rec_tag, "row_even" if idx % 2 == 0 else "row_odd"))
+                text_widget.insert(tk.END, linha + "\n\n", (rec_tag, row_tag))
             else:
-                text_widget.insert(tk.END, linha + "\n\n", ("row_even" if idx % 2 == 0 else "row_odd",))
+                text_widget.insert(tk.END, linha + "\n\n", (row_tag,))
         except Exception:
             # fallback simples
-            text_widget.insert(tk.END, linha + "\n\n", ("row_even" if idx % 2 == 0 else "row_odd",))
+            text_widget.insert(tk.END, linha + "\n\n", (row_tag,))
 
         # calcular start/end com base nas ranges da tag (quando aplicável)
         if rec_tag:
@@ -1253,6 +1282,8 @@ def _populate_text(text_widget, info_label):
         _record_tag_map_generic[text_widget] = record_tag_map
     else:
         _record_tag_map_generic.pop(text_widget, None)
+    if formatter == format_creative_entry:
+        _restore_control_text_selection(text_widget, record_tag_map)
     _restore_hover_if_needed(text_widget, "hover_line")
 
 def _schedule_update(text_widgets, info_label):

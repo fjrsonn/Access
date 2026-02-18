@@ -295,6 +295,20 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('"controle_selected"', source)
         self.assertIn('Selecione um registro para ver detalhes.', source)
 
+    def test_control_text_mode_restores_persistent_selection_and_details(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._populate_text)
+        self.assertIn('_restore_control_text_selection(text_widget, record_tag_map)', source)
+        helper_source = inspect.getsource(interfacetwo._restore_control_text_selection)
+        self.assertIn('text_widget.tag_add("controle_selected"', helper_source)
+        self.assertIn('_set_control_details(details_var, selected_rec)', helper_source)
+
+    def test_textual_rows_keep_zebra_tags_even_on_separators(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._populate_text)
+        self.assertIn('row_tag = "row_even" if idx % 2 == 0 else "row_odd"', source)
+        self.assertIn('text_widget.insert(tk.END, "─" * 80 + "\\n\\n", (row_tag,))', source)
+
     def test_hover_supports_full_record_tag_highlight(self):
         import inspect
         source = inspect.getsource(interfacetwo._bind_hover_highlight)
