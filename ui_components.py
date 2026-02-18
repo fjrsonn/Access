@@ -8,7 +8,7 @@ except Exception:  # pragma: no cover
     tk = None
     ttk = None
 
-from ui_theme import UI_THEME, theme_font, theme_space, build_card_frame, build_label
+from ui_theme import UI_THEME, theme_font, theme_space, build_card_frame, build_label, state_colors, normalize_tone
 
 
 def build_section_title(parent, text: str):
@@ -40,8 +40,7 @@ class AppFeedbackBanner(tk.Frame):
 
     def show(self, text: str, tone: str = "info", icon: str = "ℹ", timeout_ms: int = 2200):
         self.var.set(f"{icon} {text}".strip())
-        bg = UI_THEME.get(tone, UI_THEME.get("surface_alt", "#1B2430"))
-        fg = UI_THEME.get(f"on_{tone}", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+        bg, fg = state_colors(tone)
         self.configure(bg=bg)
         self.lbl.configure(bg=bg, fg=fg)
         try:
@@ -78,27 +77,62 @@ class AppStatusBar(tk.Frame):
 
     def set(self, text: str, tone: str = "info"):
         self.var.set(text)
-        bg = UI_THEME.get(tone, UI_THEME.get("surface_alt", "#1B2430"))
-        fg = UI_THEME.get(f"on_{tone}", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+        bg, fg = state_colors(tone)
         self.configure(bg=bg)
         self.lbl.configure(bg=bg, fg=fg)
 
 
 class AppMetricCard(tk.Frame):
-    def __init__(self, parent, title: str, value: str = "0", tone: str = "info"):
+    def __init__(self, parent, title: str, value: str = "0", tone: str = "info", icon: str = "●"):
         super().__init__(parent, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"))
-        self.title_var = tk.StringVar(value=title)
+        self._tone = tone
+        self._title = title
+        self._icon = icon
+        self._flash_after = None
+        self.title_var = tk.StringVar(value=f"{icon} {title}")
         self.value_var = tk.StringVar(value=value)
         self.meta_var = tk.StringVar(value="Atualizado agora")
         self.trend_var = tk.StringVar(value="→ estável")
-        self.title_lbl = tk.Label(self, textvariable=self.title_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm"))
-        self.value_lbl = tk.Label(self, textvariable=self.value_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get(f"on_{tone}", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))), font=theme_font("font_xl", "bold"))
-        self.trend_lbl = tk.Label(self, textvariable=self.trend_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm"))
-        self.meta_lbl = tk.Label(self, textvariable=self.meta_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm"))
-        self.title_lbl.pack(anchor="w", padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
-        self.value_lbl.pack(anchor="w", padx=theme_space("space_2", 8), pady=(0, 0))
-        self.trend_lbl.pack(anchor="w", padx=theme_space("space_2", 8), pady=(0, 0))
-        self.meta_lbl.pack(anchor="w", padx=theme_space("space_2", 8), pady=(0, theme_space("space_2", 8)))
+        self.accent = tk.Frame(self, bg=UI_THEME.get(tone, UI_THEME.get("primary", "#2F81F7")), width=4)
+        self.accent.pack(side=tk.LEFT, fill=tk.Y)
+        self.body = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"))
+        self.body.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.title_lbl = tk.Label(self.body, textvariable=self.title_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
+        self.value_lbl = tk.Label(self.body, textvariable=self.value_var, bg=UI_THEME.get("surface", "#151A22"), fg=state_colors(tone)[0], font=theme_font("font_xl", "bold"))
+        self.trend_lbl = tk.Label(self.body, textvariable=self.trend_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
+        self.meta_lbl = tk.Label(self.body, textvariable=self.meta_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
+        self._apply_density("confortavel")
+
+    def _apply_density(self, mode: str = "confortavel"):
+        compact = str(mode).lower().startswith("compact")
+        px = theme_space("space_1", 4) if compact else theme_space("space_2", 8)
+        py_top = theme_space("space_1", 4)
+        py_bottom = theme_space("space_1", 4) if compact else theme_space("space_2", 8)
+        self.title_lbl.pack(anchor="w", padx=px, pady=(py_top, 0))
+        self.value_lbl.pack(anchor="w", padx=px, pady=(0, 0))
+        self.trend_lbl.pack(anchor="w", padx=px, pady=(0, 0))
+        self.meta_lbl.pack(anchor="w", padx=px, pady=(0, py_bottom))
+
+    def set_density(self, mode: str = "confortavel"):
+        try:
+            self._apply_density(mode)
+        except Exception:
+            pass
+
+    def set_title(self, title: str, icon: str | None = None):
+        if icon is not None:
+            self._icon = icon
+        self._title = str(title)
+        self.title_var.set(f"{self._icon} {self._title}".strip())
+
+    def flash(self, duration_ms: int = 280):
+        try:
+            self.configure(highlightbackground=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")), highlightthickness=2)
+            if self._flash_after:
+                self.after_cancel(self._flash_after)
+            self._flash_after = self.after(duration_ms, lambda: self.configure(highlightbackground=UI_THEME.get("border", "#2B3442"), highlightthickness=1))
+        except Exception:
+            pass
 
     def set_value(self, value: str):
         self.value_var.set(str(value))
