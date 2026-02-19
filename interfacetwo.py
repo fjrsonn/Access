@@ -1274,6 +1274,14 @@ def _populate_text(text_widget, info_label):
                 text_widget.tag_bind(num_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_line_number_click(tw, rec, tag, pos))
             except Exception:
                 pass
+            try:
+                prefix = f"{marker} {idx + 1:>3} │"
+                num_tag = f"line_number_{idx}"
+                text_widget.tag_add(num_tag, start, f"{start} + {len(prefix)}c")
+                text_widget.tag_add("line_number", start, f"{start} + {len(prefix)}c")
+                text_widget.tag_bind(num_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_line_number_click(tw, rec, tag, pos))
+            except Exception:
+                pass
         else:
             # para registros não-encomenda, só guardar ranges genéricos
             try:
