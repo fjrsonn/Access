@@ -3086,6 +3086,20 @@ def _build_monitor_ui(container):
         records_top_line = tk.Frame(frame, bg="#000000", height=2)
         records_top_line.pack(fill=tk.X, padx=0, pady=(0, 0))
 
+        sticky_var = tk.StringVar(value="Sem registros visíveis")
+        sticky_label = build_label(
+            frame,
+            "",
+            muted=False,
+            bg=UI_THEME["surface"],
+            font=theme_font("font_md")
+        )
+        sticky_label.configure(textvariable=sticky_var, anchor="w", justify="left", padx=0)
+        sticky_label.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
+
+        records_top_line = tk.Frame(frame, bg="#000000", height=2)
+        records_top_line.pack(fill=tk.X, padx=0, pady=(0, 0))
+
         text_widget = tk.Text(
             frame,
             wrap="word",
