@@ -118,15 +118,14 @@ class AppMetricCard(tk.Frame):
             h = max(8, int(self.bottom_curve.winfo_height()))
             card_bg = UI_THEME.get("surface", "#151A22")
             cutout_bg = UI_THEME.get("bg", "#0D1117")
-            border = "#000000"
             self.bottom_curve.configure(bg=card_bg)
             self.bottom_curve.delete("all")
 
             # base reta do retângulo
             self.bottom_curve.create_rectangle(0, 0, w, h, fill=card_bg, outline="")
 
-            # círculo em cor de fundo: apenas metade visível na base, sem tocar no retângulo
-            gap_top = 3
+            # círculo de fundo com metade visível no final do retângulo, sem encostar nele
+            gap_top = 4
             radius = max(9, min(w // 8, (h - gap_top) // 2))
             cx = w // 2
             cy = gap_top
@@ -135,8 +134,8 @@ class AppMetricCard(tk.Frame):
                 cy - radius,
                 cx + radius,
                 cy + radius,
-                outline=border,
-                width=2,
+                outline="",
+                width=0,
                 fill=cutout_bg,
             )
         except Exception:
