@@ -2799,8 +2799,6 @@ def _build_monitor_ui(container):
     tab_button_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
 
     notebook = ttk.Notebook(container, style="Monitor.Tabless.TNotebook")
-    notebook_shadow = tk.Frame(container, bg="#000000", height=2)
-    notebook_shadow.pack(fill=tk.X, padx=theme_space("space_1", 4), pady=(0, 0))
     notebook.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_3", 10)), fill=tk.BOTH, expand=True)
     notebook.configure(padding=0)
 
@@ -2827,7 +2825,7 @@ def _build_monitor_ui(container):
             btn_tab.configure(highlightbackground=UI_THEME.get("on_surface", UI_THEME["text"]), highlightcolor=UI_THEME.get("on_surface", UI_THEME["text"]), highlightthickness=1)
         except Exception:
             pass
-        btn_tab.pack(side=tk.LEFT, padx=(0, theme_space("space_2", 8)), pady=(0, 0))
+        btn_tab.pack(side=tk.LEFT, padx=(0, 0), pady=(0, 0))
         tab_buttons.append(btn_tab)
 
     try:
@@ -2949,7 +2947,7 @@ def _build_monitor_ui(container):
 
     for frame, arquivo, formatter, filter_key in tab_configs:
         tab_depth_hard = tk.Frame(frame, bg="#000000", height=2)
-        tab_depth_hard.pack(fill=tk.X, padx=theme_space("space_1", 4), pady=(0, theme_space("space_1", 4)))
+        tab_depth_hard.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
         if filter_key == "controle":
             toolbar = tk.Frame(frame, bg=UI_THEME["surface"])
             toolbar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)) )
