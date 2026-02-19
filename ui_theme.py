@@ -61,40 +61,39 @@ UI_THEME = {
 }
 
 THEME_PRESETS = {
-    "escuro": dict(UI_THEME),
-    "claro": {
-        "bg": "#F3F4F6",
-        "surface": "#FFFFFF",
-        "surface_alt": "#E5E7EB",
-        "border": "#D1D5DB",
-        "text": "#111827",
-        "muted_text": "#6B7280",
-        "primary": "#2563EB",
-        "primary_active": "#1D4ED8",
+    "principal": {
+        "bg": "#1E1E1E",
+        "surface": "#252526",
+        "surface_alt": "#2D2D2D",
+        "border": "#3C3C3C",
+        "text": "#D4D4D4",
+        "muted_text": "#A6A6A6",
+        "primary": "#0E639C",
+        "primary_active": "#1177BB",
         "on_primary": "#FFFFFF",
-        "on_surface": "#111827",
-        "success": "#15803D",
+        "on_surface": "#D4D4D4",
+        "success": "#16825D",
         "on_success": "#FFFFFF",
-        "danger": "#B91C1C",
-        "on_danger": "#FFFFFF",
-        "warning": "#B45309",
-        "on_warning": "#FFFFFF",
-        "focus_bg": "#DBEAFE",
-        "focus_text": "#111827",
-        "edit_badge_bg": "#FEF3C7",
-        "edit_badge_text": "#111827",
-        "status_avisado_text": "#166534",
-        "status_sem_contato_text": "#B91C1C",
-        "editor_bg": "#FFFFFF",
-        "editor_text": "#111827",
-        "editor_insert": "#111827",
-        "overlay_text": "#6B7280",
-        "banner_success_bg": "#15803D",
+        "danger": "#F14C4C",
+        "on_danger": "#000000",
+        "warning": "#CCA700",
+        "on_warning": "#000000",
+        "focus_bg": "#094771",
+        "focus_text": "#FFFFFF",
+        "edit_badge_bg": "#CCA700",
+        "edit_badge_text": "#000000",
+        "status_avisado_text": "#89D185",
+        "status_sem_contato_text": "#F48771",
+        "editor_bg": "#1E1E1E",
+        "editor_text": "#D4D4D4",
+        "editor_insert": "#AEAFAD",
+        "overlay_text": "#8C8C8C",
+        "banner_success_bg": "#16825D",
         "banner_success_text": "#FFFFFF",
-        "banner_error_bg": "#B91C1C",
-        "banner_error_text": "#FFFFFF",
-        "light_bg": "#F5F7FA",
-        "light_border": "#D1D5DB",
+        "banner_error_bg": "#F14C4C",
+        "banner_error_text": "#000000",
+        "light_bg": "#1E1E1E",
+        "light_border": "#3C3C3C",
         "font_family": "Segoe UI",
         "font_sm": 9,
         "font_md": 10,
@@ -108,46 +107,47 @@ THEME_PRESETS = {
         "space_4": 16,
         "space_5": 20,
         "space_6": 24,
-        "disabled_bg": "#E5E7EB",
-        "disabled_fg": "#6B7280",
-        "info": "#2563EB",
-        "on_info": "#FFFFFF",
-        "selection_bg": "#2563EB",
+        "disabled_bg": "#3C3C3C",
+        "disabled_fg": "#A6A6A6",
+        "info": "#3794FF",
+        "on_info": "#000000",
+        "selection_bg": "#094771",
         "selection_fg": "#FFFFFF",
     },
-    "alto_contraste": {
-        "bg": "#000000",
-        "surface": "#000000",
-        "surface_alt": "#111111",
-        "border": "#FFFFFF",
-        "text": "#FFFFFF",
-        "muted_text": "#E5E7EB",
-        "primary": "#00A3FF",
-        "primary_active": "#0077CC",
-        "on_primary": "#000000",
-        "on_surface": "#FFFFFF",
-        "success": "#00FF7F",
-        "on_success": "#000000",
-        "danger": "#FF4D4D",
+    # Alias de compatibilidade para ambientes ainda com testes legados.
+    "vscode": {
+        "bg": "#1E1E1E",
+        "surface": "#252526",
+        "surface_alt": "#2D2D2D",
+        "border": "#3C3C3C",
+        "text": "#D4D4D4",
+        "muted_text": "#A6A6A6",
+        "primary": "#0E639C",
+        "primary_active": "#1177BB",
+        "on_primary": "#FFFFFF",
+        "on_surface": "#D4D4D4",
+        "success": "#16825D",
+        "on_success": "#FFFFFF",
+        "danger": "#F14C4C",
         "on_danger": "#000000",
-        "warning": "#FFD700",
+        "warning": "#CCA700",
         "on_warning": "#000000",
-        "focus_bg": "#FFFFFF",
-        "focus_text": "#000000",
-        "edit_badge_bg": "#FFD700",
+        "focus_bg": "#094771",
+        "focus_text": "#FFFFFF",
+        "edit_badge_bg": "#CCA700",
         "edit_badge_text": "#000000",
-        "status_avisado_text": "#00FF7F",
-        "status_sem_contato_text": "#FF4D4D",
-        "editor_bg": "#000000",
-        "editor_text": "#FFFFFF",
-        "editor_insert": "#FFFFFF",
-        "overlay_text": "#E5E7EB",
-        "banner_success_bg": "#00FF7F",
-        "banner_success_text": "#000000",
-        "banner_error_bg": "#FF4D4D",
+        "status_avisado_text": "#89D185",
+        "status_sem_contato_text": "#F48771",
+        "editor_bg": "#1E1E1E",
+        "editor_text": "#D4D4D4",
+        "editor_insert": "#AEAFAD",
+        "overlay_text": "#8C8C8C",
+        "banner_success_bg": "#16825D",
+        "banner_success_text": "#FFFFFF",
+        "banner_error_bg": "#F14C4C",
         "banner_error_text": "#000000",
-        "light_bg": "#000000",
-        "light_border": "#FFFFFF",
+        "light_bg": "#1E1E1E",
+        "light_border": "#3C3C3C",
         "font_family": "Segoe UI",
         "font_sm": 9,
         "font_md": 10,
@@ -161,16 +161,16 @@ THEME_PRESETS = {
         "space_4": 16,
         "space_5": 20,
         "space_6": 24,
-        "disabled_bg": "#111111",
-        "disabled_fg": "#E5E7EB",
-        "info": "#00A3FF",
+        "disabled_bg": "#3C3C3C",
+        "disabled_fg": "#A6A6A6",
+        "info": "#3794FF",
         "on_info": "#000000",
-        "selection_bg": "#00A3FF",
-        "selection_fg": "#000000",
+        "selection_bg": "#094771",
+        "selection_fg": "#FFFFFF",
     },
 }
 
-_ACTIVE_THEME = "escuro"
+_ACTIVE_THEME = "principal"
 _ACTIVE_TYPOGRAPHY = "padrao"
 
 TYPOGRAPHY_PRESETS = {
@@ -181,7 +181,7 @@ TYPOGRAPHY_PRESETS = {
 
 
 def available_theme_names():
-    return list(THEME_PRESETS.keys())
+    return ["principal"]
 
 
 def get_active_theme_name():
@@ -199,8 +199,10 @@ def get_active_typography_name():
 def apply_theme(name: str):
     global _ACTIVE_THEME
     key = (name or "").strip().lower()
+    if key == "vscode":
+        key = "principal"
     if key not in THEME_PRESETS:
-        key = "escuro"
+        key = "principal"
     UI_THEME.clear()
     UI_THEME.update(THEME_PRESETS[key])
     _ACTIVE_THEME = key
