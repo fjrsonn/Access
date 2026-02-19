@@ -2856,7 +2856,6 @@ def _build_monitor_ui(container):
     btn_eye.configure(command=_toggle_top_controls)
 
     _status_bar = AppStatusBar(container, text="UX: aguardando eventos")
-    _status_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
     global _feedback_banner
     _feedback_banner = AppFeedbackBanner(container, text="")
 
@@ -2892,6 +2891,7 @@ def _build_monitor_ui(container):
     tab_border_color = UI_THEME.get("border", UI_THEME.get("on_surface", UI_THEME["text"]))
     tab_button_normal_bg = UI_THEME.get("bg", UI_THEME["surface"])
     tab_button_selected_bg = UI_THEME.get("surface", UI_THEME["bg"])
+    tab_button_hover_bg = UI_THEME.get("border", tab_button_normal_bg)
     for idx, label in enumerate(["CONTROLE", "ENCOMENDAS", "ORIENTAÇÕES", "OBSERVAÇÕES"]):
         btn_frame = tk.Frame(tab_button_bar, bg=tab_border_color)
         btn_tab = build_secondary_button(btn_frame, label, lambda i=idx: _select_tab(i), padx=12)
@@ -2910,8 +2910,14 @@ def _build_monitor_ui(container):
         except Exception:
             pass
         try:
-            btn_tab.unbind("<Enter>")
-            btn_tab.unbind("<Leave>")
+            def _on_tab_enter(_e, b=btn_tab):
+                b.configure(bg=tab_button_hover_bg, activebackground=tab_button_hover_bg)
+
+            def _on_tab_leave(_e):
+                _refresh_tab_button_state()
+
+            btn_tab.bind("<Enter>", _on_tab_enter, add="+")
+            btn_tab.bind("<Leave>", _on_tab_leave, add="+")
         except Exception:
             pass
         btn_tab.pack(fill=tk.BOTH, expand=True, padx=1, pady=(1, 0))
