@@ -2796,7 +2796,10 @@ def _build_monitor_ui(container):
     _feedback_banner = AppFeedbackBanner(container, text="")
 
     tab_button_bar = tk.Frame(container, bg=UI_THEME["bg"])
-    tab_button_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
+    tab_button_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
+
+    tabs_separator = tk.Frame(container, bg="#000000", height=1)
+    tabs_separator.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
 
     notebook = ttk.Notebook(container, style="Monitor.Tabless.TNotebook")
     notebook.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_3", 10)), fill=tk.BOTH, expand=True)
@@ -2822,7 +2825,13 @@ def _build_monitor_ui(container):
     for idx, label in enumerate(["CONTROLE", "ENCOMENDAS", "ORIENTAÇÕES", "OBSERVAÇÕES"]):
         btn_tab = build_secondary_button(tab_button_bar, label, lambda i=idx: _select_tab(i))
         try:
-            btn_tab.configure(highlightbackground=UI_THEME.get("on_surface", UI_THEME["text"]), highlightcolor=UI_THEME.get("on_surface", UI_THEME["text"]), highlightthickness=1)
+            btn_tab.configure(
+                highlightbackground=UI_THEME.get("on_surface", UI_THEME["text"]),
+                highlightcolor=UI_THEME.get("on_surface", UI_THEME["text"]),
+                highlightthickness=1,
+                bd=1,
+                relief="solid",
+            )
         except Exception:
             pass
         btn_tab.pack(side=tk.LEFT, padx=(0, 0), pady=(0, 0))
