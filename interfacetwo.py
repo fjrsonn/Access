@@ -2586,8 +2586,13 @@ def _build_monitor_ui(container):
     btn_top_reload.pack(side=tk.LEFT, padx=(6, 0))
     btn_top_clear = build_secondary_danger_button(theme_bar, "🧹 Limpar", lambda: None)
     btn_top_clear.pack(side=tk.LEFT, padx=(6, 0))
-    btn_top_toggle_filters = build_secondary_button(theme_bar, "🧰 ⌃ Mostrar filtros", lambda: None)
+    btn_top_toggle_filters = build_secondary_button(theme_bar, "🧰 Mostrar filtros", lambda: None)
     btn_top_toggle_filters.pack(side=tk.LEFT, padx=(6, 0))
+    for _btn in (btn_top_theme, btn_top_details, btn_top_export, btn_top_save_view, btn_top_reload, btn_top_clear, btn_top_toggle_filters):
+        try:
+            _btn.configure(font=theme_font("font_lg", "bold"), anchor="center", justify="center")
+        except Exception:
+            pass
     op_mode_defaults = bool((_load_prefs().get("operation_mode") or False))
     op_mode_var = tk.BooleanVar(value=op_mode_defaults)
     op_mode_chk = tk.Checkbutton(theme_bar, text="Modo Operação", variable=op_mode_var, bg=UI_THEME["bg"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), selectcolor=UI_THEME["surface"], activebackground=UI_THEME["bg"])
@@ -2789,7 +2794,7 @@ def _build_monitor_ui(container):
     _feedback_banner = AppFeedbackBanner(container, text="")
 
     notebook = ttk.Notebook(container, style="Dark.TNotebook")
-    notebook_shadow = tk.Frame(container, bg=UI_THEME.get("border", "#3C3C3C"), height=1)
+    notebook_shadow = tk.Frame(container, bg="#000000", height=1)
     notebook_shadow.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
     notebook.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), theme_space("space_3", 10)), fill=tk.BOTH, expand=True)
 
@@ -2842,7 +2847,7 @@ def _build_monitor_ui(container):
 
     def _sync_filter_toggle_labels():
         visible = _filter_toggle_state.get("visible", False)
-        label = "🧰 ⌄ Ocultar filtros" if visible else "🧰 ⌃ Mostrar filtros"
+        label = "🧰 Ocultar filtros" if visible else "🧰 Mostrar filtros"
         for btn in [btn_top_toggle_filters]:
             try:
                 btn.configure(text=label)

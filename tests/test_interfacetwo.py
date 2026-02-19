@@ -276,8 +276,8 @@ class InterfaceTwoTests(unittest.TestCase):
         import inspect
         source = inspect.getsource(interfacetwo._build_monitor_ui)
         self.assertNotIn('def _build_filter_banner_toggle', source)
-        self.assertIn('⌄ Ocultar filtros', source)
-        self.assertIn('🧰 ⌃ Mostrar filtros', source)
+        self.assertIn('🧰 Ocultar filtros', source)
+        self.assertIn('🧰 Mostrar filtros', source)
         self.assertNotIn('_build_filter_banner_toggle(frame, str(filter_key))', source)
 
     def test_monitor_ui_moves_reload_and_clear_to_top_toolbar(self):
