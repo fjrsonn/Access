@@ -2926,6 +2926,10 @@ def _build_monitor_ui(container):
         pass
 
     for frame, arquivo, formatter, filter_key in tab_configs:
+        tab_depth_hard = tk.Frame(frame, bg=UI_THEME.get("border", "#3C3C3C"), height=1)
+        tab_depth_hard.pack(fill=tk.X, padx=0, pady=(0, 0))
+        tab_depth_soft = tk.Frame(frame, bg=UI_THEME.get("surface", "#252526"), height=1)
+        tab_depth_soft.pack(fill=tk.X, padx=0, pady=(0, theme_space("space_1", 4)))
         if filter_key == "controle":
             toolbar = tk.Frame(frame, bg=UI_THEME["surface"])
             toolbar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)) )
