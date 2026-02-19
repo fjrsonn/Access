@@ -2527,7 +2527,7 @@ def _build_monitor_ui(container):
         pass
     style.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME.get("bg", "#1E1E1E"), lightcolor=UI_THEME.get("bg", "#1E1E1E"), darkcolor=UI_THEME.get("bg", "#1E1E1E"))
     style.layout("Monitor.Tabless.TNotebook.Tab", [])
-    style.configure("Monitor.Tabless.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0)
+    style.configure("Monitor.Tabless.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME["bg"], lightcolor=UI_THEME["bg"], darkcolor=UI_THEME["bg"])
     style.configure(
         "Dark.TNotebook.Tab",
         background=UI_THEME.get("surface_alt", UI_THEME["surface"]),
@@ -2613,7 +2613,7 @@ def _build_monitor_ui(container):
             style_local = ttk.Style(container)
             style_local.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME.get("bg", "#1E1E1E"), lightcolor=UI_THEME.get("bg", "#1E1E1E"), darkcolor=UI_THEME.get("bg", "#1E1E1E"))
             style_local.layout("Monitor.Tabless.TNotebook.Tab", [])
-            style_local.configure("Monitor.Tabless.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0)
+            style_local.configure("Monitor.Tabless.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME["bg"], lightcolor=UI_THEME["bg"], darkcolor=UI_THEME["bg"])
             style_local.configure("Dark.TNotebook.Tab", background=UI_THEME.get("surface_alt", UI_THEME["surface"]), foreground=UI_THEME.get("on_surface", UI_THEME["text"]), padding=(12, 4), relief="flat", borderwidth=1, highlightthickness=1, bordercolor=UI_THEME.get("border", UI_THEME["surface_alt"]), focuscolor=UI_THEME.get("surface_alt", UI_THEME["surface"]))
             style_local.map(
                 "Dark.TNotebook.Tab",
@@ -2799,9 +2799,10 @@ def _build_monitor_ui(container):
     tab_button_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
 
     notebook = ttk.Notebook(container, style="Monitor.Tabless.TNotebook")
-    notebook_shadow = tk.Frame(container, bg="#000000", height=1)
-    notebook_shadow.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
-    notebook.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), theme_space("space_3", 10)), fill=tk.BOTH, expand=True)
+    notebook_shadow = tk.Frame(container, bg="#000000", height=2)
+    notebook_shadow.pack(fill=tk.X, padx=theme_space("space_1", 4), pady=(0, 0))
+    notebook.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_3", 10)), fill=tk.BOTH, expand=True)
+    notebook.configure(padding=0)
 
     controle_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
     encomendas_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
@@ -2822,6 +2823,10 @@ def _build_monitor_ui(container):
     tab_buttons = []
     for idx, label in enumerate(["CONTROLE", "ENCOMENDAS", "ORIENTAÇÕES", "OBSERVAÇÕES"]):
         btn_tab = build_secondary_button(tab_button_bar, label, lambda i=idx: _select_tab(i))
+        try:
+            btn_tab.configure(highlightbackground=UI_THEME.get("on_surface", UI_THEME["text"]), highlightcolor=UI_THEME.get("on_surface", UI_THEME["text"]), highlightthickness=1)
+        except Exception:
+            pass
         btn_tab.pack(side=tk.LEFT, padx=(0, theme_space("space_2", 8)), pady=(0, 0))
         tab_buttons.append(btn_tab)
 
@@ -2943,10 +2948,8 @@ def _build_monitor_ui(container):
         pass
 
     for frame, arquivo, formatter, filter_key in tab_configs:
-        tab_depth_hard = tk.Frame(frame, bg="#000000", height=1)
-        tab_depth_hard.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(0, 0))
-        tab_depth_soft = tk.Frame(frame, bg="#000000", height=1)
-        tab_depth_soft.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(0, theme_space("space_1", 4)))
+        tab_depth_hard = tk.Frame(frame, bg="#000000", height=2)
+        tab_depth_hard.pack(fill=tk.X, padx=theme_space("space_1", 4), pady=(0, theme_space("space_1", 4)))
         if filter_key == "controle":
             toolbar = tk.Frame(frame, bg=UI_THEME["surface"])
             toolbar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)) )
