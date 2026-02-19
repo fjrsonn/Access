@@ -2592,7 +2592,7 @@ def _build_monitor_ui(container):
         pass
     style.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME.get("bg", "#1E1E1E"), lightcolor=UI_THEME.get("bg", "#1E1E1E"), darkcolor=UI_THEME.get("bg", "#1E1E1E"))
     style.layout("Monitor.Tabless.TNotebook.Tab", [])
-    style.configure("Monitor.Tabless.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME["bg"], lightcolor=UI_THEME["bg"], darkcolor=UI_THEME["bg"])
+    style.configure("Monitor.Tabless.TNotebook", background=UI_THEME["surface"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME["surface"], lightcolor=UI_THEME["surface"], darkcolor=UI_THEME["surface"])
     style.configure(
         "Dark.TNotebook.Tab",
         background=UI_THEME.get("surface_alt", UI_THEME["surface"]),
@@ -2678,7 +2678,7 @@ def _build_monitor_ui(container):
             style_local = ttk.Style(container)
             style_local.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME.get("bg", "#1E1E1E"), lightcolor=UI_THEME.get("bg", "#1E1E1E"), darkcolor=UI_THEME.get("bg", "#1E1E1E"))
             style_local.layout("Monitor.Tabless.TNotebook.Tab", [])
-            style_local.configure("Monitor.Tabless.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME["bg"], lightcolor=UI_THEME["bg"], darkcolor=UI_THEME["bg"])
+            style_local.configure("Monitor.Tabless.TNotebook", background=UI_THEME["surface"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME["surface"], lightcolor=UI_THEME["surface"], darkcolor=UI_THEME["surface"])
             style_local.configure("Dark.TNotebook.Tab", background=UI_THEME.get("surface_alt", UI_THEME["surface"]), foreground=UI_THEME.get("on_surface", UI_THEME["text"]), padding=(12, 4), relief="flat", borderwidth=1, highlightthickness=1, bordercolor=UI_THEME.get("border", UI_THEME["surface_alt"]), focuscolor=UI_THEME.get("surface_alt", UI_THEME["surface"]))
             style_local.map(
                 "Dark.TNotebook.Tab",
@@ -2860,11 +2860,14 @@ def _build_monitor_ui(container):
     global _feedback_banner
     _feedback_banner = AppFeedbackBanner(container, text="")
 
-    tab_button_bar = tk.Frame(container, bg=UI_THEME["bg"])
-    tab_button_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
+    records_panel = tk.Frame(container, bg=UI_THEME["surface"])
+    records_panel.pack(fill=tk.BOTH, expand=True, padx=theme_space("space_3", 10), pady=(0, theme_space("space_3", 10)))
 
-    notebook = ttk.Notebook(container, style="Monitor.Tabless.TNotebook")
-    notebook.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_3", 10)), fill=tk.BOTH, expand=True)
+    tab_button_bar = tk.Frame(records_panel, bg=UI_THEME["surface"])
+    tab_button_bar.pack(fill=tk.X, padx=0, pady=(0, 0))
+
+    notebook = ttk.Notebook(records_panel, style="Monitor.Tabless.TNotebook")
+    notebook.pack(padx=0, pady=(0, 0), fill=tk.BOTH, expand=True)
     notebook.configure(padding=0)
 
     controle_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
