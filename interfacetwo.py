@@ -1485,7 +1485,7 @@ def _snapshot_current_filter(filter_key):
 def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
     target_widget = target_widget or filter_key
     bar = build_card_frame(parent)
-    bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_3", 10), theme_space("space_2", 6)))
+    bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 6)))
 
     top_row = tk.Frame(bar, bg=UI_THEME["surface"])
     top_row.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_2", 8), theme_space("space_1", 4)))
@@ -2592,7 +2592,7 @@ def _build_monitor_ui(container):
         pass
     style.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME.get("bg", "#1E1E1E"), lightcolor=UI_THEME.get("bg", "#1E1E1E"), darkcolor=UI_THEME.get("bg", "#1E1E1E"))
     style.layout("Monitor.Tabless.TNotebook.Tab", [])
-    style.configure("Monitor.Tabless.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME["bg"], lightcolor=UI_THEME["bg"], darkcolor=UI_THEME["bg"])
+    style.configure("Monitor.Tabless.TNotebook", background=UI_THEME["surface"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME["surface"], lightcolor=UI_THEME["surface"], darkcolor=UI_THEME["surface"])
     style.configure(
         "Dark.TNotebook.Tab",
         background=UI_THEME.get("surface_alt", UI_THEME["surface"]),
@@ -2678,7 +2678,7 @@ def _build_monitor_ui(container):
             style_local = ttk.Style(container)
             style_local.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME.get("bg", "#1E1E1E"), lightcolor=UI_THEME.get("bg", "#1E1E1E"), darkcolor=UI_THEME.get("bg", "#1E1E1E"))
             style_local.layout("Monitor.Tabless.TNotebook.Tab", [])
-            style_local.configure("Monitor.Tabless.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME["bg"], lightcolor=UI_THEME["bg"], darkcolor=UI_THEME["bg"])
+            style_local.configure("Monitor.Tabless.TNotebook", background=UI_THEME["surface"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME["surface"], lightcolor=UI_THEME["surface"], darkcolor=UI_THEME["surface"])
             style_local.configure("Dark.TNotebook.Tab", background=UI_THEME.get("surface_alt", UI_THEME["surface"]), foreground=UI_THEME.get("on_surface", UI_THEME["text"]), padding=(12, 4), relief="flat", borderwidth=1, highlightthickness=1, bordercolor=UI_THEME.get("border", UI_THEME["surface_alt"]), focuscolor=UI_THEME.get("surface_alt", UI_THEME["surface"]))
             style_local.map(
                 "Dark.TNotebook.Tab",
@@ -2856,15 +2856,17 @@ def _build_monitor_ui(container):
     btn_eye.configure(command=_toggle_top_controls)
 
     _status_bar = AppStatusBar(container, text="UX: aguardando eventos")
-    _status_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
     global _feedback_banner
     _feedback_banner = AppFeedbackBanner(container, text="")
 
-    tab_button_bar = tk.Frame(container, bg=UI_THEME["bg"])
-    tab_button_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
+    records_panel = tk.Frame(container, bg=UI_THEME["surface"])
+    records_panel.pack(fill=tk.BOTH, expand=True, padx=theme_space("space_3", 10), pady=(0, theme_space("space_3", 10)))
 
-    notebook = ttk.Notebook(container, style="Monitor.Tabless.TNotebook")
-    notebook.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_3", 10)), fill=tk.BOTH, expand=True)
+    tab_button_bar = tk.Frame(records_panel, bg=UI_THEME["surface"])
+    tab_button_bar.pack(fill=tk.X, padx=0, pady=(0, 0))
+
+    notebook = ttk.Notebook(records_panel, style="Monitor.Tabless.TNotebook")
+    notebook.pack(padx=0, pady=(0, 0), fill=tk.BOTH, expand=True)
     notebook.configure(padding=0)
 
     controle_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
@@ -2884,13 +2886,21 @@ def _build_monitor_ui(container):
             pass
 
     tab_buttons = []
+    tab_button_frames = []
     tab_button_bottom_borders = []
-    tab_border_color = UI_THEME.get("on_surface", UI_THEME["text"])
+    tab_border_color = UI_THEME.get("border", UI_THEME.get("on_surface", UI_THEME["text"]))
+    tab_button_normal_bg = UI_THEME.get("bg", UI_THEME["surface"])
+    tab_button_selected_bg = UI_THEME.get("surface", UI_THEME["bg"])
+    tab_button_hover_bg = UI_THEME.get("border", tab_button_normal_bg)
     for idx, label in enumerate(["CONTROLE", "ENCOMENDAS", "ORIENTAÇÕES", "OBSERVAÇÕES"]):
         btn_frame = tk.Frame(tab_button_bar, bg=tab_border_color)
-        btn_tab = build_secondary_button(btn_frame, label, lambda i=idx: _select_tab(i))
+        btn_tab = build_secondary_button(btn_frame, label, lambda i=idx: _select_tab(i), padx=12)
         try:
             btn_tab.configure(
+                font=theme_font("font_md"),
+                pady=theme_space("space_1", 4),
+                bg=tab_button_normal_bg,
+                activebackground=tab_button_normal_bg,
                 highlightbackground=tab_border_color,
                 highlightcolor=tab_border_color,
                 highlightthickness=0,
@@ -2899,10 +2909,22 @@ def _build_monitor_ui(container):
             )
         except Exception:
             pass
+        try:
+            def _on_tab_enter(_e, b=btn_tab):
+                b.configure(bg=tab_button_hover_bg, activebackground=tab_button_hover_bg)
+
+            def _on_tab_leave(_e):
+                _refresh_tab_button_state()
+
+            btn_tab.bind("<Enter>", _on_tab_enter, add="+")
+            btn_tab.bind("<Leave>", _on_tab_leave, add="+")
+        except Exception:
+            pass
         btn_tab.pack(fill=tk.BOTH, expand=True, padx=1, pady=(1, 0))
         btn_bottom = tk.Frame(btn_frame, height=1, bg=tab_border_color)
         btn_bottom.pack(fill=tk.X, side=tk.BOTTOM)
-        btn_frame.pack(side=tk.LEFT, padx=(0, 0), pady=(0, 0), fill=tk.Y)
+        btn_frame.pack(side=tk.LEFT, padx=(0, 0), pady=(0, 0), fill=tk.BOTH, expand=True)
+        tab_button_frames.append(btn_frame)
         tab_buttons.append(btn_tab)
         tab_button_bottom_borders.append(btn_bottom)
 
@@ -2911,9 +2933,14 @@ def _build_monitor_ui(container):
             selected = notebook.index(notebook.select())
         except Exception:
             selected = 0
-        for idx, btn_bottom in enumerate(tab_button_bottom_borders):
+        for idx, (btn_frame, btn, btn_bottom) in enumerate(zip(tab_button_frames, tab_buttons, tab_button_bottom_borders)):
             try:
-                btn_bottom.configure(bg=UI_THEME.get("surface", UI_THEME["bg"]) if idx == selected else tab_border_color)
+                is_selected = idx == selected
+                target_bg = tab_button_selected_bg if is_selected else tab_button_normal_bg
+                frame_bg = tab_button_selected_bg if is_selected else tab_border_color
+                btn_frame.configure(bg=frame_bg)
+                btn.configure(bg=target_bg, activebackground=target_bg)
+                btn_bottom.configure(bg=tab_button_selected_bg if is_selected else tab_border_color)
             except Exception:
                 continue
 
@@ -3038,31 +3065,6 @@ def _build_monitor_ui(container):
         pass
 
     for frame, arquivo, formatter, filter_key in tab_configs:
-        if filter_key == "controle":
-            toolbar = tk.Frame(frame, bg=UI_THEME["surface"])
-            toolbar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0) )
-            toolbar_count_var = tk.StringVar(value="Registros filtrados: 0")
-            toolbar_count = build_label(toolbar, "", muted=True, bg=UI_THEME["surface"], font=theme_font("font_sm"))
-            toolbar_count.configure(textvariable=toolbar_count_var)
-            toolbar_count.pack(side=tk.RIGHT)
-
-            def _sync_count(*_):
-                try:
-                    current = len(_control_filtered_records())
-                    total = len(_load_safe(ARQUIVO))
-                    toolbar_count_var.set(f"Registros filtrados: {current} (de {total})")
-                except Exception:
-                    pass
-
-            _sync_count()
-            _control_filtered_count_var = tk.StringVar(value=toolbar_count_var.get())
-            _control_filtered_count_var.trace_add("write", lambda *_: _sync_count())
-        else:
-            tab_toolbar = tk.Frame(frame, bg=UI_THEME["surface"])
-            tab_toolbar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
-            tab_spacer = build_label(tab_toolbar, "", muted=True, bg=UI_THEME["surface"], font=theme_font("font_sm"))
-            tab_spacer.pack(side=tk.RIGHT)
-
         sticky_var = tk.StringVar(value="Sem registros visíveis")
         sticky_label = build_label(
             frame,
