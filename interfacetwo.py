@@ -2887,6 +2887,7 @@ def _build_monitor_ui(container):
             pass
 
     tab_buttons = []
+    tab_button_frames = []
     tab_button_bottom_borders = []
     tab_border_color = UI_THEME.get("border", UI_THEME.get("on_surface", UI_THEME["text"]))
     tab_button_normal_bg = UI_THEME.get("bg", UI_THEME["surface"])
@@ -2908,10 +2909,16 @@ def _build_monitor_ui(container):
             )
         except Exception:
             pass
+        try:
+            btn_tab.unbind("<Enter>")
+            btn_tab.unbind("<Leave>")
+        except Exception:
+            pass
         btn_tab.pack(fill=tk.BOTH, expand=True, padx=1, pady=(1, 0))
         btn_bottom = tk.Frame(btn_frame, height=1, bg=tab_border_color)
         btn_bottom.pack(fill=tk.X, side=tk.BOTTOM)
-        btn_frame.pack(side=tk.LEFT, padx=(0, 0), pady=(0, 0), fill=tk.Y)
+        btn_frame.pack(side=tk.LEFT, padx=(0, 0), pady=(0, 0), fill=tk.BOTH, expand=True)
+        tab_button_frames.append(btn_frame)
         tab_buttons.append(btn_tab)
         tab_button_bottom_borders.append(btn_bottom)
 
@@ -2920,10 +2927,12 @@ def _build_monitor_ui(container):
             selected = notebook.index(notebook.select())
         except Exception:
             selected = 0
-        for idx, (btn, btn_bottom) in enumerate(zip(tab_buttons, tab_button_bottom_borders)):
+        for idx, (btn_frame, btn, btn_bottom) in enumerate(zip(tab_button_frames, tab_buttons, tab_button_bottom_borders)):
             try:
                 is_selected = idx == selected
                 target_bg = tab_button_selected_bg if is_selected else tab_button_normal_bg
+                frame_bg = tab_button_selected_bg if is_selected else tab_border_color
+                btn_frame.configure(bg=frame_bg)
                 btn.configure(bg=target_bg, activebackground=target_bg)
                 btn_bottom.configure(bg=tab_button_selected_bg if is_selected else tab_border_color)
             except Exception:
