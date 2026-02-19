@@ -2823,6 +2823,25 @@ def _build_monitor_ui(container):
         cards_widgets.append(card)
         attach_tooltip(card, cards_tooltips.get(key, ""))
 
+    def _play_metric_cards_intro_animation():
+        order = ["ativos", "pendentes", "sem_contato", "avisado"]
+        duration_ms = 420
+        steps = 14
+
+        def _play_next(pos=0):
+            if pos >= len(order):
+                return
+            card = _ux_cards.get(order[pos])
+            if card is None:
+                _play_next(pos + 1)
+                return
+            try:
+                card.animate_accent_growth(duration_ms=duration_ms, steps=steps, on_done=lambda: _play_next(pos + 1))
+            except Exception:
+                _play_next(pos + 1)
+
+        _play_next(0)
+
     global _metrics_accessibility_var
     _metrics_accessibility_var = tk.StringVar(value="Métricas: carregando")
     metrics_accessibility_label = build_label(container, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
@@ -3124,6 +3143,10 @@ def _build_monitor_ui(container):
     _apply_density()
     if op_mode_var.get():
         _toggle_operation_mode()
+    try:
+        container.after(3000, _play_metric_cards_intro_animation)
+    except Exception:
+        pass
     _update_status_cards()
     return monitor_widgets, info_label
 
