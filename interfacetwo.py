@@ -113,15 +113,15 @@ _sticky_header_state = {}
 
 
 
-def _summarize_sticky_header(formatter, record: dict) -> str:
+def _summarize_sticky_header(formatter, record: dict, position: int | None = None) -> str:
     try:
         base = formatter(record) if callable(formatter) else str(record or "")
     except Exception:
         base = str(record or "")
     txt = re.sub(r"\s+", " ", str(base or "")).strip()
-    if len(txt) > 160:
-        txt = txt[:157].rstrip() + "..."
-    return txt or "Sem contexto visível"
+    if position is None:
+        return txt or "Sem contexto visível"
+    return f"  {position + 1:>3}  {txt or 'Sem contexto visível'}"
 
 
 def _update_sticky_header_for_text(text_widget):
@@ -142,18 +142,22 @@ def _update_sticky_header_for_text(text_widget):
         return
 
     current = None
-    for start, end, rec in ranges:
+    current_pos = 0
+    for pos, (start, end, rec) in enumerate(ranges):
         try:
             if text_widget.compare(start, "<=", top_idx) and text_widget.compare(top_idx, "<", end):
                 current = rec
+                current_pos = pos
                 break
             if text_widget.compare(start, "<=", top_idx):
                 current = rec
+                current_pos = pos
         except Exception:
             continue
     if current is None:
         current = ranges[0][2]
-    var.set(_summarize_sticky_header(formatter, current))
+        current_pos = 0
+    var.set(_summarize_sticky_header(formatter, current, current_pos))
 
 
 def _bind_sticky_header_updates(text_widget):
@@ -2610,7 +2614,7 @@ def _build_monitor_ui(container):
     style.configure("Encomenda.Text", background=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]))
     report_status("ux_metrics", "OK", stage="theme_contrast_check", details=validate_theme_contrast())
     style.configure("Control.Treeview", background=UI_THEME["surface"], fieldbackground=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), bordercolor=UI_THEME["border"], rowheight=28)
-    style.configure("Control.Treeview.Heading", background=UI_THEME["surface_alt"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), relief="flat", font=theme_font("font_md", "bold"))
+    style.configure("Control.Treeview.Heading", background=UI_THEME["surface_alt"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), relief="flat", font=theme_font("font_md"))
     style.map("Control.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME["primary"]))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("on_primary", UI_THEME["text"])))])
 
     info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg=UI_THEME["bg"], fg=UI_THEME["muted_text"], font=theme_font("font_sm"))
@@ -2684,7 +2688,7 @@ def _build_monitor_ui(container):
                 padding=[("selected", (12, 4)), ("active", (12, 4))],
             )
             style_local.configure("Control.Treeview", background=UI_THEME["surface"], fieldbackground=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), bordercolor=UI_THEME["border"], rowheight=28)
-            style_local.configure("Control.Treeview.Heading", background=UI_THEME["surface_alt"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), relief="flat", font=theme_font("font_md", "bold"))
+            style_local.configure("Control.Treeview.Heading", background=UI_THEME["surface_alt"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), relief="flat", font=theme_font("font_md"))
             style_local.map("Control.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME["primary"]))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("on_primary", UI_THEME["text"])))])
         except Exception:
             pass
@@ -3044,13 +3048,13 @@ def _build_monitor_ui(container):
             "",
             muted=False,
             bg=UI_THEME["surface"],
-            font=theme_font("font_md", "bold")
+            font=theme_font("font_md")
         )
-        sticky_label.configure(textvariable=sticky_var, anchor="w", justify="left")
+        sticky_label.configure(textvariable=sticky_var, anchor="w", justify="left", padx=0)
         sticky_label.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
 
-        records_top_line = tk.Frame(frame, bg=UI_THEME.get("border", UI_THEME.get("surface_alt", "#2b2b2b")), height=1)
-        records_top_line.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
+        records_top_line = tk.Frame(frame, bg="#000000", height=2)
+        records_top_line.pack(fill=tk.X, padx=0, pady=(0, 0))
 
         text_widget = tk.Text(
             frame,
