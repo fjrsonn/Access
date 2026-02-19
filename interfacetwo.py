@@ -2888,12 +2888,14 @@ def _build_monitor_ui(container):
 
     tab_buttons = []
     tab_button_bottom_borders = []
-    tab_border_color = UI_THEME.get("on_surface", UI_THEME["text"])
+    tab_border_color = UI_THEME.get("border", UI_THEME.get("on_surface", UI_THEME["text"]))
     for idx, label in enumerate(["CONTROLE", "ENCOMENDAS", "ORIENTAÇÕES", "OBSERVAÇÕES"]):
         btn_frame = tk.Frame(tab_button_bar, bg=tab_border_color)
-        btn_tab = build_secondary_button(btn_frame, label, lambda i=idx: _select_tab(i))
+        btn_tab = build_secondary_button(btn_frame, label, lambda i=idx: _select_tab(i), padx=12)
         try:
             btn_tab.configure(
+                font=theme_font("font_md"),
+                pady=theme_space("space_1", 4),
                 highlightbackground=tab_border_color,
                 highlightcolor=tab_border_color,
                 highlightthickness=0,
