@@ -102,7 +102,7 @@ class AppMetricCard(tk.Frame):
         self._accent_anim_after = None
         self.body = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"))
         self.body.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.bottom_curve = tk.Canvas(self.body, height=18, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
+        self.bottom_curve = tk.Canvas(self.body, height=24, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
         self.bottom_curve.pack(side=tk.BOTTOM, fill=tk.X)
         self.title_lbl = tk.Label(self.body, textvariable=self.title_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self.value_lbl = tk.Label(self.body, textvariable=self.value_var, bg=UI_THEME.get("surface", "#151A22"), fg=state_colors(tone)[0], font=theme_font("font_xl", "bold"))
@@ -126,7 +126,7 @@ class AppMetricCard(tk.Frame):
             self.bottom_curve.create_rectangle(0, 0, w, h, fill=card_bg, outline="")
 
             # recorte côncavo (meia-lua para dentro) na ponta inferior
-            notch_r = min(max(14, w // 5), max(16, h * 2))
+            notch_r = max(8, min(w // 6, h - 3))
             cx = w // 2
             self.bottom_curve.create_arc(
                 cx - notch_r,
