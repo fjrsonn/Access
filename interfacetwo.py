@@ -2889,6 +2889,8 @@ def _build_monitor_ui(container):
     tab_buttons = []
     tab_button_bottom_borders = []
     tab_border_color = UI_THEME.get("border", UI_THEME.get("on_surface", UI_THEME["text"]))
+    tab_button_normal_bg = UI_THEME.get("bg", UI_THEME["surface"])
+    tab_button_selected_bg = UI_THEME.get("surface", UI_THEME["bg"])
     for idx, label in enumerate(["CONTROLE", "ENCOMENDAS", "ORIENTAÇÕES", "OBSERVAÇÕES"]):
         btn_frame = tk.Frame(tab_button_bar, bg=tab_border_color)
         btn_tab = build_secondary_button(btn_frame, label, lambda i=idx: _select_tab(i), padx=12)
@@ -2896,6 +2898,8 @@ def _build_monitor_ui(container):
             btn_tab.configure(
                 font=theme_font("font_md"),
                 pady=theme_space("space_1", 4),
+                bg=tab_button_normal_bg,
+                activebackground=tab_button_normal_bg,
                 highlightbackground=tab_border_color,
                 highlightcolor=tab_border_color,
                 highlightthickness=0,
@@ -2916,9 +2920,12 @@ def _build_monitor_ui(container):
             selected = notebook.index(notebook.select())
         except Exception:
             selected = 0
-        for idx, btn_bottom in enumerate(tab_button_bottom_borders):
+        for idx, (btn, btn_bottom) in enumerate(zip(tab_buttons, tab_button_bottom_borders)):
             try:
-                btn_bottom.configure(bg=UI_THEME.get("surface", UI_THEME["bg"]) if idx == selected else tab_border_color)
+                is_selected = idx == selected
+                target_bg = tab_button_selected_bg if is_selected else tab_button_normal_bg
+                btn.configure(bg=target_bg, activebackground=target_bg)
+                btn_bottom.configure(bg=tab_button_selected_bg if is_selected else tab_border_color)
             except Exception:
                 continue
 
