@@ -1,0 +1,7 @@
+id,data_hora,nome,sobrenome,bloco,apartamento,placa,modelo,cor,status,texto
+"1","17/02/2026 09:08:24","FLAVIO","JUNIOR","10","10","FEU3C84","JETTA","PRETO","MORADOR","[ID 1] Em 17/02/2026 às 09:08:24, Flavio Junior, morador, chegou ao Bloco 10, Apartamento 10, em um Jetta preto, placa FEU3C84."
+"1","17/02/2026 09:08:22","FLAVIO","JUNIOR","10","10","FEU3C84","JETTA","PRETO","MORADOR","[ID 1] Pouco antes, às 09:08:22 de 17/02/2026, Flavio Junior, morador, entrou no Bloco 10, Apartamento 10, dirigindo um Jetta preto, placa FEU3C84."
+"1","17/02/2026 09:08:20","FLAVIO","JUNIOR","10","10","FEU3C84","JETTA","PRETO","MORADOR","[ID 1] Pouco antes, às 09:08:20 de 17/02/2026, Flavio Junior, morador, entrou no Bloco 10, Apartamento 10, dirigindo um Jetta preto, placa FEU3C84."
+"1","17/02/2026 09:08:18","FLAVIO","JUNIOR","10","10","FEU3C84","JETTA","PRETO","MORADOR","[ID 1] Às 09:08:18 de 17/02/2026, Flavio Junior, morador, acessou o Bloco 10, Apartamento 10, com um Jetta preto, placa FEU3C84."
+"2","17/02/2026 09:08:16","REGIANE","MENEZES","10","10","FJS0701","NIVUS","CINZA","VISITANTE","[ID 2] Em 17/02/2026 às 09:08:16, Regiane Menezes, visitante, chegou ao Bloco 10, Apartamento 10, em um Nivus cinza, placa FJS0701."
+"1","17/02/2026 09:08:14","FLAVIO","JUNIOR","10","10","FEU3C84","JETTA","PRETO","MORADOR","[ID 1] Às 09:08:14 de 17/02/2026, Flavio Junior, morador, acessou o Bloco 10, Apartamento 10, com um Jetta preto, placa FEU3C84."

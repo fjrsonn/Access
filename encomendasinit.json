@@ -1,0 +1,604 @@
+{
+    "registros": [
+        {
+            "id": 1,
+            "texto": "APT111 88SG4RSHNA8BR ENV RIACHUELO BLO13 JOAO PEREIRA",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:26"
+        },
+        {
+            "id": 2,
+            "texto": "BL13 ENVELOPE SASERTAHFWDLSWOBR APARTAMENTO81 LUCAS MARTINS MAGAZI LUIZA",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:28"
+        },
+        {
+            "id": 3,
+            "texto": "RACHUELO GABRIEL CARVALHO APART145 YHT2B75R6J7QMJ ENVELOP BLO4",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:30"
+        },
+        {
+            "id": 4,
+            "texto": "RENNE AP45 PATRICIA GOMES COLPMPKS8TR34IG BLO13 CAIX",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:32"
+        },
+        {
+            "id": 5,
+            "texto": "CAIX GABRIEL SANTOS BL7 APARTAMEN189 2WK2IA4CWMCBR TERABITE",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:34"
+        },
+        {
+            "id": 6,
+            "texto": "AP37 BLC1 ENVELOPE AMAZ KFJLHRAGC718XXGBR ANA MELO",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:36"
+        },
+        {
+            "id": 7,
+            "texto": "BLC4 993785155980 PAULO SOUZA PACT RENE AP11",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:38"
+        },
+        {
+            "id": 8,
+            "texto": "EV BLC9 ZQUIB8WS6KMBR RENNE VANESSA NASCIMENTO AP22",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:40"
+        },
+        {
+            "id": 9,
+            "texto": "SACO CAMILA MELO RIACHUELO AP194 BLOCO4 7KMP6EDC8D77M",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:42"
+        },
+        {
+            "id": 10,
+            "texto": "22Y3OIC0JIVHF1 SACOL BLCO7 APARTAMEN180 TERBYT FERNANDO COSTA",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:44"
+        },
+        {
+            "id": 11,
+            "texto": "CIXA FERNANDO MELO BLCO3 444632496292082BR SHOPEE AP14",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:46"
+        },
+        {
+            "id": 12,
+            "texto": "APTA67 BRUNO SILVA BLOCO11 4201583695 EVELOPE SEDEX",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:48"
+        },
+        {
+            "id": 13,
+            "texto": "OJ7183RD6AX3O SHOPE PACOTE JOSE OLIVEIRA APTA159 BL3",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:50"
+        },
+        {
+            "id": 14,
+            "texto": "BLOCO6 CAIX TERABYTE APART32 96954969390261 CAMILA RODRIGUES",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:52"
+        },
+        {
+            "id": 15,
+            "texto": "AMAZ CBJJUS6O4GE SACOLA PATRICIA SOUZA APARTAMEN43 BLO14",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:54"
+        },
+        {
+            "id": 16,
+            "texto": "KABUN ENVEL APART177 BLC3 BEATRIZ PEREIRA PAZ6ALF8E9DV84BR",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:56"
+        },
+        {
+            "id": 17,
+            "texto": "GABRIEL MELO APTA153 89P7WQNVNKYXE0LBR ENVELOP TITOK BL1",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:58"
+        },
+        {
+            "id": 18,
+            "texto": "ENVELOP BLCO4 M2RUBIRH4RFY JOSE SOUZA AMAZON AP56",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:00"
+        },
+        {
+            "id": 19,
+            "texto": "GABRIEL GOMES SACOLA BLO1 81485968589139 APARTAMEN11 AMAZ",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:02"
+        },
+        {
+            "id": 20,
+            "texto": "SHOPEE 7637284390376BR FERNANDO ALMEIDA APT90 BLOCO4 ENVLOPE",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:04"
+        },
+        {
+            "id": 21,
+            "texto": "JADLOG BL13 CAIX APARTAMEN11 BRUNO SOUZA OSIJEVXTKTOTI",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:06"
+        },
+        {
+            "id": 22,
+            "texto": "CORREI PA BLO1 JULIA COSTA APT93 VIIA90G25JB6O",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:08"
+        },
+        {
+            "id": 23,
+            "texto": "BLCO8 101721960326BR RAFAEL LIMA MERC LIVR SAOLA AP93",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:10"
+        },
+        {
+            "id": 24,
+            "texto": "PACOT APARTAMEN123 RAFAEL BARBOSA TERBYT BL13 1329721878354",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:12"
+        },
+        {
+            "id": 25,
+            "texto": "LETICIA SOUSA APARTAMENTO13 257462925443895 JADLO CAIX BLCO15",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:14"
+        },
+        {
+            "id": 26,
+            "texto": "ANA LOPES APARTAMENTO97 TIKOK ENVELOPE BLO6 QNSDXHOG1EXJAE",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:16"
+        },
+        {
+            "id": 27,
+            "texto": "MERCADO LIVRE BLC3 KERI7ZC40KZ2Q9 PACOTE ALINE MELO APTA31",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:18"
+        },
+        {
+            "id": 28,
+            "texto": "4971583175027BR BLOCO12 LUCAS SOUZA JADLOG PA APARTAMENTO28",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:20"
+        },
+        {
+            "id": 29,
+            "texto": "TOUMBWZDFY0O BL4 SA APTA137 ALIEXPRES GABRIEL GOMES",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:22"
+        },
+        {
+            "id": 30,
+            "texto": "EVELOPE KABUN 0HAPAPK8S82ZCQBR APT150 BL3 MARCOS ARAÚJO",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:24"
+        },
+        {
+            "id": 31,
+            "texto": "BLCO9 CAMILA LIMA 75IQ59JXWQ6N6RH APARTAMENTO75 CRREIOS SAC",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:26"
+        },
+        {
+            "id": 32,
+            "texto": "APTA11 BRUNO CARVALHO CREIOS GX3L9X9CF22U410 CAIX BLC15",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:28"
+        },
+        {
+            "id": 33,
+            "texto": "APT123 CREIOS ANA COSTA SAC L6XNHF9CRCRBR BLO12",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:30"
+        },
+        {
+            "id": 34,
+            "texto": "PATRICIA RIBEIRO APARTAMEN128 CREIOS BL13 SACOL 7057665270",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:32"
+        },
+        {
+            "id": 35,
+            "texto": "F4F2T9ESVQI APARTAMEN109 RODRIGO ALMEIDA PACOT BLCO14 JADLOG",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:34"
+        },
+        {
+            "id": 36,
+            "texto": "BL11 PA F1MIRV2Q8NDFOR APART169 JULIA ARAÚJO TIKTOK",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:36"
+        },
+        {
+            "id": 37,
+            "texto": "SCOLA RODRIGO NASCIMENTO SEDE BL5 E5HR5U6SCG31BR APTA157",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:38"
+        },
+        {
+            "id": 38,
+            "texto": "564232334297 MAGAZI LUIZA APTA198 BLCO2 BRUNO NASCIMENTO ENVEL",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:40"
+        },
+        {
+            "id": 39,
+            "texto": "SA JULIA MELO 2OG2LHMJ0JM6UL MAGAZIN LUZ BLOCO13 AP45",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:42"
+        },
+        {
+            "id": 40,
+            "texto": "RAFAEL RODRIGUES BLCO13 APARTAMEN83 JADLO EVENLOPE 46062819933BR",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:44"
+        },
+        {
+            "id": 41,
+            "texto": "PACOT BLO14 CARLOS SANTOS C&A AP125 QDD0VNQNBIYL0",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:46"
+        },
+        {
+            "id": 42,
+            "texto": "BEATRIZ RIBEIRO APTA66 COREIO 305443740124025 BLO7 EVELOPE",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:48"
+        },
+        {
+            "id": 43,
+            "texto": "BL1 ENVELOP LETICIA FERREIRA CORREI NTFHBX294KC48D APARTAMENTO83",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:50"
+        },
+        {
+            "id": 44,
+            "texto": "ALINE OLIVEIRA RCHLO APTA158 UUX2AV16LHEBR BL10 PA",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:52"
+        },
+        {
+            "id": 45,
+            "texto": "APT159 BLOCO9 LETICIA MELO ENV TERABITE MORIYKZMHUZENDK",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:54"
+        },
+        {
+            "id": 46,
+            "texto": "BABKOK99RTPX BL4 APART31 JULIA CARVALHO SHOPEE PA",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:56"
+        },
+        {
+            "id": 47,
+            "texto": "AP116 SHOPE 57201919560BR BEATRIZ CARVALHO SACOL BLO9",
+            "processado": true,
+            "data_hora": "17/02/2026 09:09:58"
+        },
+        {
+            "id": 48,
+            "texto": "SAOLA M8TGL2GD7FOLU BLC3 APART156 JULIA ALMEIDA SDEX",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:00"
+        },
+        {
+            "id": 49,
+            "texto": "BL1 ALINE CARVALHO APARTAMENTO151 RACHUELO Z4YOJI1XN2GJF CAIX",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:02"
+        },
+        {
+            "id": 50,
+            "texto": "MLUIZA 22226900063BR ANA PEREIRA BLO4 EV APARTAMEN45",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:04"
+        },
+        {
+            "id": 51,
+            "texto": "SHOPE APT59 BLCO1 SAC XIPRH3TCVQE9NFJBR LUCAS COSTA",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:06"
+        },
+        {
+            "id": 52,
+            "texto": "TIKT MARIA SOUZA APTA152 4S8NLF6WY9 BLO6 CIXA",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:08"
+        },
+        {
+            "id": 53,
+            "texto": "CX BLOCO3 PAULO RODRIGUES 2961351015050BR APTA84 C&A",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:10"
+        },
+        {
+            "id": 54,
+            "texto": "APT47 JULIA MELO 99499171367 RACHUELO BLOCO9 ENVEL",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:12"
+        },
+        {
+            "id": 55,
+            "texto": "RENNER BLOCO7 APARTAMEN24 PAULO BARBOSA ENV YGLEKFNB2NK0T0BR",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:14"
+        },
+        {
+            "id": 56,
+            "texto": "0566404730 PATRICIA OLIVEIRA BLC5 APT183 RACHUELO EVENLOPE",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:16"
+        },
+        {
+            "id": 57,
+            "texto": "RAFAEL OLIVEIRA BLCO11 APTA127 MAGAZIN LUZ CX ZITKTPHQJJRR",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:18"
+        },
+        {
+            "id": 58,
+            "texto": "EVELOPE SHOP BRUNO RIBEIRO AX2F0Z4AY4GO BLOCO13 APARTAMEN109",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:20"
+        },
+        {
+            "id": 59,
+            "texto": "288524024898026 APARTAMEN141 TIKT BLCO10 SACOLA RODRIGO SOUSA",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:22"
+        },
+        {
+            "id": 60,
+            "texto": "APARTAMENTO45 63464268650BR ENVELOP JOSE MARTINS BLC8 AMAZON",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:24"
+        },
+        {
+            "id": 61,
+            "texto": "ENVLOPE 387462521123486 BLO1 APTA128 RAFAEL ALMEIDA CORREIS",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:26"
+        },
+        {
+            "id": 62,
+            "texto": "NNS6L6IFTKBR BLCO14 CAIXA JALOG APART158 CAMILA RODRIGUES",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:28"
+        },
+        {
+            "id": 63,
+            "texto": "BLCO6 BRUNO ARAÚJO MAGAZIN LUZ 7061933957486 ENV AP64",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:30"
+        },
+        {
+            "id": 64,
+            "texto": "TIKTOK BLC10 APT147 LUCAS MELO CAIXA PUCZ9J5Z1RXBR",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:32"
+        },
+        {
+            "id": 65,
+            "texto": "APTA101 GABRIEL RODRIGUES SAC BL15 TERBYT 7927640780810",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:34"
+        },
+        {
+            "id": 66,
+            "texto": "VANESSA CARVALHO MAGA LUIZA BL9 APARTAMENTO118 PACT VMQR0768V8JVF5O",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:36"
+        },
+        {
+            "id": 67,
+            "texto": "BLCO11 APART91 TIKOK CX 51167911076 CARLOS RODRIGUES",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:38"
+        },
+        {
+            "id": 68,
+            "texto": "APARTAMENTO78 ENVELOP BLCO4 ALIEXPR RAFAEL RODRIGUES 1DHXNVA014IXEIN",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:40"
+        },
+        {
+            "id": 69,
+            "texto": "MERC LIVR APARTAMENTO59 2125658682 ANA ALMEIDA BLC14 PACOTE",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:42"
+        },
+        {
+            "id": 70,
+            "texto": "SAOLA ALIEXPR APARTAMENTO90 BLC15 JULIA LOPES 1218984748282",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:44"
+        },
+        {
+            "id": 71,
+            "texto": "HFBMPSC6WNBR CORREI ENVELOPE RODRIGO RODRIGUES BLO11 APARTAMEN131",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:46"
+        },
+        {
+            "id": 72,
+            "texto": "KABUN APART18 BL9 PACOT MARCOS GOMES 60620847419",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:48"
+        },
+        {
+            "id": 73,
+            "texto": "SED 9C3R4DUHASD BEATRIZ LOPES BLCO7 APARTAMENTO86 ENVELOP",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:50"
+        },
+        {
+            "id": 74,
+            "texto": "ENVELOPE 768853798203 MARIA LIMA APTA73 M LIVRE BLOCO3",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:52"
+        },
+        {
+            "id": 75,
+            "texto": "SACOL EXKUEVYEH5XJBR MLIVRE BL4 APART88 JULIA MARTINS",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:54"
+        },
+        {
+            "id": 76,
+            "texto": "CRREIOS BLC2 APARTAMEN161 AUCNHLYUD7EW3U PAULO SANTOS ENVELOPE",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:56"
+        },
+        {
+            "id": 77,
+            "texto": "APTA147 MAGAZINE LUIZA 9189068917 CARLOS MELO EV BLCO3",
+            "processado": true,
+            "data_hora": "17/02/2026 09:10:58"
+        },
+        {
+            "id": 78,
+            "texto": "APARTAMENTO71 BLO14 CEA RRGUSAUBYMYE4 RAFAEL LOPES CAIXA",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:00"
+        },
+        {
+            "id": 79,
+            "texto": "BRUNO FERREIRA 40622321615 BLC14 CEA PACT APARTAMENTO197",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:02"
+        },
+        {
+            "id": 80,
+            "texto": "ALINE SOUSA BL15 ENVLOPE LMMNN5S0GN4EBBR TIKT APARTAMENTO62",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:04"
+        },
+        {
+            "id": 81,
+            "texto": "BL8 SACO N1R1FQ80EGGXZFVBR APTA71 JOAO CARVALHO SEDEX",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:06"
+        },
+        {
+            "id": 82,
+            "texto": "LUCAS SILVA SCOLA APTA25 BLO13 MAGAZINE LUIZA ZLPCMETMIB3BLY0",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:08"
+        },
+        {
+            "id": 83,
+            "texto": "LUCAS MARTINS BLO5 PLPK4SYIR7YPZIBR RENER ENVELOPE APT52",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:10"
+        },
+        {
+            "id": 84,
+            "texto": "APARTAMENTO83 BLOCO2 ANA GOMES SAC HBUDKOP483S7DJXBR CORREI",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:12"
+        },
+        {
+            "id": 85,
+            "texto": "4W67XDEXT0BR MAGAZI LUIZA APART142 BLOCO9 EVELOPE RAFAEL ALMEIDA",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:14"
+        },
+        {
+            "id": 86,
+            "texto": "RCHLO BL5 7Q6ZKFQAD3KGP LUCAS CARVALHO CIXA APARTAMENTO113",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:16"
+        },
+        {
+            "id": 87,
+            "texto": "LETICIA MELO AP16 UBTW3WM4GX BLO12 ALIEXPRES SA",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:18"
+        },
+        {
+            "id": 88,
+            "texto": "PATRICIA RIBEIRO AP174 ENVELOP 8766143183 ALIEXPRES BL5",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:20"
+        },
+        {
+            "id": 89,
+            "texto": "EV BLCO13 COREIO PATRICIA PEREIRA APART87 AMPJ9Q3GXV0",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:22"
+        },
+        {
+            "id": 90,
+            "texto": "ENVELOP APARTAMEN27 MERCADO LIVRE BLO9 VANESSA GOMES 989744094362",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:24"
+        },
+        {
+            "id": 91,
+            "texto": "JQAROUFQ47GACJ3 BLO9 SAOLA APARTAMENTO167 TITOK BRUNO LIMA",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:26"
+        },
+        {
+            "id": 92,
+            "texto": "BLOCO2 TITOK ANA MARTINS MFWAVG60A3GU3NK PA APT85",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:28"
+        },
+        {
+            "id": 93,
+            "texto": "APARTAMEN176 BLO2 4ZCHJY4U1PBR CARLOS SILVA SED SA",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:30"
+        },
+        {
+            "id": 94,
+            "texto": "COREIOS APARTAMEN109 BLC5 CX LETICIA LIMA S0HK177DSOJ12BR",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:32"
+        },
+        {
+            "id": 95,
+            "texto": "BLOCO3 AP61 TERABITE 839228507642 SACOLA PAULO MELO",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:34"
+        },
+        {
+            "id": 96,
+            "texto": "SED BLC10 JQ92GOO2IUNVBD MARCOS MARTINS APT57 EVELOPE",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:36"
+        },
+        {
+            "id": 97,
+            "texto": "JULIA SANTOS BLO1 43832206862682 APART156 RENNE CIXA",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:38"
+        },
+        {
+            "id": 98,
+            "texto": "SA BLO9 MARCOS FERREIRA AP199 KABUN 9IACFHUCR64V7",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:40"
+        },
+        {
+            "id": 99,
+            "texto": "RCHLO AP130 SAC 83152754759209 BLCO15 BEATRIZ MELO",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:43"
+        },
+        {
+            "id": 100,
+            "texto": "SACOLA MARIA PEREIRA APART16 SED Y73RDGRZ6AP BLOCO6",
+            "processado": true,
+            "data_hora": "17/02/2026 09:11:44"
+        }
+    ]
+}

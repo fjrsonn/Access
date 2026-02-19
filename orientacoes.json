@@ -1,0 +1,317 @@
+{
+  "registros": [
+    {
+      "id": 1,
+      "tipo": "ORIENTACAO",
+      "texto": "Às 22:30, o morador Flavio Junior, residente no Bloco 10, Apartamento 10, foi orientado após registro de barulho alto. A ocorrência foi tratada no local e o morador devidamente orientado quanto às normas internas.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "10"
+        ],
+        "NOME": [
+          "FLAVIO",
+          "DEVIDAMENTE"
+        ],
+        "SOBRENOME": [
+          "JUNIOR",
+          "ORIENTADO QUANTO ÀS NORMAS INTERNAS"
+        ],
+        "HORARIO": [
+          "22:30"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "10"
+        ],
+        "NOME": [
+          "FLAVIO",
+          "DEVIDAMENTE"
+        ],
+        "SOBRENOME": [
+          "JUNIOR",
+          "ORIENTADO QUANTO ÀS NORMAS INTERNAS"
+        ],
+        "HORARIO": [
+          "22:30"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/02/2026 09:07:54",
+      "processado": true,
+      "motivo_roteamento": "scores={'orientacoes': 7.4, 'observacoes': 2.0999999999999996, 'encomendas': 0.8}; escolhido=orientacoes",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.773,
+      "ambiguo": false
+    },
+    {
+      "id": 2,
+      "tipo": "ORIENTACAO",
+      "texto": "Às 21:10, MARIA Souza, moradora do Bloco B, Apartamento 202, foi orientada na portaria após relato de discussão no corredor. A situação foi acompanhada e a moradora recebeu as devidas orientações.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "B"
+        ],
+        "APARTAMENTO": [
+          "202"
+        ],
+        "NOME": [
+          "DO",
+          "RECEBEU"
+        ],
+        "SOBRENOME": [
+          "BLOCO",
+          "AS DEVIDAS ORIENTAÇÕES"
+        ],
+        "HORARIO": [
+          "21:10"
+        ],
+        "VEICULO": [],
+        "COR": [
+          "REDOR"
+        ],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "B"
+        ],
+        "APARTAMENTO": [
+          "202"
+        ],
+        "NOME": [
+          "DO",
+          "RECEBEU"
+        ],
+        "SOBRENOME": [
+          "BLOCO",
+          "AS DEVIDAS ORIENTAÇÕES"
+        ],
+        "HORARIO": [
+          "21:10"
+        ],
+        "VEICULO": [],
+        "COR": [
+          "REDOR"
+        ],
+        "PLACA": []
+      },
+      "data_hora": "17/02/2026 09:07:56",
+      "processado": true,
+      "motivo_roteamento": "scores={'orientacoes': 5.4, 'observacoes': 2.0999999999999996, 'encomendas': 0.0}; escolhido=orientacoes",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.714,
+      "ambiguo": false
+    },
+    {
+      "id": 3,
+      "tipo": "ORIENTACAO",
+      "texto": "Às 19:40, CARLOS Lima, residente no Bloco C, Apartamento 303, foi alvo de orientação formal em decorrência de som alto. A medida foi aplicada conforme as normas estabelecidas.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "C"
+        ],
+        "APARTAMENTO": [
+          "303"
+        ],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [
+          "19:40"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "C"
+        ],
+        "APARTAMENTO": [
+          "303"
+        ],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [
+          "19:40"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/02/2026 09:07:58",
+      "processado": true,
+      "motivo_roteamento": "scores={'orientacoes': 4.0, 'observacoes': 1.4, 'encomendas': 0.0}; escolhido=orientacoes",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.732,
+      "ambiguo": false
+    },
+    {
+      "id": 4,
+      "tipo": "ORIENTACAO",
+      "texto": "Às 20:05, ANA Pereira, moradora do Bloco D, Apartamento 404, recebeu orientação após registro de conduta inadequada. A situação foi tratada e a moradora devidamente orientada.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "D"
+        ],
+        "APARTAMENTO": [
+          "404"
+        ],
+        "NOME": [
+          "DO",
+          "DEVIDAMENTE"
+        ],
+        "SOBRENOME": [
+          "BLOCO",
+          "ORIENTADA"
+        ],
+        "HORARIO": [
+          "20:05"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "D"
+        ],
+        "APARTAMENTO": [
+          "404"
+        ],
+        "NOME": [
+          "DO",
+          "DEVIDAMENTE"
+        ],
+        "SOBRENOME": [
+          "BLOCO",
+          "ORIENTADA"
+        ],
+        "HORARIO": [
+          "20:05"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/02/2026 09:08:00",
+      "processado": true,
+      "motivo_roteamento": "scores={'orientacoes': 8.0, 'observacoes': 2.0999999999999996, 'encomendas': 0.0}; escolhido=orientacoes",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.786,
+      "ambiguo": false
+    },
+    {
+      "id": 5,
+      "tipo": "ORIENTACAO",
+      "texto": "Às 18:15, JOÃO Silva, residente no Bloco A, Apartamento 101, foi orientado em razão de uso indevido da garagem. A ocorrência foi registrada e o morador recebeu as orientações necessárias.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "A"
+        ],
+        "APARTAMENTO": [
+          "101"
+        ],
+        "NOME": [
+          "RECEBEU"
+        ],
+        "SOBRENOME": [
+          "AS ORIENTAÇÕES NECESSÁRIAS"
+        ],
+        "HORARIO": [
+          "18:15"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "A"
+        ],
+        "APARTAMENTO": [
+          "101"
+        ],
+        "NOME": [
+          "RECEBEU"
+        ],
+        "SOBRENOME": [
+          "AS ORIENTAÇÕES NECESSÁRIAS"
+        ],
+        "HORARIO": [
+          "18:15"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/02/2026 09:08:02",
+      "processado": true,
+      "motivo_roteamento": "scores={'orientacoes': 5.4, 'observacoes': 2.0999999999999996, 'encomendas': 0.0}; escolhido=orientacoes",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.714,
+      "ambiguo": false
+    }
+  ]
+}

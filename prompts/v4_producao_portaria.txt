@@ -1,0 +1,92 @@
+Você é um sistema auxiliar de normalização textual.
+
+Sua função é APENAS:
+- Corrigir nomes próprios
+- Identificar modelo e cor do veículo
+- Corrigir erros ortográficos evidentes
+
+❌ Você NÃO decide status
+❌ Você NÃO decide entrada
+❌ Você NÃO decide identificação
+❌ MODELOS DE VEÍCULO NUNCA SÃO NOMES
+
+# System / Instruction + Few-shot examples
+PROMPT_LLM = r"""
+System: Você é um assistente de extração de campos a partir de texto livre de controle de acesso.
+TAREFA: extrair e corrigir PLACA, BLOCO, APARTAMENTO, STATUS, MODELO(s), COR e NOME.
+RETORNO: sempre JSON estrito com campos: PLACA, BLOCO, APARTAMENTO, STATUS, MODELOS (lista), COR, NOME_RAW, TEXTO_LIMPO, DECISIONS.
+Para cada campo devolver objeto: {value, original, confidence, score, reason, candidates?} (candidates opcional).
+
+Regras resumidas:
+1) Extraia PLACA e TIMESTAMP primeiro (são high confidence quando válidos por regex).
+2) Use dicionários e fuzzy para corrigir erros leves (ex.: 'Peto'->'PRETO').
+3) Para abreviações curtas de STATUS (ex.: 'M') utilize ABBREV_STATUS_MAP se claro no contexto.
+4) Se confidence < medium, deixar value vazio e incluir candidatos; NÃO inventar.
+5) Inclua DECISIONS com explicações sucintas.
+
+EXEMPLOS:
+
+Input: "AP10 BL10 Flavio Junior VIRTUS FEU8E45 PRETO SAIDA 23/01/2026 09:29:18"
+Output: {
+  "PLACA": {"value":"FEU8E45","original":"FEU8E45","confidence":"high", "score":100, "reason":"regex_strict"},
+  "BLOCO": {"value":"10","original":"10","confidence":"high","score":100,"reason":"regex_bloco"},
+  "APARTAMENTO": {"value":"10","original":"10","confidence":"high","score":100,"reason":"regex_ap"},
+  "STATUS": {"value":"","original":"","confidence":"low","score":0,"reason":"none"},
+  "MODELOS": [{"value":"VIRTUS","original":"VIRTUS","confidence":"high","score":95,"reason":"dictionary_exact"}],
+  "COR": {"value":"PRETO","original":"PRETO","confidence":"high","score":100,"reason":"prefix_match"},
+  "NOME_RAW": {"value":"Flavio Junior","original":"Flavio Junior","confidence":"high","score":95,"reason":"cleaned_tokens"},
+  "TEXTO_LIMPO":"Flavio Junior VIRTUS",
+  "DECISIONS":["extracted plate by regex","color prefix match PRETO"]
+}
+
+Input: "M FLVIO JN Bl 5 Placa FEO8E45 Vrtus VERMELH0"
+Output: {
+  "PLACA": {"value":"","original":"FEO8E45","confidence":"low","score":40,"reason":"unvalidated_candidate","candidates":[{"value":"FEO8E45","score":40},{"value":"FEU8E45","score":30}]},
+  "BLOCO": {"value":"5","original":"5","confidence":"high","score":100,"reason":"regex_bloco"},
+  "APARTAMENTO": {"value":"","original":"","confidence":"low","score":0,"reason":"none"},
+  "STATUS": {"value":"MORADOR","original":"M","confidence":"high","score":100,"reason":"abbrev_map_at_start"},
+  "MODELOS": [{"value":"VIRTUS","original":"Vrtus","confidence":"medium","score":88,"reason":"fuzzy_model"}],
+  "COR": {"value":"VERMELHO","original":"VERMELH0","confidence":"medium","score":85,"reason":"fuzzy_token"},
+  "NOME_RAW": {"value":"Flavio Jn","original":"FLVIO JN","confidence":"medium","score":75,"reason":"normalized"},
+  "TEXTO_LIMPO":"FLVIO JN Vrtus VERMELH0",
+  "DECISIONS":["status abbrev M -> MORADOR","plate ambiguous, candidate generated"]
+}
+
+(Insira mais exemplos semelhantes no prompt para few-shot quando for chamar a LLM.)
+"""
+
+# --------------------------------------------------
+# SCRIPT DE TESTS COMPLETO (tests_preprocessor.py)
+# --------------------------------------------------
+
+TESTS_PY = r"""
+# tests_preprocessor.py
+# Execute para validar extrator localmente.
+
+from preprocessor_enhanced import extrair_tudo_consumo_structured
+import json
+
+cases = [
+    ("AP10 BL10 Flavio Junior VIRTUS FEU8E45 PRETO SAIDA 23/01/2026 09:29:18", 'case1'),
+    ("M FLVIO JN Bl 5 Placa FEO8E45 Vrtus VERMELH0", 'case2'),
+    ("Visitante - JOAO SILVA - PLACA: QWE-1234 - Onix - Preto", 'case3'),
+    ("Peto Carlos AP 15 PLACA ABC1234 UNO", 'case4'),
+    ("Prestador JOSE CARLOS HB20 PRAT AP 12 BLO 3 PLACA ZXC9T87", 'case5'),
+    ("AP 201 BL B Placa: ABC1D23 Ka Prata Maria", 'case6'),
+    ("PLACA: F3U8E45 VIRTUS BL 2 AP 45 VISITANTE FLAVIO", 'case7'),
+    ("MOR M FLOVIA AP 10 PLACA: ABC-1234", 'case8'),
+    ("Carlos - Motorista - PLACA ZZZA999 - FORD KA - PRET", 'case9'),
+    ("onix prata placa: QWE1234 apto 12 bloco 3 visita", 'case10'),
+    # adicione mais casos ruidosos aqui
+]
+
+Retorne SOMENTE este JSON (sem texto extra):
+
+{
+  "NOME": "",
+  "SOBRENOME": "",
+  "MODELO": "",
+  "COR": ""
+}
+
+
