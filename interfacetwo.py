@@ -2913,7 +2913,7 @@ def _build_monitor_ui(container):
             selected = 0
         for idx, btn_bottom in enumerate(tab_button_bottom_borders):
             try:
-                btn_bottom.configure(bg=UI_THEME["bg"] if idx == selected else tab_border_color)
+                btn_bottom.configure(bg=UI_THEME.get("surface", UI_THEME["bg"]) if idx == selected else tab_border_color)
             except Exception:
                 continue
 
@@ -3072,7 +3072,7 @@ def _build_monitor_ui(container):
             font=theme_font("font_md")
         )
         sticky_label.configure(textvariable=sticky_var, anchor="w", justify="left", padx=0)
-        sticky_label.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
+        sticky_label.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
 
         records_top_line = tk.Frame(frame, bg="#000000", height=2)
         records_top_line.pack(fill=tk.X, padx=0, pady=(0, 0))
