@@ -1208,7 +1208,7 @@ def _populate_text(text_widget, info_label):
             rec_tag = f"{prefix}_record_{idx}"
         linha = formatter(r)
         hover_idx = _text_hover_marker.get(text_widget)
-        marker = "●" if idx in _text_breakpoints.get(text_widget, set()) else ("○" if hover_idx == idx else " ")
+        marker = "●" if idx in _text_breakpoints.get(text_widget, set()) or hover_idx == idx else " "
         numbered = f"{marker} {idx + 1:>3}  {linha}"
         text_tags = [row_tag]
         if rec_tag:
@@ -2525,7 +2525,7 @@ def _build_monitor_ui(container):
         style.theme_use("clam")
     except Exception:
         pass
-    style.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0)
+    style.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME.get("bg", "#1E1E1E"), lightcolor=UI_THEME.get("bg", "#1E1E1E"), darkcolor=UI_THEME.get("bg", "#1E1E1E"))
     style.configure(
         "Dark.TNotebook.Tab",
         background=UI_THEME.get("surface_alt", UI_THEME["surface"]),
@@ -2607,7 +2607,7 @@ def _build_monitor_ui(container):
         apply_ttk_theme_styles(container)
         try:
             style_local = ttk.Style(container)
-            style_local.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0)
+            style_local.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME.get("bg", "#1E1E1E"), lightcolor=UI_THEME.get("bg", "#1E1E1E"), darkcolor=UI_THEME.get("bg", "#1E1E1E"))
             style_local.configure("Dark.TNotebook.Tab", background=UI_THEME.get("surface_alt", UI_THEME["surface"]), foreground=UI_THEME.get("on_surface", UI_THEME["text"]), padding=(18, 8), relief="flat", borderwidth=0, highlightthickness=0, focuscolor=UI_THEME.get("surface_alt", UI_THEME["surface"]))
             style_local.map(
                 "Dark.TNotebook.Tab",
@@ -2957,6 +2957,8 @@ def _build_monitor_ui(container):
             fg=UI_THEME.get("on_surface", UI_THEME["text"]),
             insertbackground=UI_THEME.get("on_surface", UI_THEME["text"]),
             relief="flat",
+            bd=0,
+            highlightthickness=0,
             undo=True,
             autoseparators=True,
             maxundo=-1,
