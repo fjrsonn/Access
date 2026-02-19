@@ -107,7 +107,66 @@ _filter_toggle_state = {"visible": False}
 _text_breakpoints = {}
 _text_hover_marker = {}
 _record_num_tag_map = {}
+_text_record_ranges = {}
+_sticky_header_state = {}
 
+
+
+
+def _summarize_sticky_header(formatter, record: dict) -> str:
+    try:
+        base = formatter(record) if callable(formatter) else str(record or "")
+    except Exception:
+        base = str(record or "")
+    txt = re.sub(r"\s+", " ", str(base or "")).strip()
+    if len(txt) > 160:
+        txt = txt[:157].rstrip() + "..."
+    return txt or "Sem contexto visível"
+
+
+def _update_sticky_header_for_text(text_widget):
+    state = _sticky_header_state.get(text_widget)
+    if not state:
+        return
+    var = state.get("var")
+    formatter = state.get("formatter")
+    if var is None:
+        return
+    ranges = _text_record_ranges.get(text_widget) or []
+    if not ranges:
+        var.set("Sem registros visíveis")
+        return
+    try:
+        top_idx = text_widget.index("@0,0")
+    except Exception:
+        return
+
+    current = None
+    for start, end, rec in ranges:
+        try:
+            if text_widget.compare(start, "<=", top_idx) and text_widget.compare(top_idx, "<", end):
+                current = rec
+                break
+            if text_widget.compare(start, "<=", top_idx):
+                current = rec
+        except Exception:
+            continue
+    if current is None:
+        current = ranges[0][2]
+    var.set(_summarize_sticky_header(formatter, current))
+
+
+def _bind_sticky_header_updates(text_widget):
+    try:
+        text_widget.configure(yscrollcommand=lambda *_: _update_sticky_header_for_text(text_widget))
+    except Exception:
+        pass
+
+    for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>", "<KeyRelease>", "<Configure>"):
+        try:
+            text_widget.bind(seq, lambda _e, tw=text_widget: _update_sticky_header_for_text(tw), add="+")
+        except Exception:
+            pass
 
 def _load_prefs():
     try:
@@ -1294,6 +1353,7 @@ def _populate_text(text_widget, info_label):
     # desativa edição após inserir
     text_widget.config(state="disabled")
     report_status("monitor", "OK", stage="populate_text_done", details={"source": arquivo, "visible": len(filtrados)})
+    _text_record_ranges[text_widget] = record_ranges
     if formatter == format_encomenda_entry:
         _encomenda_display_map[text_widget] = record_ranges
         _encomenda_tag_map[text_widget] = record_tag_map
@@ -1311,6 +1371,7 @@ def _populate_text(text_widget, info_label):
     if formatter == format_creative_entry:
         _restore_control_text_selection(text_widget, record_tag_map)
     _restore_hover_if_needed(text_widget, "hover_line")
+    _update_sticky_header_for_text(text_widget)
 
 def _schedule_update(text_widgets, info_label):
     global _monitor_after_id
@@ -2977,6 +3038,17 @@ def _build_monitor_ui(container):
             tab_spacer = build_label(tab_toolbar, "", muted=True, bg=UI_THEME["surface"], font=theme_font("font_sm"))
             tab_spacer.pack(side=tk.RIGHT)
 
+        sticky_var = tk.StringVar(value="Sem registros visíveis")
+        sticky_label = build_label(
+            frame,
+            "",
+            muted=False,
+            bg=UI_THEME["surface"],
+            font=theme_font("font_md", "bold")
+        )
+        sticky_label.configure(textvariable=sticky_var, anchor="w", justify="left")
+        sticky_label.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
+
         records_top_line = tk.Frame(frame, bg=UI_THEME.get("border", UI_THEME.get("surface_alt", "#2b2b2b")), height=1)
         records_top_line.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
 
@@ -3005,6 +3077,8 @@ def _build_monitor_ui(container):
             text_widget.tag_configure("controle_selected", background=UI_THEME.get("selection_bg", UI_THEME["focus_bg"]), foreground=UI_THEME.get("selection_fg", UI_THEME["focus_text"]))
         text_widget.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)), fill=tk.BOTH, expand=True)
         text_widget.config(state="disabled")
+        _sticky_header_state[text_widget] = {"var": sticky_var, "formatter": formatter}
+        _bind_sticky_header_updates(text_widget)
         _bind_hover_highlight(text_widget)
         if formatter == format_encomenda_entry:
             _build_encomenda_actions(frame, text_widget, info_label)
