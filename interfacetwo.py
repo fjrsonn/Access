@@ -2641,6 +2641,7 @@ def _build_monitor_ui(container):
 
     theme_bar = tk.Frame(container, bg=UI_THEME["bg"])
     theme_bar.pack(fill=tk.X, padx=10, pady=(6, 0))
+    theme_bar.pack_forget()
     btn_top_theme = build_secondary_button(theme_bar, "🎨 Tema", lambda: None)
     btn_top_theme.pack(side=tk.LEFT, padx=(6, 0))
     details_visible = tk.BooleanVar(value=False)
@@ -2826,11 +2827,8 @@ def _build_monitor_ui(container):
     _metrics_accessibility_var = tk.StringVar(value="Métricas: carregando")
     metrics_accessibility_label = build_label(container, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
     metrics_accessibility_label.configure(textvariable=_metrics_accessibility_var)
-    metrics_accessibility_label.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
 
     hints = build_label(container, "Atalhos: Ctrl+F buscar • Ctrl+Enter aplicar • Ctrl+Shift+L limpar • Alt+1..4 abas • Alt+E exportar • Alt+V salvar visão", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
-    hints.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
-    info_label.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
 
     def _toggle_details_panel():
         details_visible.set(not details_visible.get())
@@ -2860,7 +2858,7 @@ def _build_monitor_ui(container):
     _feedback_banner = AppFeedbackBanner(container, text="")
 
     records_panel = tk.Frame(container, bg=UI_THEME["surface"])
-    records_panel.pack(fill=tk.BOTH, expand=True, padx=theme_space("space_3", 10), pady=(0, theme_space("space_3", 10)))
+    records_panel.pack(fill=tk.BOTH, expand=True, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), theme_space("space_3", 10)))
 
     tab_button_bar = tk.Frame(records_panel, bg=UI_THEME["surface"])
     tab_button_bar.pack(fill=tk.X, padx=0, pady=(0, 0))
