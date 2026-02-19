@@ -35,9 +35,6 @@ from ui_theme import (
     available_theme_names,
     get_active_theme_name,
     validate_theme_contrast,
-    apply_typography,
-    available_typography_names,
-    get_active_typography_name,
     state_colors,
 )
 
@@ -108,6 +105,7 @@ _metrics_accessibility_var = None
 _filter_bars = {}
 _filter_toggle_buttons = {}
 _filter_toggle_state = {"visible": False}
+_text_breakpoints = {}
 
 
 def _load_prefs():
@@ -145,7 +143,6 @@ def _restore_filter_state(snapshot: dict):
 def _persist_ui_state(extra: dict | None = None):
     payload = _load_prefs()
     payload["theme"] = get_active_theme_name()
-    payload["typography"] = get_active_typography_name()
     payload["filter_state"] = _serialize_filter_state()
     payload["control_sort_state"] = {
         str(k): dict(v or {}) for k, v in _control_sort_state.items()
@@ -159,7 +156,6 @@ def _restore_ui_state():
     global _restored_control_sort_state
     prefs = _load_prefs()
     apply_theme(prefs.get("theme") or get_active_theme_name())
-    apply_typography(prefs.get("typography") or get_active_typography_name())
     _restore_filter_state(prefs.get("filter_state") or {})
     restored_sort = prefs.get("control_sort_state") or {}
     _restored_control_sort_state = dict(restored_sort) if isinstance(restored_sort, dict) else {}
@@ -974,6 +970,15 @@ def _record_on_tag_click(text_widget, record, event=None, rec_tag=None):
         _control_selection_state[text_widget] = str((record or {}).get("ID") or (record or {}).get("_entrada_id") or "")
         _set_control_details(details_var, record)
 
+
+def _on_record_line_number_click(text_widget, record, rec_tag, idx):
+    bp = _text_breakpoints.setdefault(text_widget, set())
+    if idx in bp:
+        bp.remove(idx)
+    else:
+        bp.add(idx)
+    _record_on_tag_click(text_widget, record, rec_tag=rec_tag)
+
 def _format_control_row(record: dict):
     nome = _title_name(record.get("NOME", ""), record.get("SOBRENOME", ""))
     return (
@@ -1182,7 +1187,9 @@ def _populate_text(text_widget, info_label):
     has_clickable_records = False
 
     text_widget.tag_configure("row_even", background=UI_THEME.get("surface", "#151A22"))
-    text_widget.tag_configure("row_odd", background=UI_THEME.get("surface_alt", "#1B2430"))
+    text_widget.tag_configure("row_odd", background=UI_THEME.get("surface", "#151A22"))
+    text_widget.tag_configure("line_number", foreground=UI_THEME.get("muted_text", "#A6A6A6"))
+    text_widget.tag_configure("line_center", justify="center")
     for idx, r in enumerate(filtrados):
         is_clickable = formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry)
         row_tag = "row_even" if idx % 2 == 0 else "row_odd"
@@ -1192,21 +1199,28 @@ def _populate_text(text_widget, info_label):
             prefix = "controle" if formatter == format_creative_entry else ("encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else "observacao"))
             rec_tag = f"{prefix}_record_{idx}"
         linha = formatter(r)
+        marker = "●" if idx in _text_breakpoints.get(text_widget, set()) else " "
+        numbered = f"{marker} {idx + 1:>3} │ {linha}"
+        text_tags = [row_tag]
+        if formatter in (format_encomenda_entry, format_orientacao_entry, format_observacao_entry):
+            text_tags.append("line_center")
+        if rec_tag:
+            text_tags.append(rec_tag)
         # Inserir já com a tag — isto garante que o tag cubra exatamente o texto
         try:
             if rec_tag and formatter in (format_orientacao_entry, format_observacao_entry):
-                text_widget.insert(tk.END, linha + "\n", (rec_tag, row_tag))
+                text_widget.insert(tk.END, numbered + "\n", tuple(text_tags))
                 if idx < len(filtrados) - 1:
                     text_widget.insert(tk.END, "─" * 80 + "\n\n", (row_tag,))
                 else:
                     text_widget.insert(tk.END, "\n", (row_tag,))
             elif rec_tag:
-                text_widget.insert(tk.END, linha + "\n\n", (rec_tag, row_tag))
+                text_widget.insert(tk.END, numbered + "\n\n", tuple(text_tags))
             else:
-                text_widget.insert(tk.END, linha + "\n\n", (row_tag,))
+                text_widget.insert(tk.END, numbered + "\n\n", tuple(text_tags))
         except Exception:
             # fallback simples
-            text_widget.insert(tk.END, linha + "\n\n", (row_tag,))
+            text_widget.insert(tk.END, numbered + "\n\n", tuple(text_tags))
 
         # calcular start/end com base nas ranges da tag (quando aplicável)
         if rec_tag:
@@ -1218,7 +1232,7 @@ def _populate_text(text_widget, info_label):
                 else:
                     # fallback: aproximar pelo 'end' antes das quebras adicionadas
                     end = text_widget.index("end-2c")
-                    start = text_widget.index(f"{end} - {len(linha)}c")
+                    start = text_widget.index(f"{end} - {len(numbered)}c")
             except Exception:
                 start = "1.0"
                 end = text_widget.index("end-2c")
@@ -1251,11 +1265,19 @@ def _populate_text(text_widget, info_label):
                 text_widget.tag_bind(rec_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag: _record_on_tag_click(tw, rec, ev, tag))
             except Exception:
                 pass
+            try:
+                prefix = f"{marker} {idx + 1:>3} │"
+                num_tag = f"line_number_{idx}"
+                text_widget.tag_add(num_tag, start, f"{start} + {len(prefix)}c")
+                text_widget.tag_add("line_number", start, f"{start} + {len(prefix)}c")
+                text_widget.tag_bind(num_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_line_number_click(tw, rec, tag, pos))
+            except Exception:
+                pass
         else:
             # para registros não-encomenda, só guardar ranges genéricos
             try:
                 end = text_widget.index("end-2c")
-                start = text_widget.index(f"{end} - {len(linha)}c")
+                start = text_widget.index(f"{end} - {len(numbered)}c")
                 record_ranges.append((start, end, r))
                 try:
                     line_no = str(start).split(".", 1)[0]
@@ -2473,21 +2495,15 @@ def _build_monitor_ui(container):
     theme_var = tk.StringVar(value=get_active_theme_name())
     theme_combo = ttk.Combobox(theme_bar, textvariable=theme_var, values=available_theme_names(), state="readonly")
     theme_combo.pack(side=tk.LEFT, padx=(6, 0))
-    typo_label = build_label(theme_bar, "Tipografia:", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm")); typo_label.pack(side=tk.LEFT, padx=(12, 0))
-    typo_var = tk.StringVar(value=get_active_typography_name())
-    typo_combo = ttk.Combobox(theme_bar, textvariable=typo_var, values=available_typography_names(), state="readonly", width=10)
-    typo_combo.pack(side=tk.LEFT, padx=(6, 0))
-    density_label = build_label(theme_bar, "Densidade:", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm")); density_label.pack(side=tk.LEFT, padx=(12, 0))
-    density_defaults = (_load_prefs().get("layout_density") or "confortavel")
-    density_var = tk.StringVar(value=("Compacto" if str(density_defaults).lower().startswith("compact") else "Confortável"))
-    density_combo = ttk.Combobox(theme_bar, textvariable=density_var, values=["Compacto", "Confortável"], state="readonly", width=12)
-    density_combo.pack(side=tk.LEFT, padx=(6, 0))
+    details_visible = tk.BooleanVar(value=False)
+    btn_top_details = build_secondary_button(theme_bar, "Detalhes", lambda: None)
+    btn_top_details.pack(side=tk.LEFT, padx=(12, 0))
     btn_top_export = build_secondary_button(theme_bar, "Exportar CSV", lambda: None)
-    btn_top_export.pack(side=tk.LEFT, padx=(12, 0))
+    btn_top_export.pack(side=tk.LEFT, padx=(6, 0))
     btn_top_save_view = build_secondary_button(theme_bar, "Salvar visão", lambda: None)
     btn_top_save_view.pack(side=tk.LEFT, padx=(6, 0))
     _legacy_reset_columns_label = "Resetar colunas"
-    btn_top_reload = build_primary_button(theme_bar, "Recarregar", lambda: None)
+    btn_top_reload = build_secondary_button(theme_bar, "Recarregar", lambda: None)
     btn_top_reload.pack(side=tk.LEFT, padx=(6, 0))
     btn_top_clear = build_secondary_danger_button(theme_bar, "Limpar", lambda: None)
     btn_top_clear.pack(side=tk.LEFT, padx=(6, 0))
@@ -2531,13 +2547,11 @@ def _build_monitor_ui(container):
     table_trees = []
     cards_widgets = []
 
-    def _apply_density(mode_label=None):
+    def _apply_density(_mode_label=None):
         global _layout_density_mode
-        selected = str(mode_label or density_var.get() or "Confortável")
-        is_compact = selected.lower().startswith("compact")
-        _layout_density_mode = "compacto" if is_compact else "confortavel"
-        rowheight = 24 if is_compact else 30
-        gap = theme_space("space_1", 4) if is_compact else theme_space("space_2", 8)
+        _layout_density_mode = "confortavel"
+        rowheight = 30
+        gap = theme_space("space_2", 8)
         try:
             ttk.Style(container).configure("Control.Treeview", rowheight=rowheight)
         except Exception:
@@ -2556,45 +2570,32 @@ def _build_monitor_ui(container):
                 pass
         for tree in table_trees:
             try:
-                tree.configure(height=18 if is_compact else 14)
+                tree.configure(height=14)
             except Exception:
                 pass
-        for w in (btn_top_reload, btn_top_clear):
+        for w in (btn_top_details, btn_top_export, btn_top_save_view, btn_top_reload, btn_top_clear, btn_top_toggle_filters):
             try:
-                w.configure(padx=(8 if is_compact else 12), pady=(2 if is_compact else 4))
+                w.configure(padx=12, pady=4)
             except Exception:
                 pass
         _persist_ui_state({"layout_density": _layout_density_mode})
-
-    def _on_density_change(_event=None):
-        _apply_density(density_var.get())
-        report_status("ux_metrics", "OK", stage="density_change", details={"density": _layout_density_mode})
-
-    def _on_typography_change(_event=None):
-        selected = apply_typography(typo_var.get())
-        report_status("ux_metrics", "OK", stage="typography_switch", details={"typography": selected})
-        _persist_ui_state({"typography": selected})
-        _refresh_theme_in_place()
-        _apply_density(density_var.get())
 
     def _on_theme_change(_event=None):
         selected = apply_theme(theme_var.get())
         report_status("ux_metrics", "OK", stage="theme_switch", details={"theme": selected})
         _persist_ui_state({"theme": selected})
         _refresh_theme_in_place()
-        _apply_density(density_var.get())
+        _apply_density()
 
     def _toggle_operation_mode(*_args):
         global _operation_mode_enabled, _runtime_refresh_ms
         _operation_mode_enabled = bool(op_mode_var.get())
         if _operation_mode_enabled:
-            apply_theme("alto_contraste")
-            apply_typography("acessivel")
+            apply_theme("principal")
             _runtime_refresh_ms = 1000
             theme_var.set(get_active_theme_name())
-            typo_var.set(get_active_typography_name())
             focus_mode_var.set(True)
-            report_status("ux_metrics", "OK", stage="operation_mode_enabled", details={"theme": get_active_theme_name(), "typography": get_active_typography_name(), "refresh_ms": _runtime_refresh_ms})
+            report_status("ux_metrics", "OK", stage="operation_mode_enabled", details={"theme": get_active_theme_name(), "refresh_ms": _runtime_refresh_ms})
             try:
                 hints.pack_forget()
             except Exception:
@@ -2613,7 +2614,7 @@ def _build_monitor_ui(container):
             report_status("ux_metrics", "OK", stage="operation_mode_disabled", details={"refresh_ms": _runtime_refresh_ms})
         _persist_ui_state({"operation_mode": _operation_mode_enabled})
         _refresh_theme_in_place()
-        _apply_density(density_var.get())
+        _apply_density()
 
     def _toggle_focus_mode(*_args):
         enabled = bool(focus_mode_var.get())
@@ -2630,8 +2631,6 @@ def _build_monitor_ui(container):
         report_status("ux_metrics", "OK", stage="focus_mode_toggle", details={"enabled": enabled})
 
     theme_combo.bind("<<ComboboxSelected>>", _on_theme_change, add="+")
-    typo_combo.bind("<<ComboboxSelected>>", _on_typography_change, add="+")
-    density_combo.bind("<<ComboboxSelected>>", _on_density_change, add="+")
     op_mode_var.trace_add("write", _toggle_operation_mode)
     focus_mode_var.trace_add("write", _toggle_focus_mode)
 
@@ -2657,7 +2656,7 @@ def _build_monitor_ui(container):
     }
     cards_tooltips = {
         "ativos": "Total de avisos atualmente ativos no sistema.",
-        "pendentes": "Soma de alertas pendentes + sem contato + status pendente.",
+        "pendentes": "Soma de alertas pendentes + status pendente.",
         "sem_contato": "Registros com status marcado como SEM CONTATO.",
         "avisado": "Registros com status marcado como AVISADO.",
     }
@@ -2677,6 +2676,21 @@ def _build_monitor_ui(container):
     hints = build_label(container, "Atalhos: Ctrl+F buscar • Ctrl+Enter aplicar • Ctrl+Shift+L limpar • Alt+1..4 abas • Alt+E exportar • Alt+V salvar visão", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
     hints.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
     info_label.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+
+    def _toggle_details_panel():
+        details_visible.set(not details_visible.get())
+        visible = details_visible.get()
+        widgets = (metrics_accessibility_label, hints, info_label)
+        for widget in widgets:
+            try:
+                if visible:
+                    widget.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+                else:
+                    widget.pack_forget()
+            except Exception:
+                pass
+
+    btn_top_details.configure(command=_toggle_details_panel)
 
     _status_bar = AppStatusBar(container, text="UX: aguardando eventos")
     _status_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
@@ -2874,7 +2888,7 @@ def _build_monitor_ui(container):
         _announce_feedback("Use Ctrl+F para busca e Alt+1..4 para trocar abas", "info")
         _persist_ui_state({"onboarding_seen": True})
 
-    _apply_density(density_var.get())
+    _apply_density()
     if op_mode_var.get():
         _toggle_operation_mode()
     _update_status_cards()

@@ -262,11 +262,10 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('root_win.bind("<F1>", _show_shortcuts, add="+")', source)
 
 
-    def test_monitor_ui_has_density_toolbar_and_operation_mode_hooks(self):
+    def test_monitor_ui_has_main_toolbar_and_operation_mode_hooks(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_monitor_ui)
-        self.assertIn('Densidade:', source)
-        self.assertIn('values=["Compacto", "Confortável"]', source)
+        self.assertIn('Detalhes', source)
         self.assertIn('Exportar CSV', source)
         self.assertIn('Resetar colunas', source)
         self.assertIn('Salvar visão', source)
@@ -284,7 +283,7 @@ class InterfaceTwoTests(unittest.TestCase):
     def test_monitor_ui_moves_reload_and_clear_to_top_toolbar(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_monitor_ui)
-        self.assertIn('btn_top_reload = build_primary_button(theme_bar, "Recarregar", lambda: None)', source)
+        self.assertIn('btn_top_reload = build_secondary_button(theme_bar, "Recarregar", lambda: None)', source)
         self.assertIn('btn_top_clear = build_secondary_danger_button(theme_bar, "Limpar", lambda: None)', source)
         self.assertNotIn('btn_frame = tk.Frame(container, bg=UI_THEME["bg"])', source)
 
