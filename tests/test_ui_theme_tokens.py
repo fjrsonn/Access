@@ -22,9 +22,15 @@ class UIThemeTokensTests(unittest.TestCase):
             snapshots[name] = out["ratios"]
             self.assertFalse(out["warnings"], f"Theme {name} has contrast warnings: {out['warnings']}")
 
-        self.assertIn("escuro", snapshots)
-        self.assertIn("claro", snapshots)
-        self.assertIn("alto_contraste", snapshots)
+        self.assertIn("principal", snapshots)
+
+    def test_principal_theme_matches_expected_core_palette(self):
+        preset = ui_theme.THEME_PRESETS.get("principal", {})
+        self.assertEqual(preset.get("bg"), "#1E1E1E")
+        self.assertEqual(preset.get("surface"), "#252526")
+        self.assertEqual(preset.get("text"), "#D4D4D4")
+        self.assertEqual(preset.get("primary"), "#0E639C")
+        self.assertEqual(preset.get("selection_bg"), "#094771")
 
     def test_typography_presets_exist(self):
         self.assertIn("compacto", ui_theme.TYPOGRAPHY_PRESETS)
