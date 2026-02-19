@@ -1485,7 +1485,7 @@ def _snapshot_current_filter(filter_key):
 def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
     target_widget = target_widget or filter_key
     bar = build_card_frame(parent)
-    bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_3", 10), theme_space("space_2", 6)))
+    bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 6)))
 
     top_row = tk.Frame(bar, bg=UI_THEME["surface"])
     top_row.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_2", 8), theme_space("space_1", 4)))
