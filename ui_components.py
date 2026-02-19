@@ -93,8 +93,11 @@ class AppMetricCard(tk.Frame):
         self.value_var = tk.StringVar(value=value)
         self.meta_var = tk.StringVar(value="Atualizado agora")
         self.trend_var = tk.StringVar(value="→ estável")
-        self.accent = tk.Frame(self, bg=UI_THEME.get(tone, UI_THEME.get("primary", "#2F81F7")), width=4)
-        self.accent.pack(side=tk.LEFT, fill=tk.Y)
+        self.accent_wrap = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"), width=4)
+        self.accent_wrap.pack(side=tk.LEFT, fill=tk.Y)
+        self.accent = tk.Frame(self.accent_wrap, bg=UI_THEME.get(tone, UI_THEME.get("primary", "#2F81F7")))
+        self.accent.place(relx=0.0, rely=1.0, relwidth=1.0, relheight=1.0, anchor="sw")
+        self._accent_anim_after = None
         self.body = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"))
         self.body.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.title_lbl = tk.Label(self.body, textvariable=self.title_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
@@ -118,6 +121,41 @@ class AppMetricCard(tk.Frame):
             self._apply_density(mode)
         except Exception:
             pass
+
+
+    def _set_accent_progress(self, progress: float):
+        p = max(0.0, min(1.0, float(progress)))
+        try:
+            self.accent.configure(bg=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")))
+            self.accent.place_configure(relheight=p, rely=1.0, relx=0.0, relwidth=1.0, anchor="sw")
+        except Exception:
+            pass
+
+    def animate_accent_growth(self, duration_ms: int = 360, steps: int = 12, on_done=None):
+        try:
+            if self._accent_anim_after:
+                self.after_cancel(self._accent_anim_after)
+        except Exception:
+            pass
+        self._accent_anim_after = None
+        total_steps = max(1, int(steps))
+        interval = max(16, int(duration_ms / total_steps))
+        self._set_accent_progress(0.0)
+
+        def _tick(step_idx=0):
+            progress = min(1.0, step_idx / total_steps)
+            self._set_accent_progress(progress)
+            if step_idx >= total_steps:
+                self._accent_anim_after = None
+                if callable(on_done):
+                    try:
+                        on_done()
+                    except Exception:
+                        pass
+                return
+            self._accent_anim_after = self.after(interval, lambda: _tick(step_idx + 1))
+
+        _tick(0)
 
     def set_title(self, title: str, icon: str | None = None):
         if icon is not None:
