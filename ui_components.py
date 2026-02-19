@@ -102,11 +102,46 @@ class AppMetricCard(tk.Frame):
         self._accent_anim_after = None
         self.body = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"))
         self.body.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.bottom_curve = tk.Canvas(self.body, height=18, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
+        self.bottom_curve.pack(side=tk.BOTTOM, fill=tk.X)
         self.title_lbl = tk.Label(self.body, textvariable=self.title_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self.value_lbl = tk.Label(self.body, textvariable=self.value_var, bg=UI_THEME.get("surface", "#151A22"), fg=state_colors(tone)[0], font=theme_font("font_xl", "bold"))
         self.trend_lbl = tk.Label(self.body, textvariable=self.trend_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self.meta_lbl = tk.Label(self.body, textvariable=self.meta_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self._apply_density("confortavel")
+        self.bottom_curve.bind("<Configure>", self._draw_bottom_curve, add="+")
+        self.after(0, self._draw_bottom_curve)
+
+    def _draw_bottom_curve(self, _event=None):
+        try:
+            w = max(20, int(self.bottom_curve.winfo_width()))
+            h = max(8, int(self.bottom_curve.winfo_height()))
+            card_bg = UI_THEME.get("surface", "#151A22")
+            cutout_bg = self.master.cget("bg") if self.master is not None else UI_THEME.get("bg", "#0D1117")
+            border = "#000000"
+            self.bottom_curve.configure(bg=card_bg)
+            self.bottom_curve.delete("all")
+
+            # base reta do retângulo
+            self.bottom_curve.create_rectangle(0, 0, w, h, fill=card_bg, outline="")
+
+            # recorte côncavo (meia-lua para dentro) na ponta inferior
+            notch_r = min(max(10, w // 6), max(12, h * 2))
+            cx = w // 2
+            self.bottom_curve.create_arc(
+                cx - notch_r,
+                h - (2 * notch_r),
+                cx + notch_r,
+                h,
+                start=0,
+                extent=180,
+                style="pieslice",
+                outline=border,
+                width=1,
+                fill=cutout_bg,
+            )
+        except Exception:
+            pass
 
     def _apply_density(self, mode: str = "confortavel"):
         compact = str(mode).lower().startswith("compact")
