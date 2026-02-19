@@ -1,0 +1,273 @@
+{
+  "registros": [
+    {
+      "id": 1,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação registrada para Flavio Junior, morador do Bloco 10, Apartamento 10: avisar quando chegar a entrega da farmácia.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "10"
+        ],
+        "NOME": [
+          "DO"
+        ],
+        "SOBRENOME": [
+          "BLOCO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "10"
+        ],
+        "NOME": [
+          "DO"
+        ],
+        "SOBRENOME": [
+          "BLOCO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/02/2026 09:08:04",
+      "processado": true,
+      "motivo_roteamento": "scores={'orientacoes': 0.0, 'observacoes': 8.5, 'encomendas': 1.1}; escolhido=observacoes",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.878,
+      "ambiguo": false
+    },
+    {
+      "id": 2,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação referente à moradora MARIA Souza, Bloco B, Apartamento 202: guardar documento e avisar quando chegar.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "B"
+        ],
+        "APARTAMENTO": [
+          "202"
+        ],
+        "NOME": [
+          "MARIA"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "B"
+        ],
+        "APARTAMENTO": [
+          "202"
+        ],
+        "NOME": [
+          "MARIA"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/02/2026 09:08:06",
+      "processado": true,
+      "motivo_roteamento": "scores={'orientacoes': 0.0, 'observacoes': 10.5, 'encomendas': 0.0}; escolhido=observacoes",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.991,
+      "ambiguo": false
+    },
+    {
+      "id": 3,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação direcionada a CARLOS Lima, residente no Bloco C, Apartamento 303: receber encomenda e realizar a entrega no período da noite.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "C"
+        ],
+        "APARTAMENTO": [
+          "303"
+        ],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "C"
+        ],
+        "APARTAMENTO": [
+          "303"
+        ],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/02/2026 09:08:08",
+      "processado": true,
+      "motivo_roteamento": "scores={'orientacoes': 0.0, 'observacoes': 3.4000000000000004, 'encomendas': 3.6}; escolhido=encomendas",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.514,
+      "ambiguo": true
+    },
+    {
+      "id": 4,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação para ANA Pereira, moradora do Bloco D, Apartamento 404: anotar recado e avisar o prestador.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "D"
+        ],
+        "APARTAMENTO": [
+          "404"
+        ],
+        "NOME": [
+          "DO"
+        ],
+        "SOBRENOME": [
+          "BLOCO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "D"
+        ],
+        "APARTAMENTO": [
+          "404"
+        ],
+        "NOME": [
+          "DO"
+        ],
+        "SOBRENOME": [
+          "BLOCO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/02/2026 09:08:10",
+      "processado": true,
+      "motivo_roteamento": "scores={'orientacoes': 0.0, 'observacoes': 7.800000000000001, 'encomendas': 0.0}; escolhido=observacoes",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.988,
+      "ambiguo": false
+    },
+    {
+      "id": 5,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação registrada para JOÃO Silva, residente no Bloco A, Apartamento 101: aviso operacional de manutenção.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "A"
+        ],
+        "APARTAMENTO": [
+          "101"
+        ],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "A"
+        ],
+        "APARTAMENTO": [
+          "101"
+        ],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/02/2026 09:08:12",
+      "processado": true,
+      "motivo_roteamento": "scores={'orientacoes': 0.0, 'observacoes': 6.4, 'encomendas': 0.0}; escolhido=observacoes",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.985,
+      "ambiguo": false
+    }
+  ]
+}

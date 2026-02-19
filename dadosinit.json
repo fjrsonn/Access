@@ -1,0 +1,45 @@
+{
+    "registros": [
+        {
+            "id": 1,
+            "texto": "FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO MORADOR",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:14",
+            "MORADOR SEM TAG": "SIM"
+        },
+        {
+            "id": 2,
+            "texto": "REGIANE MENEZES BL10 AP10 FJS0701 NIVUS CINZA VISITANTE",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:16"
+        },
+        {
+            "id": 3,
+            "texto": "FLAVIO JUNIOR MORADOR BL10 AP10 FEU3C84 JETA PRETO",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:18",
+            "MORADOR SEM TAG": "SIM"
+        },
+        {
+            "id": 4,
+            "texto": "MORADOR FLAVIO JUNIOR BL10 AP10 FEU3C84 JETA PRETO",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:20",
+            "MORADOR SEM TAG": "SIM"
+        },
+        {
+            "id": 5,
+            "texto": "JETA PRETO FEU3C84 MORADOR FLAVIO JUNIOR BL10 AP10",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:22",
+            "MORADOR SEM TAG": "SIM"
+        },
+        {
+            "id": 6,
+            "texto": "FEU3C84 JETA FLAVIO MORADOR AP10 BL10 JUNIOR PRETO",
+            "processado": true,
+            "data_hora": "17/02/2026 09:08:24",
+            "MORADOR SEM TAG": "SIM"
+        }
+    ]
+}
