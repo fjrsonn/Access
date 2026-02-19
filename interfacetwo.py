@@ -2825,8 +2825,8 @@ def _build_monitor_ui(container):
 
     def _play_metric_cards_intro_animation():
         order = ["ativos", "pendentes", "sem_contato", "avisado"]
-        duration_ms = 420
-        steps = 14
+        duration_ms = 780
+        steps = 20
 
         def _play_next(pos=0):
             if pos >= len(order):

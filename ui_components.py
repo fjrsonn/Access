@@ -96,7 +96,7 @@ class AppMetricCard(tk.Frame):
         self.accent_wrap = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"), width=4)
         self.accent_wrap.pack(side=tk.LEFT, fill=tk.Y)
         self.accent = tk.Frame(self.accent_wrap, bg=UI_THEME.get(tone, UI_THEME.get("primary", "#2F81F7")))
-        self.accent.place(relx=0.0, rely=1.0, relwidth=1.0, relheight=1.0, anchor="sw")
+        self.accent.place(relx=0.0, rely=1.0, relwidth=1.0, relheight=0.0, anchor="sw")
         self._accent_anim_after = None
         self.body = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"))
         self.body.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
