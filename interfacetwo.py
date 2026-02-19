@@ -2559,7 +2559,7 @@ def _build_monitor_ui(container):
                 tree.configure(height=18 if is_compact else 14)
             except Exception:
                 pass
-        for w in (btn_reload, btn_backup):
+        for w in (btn_top_reload, btn_top_clear):
             try:
                 w.configure(padx=(8 if is_compact else 12), pady=(2 if is_compact else 4))
             except Exception:
