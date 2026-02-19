@@ -117,7 +117,7 @@ class AppMetricCard(tk.Frame):
             w = max(20, int(self.bottom_curve.winfo_width()))
             h = max(8, int(self.bottom_curve.winfo_height()))
             card_bg = UI_THEME.get("surface", "#151A22")
-            cutout_bg = self.master.cget("bg") if self.master is not None else UI_THEME.get("bg", "#0D1117")
+            cutout_bg = UI_THEME.get("bg", "#0D1117")
             border = "#000000"
             self.bottom_curve.configure(bg=card_bg)
             self.bottom_curve.delete("all")
@@ -126,7 +126,7 @@ class AppMetricCard(tk.Frame):
             self.bottom_curve.create_rectangle(0, 0, w, h, fill=card_bg, outline="")
 
             # recorte côncavo (meia-lua para dentro) na ponta inferior
-            notch_r = min(max(10, w // 6), max(12, h * 2))
+            notch_r = min(max(14, w // 5), max(16, h * 2))
             cx = w // 2
             self.bottom_curve.create_arc(
                 cx - notch_r,
@@ -137,7 +137,7 @@ class AppMetricCard(tk.Frame):
                 extent=180,
                 style="pieslice",
                 outline=border,
-                width=1,
+                width=2,
                 fill=cutout_bg,
             )
         except Exception:
