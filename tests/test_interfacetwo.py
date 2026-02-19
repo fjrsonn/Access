@@ -314,7 +314,7 @@ class InterfaceTwoTests(unittest.TestCase):
         import inspect
         source = inspect.getsource(interfacetwo._populate_text)
         self.assertIn('row_tag = "row_even" if idx % 2 == 0 else "row_odd"', source)
-        self.assertIn('text_widget.insert(tk.END, "─" * 80 + "\\n\\n", (row_tag,))', source)
+        self.assertIn('text_widget.tag_configure("row_odd", background=UI_THEME.get("surface", "#151A22"))', source)
 
     def test_hover_supports_full_record_tag_highlight(self):
         import inspect

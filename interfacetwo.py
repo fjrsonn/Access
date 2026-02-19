@@ -32,7 +32,6 @@ from ui_theme import (
     bind_focus_ring,
     bind_button_states,
     apply_theme,
-    available_theme_names,
     get_active_theme_name,
     validate_theme_contrast,
     state_colors,
@@ -106,6 +105,7 @@ _filter_bars = {}
 _filter_toggle_buttons = {}
 _filter_toggle_state = {"visible": False}
 _text_breakpoints = {}
+_text_hover_marker = {}
 
 
 def _load_prefs():
@@ -978,6 +978,10 @@ def _on_record_line_number_click(text_widget, record, rec_tag, idx):
     else:
         bp.add(idx)
     _record_on_tag_click(text_widget, record, rec_tag=rec_tag)
+    source = _monitor_sources.get(text_widget, {})
+    info_label = source.get("info_label")
+    if info_label is not None:
+        _populate_text(text_widget, info_label)
 
 
 def _on_record_text_click_toggle_bp(text_widget, record, rec_tag, idx):
@@ -1202,20 +1206,15 @@ def _populate_text(text_widget, info_label):
             prefix = "controle" if formatter == format_creative_entry else ("encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else "observacao"))
             rec_tag = f"{prefix}_record_{idx}"
         linha = formatter(r)
-        marker = "●" if idx in _text_breakpoints.get(text_widget, set()) else "○"
+        hover_idx = _text_hover_marker.get(text_widget)
+        marker = "●" if idx in _text_breakpoints.get(text_widget, set()) else ("○" if hover_idx == idx else " ")
         numbered = f"{marker} {idx + 1:>3}  {linha}"
         text_tags = [row_tag]
         if rec_tag:
             text_tags.append(rec_tag)
         # Inserir já com a tag — isto garante que o tag cubra exatamente o texto
         try:
-            if rec_tag and formatter in (format_orientacao_entry, format_observacao_entry):
-                text_widget.insert(tk.END, numbered + "\n", tuple(text_tags))
-                if idx < len(filtrados) - 1:
-                    text_widget.insert(tk.END, "─" * 80 + "\n\n", (row_tag,))
-                else:
-                    text_widget.insert(tk.END, "\n", (row_tag,))
-            elif rec_tag:
+            if rec_tag:
                 text_widget.insert(tk.END, numbered + "\n\n", tuple(text_tags))
             else:
                 text_widget.insert(tk.END, numbered + "\n\n", tuple(text_tags))
@@ -1272,14 +1271,7 @@ def _populate_text(text_widget, info_label):
                 text_widget.tag_add(num_tag, start, f"{start} + {len(prefix)}c")
                 text_widget.tag_add("line_number", start, f"{start} + {len(prefix)}c")
                 text_widget.tag_bind(num_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_line_number_click(tw, rec, tag, pos))
-            except Exception:
-                pass
-            try:
-                prefix = f"{marker} {idx + 1:>3} │"
-                num_tag = f"line_number_{idx}"
-                text_widget.tag_add(num_tag, start, f"{start} + {len(prefix)}c")
-                text_widget.tag_add("line_number", start, f"{start} + {len(prefix)}c")
-                text_widget.tag_bind(num_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_line_number_click(tw, rec, tag, pos))
+                text_widget.tag_bind(num_tag, "<Enter>", lambda ev, tw=text_widget, rec=r, tag=rec_tag: _record_on_tag_click(tw, rec, ev, tag))
             except Exception:
                 pass
         else:
@@ -1967,6 +1959,15 @@ def _bind_hover_highlight(text_widget):
         tag_names = text_widget.tag_names(index)
         rec_tag = next((t for t in tag_names if "_record_" in t), None)
         if rec_tag:
+            try:
+                hover_idx = int(str(rec_tag).rsplit("_", 1)[1])
+            except Exception:
+                hover_idx = None
+            if _text_hover_marker.get(text_widget) != hover_idx:
+                _text_hover_marker[text_widget] = hover_idx
+                info = (_monitor_sources.get(text_widget) or {}).get("info_label")
+                if info is not None:
+                    _populate_text(text_widget, info)
             token = f"tag:{rec_tag}"
             if _hover_state.get(text_widget) == token:
                 return
@@ -1974,6 +1975,11 @@ def _bind_hover_highlight(text_widget):
             if _apply_hover_record(text_widget, rec_tag, hover_tag):
                 _hover_state[text_widget] = token
             return
+        if _text_hover_marker.get(text_widget) is not None:
+            _text_hover_marker[text_widget] = None
+            info = (_monitor_sources.get(text_widget) or {}).get("info_label")
+            if info is not None:
+                _populate_text(text_widget, info)
         try:
             line_text = text_widget.get(f"{line}.0", f"{line}.end")
         except Exception:
@@ -1988,7 +1994,16 @@ def _bind_hover_highlight(text_widget):
         _hover_state[text_widget] = line
 
     text_widget.bind("<Motion>", on_motion)
-    text_widget.bind("<Leave>", lambda _event: _clear_hover_line(text_widget, hover_tag))
+
+    def _on_leave(_event):
+        _clear_hover_line(text_widget, hover_tag)
+        if _text_hover_marker.get(text_widget) is not None:
+            _text_hover_marker[text_widget] = None
+            info = (_monitor_sources.get(text_widget) or {}).get("info_label")
+            if info is not None:
+                _populate_text(text_widget, info)
+
+    text_widget.bind("<Leave>", _on_leave)
 
 def _find_encomenda_record_at_index(text_widget, index):
     try:
@@ -2498,17 +2513,29 @@ def _build_monitor_ui(container):
     style.map("Control.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME["primary"]))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("on_primary", UI_THEME["text"])))])
 
     info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg=UI_THEME["bg"], fg=UI_THEME["muted_text"], font=theme_font("font_sm"))
-    top_toggle_bar = tk.Frame(container, bg=UI_THEME.get("primary", UI_THEME["bg"]))
+    top_toggle_bar = tk.Frame(container, bg=UI_THEME.get("surface_alt", UI_THEME["bg"]))
     top_toggle_bar.pack(fill=tk.X, padx=0, pady=(0, 0))
-    btn_eye = build_secondary_button(top_toggle_bar, "👁", lambda: None)
-    btn_eye.pack(side=tk.LEFT, padx=(theme_space("space_3", 10), 0), pady=(2, 2))
+    btn_eye = tk.Button(
+        top_toggle_bar,
+        text="👁",
+        command=lambda: None,
+        bg=UI_THEME.get("surface_alt", UI_THEME["bg"]),
+        fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
+        activebackground=UI_THEME.get("border", UI_THEME.get("surface_alt", "#2D2D2D")),
+        activeforeground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
+        relief="flat",
+        bd=0,
+        font=theme_font("font_xl", "bold"),
+        anchor="center",
+        padx=0,
+        pady=4,
+    )
+    btn_eye.pack(fill=tk.X)
 
     theme_bar = tk.Frame(container, bg=UI_THEME["bg"])
     theme_bar.pack(fill=tk.X, padx=10, pady=(6, 0))
-    theme_label = build_label(theme_bar, "Tema:", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm")); theme_label.pack(side=tk.LEFT)
-    theme_var = tk.StringVar(value=get_active_theme_name())
-    theme_combo = ttk.Combobox(theme_bar, textvariable=theme_var, values=available_theme_names(), state="readonly")
-    theme_combo.pack(side=tk.LEFT, padx=(6, 0))
+    btn_top_theme = build_secondary_button(theme_bar, "🎨 Tema", lambda: None)
+    btn_top_theme.pack(side=tk.LEFT, padx=(6, 0))
     details_visible = tk.BooleanVar(value=False)
     btn_top_details = build_secondary_button(theme_bar, "🧾 Detalhes", lambda: None)
     btn_top_details.pack(side=tk.LEFT, padx=(12, 0))
@@ -2535,7 +2562,6 @@ def _build_monitor_ui(container):
         try:
             container.configure(bg=UI_THEME["bg"])
             theme_bar.configure(bg=UI_THEME["bg"])
-            theme_label.configure(bg=UI_THEME["bg"], fg=UI_THEME["muted_text"])
             info_label.configure(bg=UI_THEME["bg"], fg=UI_THEME["muted_text"])
         except Exception:
             pass
@@ -2595,7 +2621,7 @@ def _build_monitor_ui(container):
         _persist_ui_state({"layout_density": _layout_density_mode})
 
     def _on_theme_change(_event=None):
-        selected = apply_theme(theme_var.get())
+        selected = apply_theme("principal")
         report_status("ux_metrics", "OK", stage="theme_switch", details={"theme": selected})
         _persist_ui_state({"theme": selected})
         _refresh_theme_in_place()
@@ -2607,7 +2633,7 @@ def _build_monitor_ui(container):
         if _operation_mode_enabled:
             apply_theme("principal")
             _runtime_refresh_ms = 1000
-            theme_var.set(get_active_theme_name())
+            
             focus_mode_var.set(True)
             report_status("ux_metrics", "OK", stage="operation_mode_enabled", details={"theme": get_active_theme_name(), "refresh_ms": _runtime_refresh_ms})
             try:
@@ -2644,7 +2670,7 @@ def _build_monitor_ui(container):
             pass
         report_status("ux_metrics", "OK", stage="focus_mode_toggle", details={"enabled": enabled})
 
-    theme_combo.bind("<<ComboboxSelected>>", _on_theme_change, add="+")
+    btn_top_theme.configure(command=_on_theme_change)
     op_mode_var.trace_add("write", _toggle_operation_mode)
     focus_mode_var.trace_add("write", _toggle_focus_mode)
 
@@ -2870,7 +2896,10 @@ def _build_monitor_ui(container):
             _control_filtered_count_var = tk.StringVar(value=toolbar_count_var.get())
             _control_filtered_count_var.trace_add("write", lambda *_: _sync_count())
         else:
-            tk.Frame(frame, bg=UI_THEME["surface"], height=theme_space("space_1", 4)).pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
+            tab_toolbar = tk.Frame(frame, bg=UI_THEME["surface"])
+            tab_toolbar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
+            tab_spacer = build_label(tab_toolbar, "", muted=True, bg=UI_THEME["surface"], font=theme_font("font_sm"))
+            tab_spacer.pack(side=tk.RIGHT)
 
         text_widget = tk.Text(
             frame,
