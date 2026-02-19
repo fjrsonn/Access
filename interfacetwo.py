@@ -2542,7 +2542,14 @@ def _build_monitor_ui(container):
     style.map("Control.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME["primary"]))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("on_primary", UI_THEME["text"])))])
 
     info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg=UI_THEME["bg"], fg=UI_THEME["muted_text"], font=theme_font("font_sm"))
-    top_toggle_bar = tk.Frame(container, bg=UI_THEME.get("surface_alt", UI_THEME["bg"]))
+    top_toggle_bar = tk.Frame(
+        container,
+        bg=UI_THEME.get("surface_alt", UI_THEME["bg"]),
+        relief="raised",
+        bd=1,
+        highlightthickness=1,
+        highlightbackground=UI_THEME.get("border", "#3C3C3C"),
+    )
     top_toggle_bar.pack(fill=tk.X, padx=0, pady=(0, 0))
     btn_eye = tk.Button(
         top_toggle_bar,
@@ -2562,6 +2569,8 @@ def _build_monitor_ui(container):
     btn_eye.pack(fill=tk.X)
     top_shadow = tk.Frame(container, bg=UI_THEME.get("border", "#3C3C3C"), height=1)
     top_shadow.pack(fill=tk.X, padx=0, pady=(0, 0))
+    top_shadow_soft = tk.Frame(container, bg=UI_THEME.get("surface", "#252526"), height=1)
+    top_shadow_soft.pack(fill=tk.X, padx=0, pady=(0, 2))
 
     theme_bar = tk.Frame(container, bg=UI_THEME["bg"])
     theme_bar.pack(fill=tk.X, padx=10, pady=(6, 0))
@@ -2909,6 +2918,10 @@ def _build_monitor_ui(container):
         pass
 
     for frame, arquivo, formatter, filter_key in tab_configs:
+        tab_depth_hard = tk.Frame(frame, bg=UI_THEME.get("border", "#3C3C3C"), height=1)
+        tab_depth_hard.pack(fill=tk.X, padx=0, pady=(0, 0))
+        tab_depth_soft = tk.Frame(frame, bg=UI_THEME.get("surface", "#252526"), height=1)
+        tab_depth_soft.pack(fill=tk.X, padx=0, pady=(0, theme_space("space_1", 4)))
         if filter_key == "controle":
             toolbar = tk.Frame(frame, bg=UI_THEME["surface"])
             toolbar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)) )
