@@ -2798,9 +2798,6 @@ def _build_monitor_ui(container):
     tab_button_bar = tk.Frame(container, bg=UI_THEME["bg"])
     tab_button_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
 
-    tabs_separator = tk.Frame(container, bg="#000000", height=1)
-    tabs_separator.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
-
     notebook = ttk.Notebook(container, style="Monitor.Tabless.TNotebook")
     notebook.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_3", 10)), fill=tk.BOTH, expand=True)
     notebook.configure(padding=0)
@@ -2957,7 +2954,7 @@ def _build_monitor_ui(container):
     for frame, arquivo, formatter, filter_key in tab_configs:
         if filter_key == "controle":
             toolbar = tk.Frame(frame, bg=UI_THEME["surface"])
-            toolbar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)) )
+            toolbar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0) )
             toolbar_count_var = tk.StringVar(value="Registros filtrados: 0")
             toolbar_count = build_label(toolbar, "", muted=True, bg=UI_THEME["surface"], font=theme_font("font_sm"))
             toolbar_count.configure(textvariable=toolbar_count_var)
@@ -2976,9 +2973,12 @@ def _build_monitor_ui(container):
             _control_filtered_count_var.trace_add("write", lambda *_: _sync_count())
         else:
             tab_toolbar = tk.Frame(frame, bg=UI_THEME["surface"])
-            tab_toolbar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
+            tab_toolbar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
             tab_spacer = build_label(tab_toolbar, "", muted=True, bg=UI_THEME["surface"], font=theme_font("font_sm"))
             tab_spacer.pack(side=tk.RIGHT)
+
+        records_top_line = tk.Frame(frame, bg=UI_THEME.get("border", UI_THEME.get("surface_alt", "#2b2b2b")), height=1)
+        records_top_line.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
 
         text_widget = tk.Text(
             frame,
