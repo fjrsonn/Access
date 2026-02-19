@@ -1270,8 +1270,7 @@ def _populate_text(text_widget, info_label):
                 num_tag = f"line_number_{idx}"
                 text_widget.tag_add(num_tag, start, f"{start} + {len(prefix)}c")
                 text_widget.tag_add("line_number", start, f"{start} + {len(prefix)}c")
-                is_fixed = idx in _text_breakpoints.get(text_widget, set())
-                text_widget.tag_configure(num_tag, foreground=(UI_THEME.get("muted_text", "#A6A6A6") if is_fixed else UI_THEME.get("surface", "#151A22")))
+                text_widget.tag_configure(num_tag, foreground=UI_THEME.get("muted_text", "#A6A6A6"))
                 text_widget.tag_bind(num_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_line_number_click(tw, rec, tag, pos))
                 text_widget.tag_bind(num_tag, "<Enter>", lambda ev, tw=text_widget, rec=r, tag=rec_tag: _record_on_tag_click(tw, rec, ev, tag))
                 _record_num_tag_map.setdefault(text_widget, {})[rec_tag] = num_tag
@@ -1973,8 +1972,7 @@ def _bind_hover_highlight(text_widget):
                 except Exception:
                     prev_idx = None
                 if prev_num:
-                    fixed = prev_idx in _text_breakpoints.get(text_widget, set()) if prev_idx is not None else False
-                    text_widget.tag_configure(prev_num, foreground=(UI_THEME.get("muted_text", "#A6A6A6") if fixed else UI_THEME.get("surface", "#151A22")))
+                    text_widget.tag_configure(prev_num, foreground=UI_THEME.get("muted_text", "#A6A6A6"))
             cur_num = num_map.get(rec_tag)
             if cur_num:
                 text_widget.tag_configure(cur_num, foreground=UI_THEME.get("muted_text", "#A6A6A6"))
@@ -1999,8 +1997,7 @@ def _bind_hover_highlight(text_widget):
                     prev_idx = int(str(prev_tag).rsplit("_", 1)[1])
                 except Exception:
                     prev_idx = None
-                fixed = prev_idx in _text_breakpoints.get(text_widget, set()) if prev_idx is not None else False
-                text_widget.tag_configure(prev_num, foreground=(UI_THEME.get("muted_text", "#A6A6A6") if fixed else UI_THEME.get("surface", "#151A22")))
+                text_widget.tag_configure(prev_num, foreground=UI_THEME.get("muted_text", "#A6A6A6"))
             _text_hover_marker[text_widget] = None
         try:
             line_text = text_widget.get(f"{line}.0", f"{line}.end")
@@ -2026,8 +2023,7 @@ def _bind_hover_highlight(text_widget):
                 prev_idx = int(str(prev_tag).rsplit("_", 1)[1])
             except Exception:
                 prev_idx = None
-            fixed = prev_idx in _text_breakpoints.get(text_widget, set()) if prev_idx is not None else False
-            text_widget.tag_configure(prev_num, foreground=(UI_THEME.get("muted_text", "#A6A6A6") if fixed else UI_THEME.get("surface", "#151A22")))
+            text_widget.tag_configure(prev_num, foreground=UI_THEME.get("muted_text", "#A6A6A6"))
         _clear_hover_line(text_widget, hover_tag)
         if _text_hover_marker.get(text_widget) is not None:
             _text_hover_marker[text_widget] = None
@@ -2528,12 +2524,23 @@ def _build_monitor_ui(container):
         style.theme_use("clam")
     except Exception:
         pass
-    style.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0)
-    style.configure("Dark.TNotebook.Tab", background=UI_THEME.get("surface_alt", UI_THEME["surface"]), foreground=UI_THEME.get("on_surface", UI_THEME["text"]), padding=(18, 8), relief="flat")
+    style.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat")
+    style.configure(
+        "Dark.TNotebook.Tab",
+        background=UI_THEME.get("surface_alt", UI_THEME["surface"]),
+        foreground=UI_THEME.get("on_surface", UI_THEME["text"]),
+        padding=(18, 8),
+        relief="flat",
+        borderwidth=0,
+        highlightthickness=0,
+    )
     style.map(
         "Dark.TNotebook.Tab",
         background=[("selected", UI_THEME.get("surface", UI_THEME["bg"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
         foreground=[("selected", UI_THEME.get("on_primary", UI_THEME["text"])), ("active", UI_THEME.get("on_surface", UI_THEME["text"]))],
+        bordercolor=[("selected", UI_THEME.get("surface", UI_THEME["bg"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
+        lightcolor=[("selected", UI_THEME.get("surface", UI_THEME["bg"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
+        darkcolor=[("selected", UI_THEME.get("surface", UI_THEME["bg"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
     )
     style.configure("Encomenda.Text", background=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]))
     report_status("ux_metrics", "OK", stage="theme_contrast_check", details=validate_theme_contrast())
@@ -2542,14 +2549,7 @@ def _build_monitor_ui(container):
     style.map("Control.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME["primary"]))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("on_primary", UI_THEME["text"])))])
 
     info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg=UI_THEME["bg"], fg=UI_THEME["muted_text"], font=theme_font("font_sm"))
-    top_toggle_bar = tk.Frame(
-        container,
-        bg=UI_THEME.get("surface_alt", UI_THEME["bg"]),
-        relief="raised",
-        bd=1,
-        highlightthickness=1,
-        highlightbackground=UI_THEME.get("border", "#3C3C3C"),
-    )
+    top_toggle_bar = tk.Frame(container, bg=UI_THEME.get("surface_alt", UI_THEME["bg"]), relief="flat", bd=0, highlightthickness=0)
     top_toggle_bar.pack(fill=tk.X, padx=0, pady=(0, 0))
     btn_eye = tk.Button(
         top_toggle_bar,
@@ -2567,10 +2567,8 @@ def _build_monitor_ui(container):
         pady=4,
     )
     btn_eye.pack(fill=tk.X)
-    top_shadow = tk.Frame(container, bg=UI_THEME.get("border", "#3C3C3C"), height=1)
-    top_shadow.pack(fill=tk.X, padx=0, pady=(0, 0))
-    top_shadow_soft = tk.Frame(container, bg=UI_THEME.get("surface", "#252526"), height=1)
-    top_shadow_soft.pack(fill=tk.X, padx=0, pady=(0, 2))
+    top_separator = tk.Frame(container, bg="#000000", height=1)
+    top_separator.pack(fill=tk.X, padx=0, pady=(0, 0))
 
     theme_bar = tk.Frame(container, bg=UI_THEME["bg"])
     theme_bar.pack(fill=tk.X, padx=10, pady=(6, 0))
@@ -2609,9 +2607,16 @@ def _build_monitor_ui(container):
         apply_ttk_theme_styles(container)
         try:
             style_local = ttk.Style(container)
-            style_local.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0)
-            style_local.configure("Dark.TNotebook.Tab", background=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), padding=(16, 6))
-            style_local.map("Dark.TNotebook.Tab", background=[("selected", UI_THEME["primary"]), ("active", UI_THEME["surface_alt"])], foreground=[("selected", UI_THEME.get("on_primary", UI_THEME["text"])), ("active", UI_THEME.get("on_surface", UI_THEME["text"]))])
+            style_local.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat")
+            style_local.configure("Dark.TNotebook.Tab", background=UI_THEME.get("surface_alt", UI_THEME["surface"]), foreground=UI_THEME.get("on_surface", UI_THEME["text"]), padding=(18, 8), relief="flat", borderwidth=0, highlightthickness=0)
+            style_local.map(
+                "Dark.TNotebook.Tab",
+                background=[("selected", UI_THEME.get("surface", UI_THEME["bg"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
+                foreground=[("selected", UI_THEME.get("on_primary", UI_THEME["text"])), ("active", UI_THEME.get("on_surface", UI_THEME["text"]))],
+                bordercolor=[("selected", UI_THEME.get("surface", UI_THEME["bg"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
+                lightcolor=[("selected", UI_THEME.get("surface", UI_THEME["bg"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
+                darkcolor=[("selected", UI_THEME.get("surface", UI_THEME["bg"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
+            )
             style_local.configure("Control.Treeview", background=UI_THEME["surface"], fieldbackground=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), bordercolor=UI_THEME["border"], rowheight=28)
             style_local.configure("Control.Treeview.Heading", background=UI_THEME["surface_alt"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), relief="flat", font=theme_font("font_md", "bold"))
             style_local.map("Control.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME["primary"]))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("on_primary", UI_THEME["text"])))])
