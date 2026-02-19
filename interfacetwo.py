@@ -2861,7 +2861,7 @@ def _build_monitor_ui(container):
     _feedback_banner = AppFeedbackBanner(container, text="")
 
     tab_button_bar = tk.Frame(container, bg=UI_THEME["bg"])
-    tab_button_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
+    tab_button_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
 
     notebook = ttk.Notebook(container, style="Monitor.Tabless.TNotebook")
     notebook.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_3", 10)), fill=tk.BOTH, expand=True)
@@ -2884,20 +2884,41 @@ def _build_monitor_ui(container):
             pass
 
     tab_buttons = []
+    tab_button_bottom_borders = []
+    tab_border_color = UI_THEME.get("on_surface", UI_THEME["text"])
     for idx, label in enumerate(["CONTROLE", "ENCOMENDAS", "ORIENTAÇÕES", "OBSERVAÇÕES"]):
-        btn_tab = build_secondary_button(tab_button_bar, label, lambda i=idx: _select_tab(i))
+        btn_frame = tk.Frame(tab_button_bar, bg=tab_border_color)
+        btn_tab = build_secondary_button(btn_frame, label, lambda i=idx: _select_tab(i))
         try:
             btn_tab.configure(
-                highlightbackground=UI_THEME.get("on_surface", UI_THEME["text"]),
-                highlightcolor=UI_THEME.get("on_surface", UI_THEME["text"]),
-                highlightthickness=1,
-                bd=1,
-                relief="solid",
+                highlightbackground=tab_border_color,
+                highlightcolor=tab_border_color,
+                highlightthickness=0,
+                bd=0,
+                relief="flat",
             )
         except Exception:
             pass
-        btn_tab.pack(side=tk.LEFT, padx=(0, 0), pady=(0, 0))
+        btn_tab.pack(fill=tk.BOTH, expand=True, padx=1, pady=(1, 0))
+        btn_bottom = tk.Frame(btn_frame, height=1, bg=tab_border_color)
+        btn_bottom.pack(fill=tk.X, side=tk.BOTTOM)
+        btn_frame.pack(side=tk.LEFT, padx=(0, 0), pady=(0, 0), fill=tk.Y)
         tab_buttons.append(btn_tab)
+        tab_button_bottom_borders.append(btn_bottom)
+
+    def _refresh_tab_button_state(*_):
+        try:
+            selected = notebook.index(notebook.select())
+        except Exception:
+            selected = 0
+        for idx, btn_bottom in enumerate(tab_button_bottom_borders):
+            try:
+                btn_bottom.configure(bg=UI_THEME.get("surface", UI_THEME["bg"]) if idx == selected else tab_border_color)
+            except Exception:
+                continue
+
+    notebook.bind("<<NotebookTabChanged>>", _refresh_tab_button_state, add="+")
+    _refresh_tab_button_state()
 
     try:
         root_win = container.winfo_toplevel()
@@ -3051,7 +3072,7 @@ def _build_monitor_ui(container):
             font=theme_font("font_md")
         )
         sticky_label.configure(textvariable=sticky_var, anchor="w", justify="left", padx=0)
-        sticky_label.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
+        sticky_label.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
 
         records_top_line = tk.Frame(frame, bg="#000000", height=2)
         records_top_line.pack(fill=tk.X, padx=0, pady=(0, 0))
