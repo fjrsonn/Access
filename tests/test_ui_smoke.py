@@ -22,9 +22,7 @@ class UIThemeTokensTests(unittest.TestCase):
             snapshots[name] = out["ratios"]
             self.assertFalse(out["warnings"], f"Theme {name} has contrast warnings: {out['warnings']}")
 
-        self.assertIn("escuro", snapshots)
-        self.assertIn("claro", snapshots)
-        self.assertIn("alto_contraste", snapshots)
+        self.assertIn("principal", snapshots)
 
 
 if __name__ == "__main__":
