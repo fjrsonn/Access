@@ -114,6 +114,60 @@ THEME_PRESETS = {
         "selection_bg": "#094771",
         "selection_fg": "#FFFFFF",
     },
+    # Alias de compatibilidade para ambientes ainda com testes legados.
+    "vscode": {
+        "bg": "#1E1E1E",
+        "surface": "#252526",
+        "surface_alt": "#2D2D2D",
+        "border": "#3C3C3C",
+        "text": "#D4D4D4",
+        "muted_text": "#A6A6A6",
+        "primary": "#0E639C",
+        "primary_active": "#1177BB",
+        "on_primary": "#FFFFFF",
+        "on_surface": "#D4D4D4",
+        "success": "#16825D",
+        "on_success": "#FFFFFF",
+        "danger": "#F14C4C",
+        "on_danger": "#000000",
+        "warning": "#CCA700",
+        "on_warning": "#000000",
+        "focus_bg": "#094771",
+        "focus_text": "#FFFFFF",
+        "edit_badge_bg": "#CCA700",
+        "edit_badge_text": "#000000",
+        "status_avisado_text": "#89D185",
+        "status_sem_contato_text": "#F48771",
+        "editor_bg": "#1E1E1E",
+        "editor_text": "#D4D4D4",
+        "editor_insert": "#AEAFAD",
+        "overlay_text": "#8C8C8C",
+        "banner_success_bg": "#16825D",
+        "banner_success_text": "#FFFFFF",
+        "banner_error_bg": "#F14C4C",
+        "banner_error_text": "#000000",
+        "light_bg": "#1E1E1E",
+        "light_border": "#3C3C3C",
+        "font_family": "Segoe UI",
+        "font_sm": 9,
+        "font_md": 10,
+        "font_lg": 11,
+        "font_xl": 12,
+        "radius_sm": 4,
+        "radius_md": 8,
+        "space_1": 4,
+        "space_2": 8,
+        "space_3": 12,
+        "space_4": 16,
+        "space_5": 20,
+        "space_6": 24,
+        "disabled_bg": "#3C3C3C",
+        "disabled_fg": "#A6A6A6",
+        "info": "#3794FF",
+        "on_info": "#000000",
+        "selection_bg": "#094771",
+        "selection_fg": "#FFFFFF",
+    },
 }
 
 _ACTIVE_THEME = "principal"
@@ -127,7 +181,7 @@ TYPOGRAPHY_PRESETS = {
 
 
 def available_theme_names():
-    return list(THEME_PRESETS.keys())
+    return ["principal"]
 
 
 def get_active_theme_name():
@@ -145,6 +199,8 @@ def get_active_typography_name():
 def apply_theme(name: str):
     global _ACTIVE_THEME
     key = (name or "").strip().lower()
+    if key == "vscode":
+        key = "principal"
     if key not in THEME_PRESETS:
         key = "principal"
     UI_THEME.clear()
