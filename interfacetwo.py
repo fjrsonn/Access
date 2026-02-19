@@ -2861,7 +2861,7 @@ def _build_monitor_ui(container):
     _feedback_banner = AppFeedbackBanner(container, text="")
 
     tab_button_bar = tk.Frame(container, bg=UI_THEME["bg"])
-    tab_button_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
+    tab_button_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
 
     notebook = ttk.Notebook(container, style="Monitor.Tabless.TNotebook")
     notebook.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_3", 10)), fill=tk.BOTH, expand=True)
