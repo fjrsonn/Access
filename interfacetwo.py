@@ -106,6 +106,7 @@ _filter_toggle_buttons = {}
 _filter_toggle_state = {"visible": False}
 _text_breakpoints = {}
 _text_hover_marker = {}
+_record_num_tag_map = {}
 
 
 def _load_prefs():
@@ -1206,8 +1207,7 @@ def _populate_text(text_widget, info_label):
             prefix = "controle" if formatter == format_creative_entry else ("encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else "observacao"))
             rec_tag = f"{prefix}_record_{idx}"
         linha = formatter(r)
-        hover_idx = _text_hover_marker.get(text_widget)
-        marker = "●" if idx in _text_breakpoints.get(text_widget, set()) else ("○" if hover_idx == idx else " ")
+        marker = "●" if idx in _text_breakpoints.get(text_widget, set()) else "○"
         numbered = f"{marker} {idx + 1:>3}  {linha}"
         text_tags = [row_tag]
         if rec_tag:
@@ -1270,8 +1270,11 @@ def _populate_text(text_widget, info_label):
                 num_tag = f"line_number_{idx}"
                 text_widget.tag_add(num_tag, start, f"{start} + {len(prefix)}c")
                 text_widget.tag_add("line_number", start, f"{start} + {len(prefix)}c")
+                is_fixed = idx in _text_breakpoints.get(text_widget, set())
+                text_widget.tag_configure(num_tag, foreground=(UI_THEME.get("muted_text", "#A6A6A6") if is_fixed else UI_THEME.get("surface", "#151A22")))
                 text_widget.tag_bind(num_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_line_number_click(tw, rec, tag, pos))
                 text_widget.tag_bind(num_tag, "<Enter>", lambda ev, tw=text_widget, rec=r, tag=rec_tag: _record_on_tag_click(tw, rec, ev, tag))
+                _record_num_tag_map.setdefault(text_widget, {})[rec_tag] = num_tag
             except Exception:
                 pass
         else:
@@ -1304,6 +1307,7 @@ def _populate_text(text_widget, info_label):
         _record_tag_map_generic[text_widget] = record_tag_map
     else:
         _record_tag_map_generic.pop(text_widget, None)
+        _record_num_tag_map.pop(text_widget, None)
     if formatter == format_creative_entry:
         _restore_control_text_selection(text_widget, record_tag_map)
     _restore_hover_if_needed(text_widget, "hover_line")
@@ -1959,15 +1963,26 @@ def _bind_hover_highlight(text_widget):
         tag_names = text_widget.tag_names(index)
         rec_tag = next((t for t in tag_names if "_record_" in t), None)
         if rec_tag:
+            num_map = _record_num_tag_map.get(text_widget, {})
+            prev_token = _hover_state.get(text_widget)
+            prev_tag = prev_token[4:] if isinstance(prev_token, str) and prev_token.startswith("tag:") else None
+            if prev_tag and prev_tag != rec_tag:
+                prev_num = num_map.get(prev_tag)
+                try:
+                    prev_idx = int(str(prev_tag).rsplit("_", 1)[1])
+                except Exception:
+                    prev_idx = None
+                if prev_num:
+                    fixed = prev_idx in _text_breakpoints.get(text_widget, set()) if prev_idx is not None else False
+                    text_widget.tag_configure(prev_num, foreground=(UI_THEME.get("muted_text", "#A6A6A6") if fixed else UI_THEME.get("surface", "#151A22")))
+            cur_num = num_map.get(rec_tag)
+            if cur_num:
+                text_widget.tag_configure(cur_num, foreground=UI_THEME.get("muted_text", "#A6A6A6"))
             try:
                 hover_idx = int(str(rec_tag).rsplit("_", 1)[1])
             except Exception:
                 hover_idx = None
-            if _text_hover_marker.get(text_widget) != hover_idx:
-                _text_hover_marker[text_widget] = hover_idx
-                info = (_monitor_sources.get(text_widget) or {}).get("info_label")
-                if info is not None:
-                    _populate_text(text_widget, info)
+            _text_hover_marker[text_widget] = hover_idx
             token = f"tag:{rec_tag}"
             if _hover_state.get(text_widget) == token:
                 return
@@ -1976,10 +1991,17 @@ def _bind_hover_highlight(text_widget):
                 _hover_state[text_widget] = token
             return
         if _text_hover_marker.get(text_widget) is not None:
+            prev_token = _hover_state.get(text_widget)
+            prev_tag = prev_token[4:] if isinstance(prev_token, str) and prev_token.startswith("tag:") else None
+            prev_num = (_record_num_tag_map.get(text_widget, {}) or {}).get(prev_tag) if prev_tag else None
+            if prev_num:
+                try:
+                    prev_idx = int(str(prev_tag).rsplit("_", 1)[1])
+                except Exception:
+                    prev_idx = None
+                fixed = prev_idx in _text_breakpoints.get(text_widget, set()) if prev_idx is not None else False
+                text_widget.tag_configure(prev_num, foreground=(UI_THEME.get("muted_text", "#A6A6A6") if fixed else UI_THEME.get("surface", "#151A22")))
             _text_hover_marker[text_widget] = None
-            info = (_monitor_sources.get(text_widget) or {}).get("info_label")
-            if info is not None:
-                _populate_text(text_widget, info)
         try:
             line_text = text_widget.get(f"{line}.0", f"{line}.end")
         except Exception:
@@ -1996,12 +2018,19 @@ def _bind_hover_highlight(text_widget):
     text_widget.bind("<Motion>", on_motion)
 
     def _on_leave(_event):
+        prev_token = _hover_state.get(text_widget)
+        prev_tag = prev_token[4:] if isinstance(prev_token, str) and prev_token.startswith("tag:") else None
+        prev_num = (_record_num_tag_map.get(text_widget, {}) or {}).get(prev_tag) if prev_tag else None
+        if prev_num:
+            try:
+                prev_idx = int(str(prev_tag).rsplit("_", 1)[1])
+            except Exception:
+                prev_idx = None
+            fixed = prev_idx in _text_breakpoints.get(text_widget, set()) if prev_idx is not None else False
+            text_widget.tag_configure(prev_num, foreground=(UI_THEME.get("muted_text", "#A6A6A6") if fixed else UI_THEME.get("surface", "#151A22")))
         _clear_hover_line(text_widget, hover_tag)
         if _text_hover_marker.get(text_widget) is not None:
             _text_hover_marker[text_widget] = None
-            info = (_monitor_sources.get(text_widget) or {}).get("info_label")
-            if info is not None:
-                _populate_text(text_widget, info)
 
     text_widget.bind("<Leave>", _on_leave)
 
@@ -2500,10 +2529,10 @@ def _build_monitor_ui(container):
     except Exception:
         pass
     style.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0)
-    style.configure("Dark.TNotebook.Tab", background=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), padding=(16, 6))
+    style.configure("Dark.TNotebook.Tab", background=UI_THEME.get("surface_alt", UI_THEME["surface"]), foreground=UI_THEME.get("on_surface", UI_THEME["text"]), padding=(18, 8), relief="flat")
     style.map(
         "Dark.TNotebook.Tab",
-        background=[("selected", UI_THEME["primary"]), ("active", UI_THEME["surface_alt"])],
+        background=[("selected", UI_THEME.get("surface", UI_THEME["bg"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
         foreground=[("selected", UI_THEME.get("on_primary", UI_THEME["text"])), ("active", UI_THEME.get("on_surface", UI_THEME["text"]))],
     )
     style.configure("Encomenda.Text", background=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]))
@@ -2531,6 +2560,8 @@ def _build_monitor_ui(container):
         pady=4,
     )
     btn_eye.pack(fill=tk.X)
+    top_shadow = tk.Frame(container, bg=UI_THEME.get("border", "#3C3C3C"), height=1)
+    top_shadow.pack(fill=tk.X, padx=0, pady=(0, 0))
 
     theme_bar = tk.Frame(container, bg=UI_THEME["bg"])
     theme_bar.pack(fill=tk.X, padx=10, pady=(6, 0))
@@ -2746,6 +2777,8 @@ def _build_monitor_ui(container):
     _feedback_banner = AppFeedbackBanner(container, text="")
 
     notebook = ttk.Notebook(container, style="Dark.TNotebook")
+    notebook_shadow = tk.Frame(container, bg=UI_THEME.get("border", "#3C3C3C"), height=1)
+    notebook_shadow.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
     notebook.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), theme_space("space_3", 10)), fill=tk.BOTH, expand=True)
 
     controle_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
