@@ -170,7 +170,7 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertEqual(registros[0].get('NOME'), 'LUCAS')
 
 
-    def test_collect_status_cards_data_counts_pending_sem_contato_avisado(self):
+    def test_collect_status_cards_data_counts_pending_without_sem_contato(self):
         original_load_safe = interfacetwo._load_safe
 
         def fake_load_safe(path):
@@ -194,7 +194,7 @@ class InterfaceTwoTests(unittest.TestCase):
             interfacetwo._load_safe = original_load_safe
 
         self.assertEqual(out.get('ativos'), 2)
-        self.assertEqual(out.get('pendentes'), 5)
+        self.assertEqual(out.get('pendentes'), 3)
         self.assertEqual(out.get('sem_contato'), 2)
         self.assertEqual(out.get('avisado'), 2)
         self.assertEqual(out.get('alta_severidade'), 1)
@@ -273,12 +273,20 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('Registros filtrados:', source)
         self.assertIn('_runtime_refresh_ms = 1000', source)
 
-    def test_monitor_ui_has_filter_banner_toggle_button(self):
+    def test_monitor_ui_has_single_top_filter_toggle_button(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_monitor_ui)
-        self.assertIn('def _build_filter_banner_toggle', source)
+        self.assertNotIn('def _build_filter_banner_toggle', source)
         self.assertIn('⌄ Ocultar filtros', source)
         self.assertIn('⌃ Mostrar filtros', source)
+        self.assertNotIn('_build_filter_banner_toggle(frame, str(filter_key))', source)
+
+    def test_monitor_ui_moves_reload_and_clear_to_top_toolbar(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_monitor_ui)
+        self.assertIn('btn_top_reload = build_primary_button(theme_bar, "Recarregar", lambda: None)', source)
+        self.assertIn('btn_top_clear = build_secondary_danger_button(theme_bar, "Limpar", lambda: None)', source)
+        self.assertNotIn('btn_frame = tk.Frame(container, bg=UI_THEME["bg"])', source)
 
     def test_monitor_ui_has_analytic_table_and_focus_mode_controls(self):
         import inspect
@@ -294,6 +302,20 @@ class InterfaceTwoTests(unittest.TestCase):
         source = inspect.getsource(interfacetwo._build_monitor_ui)
         self.assertIn('"controle_selected"', source)
         self.assertIn('Selecione um registro para ver detalhes.', source)
+
+    def test_control_text_mode_restores_persistent_selection_and_details(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._populate_text)
+        self.assertIn('_restore_control_text_selection(text_widget, record_tag_map)', source)
+        helper_source = inspect.getsource(interfacetwo._restore_control_text_selection)
+        self.assertIn('text_widget.tag_add("controle_selected"', helper_source)
+        self.assertIn('_set_control_details(details_var, selected_rec)', helper_source)
+
+    def test_textual_rows_keep_zebra_tags_even_on_separators(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._populate_text)
+        self.assertIn('row_tag = "row_even" if idx % 2 == 0 else "row_odd"', source)
+        self.assertIn('text_widget.insert(tk.END, "─" * 80 + "\\n\\n", (row_tag,))', source)
 
     def test_hover_supports_full_record_tag_highlight(self):
         import inspect
