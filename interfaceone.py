@@ -134,9 +134,9 @@ except Exception:
     def apply_theme(name):
         return name
     def available_theme_names():
-        return ["escuro"]
+        return ["principal"]
     def get_active_theme_name():
-        return "escuro"
+        return "principal"
     def validate_theme_contrast(theme=None):
         return {"ratios": {}, "warnings": {}}
 
@@ -2599,8 +2599,10 @@ class AvisoBar(tk.Frame):
             body = tk.Frame(top, bg=UI_THEME.get("light_bg", "#F5F7FA"))
             body.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
-            tree = ttk.Treeview(body, columns=("nivel", "grupo", "tipo", "identidade", "mensagem", "gerado", "ativo"), show="headings")
+            breakpoints = set()
+            tree = ttk.Treeview(body, columns=("linha", "nivel", "grupo", "tipo", "identidade", "mensagem", "gerado", "ativo"), show="headings")
             for c, t, w in (
+                ("linha", "#", 56),
                 ("nivel", "Nível", 90),
                 ("grupo", "Grupo", 150),
                 ("tipo", "Tipo", 140),
@@ -2644,7 +2646,9 @@ class AvisoBar(tk.Frame):
                     ativo = bool(status.get("ativo", True) and not status.get("fechado_pelo_usuario", False))
                     ts = a.get("timestamps") or {}
                     group = f"{(a.get('identidade') or '-').split('|')[0]} / {(a.get('tipo') or '-')}"
+                    marker = "● " if idx in breakpoints else ""
                     tree.insert("", tk.END, iid=f"a_{idx}", values=(
+                        f"{marker}{idx + 1}",
                         (a.get("nivel") or "info").upper(),
                         group,
                         a.get("tipo") or "-",
@@ -2741,6 +2745,25 @@ class AvisoBar(tk.Frame):
             build_secondary_button(actions, "Snooze 30m", lambda: _snooze(30), padx=14).pack(side=tk.LEFT, padx=(0, 8))
             build_primary_button(actions, "Marcar como tratado", _mark_handled, padx=14).pack(side=tk.LEFT)
             tree.bind("<<TreeviewSelect>>", _on_select_detail, add="+")
+            def _on_tree_click(event):
+                iid = tree.identify_row(event.y)
+                col = tree.identify_column(event.x)
+                if not iid or col != "#1":
+                    return
+                try:
+                    idx = int(str(iid).split("_", 1)[1])
+                except Exception:
+                    return
+                if idx in breakpoints:
+                    breakpoints.remove(idx)
+                else:
+                    breakpoints.add(idx)
+                _load_all()
+                try:
+                    tree.selection_set(iid)
+                except Exception:
+                    pass
+            tree.bind("<Button-1>", _on_tree_click, add="+")
             ent.bind("<Return>", lambda _e: _load_all(), add="+")
             _load_all()
             ent.focus_set()
