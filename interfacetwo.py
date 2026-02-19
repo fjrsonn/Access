@@ -289,7 +289,6 @@ def _collect_status_cards_data() -> dict:
         st = _status_text(r)
         if "SEM CONTATO" in st:
             sem_contato += 1
-            pendentes += 1
         elif "AVISADO" in st:
             avisado += 1
         elif "PEND" in st:
@@ -1018,6 +1017,34 @@ def _set_control_details(details_var, rec):
     )
 
 
+def _restore_control_text_selection(text_widget, record_tag_map):
+    selected_record = _control_selection_state.get(text_widget)
+    if not selected_record:
+        return
+    selected_tag = None
+    selected_rec = None
+    for rec_tag, rec in (record_tag_map or {}).items():
+        rec_id = str((rec or {}).get("ID") or (rec or {}).get("_entrada_id") or "")
+        if rec_id and rec_id == selected_record:
+            selected_tag = rec_tag
+            selected_rec = rec
+            break
+    if not selected_tag:
+        return
+    try:
+        text_widget.config(state="normal")
+        text_widget.tag_remove("controle_selected", "1.0", tk.END)
+        ranges = text_widget.tag_ranges(selected_tag)
+        if ranges and len(ranges) >= 2:
+            text_widget.tag_add("controle_selected", ranges[0], ranges[1])
+        text_widget.config(state="disabled")
+    except Exception:
+        pass
+    details_var = _control_details_var.get(text_widget)
+    if details_var is not None:
+        _set_control_details(details_var, selected_rec)
+
+
 def _update_control_details(tree_widget, selection):
     details_var = _control_details_var.get(tree_widget)
     record_map = _control_table_map.get(tree_widget, {})
@@ -1104,7 +1131,7 @@ def _populate_control_table(tree_widget, info_label):
     if _operation_mode_enabled and not selected_iid:
         for iid, rec in record_map.items():
             st = str((rec or {}).get("STATUS") or (rec or {}).get("STATUS_ENCOMENDA") or "").upper()
-            if "SEM CONTATO" in st or "PEND" in st:
+            if "PEND" in st:
                 selected_iid = iid
                 break
     if selected_iid:
@@ -1158,6 +1185,7 @@ def _populate_text(text_widget, info_label):
     text_widget.tag_configure("row_odd", background=UI_THEME.get("surface_alt", "#1B2430"))
     for idx, r in enumerate(filtrados):
         is_clickable = formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry)
+        row_tag = "row_even" if idx % 2 == 0 else "row_odd"
         rec_tag = None
         if is_clickable:
             has_clickable_records = True
@@ -1167,18 +1195,18 @@ def _populate_text(text_widget, info_label):
         # Inserir já com a tag — isto garante que o tag cubra exatamente o texto
         try:
             if rec_tag and formatter in (format_orientacao_entry, format_observacao_entry):
-                text_widget.insert(tk.END, linha + "\n", (rec_tag, "row_even" if idx % 2 == 0 else "row_odd"))
+                text_widget.insert(tk.END, linha + "\n", (rec_tag, row_tag))
                 if idx < len(filtrados) - 1:
-                    text_widget.insert(tk.END, "─" * 80 + "\n\n")
+                    text_widget.insert(tk.END, "─" * 80 + "\n\n", (row_tag,))
                 else:
-                    text_widget.insert(tk.END, "\n")
+                    text_widget.insert(tk.END, "\n", (row_tag,))
             elif rec_tag:
-                text_widget.insert(tk.END, linha + "\n\n", (rec_tag, "row_even" if idx % 2 == 0 else "row_odd"))
+                text_widget.insert(tk.END, linha + "\n\n", (rec_tag, row_tag))
             else:
-                text_widget.insert(tk.END, linha + "\n\n", ("row_even" if idx % 2 == 0 else "row_odd",))
+                text_widget.insert(tk.END, linha + "\n\n", (row_tag,))
         except Exception:
             # fallback simples
-            text_widget.insert(tk.END, linha + "\n\n", ("row_even" if idx % 2 == 0 else "row_odd",))
+            text_widget.insert(tk.END, linha + "\n\n", (row_tag,))
 
         # calcular start/end com base nas ranges da tag (quando aplicável)
         if rec_tag:
@@ -1253,6 +1281,8 @@ def _populate_text(text_widget, info_label):
         _record_tag_map_generic[text_widget] = record_tag_map
     else:
         _record_tag_map_generic.pop(text_widget, None)
+    if formatter == format_creative_entry:
+        _restore_control_text_selection(text_widget, record_tag_map)
     _restore_hover_if_needed(text_widget, "hover_line")
 
 def _schedule_update(text_widgets, info_label):
@@ -1301,7 +1331,7 @@ def limpar_dados(text_widgets, info_label, action_button=None):
     if not resp:
         if action_button is not None:
             try:
-                action_button.configure(state="normal", text="Backup e Limpar")
+                action_button.configure(state="normal", text="Limpar")
             except Exception:
                 pass
         return
@@ -1313,7 +1343,7 @@ def limpar_dados(text_widgets, info_label, action_button=None):
         messagebox.showerror("Erro", f"Erro ao criar backup: {e}")
         if action_button is not None:
             try:
-                action_button.configure(state="normal", text="Backup e Limpar")
+                action_button.configure(state="normal", text="Limpar")
             except Exception:
                 pass
         return
@@ -1323,7 +1353,7 @@ def limpar_dados(text_widgets, info_label, action_button=None):
         messagebox.showerror("Erro", f"Erro ao limpar arquivo: {e}")
         if action_button is not None:
             try:
-                action_button.configure(state="normal", text="Backup e Limpar")
+                action_button.configure(state="normal", text="Limpar")
             except Exception:
                 pass
         return
@@ -1332,7 +1362,7 @@ def limpar_dados(text_widgets, info_label, action_button=None):
         _populate_text(tw, info_label)
     if action_button is not None:
         try:
-            action_button.configure(state="normal", text="Backup e Limpar")
+            action_button.configure(state="normal", text="Limpar")
         except Exception:
             pass
 
@@ -2457,6 +2487,10 @@ def _build_monitor_ui(container):
     btn_top_save_view = build_secondary_button(theme_bar, "Salvar visão", lambda: None)
     btn_top_save_view.pack(side=tk.LEFT, padx=(6, 0))
     _legacy_reset_columns_label = "Resetar colunas"
+    btn_top_reload = build_primary_button(theme_bar, "Recarregar", lambda: None)
+    btn_top_reload.pack(side=tk.LEFT, padx=(6, 0))
+    btn_top_clear = build_secondary_danger_button(theme_bar, "Limpar", lambda: None)
+    btn_top_clear.pack(side=tk.LEFT, padx=(6, 0))
     btn_top_toggle_filters = build_secondary_button(theme_bar, "⌃ Mostrar filtros", lambda: None)
     btn_top_toggle_filters.pack(side=tk.LEFT, padx=(6, 0))
     op_mode_defaults = bool((_load_prefs().get("operation_mode") or False))
@@ -2525,7 +2559,7 @@ def _build_monitor_ui(container):
                 tree.configure(height=18 if is_compact else 14)
             except Exception:
                 pass
-        for w in (btn_reload, btn_backup):
+        for w in (btn_top_reload, btn_top_clear):
             try:
                 w.configure(padx=(8 if is_compact else 12), pady=(2 if is_compact else 4))
             except Exception:
@@ -2702,7 +2736,7 @@ def _build_monitor_ui(container):
     def _sync_filter_toggle_labels():
         visible = _filter_toggle_state.get("visible", False)
         label = "⌄ Ocultar filtros" if visible else "⌃ Mostrar filtros"
-        for btn in list(_filter_toggle_buttons.values()):
+        for btn in [btn_top_toggle_filters]:
             try:
                 btn.configure(text=label)
             except Exception:
@@ -2714,16 +2748,6 @@ def _build_monitor_ui(container):
             _apply_filter_visibility(key)
         _sync_filter_toggle_labels()
         report_status("ux_metrics", "OK", stage="filter_banner_toggle", details={"source": source_key, "visible": _filter_toggle_state["visible"]})
-
-    def _build_filter_banner_toggle(parent_frame, source_key: str):
-        toggle_row = tk.Frame(parent_frame, bg=UI_THEME["surface"])
-        toggle_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
-        btn_toggle = build_secondary_button(toggle_row, "⌃ Mostrar filtros", lambda: _toggle_filters(source_key))
-        btn_toggle.pack(side=tk.RIGHT)
-        _filter_toggle_buttons[source_key] = btn_toggle
-        attach_tooltip(btn_toggle, "Mostra/oculta os filtros")
-        bind_focus_ring(btn_toggle, focus_thickness=3, blur_thickness=1)
-        _sync_filter_toggle_labels()
 
     tab_configs = [
         (controle_frame, ARQUIVO, format_creative_entry, "controle"),
@@ -2777,7 +2801,11 @@ def _build_monitor_ui(container):
 
     btn_top_export.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_export_csv", details={"source": "controle"}), _export_control_csv()))
     btn_top_save_view.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_save_view", details={"source": "controle"}), _save_control_view()))
+    btn_top_reload.configure(command=lambda: forcar_recarregar(monitor_widgets, info_label))
+    btn_top_clear.configure(command=lambda: limpar_dados(monitor_widgets, info_label, btn_top_clear))
     btn_top_toggle_filters.configure(command=lambda: _toggle_filters("global"))
+    attach_tooltip(btn_top_reload, "Recarrega todos os dados do monitor")
+    attach_tooltip(btn_top_clear, "Cria backup e limpa os registros exibidos")
 
     try:
         root_win.bind("<Alt-e>", lambda _e: (btn_top_export.invoke(), "break")[1], add="+")
@@ -2821,8 +2849,6 @@ def _build_monitor_ui(container):
         filter_bar._filter_target_widget = text_widget
         _filter_bars[str(filter_key)] = filter_bar
         _apply_filter_visibility(str(filter_key))
-        _build_filter_banner_toggle(frame, str(filter_key))
-
         if formatter == format_encomenda_entry:
             text_widget.tag_configure("status_avisado", foreground=UI_THEME["status_avisado_text"])
             text_widget.tag_configure("status_sem_contato", foreground=UI_THEME["status_sem_contato_text"])
@@ -2844,13 +2870,6 @@ def _build_monitor_ui(container):
         monitor_widgets.append(text_widget)
         _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter, "filter_key": filter_key, "widget": text_widget}
 
-    btn_frame = tk.Frame(container, bg=UI_THEME["bg"])
-    btn_frame.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_3", 10)))
-    btn_reload = build_primary_button(btn_frame, "Recarregar", lambda: forcar_recarregar(monitor_widgets, info_label))
-    btn_reload.pack(side=tk.LEFT, padx=6)
-    btn_backup = build_secondary_danger_button(btn_frame, "Backup e Limpar", lambda: limpar_dados(monitor_widgets, info_label, btn_backup)); btn_backup.pack(side=tk.LEFT, padx=6)
-    attach_tooltip(btn_reload, "Recarrega todos os dados do monitor")
-    attach_tooltip(btn_backup, "Cria backup e limpa os registros exibidos")
     if not prefs.get("onboarding_seen"):
         _announce_feedback("Use Ctrl+F para busca e Alt+1..4 para trocar abas", "info")
         _persist_ui_state({"onboarding_seen": True})
