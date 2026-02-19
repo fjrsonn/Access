@@ -142,11 +142,36 @@ class AppMetricCard(tk.Frame):
         interval = max(16, int(duration_ms / total_steps))
         self._set_accent_progress(0.0)
 
+        target_text = str(self.value_var.get())
+        digits = "".join(ch for ch in target_text if ch.isdigit())
+        target_value = int(digits) if digits else None
+        value_start_progress = 0.55
+        value_has_started = False
+
+        def _format_value(v: int):
+            if target_text.isdigit():
+                return str(v)
+            return str(v)
+
         def _tick(step_idx=0):
+            nonlocal value_has_started
             progress = min(1.0, step_idx / total_steps)
             self._set_accent_progress(progress)
+
+            if target_value is not None:
+                if progress >= value_start_progress:
+                    if not value_has_started:
+                        value_has_started = True
+                        self.value_var.set("0")
+                    rel = (progress - value_start_progress) / max(0.001, (1.0 - value_start_progress))
+                    rel = max(0.0, min(1.0, rel))
+                    current = int(round(target_value * rel))
+                    self.value_var.set(_format_value(current))
+
             if step_idx >= total_steps:
                 self._accent_anim_after = None
+                if target_value is not None:
+                    self.value_var.set(target_text)
                 if callable(on_done):
                     try:
                         on_done()
