@@ -277,14 +277,14 @@ class InterfaceTwoTests(unittest.TestCase):
         source = inspect.getsource(interfacetwo._build_monitor_ui)
         self.assertNotIn('def _build_filter_banner_toggle', source)
         self.assertIn('⌄ Ocultar filtros', source)
-        self.assertIn('⌃ Mostrar filtros', source)
+        self.assertIn('🧰 ⌃ Mostrar filtros', source)
         self.assertNotIn('_build_filter_banner_toggle(frame, str(filter_key))', source)
 
     def test_monitor_ui_moves_reload_and_clear_to_top_toolbar(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_monitor_ui)
-        self.assertIn('btn_top_reload = build_secondary_button(theme_bar, "Recarregar", lambda: None)', source)
-        self.assertIn('btn_top_clear = build_secondary_danger_button(theme_bar, "Limpar", lambda: None)', source)
+        self.assertIn('btn_top_reload = build_secondary_button(theme_bar, "🔄 Recarregar", lambda: None)', source)
+        self.assertIn('btn_top_clear = build_secondary_danger_button(theme_bar, "🧹 Limpar", lambda: None)', source)
         self.assertNotIn('btn_frame = tk.Frame(container, bg=UI_THEME["bg"])', source)
 
     def test_monitor_ui_has_analytic_table_and_focus_mode_controls(self):

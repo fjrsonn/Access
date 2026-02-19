@@ -979,6 +979,10 @@ def _on_record_line_number_click(text_widget, record, rec_tag, idx):
         bp.add(idx)
     _record_on_tag_click(text_widget, record, rec_tag=rec_tag)
 
+
+def _on_record_text_click_toggle_bp(text_widget, record, rec_tag, idx):
+    _on_record_line_number_click(text_widget, record, rec_tag, idx)
+
 def _format_control_row(record: dict):
     nome = _title_name(record.get("NOME", ""), record.get("SOBRENOME", ""))
     return (
@@ -1189,7 +1193,6 @@ def _populate_text(text_widget, info_label):
     text_widget.tag_configure("row_even", background=UI_THEME.get("surface", "#151A22"))
     text_widget.tag_configure("row_odd", background=UI_THEME.get("surface", "#151A22"))
     text_widget.tag_configure("line_number", foreground=UI_THEME.get("muted_text", "#A6A6A6"))
-    text_widget.tag_configure("line_center", justify="center")
     for idx, r in enumerate(filtrados):
         is_clickable = formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry)
         row_tag = "row_even" if idx % 2 == 0 else "row_odd"
@@ -1199,11 +1202,9 @@ def _populate_text(text_widget, info_label):
             prefix = "controle" if formatter == format_creative_entry else ("encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else "observacao"))
             rec_tag = f"{prefix}_record_{idx}"
         linha = formatter(r)
-        marker = "●" if idx in _text_breakpoints.get(text_widget, set()) else " "
-        numbered = f"{marker} {idx + 1:>3} │ {linha}"
+        marker = "●" if idx in _text_breakpoints.get(text_widget, set()) else "○"
+        numbered = f"{marker} {idx + 1:>3}  {linha}"
         text_tags = [row_tag]
-        if formatter in (format_encomenda_entry, format_orientacao_entry, format_observacao_entry):
-            text_tags.append("line_center")
         if rec_tag:
             text_tags.append(rec_tag)
         # Inserir já com a tag — isto garante que o tag cubra exatamente o texto
@@ -1262,7 +1263,15 @@ def _populate_text(text_widget, info_label):
                 pass
             try:
                 # capturar rec_tag e r no default args
-                text_widget.tag_bind(rec_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag: _record_on_tag_click(tw, rec, ev, tag))
+                text_widget.tag_bind(rec_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_text_click_toggle_bp(tw, rec, tag, pos))
+            except Exception:
+                pass
+            try:
+                prefix = f"{marker} {idx + 1:>3}"
+                num_tag = f"line_number_{idx}"
+                text_widget.tag_add(num_tag, start, f"{start} + {len(prefix)}c")
+                text_widget.tag_add("line_number", start, f"{start} + {len(prefix)}c")
+                text_widget.tag_bind(num_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_line_number_click(tw, rec, tag, pos))
             except Exception:
                 pass
             try:
@@ -2489,6 +2498,11 @@ def _build_monitor_ui(container):
     style.map("Control.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME["primary"]))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("on_primary", UI_THEME["text"])))])
 
     info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg=UI_THEME["bg"], fg=UI_THEME["muted_text"], font=theme_font("font_sm"))
+    top_toggle_bar = tk.Frame(container, bg=UI_THEME.get("primary", UI_THEME["bg"]))
+    top_toggle_bar.pack(fill=tk.X, padx=0, pady=(0, 0))
+    btn_eye = build_secondary_button(top_toggle_bar, "👁", lambda: None)
+    btn_eye.pack(side=tk.LEFT, padx=(theme_space("space_3", 10), 0), pady=(2, 2))
+
     theme_bar = tk.Frame(container, bg=UI_THEME["bg"])
     theme_bar.pack(fill=tk.X, padx=10, pady=(6, 0))
     theme_label = build_label(theme_bar, "Tema:", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm")); theme_label.pack(side=tk.LEFT)
@@ -2496,18 +2510,18 @@ def _build_monitor_ui(container):
     theme_combo = ttk.Combobox(theme_bar, textvariable=theme_var, values=available_theme_names(), state="readonly")
     theme_combo.pack(side=tk.LEFT, padx=(6, 0))
     details_visible = tk.BooleanVar(value=False)
-    btn_top_details = build_secondary_button(theme_bar, "Detalhes", lambda: None)
+    btn_top_details = build_secondary_button(theme_bar, "🧾 Detalhes", lambda: None)
     btn_top_details.pack(side=tk.LEFT, padx=(12, 0))
-    btn_top_export = build_secondary_button(theme_bar, "Exportar CSV", lambda: None)
+    btn_top_export = build_secondary_button(theme_bar, "📤 Exportar CSV", lambda: None)
     btn_top_export.pack(side=tk.LEFT, padx=(6, 0))
-    btn_top_save_view = build_secondary_button(theme_bar, "Salvar visão", lambda: None)
+    btn_top_save_view = build_secondary_button(theme_bar, "💾 Salvar visão", lambda: None)
     btn_top_save_view.pack(side=tk.LEFT, padx=(6, 0))
     _legacy_reset_columns_label = "Resetar colunas"
-    btn_top_reload = build_secondary_button(theme_bar, "Recarregar", lambda: None)
+    btn_top_reload = build_secondary_button(theme_bar, "🔄 Recarregar", lambda: None)
     btn_top_reload.pack(side=tk.LEFT, padx=(6, 0))
-    btn_top_clear = build_secondary_danger_button(theme_bar, "Limpar", lambda: None)
+    btn_top_clear = build_secondary_danger_button(theme_bar, "🧹 Limpar", lambda: None)
     btn_top_clear.pack(side=tk.LEFT, padx=(6, 0))
-    btn_top_toggle_filters = build_secondary_button(theme_bar, "⌃ Mostrar filtros", lambda: None)
+    btn_top_toggle_filters = build_secondary_button(theme_bar, "🧰 ⌃ Mostrar filtros", lambda: None)
     btn_top_toggle_filters.pack(side=tk.LEFT, padx=(6, 0))
     op_mode_defaults = bool((_load_prefs().get("operation_mode") or False))
     op_mode_var = tk.BooleanVar(value=op_mode_defaults)
@@ -2692,6 +2706,14 @@ def _build_monitor_ui(container):
 
     btn_top_details.configure(command=_toggle_details_panel)
 
+    def _toggle_top_controls():
+        if theme_bar.winfo_manager():
+            theme_bar.pack_forget()
+        else:
+            theme_bar.pack(fill=tk.X, padx=10, pady=(6, 0), before=title_row)
+
+    btn_eye.configure(command=_toggle_top_controls)
+
     _status_bar = AppStatusBar(container, text="UX: aguardando eventos")
     _status_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
     global _feedback_banner
@@ -2749,7 +2771,7 @@ def _build_monitor_ui(container):
 
     def _sync_filter_toggle_labels():
         visible = _filter_toggle_state.get("visible", False)
-        label = "⌄ Ocultar filtros" if visible else "⌃ Mostrar filtros"
+        label = "🧰 ⌄ Ocultar filtros" if visible else "🧰 ⌃ Mostrar filtros"
         for btn in [btn_top_toggle_filters]:
             try:
                 btn.configure(text=label)
@@ -2847,6 +2869,8 @@ def _build_monitor_ui(container):
             _sync_count()
             _control_filtered_count_var = tk.StringVar(value=toolbar_count_var.get())
             _control_filtered_count_var.trace_add("write", lambda *_: _sync_count())
+        else:
+            tk.Frame(frame, bg=UI_THEME["surface"], height=theme_space("space_1", 4)).pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
 
         text_widget = tk.Text(
             frame,
