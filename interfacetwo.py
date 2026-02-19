@@ -2526,21 +2526,25 @@ def _build_monitor_ui(container):
     except Exception:
         pass
     style.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME.get("bg", "#1E1E1E"), lightcolor=UI_THEME.get("bg", "#1E1E1E"), darkcolor=UI_THEME.get("bg", "#1E1E1E"))
+    style.layout("Monitor.Tabless.TNotebook.Tab", [])
+    style.configure("Monitor.Tabless.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME["bg"], lightcolor=UI_THEME["bg"], darkcolor=UI_THEME["bg"])
     style.configure(
         "Dark.TNotebook.Tab",
         background=UI_THEME.get("surface_alt", UI_THEME["surface"]),
         foreground=UI_THEME.get("on_surface", UI_THEME["text"]),
-        padding=(18, 8),
+        padding=(12, 4),
         relief="flat",
-        borderwidth=0,
-        highlightthickness=0,
+        borderwidth=1,
+        highlightthickness=1,
+        bordercolor=UI_THEME.get("border", UI_THEME["surface_alt"]),
         focuscolor=UI_THEME.get("surface_alt", UI_THEME["surface"]),
     )
     style.map(
         "Dark.TNotebook.Tab",
-        background=[("selected", UI_THEME.get("surface", UI_THEME["bg"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
-        foreground=[("selected", UI_THEME.get("on_primary", UI_THEME["text"])), ("active", UI_THEME.get("on_surface", UI_THEME["text"]))],
-        focuscolor=[("selected", UI_THEME.get("surface", UI_THEME["bg"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
+        background=[("selected", UI_THEME.get("surface_alt", UI_THEME["surface"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
+        foreground=[("selected", UI_THEME.get("on_surface", UI_THEME["text"])), ("active", UI_THEME.get("on_surface", UI_THEME["text"]))],
+        focuscolor=[("selected", UI_THEME.get("surface_alt", UI_THEME["surface"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
+        padding=[("selected", (12, 4)), ("active", (12, 4))],
     )
     style.configure("Encomenda.Text", background=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]))
     report_status("ux_metrics", "OK", stage="theme_contrast_check", details=validate_theme_contrast())
@@ -2608,12 +2612,15 @@ def _build_monitor_ui(container):
         try:
             style_local = ttk.Style(container)
             style_local.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME.get("bg", "#1E1E1E"), lightcolor=UI_THEME.get("bg", "#1E1E1E"), darkcolor=UI_THEME.get("bg", "#1E1E1E"))
-            style_local.configure("Dark.TNotebook.Tab", background=UI_THEME.get("surface_alt", UI_THEME["surface"]), foreground=UI_THEME.get("on_surface", UI_THEME["text"]), padding=(18, 8), relief="flat", borderwidth=0, highlightthickness=0, focuscolor=UI_THEME.get("surface_alt", UI_THEME["surface"]))
+            style_local.layout("Monitor.Tabless.TNotebook.Tab", [])
+            style_local.configure("Monitor.Tabless.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME["bg"], lightcolor=UI_THEME["bg"], darkcolor=UI_THEME["bg"])
+            style_local.configure("Dark.TNotebook.Tab", background=UI_THEME.get("surface_alt", UI_THEME["surface"]), foreground=UI_THEME.get("on_surface", UI_THEME["text"]), padding=(12, 4), relief="flat", borderwidth=1, highlightthickness=1, bordercolor=UI_THEME.get("border", UI_THEME["surface_alt"]), focuscolor=UI_THEME.get("surface_alt", UI_THEME["surface"]))
             style_local.map(
                 "Dark.TNotebook.Tab",
-                background=[("selected", UI_THEME.get("surface", UI_THEME["bg"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
-                foreground=[("selected", UI_THEME.get("on_primary", UI_THEME["text"])), ("active", UI_THEME.get("on_surface", UI_THEME["text"]))],
-                focuscolor=[("selected", UI_THEME.get("surface", UI_THEME["bg"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
+                background=[("selected", UI_THEME.get("surface_alt", UI_THEME["surface"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
+                foreground=[("selected", UI_THEME.get("on_surface", UI_THEME["text"])), ("active", UI_THEME.get("on_surface", UI_THEME["text"]))],
+                focuscolor=[("selected", UI_THEME.get("surface_alt", UI_THEME["surface"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
+                padding=[("selected", (12, 4)), ("active", (12, 4))],
             )
             style_local.configure("Control.Treeview", background=UI_THEME["surface"], fieldbackground=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), bordercolor=UI_THEME["border"], rowheight=28)
             style_local.configure("Control.Treeview.Heading", background=UI_THEME["surface_alt"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), relief="flat", font=theme_font("font_md", "bold"))
@@ -2788,10 +2795,12 @@ def _build_monitor_ui(container):
     global _feedback_banner
     _feedback_banner = AppFeedbackBanner(container, text="")
 
-    notebook = ttk.Notebook(container, style="Dark.TNotebook")
-    notebook_shadow = tk.Frame(container, bg=UI_THEME.get("border", "#3C3C3C"), height=1)
-    notebook_shadow.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
-    notebook.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), theme_space("space_3", 10)), fill=tk.BOTH, expand=True)
+    tab_button_bar = tk.Frame(container, bg=UI_THEME["bg"])
+    tab_button_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
+
+    notebook = ttk.Notebook(container, style="Monitor.Tabless.TNotebook")
+    notebook.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_3", 10)), fill=tk.BOTH, expand=True)
+    notebook.configure(padding=0)
 
     controle_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
     encomendas_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
@@ -2803,6 +2812,22 @@ def _build_monitor_ui(container):
     notebook.add(orientacoes_frame, text="ORIENTAÇÕES")
     notebook.add(observacoes_frame, text="OBSERVAÇÕES")
 
+    def _select_tab(index: int):
+        try:
+            notebook.select(index)
+        except Exception:
+            pass
+
+    tab_buttons = []
+    for idx, label in enumerate(["CONTROLE", "ENCOMENDAS", "ORIENTAÇÕES", "OBSERVAÇÕES"]):
+        btn_tab = build_secondary_button(tab_button_bar, label, lambda i=idx: _select_tab(i))
+        try:
+            btn_tab.configure(highlightbackground=UI_THEME.get("on_surface", UI_THEME["text"]), highlightcolor=UI_THEME.get("on_surface", UI_THEME["text"]), highlightthickness=1)
+        except Exception:
+            pass
+        btn_tab.pack(side=tk.LEFT, padx=(0, 0), pady=(0, 0))
+        tab_buttons.append(btn_tab)
+
     try:
         root_win = container.winfo_toplevel()
         def _show_shortcuts(_e=None):
@@ -2812,10 +2837,10 @@ def _build_monitor_ui(container):
                 parent=root_win,
             )
             return "break"
-        root_win.bind("<Alt-Key-1>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+1"}), notebook.select(0), "break")[2], add="+")
-        root_win.bind("<Alt-Key-2>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+2"}), notebook.select(1), "break")[2], add="+")
-        root_win.bind("<Alt-Key-3>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+3"}), notebook.select(2), "break")[2], add="+")
-        root_win.bind("<Alt-Key-4>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+4"}), notebook.select(3), "break")[2], add="+")
+        root_win.bind("<Alt-Key-1>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+1"}), _select_tab(0), "break")[2], add="+")
+        root_win.bind("<Alt-Key-2>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+2"}), _select_tab(1), "break")[2], add="+")
+        root_win.bind("<Alt-Key-3>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+3"}), _select_tab(2), "break")[2], add="+")
+        root_win.bind("<Alt-Key-4>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+4"}), _select_tab(3), "break")[2], add="+")
         root_win.bind("<F1>", _show_shortcuts, add="+")
     except Exception:
         pass
@@ -2921,10 +2946,8 @@ def _build_monitor_ui(container):
         pass
 
     for frame, arquivo, formatter, filter_key in tab_configs:
-        tab_depth_hard = tk.Frame(frame, bg=UI_THEME.get("border", "#3C3C3C"), height=1)
-        tab_depth_hard.pack(fill=tk.X, padx=0, pady=(0, 0))
-        tab_depth_soft = tk.Frame(frame, bg=UI_THEME.get("surface", "#252526"), height=1)
-        tab_depth_soft.pack(fill=tk.X, padx=0, pady=(0, theme_space("space_1", 4)))
+        tab_depth_hard = tk.Frame(frame, bg="#000000", height=2)
+        tab_depth_hard.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
         if filter_key == "controle":
             toolbar = tk.Frame(frame, bg=UI_THEME["surface"])
             toolbar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)) )
