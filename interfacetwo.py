@@ -35,9 +35,6 @@ from ui_theme import (
     available_theme_names,
     get_active_theme_name,
     validate_theme_contrast,
-    apply_typography,
-    available_typography_names,
-    get_active_typography_name,
     state_colors,
 )
 
@@ -108,6 +105,7 @@ _metrics_accessibility_var = None
 _filter_bars = {}
 _filter_toggle_buttons = {}
 _filter_toggle_state = {"visible": False}
+_text_breakpoints = {}
 
 
 def _load_prefs():
@@ -145,7 +143,6 @@ def _restore_filter_state(snapshot: dict):
 def _persist_ui_state(extra: dict | None = None):
     payload = _load_prefs()
     payload["theme"] = get_active_theme_name()
-    payload["typography"] = get_active_typography_name()
     payload["filter_state"] = _serialize_filter_state()
     payload["control_sort_state"] = {
         str(k): dict(v or {}) for k, v in _control_sort_state.items()
@@ -159,7 +156,6 @@ def _restore_ui_state():
     global _restored_control_sort_state
     prefs = _load_prefs()
     apply_theme(prefs.get("theme") or get_active_theme_name())
-    apply_typography(prefs.get("typography") or get_active_typography_name())
     _restore_filter_state(prefs.get("filter_state") or {})
     restored_sort = prefs.get("control_sort_state") or {}
     _restored_control_sort_state = dict(restored_sort) if isinstance(restored_sort, dict) else {}
@@ -289,7 +285,6 @@ def _collect_status_cards_data() -> dict:
         st = _status_text(r)
         if "SEM CONTATO" in st:
             sem_contato += 1
-            pendentes += 1
         elif "AVISADO" in st:
             avisado += 1
         elif "PEND" in st:
@@ -975,6 +970,19 @@ def _record_on_tag_click(text_widget, record, event=None, rec_tag=None):
         _control_selection_state[text_widget] = str((record or {}).get("ID") or (record or {}).get("_entrada_id") or "")
         _set_control_details(details_var, record)
 
+
+def _on_record_line_number_click(text_widget, record, rec_tag, idx):
+    bp = _text_breakpoints.setdefault(text_widget, set())
+    if idx in bp:
+        bp.remove(idx)
+    else:
+        bp.add(idx)
+    _record_on_tag_click(text_widget, record, rec_tag=rec_tag)
+
+
+def _on_record_text_click_toggle_bp(text_widget, record, rec_tag, idx):
+    _on_record_line_number_click(text_widget, record, rec_tag, idx)
+
 def _format_control_row(record: dict):
     nome = _title_name(record.get("NOME", ""), record.get("SOBRENOME", ""))
     return (
@@ -1016,6 +1024,34 @@ def _set_control_details(details_var, rec):
         f"Status: {safe(rec.get('STATUS'))}\n"
         f"Data/Hora: {safe(rec.get('DATA_HORA'))}"
     )
+
+
+def _restore_control_text_selection(text_widget, record_tag_map):
+    selected_record = _control_selection_state.get(text_widget)
+    if not selected_record:
+        return
+    selected_tag = None
+    selected_rec = None
+    for rec_tag, rec in (record_tag_map or {}).items():
+        rec_id = str((rec or {}).get("ID") or (rec or {}).get("_entrada_id") or "")
+        if rec_id and rec_id == selected_record:
+            selected_tag = rec_tag
+            selected_rec = rec
+            break
+    if not selected_tag:
+        return
+    try:
+        text_widget.config(state="normal")
+        text_widget.tag_remove("controle_selected", "1.0", tk.END)
+        ranges = text_widget.tag_ranges(selected_tag)
+        if ranges and len(ranges) >= 2:
+            text_widget.tag_add("controle_selected", ranges[0], ranges[1])
+        text_widget.config(state="disabled")
+    except Exception:
+        pass
+    details_var = _control_details_var.get(text_widget)
+    if details_var is not None:
+        _set_control_details(details_var, selected_rec)
 
 
 def _update_control_details(tree_widget, selection):
@@ -1104,7 +1140,7 @@ def _populate_control_table(tree_widget, info_label):
     if _operation_mode_enabled and not selected_iid:
         for iid, rec in record_map.items():
             st = str((rec or {}).get("STATUS") or (rec or {}).get("STATUS_ENCOMENDA") or "").upper()
-            if "SEM CONTATO" in st or "PEND" in st:
+            if "PEND" in st:
                 selected_iid = iid
                 break
     if selected_iid:
@@ -1155,30 +1191,37 @@ def _populate_text(text_widget, info_label):
     has_clickable_records = False
 
     text_widget.tag_configure("row_even", background=UI_THEME.get("surface", "#151A22"))
-    text_widget.tag_configure("row_odd", background=UI_THEME.get("surface_alt", "#1B2430"))
+    text_widget.tag_configure("row_odd", background=UI_THEME.get("surface", "#151A22"))
+    text_widget.tag_configure("line_number", foreground=UI_THEME.get("muted_text", "#A6A6A6"))
     for idx, r in enumerate(filtrados):
         is_clickable = formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry)
+        row_tag = "row_even" if idx % 2 == 0 else "row_odd"
         rec_tag = None
         if is_clickable:
             has_clickable_records = True
             prefix = "controle" if formatter == format_creative_entry else ("encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else "observacao"))
             rec_tag = f"{prefix}_record_{idx}"
         linha = formatter(r)
+        marker = "●" if idx in _text_breakpoints.get(text_widget, set()) else "○"
+        numbered = f"{marker} {idx + 1:>3}  {linha}"
+        text_tags = [row_tag]
+        if rec_tag:
+            text_tags.append(rec_tag)
         # Inserir já com a tag — isto garante que o tag cubra exatamente o texto
         try:
             if rec_tag and formatter in (format_orientacao_entry, format_observacao_entry):
-                text_widget.insert(tk.END, linha + "\n", (rec_tag, "row_even" if idx % 2 == 0 else "row_odd"))
+                text_widget.insert(tk.END, numbered + "\n", tuple(text_tags))
                 if idx < len(filtrados) - 1:
-                    text_widget.insert(tk.END, "─" * 80 + "\n\n")
+                    text_widget.insert(tk.END, "─" * 80 + "\n\n", (row_tag,))
                 else:
-                    text_widget.insert(tk.END, "\n")
+                    text_widget.insert(tk.END, "\n", (row_tag,))
             elif rec_tag:
-                text_widget.insert(tk.END, linha + "\n\n", (rec_tag, "row_even" if idx % 2 == 0 else "row_odd"))
+                text_widget.insert(tk.END, numbered + "\n\n", tuple(text_tags))
             else:
-                text_widget.insert(tk.END, linha + "\n\n", ("row_even" if idx % 2 == 0 else "row_odd",))
+                text_widget.insert(tk.END, numbered + "\n\n", tuple(text_tags))
         except Exception:
             # fallback simples
-            text_widget.insert(tk.END, linha + "\n\n", ("row_even" if idx % 2 == 0 else "row_odd",))
+            text_widget.insert(tk.END, numbered + "\n\n", tuple(text_tags))
 
         # calcular start/end com base nas ranges da tag (quando aplicável)
         if rec_tag:
@@ -1190,7 +1233,7 @@ def _populate_text(text_widget, info_label):
                 else:
                     # fallback: aproximar pelo 'end' antes das quebras adicionadas
                     end = text_widget.index("end-2c")
-                    start = text_widget.index(f"{end} - {len(linha)}c")
+                    start = text_widget.index(f"{end} - {len(numbered)}c")
             except Exception:
                 start = "1.0"
                 end = text_widget.index("end-2c")
@@ -1220,14 +1263,22 @@ def _populate_text(text_widget, info_label):
                 pass
             try:
                 # capturar rec_tag e r no default args
-                text_widget.tag_bind(rec_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag: _record_on_tag_click(tw, rec, ev, tag))
+                text_widget.tag_bind(rec_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_text_click_toggle_bp(tw, rec, tag, pos))
+            except Exception:
+                pass
+            try:
+                prefix = f"{marker} {idx + 1:>3}"
+                num_tag = f"line_number_{idx}"
+                text_widget.tag_add(num_tag, start, f"{start} + {len(prefix)}c")
+                text_widget.tag_add("line_number", start, f"{start} + {len(prefix)}c")
+                text_widget.tag_bind(num_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_line_number_click(tw, rec, tag, pos))
             except Exception:
                 pass
         else:
             # para registros não-encomenda, só guardar ranges genéricos
             try:
                 end = text_widget.index("end-2c")
-                start = text_widget.index(f"{end} - {len(linha)}c")
+                start = text_widget.index(f"{end} - {len(numbered)}c")
                 record_ranges.append((start, end, r))
                 try:
                     line_no = str(start).split(".", 1)[0]
@@ -1253,6 +1304,8 @@ def _populate_text(text_widget, info_label):
         _record_tag_map_generic[text_widget] = record_tag_map
     else:
         _record_tag_map_generic.pop(text_widget, None)
+    if formatter == format_creative_entry:
+        _restore_control_text_selection(text_widget, record_tag_map)
     _restore_hover_if_needed(text_widget, "hover_line")
 
 def _schedule_update(text_widgets, info_label):
@@ -1301,7 +1354,7 @@ def limpar_dados(text_widgets, info_label, action_button=None):
     if not resp:
         if action_button is not None:
             try:
-                action_button.configure(state="normal", text="Backup e Limpar")
+                action_button.configure(state="normal", text="Limpar")
             except Exception:
                 pass
         return
@@ -1313,7 +1366,7 @@ def limpar_dados(text_widgets, info_label, action_button=None):
         messagebox.showerror("Erro", f"Erro ao criar backup: {e}")
         if action_button is not None:
             try:
-                action_button.configure(state="normal", text="Backup e Limpar")
+                action_button.configure(state="normal", text="Limpar")
             except Exception:
                 pass
         return
@@ -1323,7 +1376,7 @@ def limpar_dados(text_widgets, info_label, action_button=None):
         messagebox.showerror("Erro", f"Erro ao limpar arquivo: {e}")
         if action_button is not None:
             try:
-                action_button.configure(state="normal", text="Backup e Limpar")
+                action_button.configure(state="normal", text="Limpar")
             except Exception:
                 pass
         return
@@ -1332,7 +1385,7 @@ def limpar_dados(text_widgets, info_label, action_button=None):
         _populate_text(tw, info_label)
     if action_button is not None:
         try:
-            action_button.configure(state="normal", text="Backup e Limpar")
+            action_button.configure(state="normal", text="Limpar")
         except Exception:
             pass
 
@@ -2437,27 +2490,30 @@ def _build_monitor_ui(container):
     style.map("Control.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME["primary"]))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("on_primary", UI_THEME["text"])))])
 
     info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg=UI_THEME["bg"], fg=UI_THEME["muted_text"], font=theme_font("font_sm"))
+    top_toggle_bar = tk.Frame(container, bg=UI_THEME.get("primary", UI_THEME["bg"]))
+    top_toggle_bar.pack(fill=tk.X, padx=0, pady=(0, 0))
+    btn_eye = build_secondary_button(top_toggle_bar, "👁", lambda: None)
+    btn_eye.pack(side=tk.LEFT, padx=(theme_space("space_3", 10), 0), pady=(2, 2))
+
     theme_bar = tk.Frame(container, bg=UI_THEME["bg"])
     theme_bar.pack(fill=tk.X, padx=10, pady=(6, 0))
     theme_label = build_label(theme_bar, "Tema:", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm")); theme_label.pack(side=tk.LEFT)
     theme_var = tk.StringVar(value=get_active_theme_name())
     theme_combo = ttk.Combobox(theme_bar, textvariable=theme_var, values=available_theme_names(), state="readonly")
     theme_combo.pack(side=tk.LEFT, padx=(6, 0))
-    typo_label = build_label(theme_bar, "Tipografia:", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm")); typo_label.pack(side=tk.LEFT, padx=(12, 0))
-    typo_var = tk.StringVar(value=get_active_typography_name())
-    typo_combo = ttk.Combobox(theme_bar, textvariable=typo_var, values=available_typography_names(), state="readonly", width=10)
-    typo_combo.pack(side=tk.LEFT, padx=(6, 0))
-    density_label = build_label(theme_bar, "Densidade:", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm")); density_label.pack(side=tk.LEFT, padx=(12, 0))
-    density_defaults = (_load_prefs().get("layout_density") or "confortavel")
-    density_var = tk.StringVar(value=("Compacto" if str(density_defaults).lower().startswith("compact") else "Confortável"))
-    density_combo = ttk.Combobox(theme_bar, textvariable=density_var, values=["Compacto", "Confortável"], state="readonly", width=12)
-    density_combo.pack(side=tk.LEFT, padx=(6, 0))
-    btn_top_export = build_secondary_button(theme_bar, "Exportar CSV", lambda: None)
-    btn_top_export.pack(side=tk.LEFT, padx=(12, 0))
-    btn_top_save_view = build_secondary_button(theme_bar, "Salvar visão", lambda: None)
+    details_visible = tk.BooleanVar(value=False)
+    btn_top_details = build_secondary_button(theme_bar, "🧾 Detalhes", lambda: None)
+    btn_top_details.pack(side=tk.LEFT, padx=(12, 0))
+    btn_top_export = build_secondary_button(theme_bar, "📤 Exportar CSV", lambda: None)
+    btn_top_export.pack(side=tk.LEFT, padx=(6, 0))
+    btn_top_save_view = build_secondary_button(theme_bar, "💾 Salvar visão", lambda: None)
     btn_top_save_view.pack(side=tk.LEFT, padx=(6, 0))
     _legacy_reset_columns_label = "Resetar colunas"
-    btn_top_toggle_filters = build_secondary_button(theme_bar, "⌃ Mostrar filtros", lambda: None)
+    btn_top_reload = build_secondary_button(theme_bar, "🔄 Recarregar", lambda: None)
+    btn_top_reload.pack(side=tk.LEFT, padx=(6, 0))
+    btn_top_clear = build_secondary_danger_button(theme_bar, "🧹 Limpar", lambda: None)
+    btn_top_clear.pack(side=tk.LEFT, padx=(6, 0))
+    btn_top_toggle_filters = build_secondary_button(theme_bar, "🧰 ⌃ Mostrar filtros", lambda: None)
     btn_top_toggle_filters.pack(side=tk.LEFT, padx=(6, 0))
     op_mode_defaults = bool((_load_prefs().get("operation_mode") or False))
     op_mode_var = tk.BooleanVar(value=op_mode_defaults)
@@ -2497,13 +2553,11 @@ def _build_monitor_ui(container):
     table_trees = []
     cards_widgets = []
 
-    def _apply_density(mode_label=None):
+    def _apply_density(_mode_label=None):
         global _layout_density_mode
-        selected = str(mode_label or density_var.get() or "Confortável")
-        is_compact = selected.lower().startswith("compact")
-        _layout_density_mode = "compacto" if is_compact else "confortavel"
-        rowheight = 24 if is_compact else 30
-        gap = theme_space("space_1", 4) if is_compact else theme_space("space_2", 8)
+        _layout_density_mode = "confortavel"
+        rowheight = 30
+        gap = theme_space("space_2", 8)
         try:
             ttk.Style(container).configure("Control.Treeview", rowheight=rowheight)
         except Exception:
@@ -2522,45 +2576,32 @@ def _build_monitor_ui(container):
                 pass
         for tree in table_trees:
             try:
-                tree.configure(height=18 if is_compact else 14)
+                tree.configure(height=14)
             except Exception:
                 pass
-        for w in (btn_reload, btn_backup):
+        for w in (btn_top_details, btn_top_export, btn_top_save_view, btn_top_reload, btn_top_clear, btn_top_toggle_filters):
             try:
-                w.configure(padx=(8 if is_compact else 12), pady=(2 if is_compact else 4))
+                w.configure(padx=12, pady=4)
             except Exception:
                 pass
         _persist_ui_state({"layout_density": _layout_density_mode})
-
-    def _on_density_change(_event=None):
-        _apply_density(density_var.get())
-        report_status("ux_metrics", "OK", stage="density_change", details={"density": _layout_density_mode})
-
-    def _on_typography_change(_event=None):
-        selected = apply_typography(typo_var.get())
-        report_status("ux_metrics", "OK", stage="typography_switch", details={"typography": selected})
-        _persist_ui_state({"typography": selected})
-        _refresh_theme_in_place()
-        _apply_density(density_var.get())
 
     def _on_theme_change(_event=None):
         selected = apply_theme(theme_var.get())
         report_status("ux_metrics", "OK", stage="theme_switch", details={"theme": selected})
         _persist_ui_state({"theme": selected})
         _refresh_theme_in_place()
-        _apply_density(density_var.get())
+        _apply_density()
 
     def _toggle_operation_mode(*_args):
         global _operation_mode_enabled, _runtime_refresh_ms
         _operation_mode_enabled = bool(op_mode_var.get())
         if _operation_mode_enabled:
-            apply_theme("alto_contraste")
-            apply_typography("acessivel")
+            apply_theme("principal")
             _runtime_refresh_ms = 1000
             theme_var.set(get_active_theme_name())
-            typo_var.set(get_active_typography_name())
             focus_mode_var.set(True)
-            report_status("ux_metrics", "OK", stage="operation_mode_enabled", details={"theme": get_active_theme_name(), "typography": get_active_typography_name(), "refresh_ms": _runtime_refresh_ms})
+            report_status("ux_metrics", "OK", stage="operation_mode_enabled", details={"theme": get_active_theme_name(), "refresh_ms": _runtime_refresh_ms})
             try:
                 hints.pack_forget()
             except Exception:
@@ -2579,7 +2620,7 @@ def _build_monitor_ui(container):
             report_status("ux_metrics", "OK", stage="operation_mode_disabled", details={"refresh_ms": _runtime_refresh_ms})
         _persist_ui_state({"operation_mode": _operation_mode_enabled})
         _refresh_theme_in_place()
-        _apply_density(density_var.get())
+        _apply_density()
 
     def _toggle_focus_mode(*_args):
         enabled = bool(focus_mode_var.get())
@@ -2596,8 +2637,6 @@ def _build_monitor_ui(container):
         report_status("ux_metrics", "OK", stage="focus_mode_toggle", details={"enabled": enabled})
 
     theme_combo.bind("<<ComboboxSelected>>", _on_theme_change, add="+")
-    typo_combo.bind("<<ComboboxSelected>>", _on_typography_change, add="+")
-    density_combo.bind("<<ComboboxSelected>>", _on_density_change, add="+")
     op_mode_var.trace_add("write", _toggle_operation_mode)
     focus_mode_var.trace_add("write", _toggle_focus_mode)
 
@@ -2623,7 +2662,7 @@ def _build_monitor_ui(container):
     }
     cards_tooltips = {
         "ativos": "Total de avisos atualmente ativos no sistema.",
-        "pendentes": "Soma de alertas pendentes + sem contato + status pendente.",
+        "pendentes": "Soma de alertas pendentes + status pendente.",
         "sem_contato": "Registros com status marcado como SEM CONTATO.",
         "avisado": "Registros com status marcado como AVISADO.",
     }
@@ -2643,6 +2682,29 @@ def _build_monitor_ui(container):
     hints = build_label(container, "Atalhos: Ctrl+F buscar • Ctrl+Enter aplicar • Ctrl+Shift+L limpar • Alt+1..4 abas • Alt+E exportar • Alt+V salvar visão", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
     hints.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
     info_label.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+
+    def _toggle_details_panel():
+        details_visible.set(not details_visible.get())
+        visible = details_visible.get()
+        widgets = (metrics_accessibility_label, hints, info_label)
+        for widget in widgets:
+            try:
+                if visible:
+                    widget.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+                else:
+                    widget.pack_forget()
+            except Exception:
+                pass
+
+    btn_top_details.configure(command=_toggle_details_panel)
+
+    def _toggle_top_controls():
+        if theme_bar.winfo_manager():
+            theme_bar.pack_forget()
+        else:
+            theme_bar.pack(fill=tk.X, padx=10, pady=(6, 0), before=title_row)
+
+    btn_eye.configure(command=_toggle_top_controls)
 
     _status_bar = AppStatusBar(container, text="UX: aguardando eventos")
     _status_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
@@ -2701,8 +2763,8 @@ def _build_monitor_ui(container):
 
     def _sync_filter_toggle_labels():
         visible = _filter_toggle_state.get("visible", False)
-        label = "⌄ Ocultar filtros" if visible else "⌃ Mostrar filtros"
-        for btn in list(_filter_toggle_buttons.values()):
+        label = "🧰 ⌄ Ocultar filtros" if visible else "🧰 ⌃ Mostrar filtros"
+        for btn in [btn_top_toggle_filters]:
             try:
                 btn.configure(text=label)
             except Exception:
@@ -2714,16 +2776,6 @@ def _build_monitor_ui(container):
             _apply_filter_visibility(key)
         _sync_filter_toggle_labels()
         report_status("ux_metrics", "OK", stage="filter_banner_toggle", details={"source": source_key, "visible": _filter_toggle_state["visible"]})
-
-    def _build_filter_banner_toggle(parent_frame, source_key: str):
-        toggle_row = tk.Frame(parent_frame, bg=UI_THEME["surface"])
-        toggle_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
-        btn_toggle = build_secondary_button(toggle_row, "⌃ Mostrar filtros", lambda: _toggle_filters(source_key))
-        btn_toggle.pack(side=tk.RIGHT)
-        _filter_toggle_buttons[source_key] = btn_toggle
-        attach_tooltip(btn_toggle, "Mostra/oculta os filtros")
-        bind_focus_ring(btn_toggle, focus_thickness=3, blur_thickness=1)
-        _sync_filter_toggle_labels()
 
     tab_configs = [
         (controle_frame, ARQUIVO, format_creative_entry, "controle"),
@@ -2777,7 +2829,11 @@ def _build_monitor_ui(container):
 
     btn_top_export.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_export_csv", details={"source": "controle"}), _export_control_csv()))
     btn_top_save_view.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_save_view", details={"source": "controle"}), _save_control_view()))
+    btn_top_reload.configure(command=lambda: forcar_recarregar(monitor_widgets, info_label))
+    btn_top_clear.configure(command=lambda: limpar_dados(monitor_widgets, info_label, btn_top_clear))
     btn_top_toggle_filters.configure(command=lambda: _toggle_filters("global"))
+    attach_tooltip(btn_top_reload, "Recarrega todos os dados do monitor")
+    attach_tooltip(btn_top_clear, "Cria backup e limpa os registros exibidos")
 
     try:
         root_win.bind("<Alt-e>", lambda _e: (btn_top_export.invoke(), "break")[1], add="+")
@@ -2805,6 +2861,8 @@ def _build_monitor_ui(container):
             _sync_count()
             _control_filtered_count_var = tk.StringVar(value=toolbar_count_var.get())
             _control_filtered_count_var.trace_add("write", lambda *_: _sync_count())
+        else:
+            tk.Frame(frame, bg=UI_THEME["surface"], height=theme_space("space_1", 4)).pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
 
         text_widget = tk.Text(
             frame,
@@ -2821,8 +2879,6 @@ def _build_monitor_ui(container):
         filter_bar._filter_target_widget = text_widget
         _filter_bars[str(filter_key)] = filter_bar
         _apply_filter_visibility(str(filter_key))
-        _build_filter_banner_toggle(frame, str(filter_key))
-
         if formatter == format_encomenda_entry:
             text_widget.tag_configure("status_avisado", foreground=UI_THEME["status_avisado_text"])
             text_widget.tag_configure("status_sem_contato", foreground=UI_THEME["status_sem_contato_text"])
@@ -2844,18 +2900,11 @@ def _build_monitor_ui(container):
         monitor_widgets.append(text_widget)
         _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter, "filter_key": filter_key, "widget": text_widget}
 
-    btn_frame = tk.Frame(container, bg=UI_THEME["bg"])
-    btn_frame.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_3", 10)))
-    btn_reload = build_primary_button(btn_frame, "Recarregar", lambda: forcar_recarregar(monitor_widgets, info_label))
-    btn_reload.pack(side=tk.LEFT, padx=6)
-    btn_backup = build_secondary_danger_button(btn_frame, "Backup e Limpar", lambda: limpar_dados(monitor_widgets, info_label, btn_backup)); btn_backup.pack(side=tk.LEFT, padx=6)
-    attach_tooltip(btn_reload, "Recarrega todos os dados do monitor")
-    attach_tooltip(btn_backup, "Cria backup e limpa os registros exibidos")
     if not prefs.get("onboarding_seen"):
         _announce_feedback("Use Ctrl+F para busca e Alt+1..4 para trocar abas", "info")
         _persist_ui_state({"onboarding_seen": True})
 
-    _apply_density(density_var.get())
+    _apply_density()
     if op_mode_var.get():
         _toggle_operation_mode()
     _update_status_cards()
