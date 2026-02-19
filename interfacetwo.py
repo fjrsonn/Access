@@ -2588,6 +2588,11 @@ def _build_monitor_ui(container):
     btn_top_clear.pack(side=tk.LEFT, padx=(6, 0))
     btn_top_toggle_filters = build_secondary_button(theme_bar, "🧰 Mostrar filtros", lambda: None)
     btn_top_toggle_filters.pack(side=tk.LEFT, padx=(6, 0))
+    for _btn in (btn_top_theme, btn_top_details, btn_top_export, btn_top_save_view, btn_top_reload, btn_top_clear, btn_top_toggle_filters):
+        try:
+            _btn.configure(font=theme_font("font_lg", "bold"), anchor="center", justify="center")
+        except Exception:
+            pass
     op_mode_defaults = bool((_load_prefs().get("operation_mode") or False))
     op_mode_var = tk.BooleanVar(value=op_mode_defaults)
     op_mode_chk = tk.Checkbutton(theme_bar, text="Modo Operação", variable=op_mode_var, bg=UI_THEME["bg"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), selectcolor=UI_THEME["surface"], activebackground=UI_THEME["bg"])
@@ -2921,6 +2926,10 @@ def _build_monitor_ui(container):
         pass
 
     for frame, arquivo, formatter, filter_key in tab_configs:
+        tab_depth_hard = tk.Frame(frame, bg=UI_THEME.get("border", "#3C3C3C"), height=1)
+        tab_depth_hard.pack(fill=tk.X, padx=0, pady=(0, 0))
+        tab_depth_soft = tk.Frame(frame, bg=UI_THEME.get("surface", "#252526"), height=1)
+        tab_depth_soft.pack(fill=tk.X, padx=0, pady=(0, theme_space("space_1", 4)))
         if filter_key == "controle":
             toolbar = tk.Frame(frame, bg=UI_THEME["surface"])
             toolbar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)) )
