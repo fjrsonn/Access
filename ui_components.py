@@ -268,7 +268,6 @@ class AppMetricCard(tk.Frame):
 
 
     def animate_capacity_fill(self, on_done=None, phase_one_ms: int = 420, phase_two_ms: int = 360, steps: int = 14):
-        """Versão segura: garante donut visível sem animação de entrada suscetível a flicker."""
         try:
             if self._donut_anim_after:
                 self.after_cancel(self._donut_anim_after)
@@ -276,14 +275,34 @@ class AppMetricCard(tk.Frame):
             pass
         self._donut_anim_after = None
         self.set_donut_visibility(True)
-        self._donut_consumed_progress = 1.0
-        self._donut_remaining_progress = 1.0
-        self._draw_donut()
-        if callable(on_done):
-            try:
-                on_done()
-            except Exception:
-                pass
+        self._donut_consumed_progress = 0.0
+        self._donut_remaining_progress = 0.0
+        total_steps = max(1, int(steps))
+        interval_one = max(16, int(phase_one_ms / total_steps))
+        interval_two = max(16, int(phase_two_ms / total_steps))
+
+        def _phase_two(idx=0):
+            self._donut_remaining_progress = min(1.0, idx / total_steps)
+            self._draw_donut()
+            if idx >= total_steps:
+                self._donut_anim_after = None
+                if callable(on_done):
+                    try:
+                        on_done()
+                    except Exception:
+                        pass
+                return
+            self._donut_anim_after = self.after(interval_two, lambda: _phase_two(idx + 1))
+
+        def _phase_one(idx=0):
+            self._donut_consumed_progress = min(1.0, idx / total_steps)
+            self._draw_donut()
+            if idx >= total_steps:
+                _phase_two(0)
+                return
+            self._donut_anim_after = self.after(interval_one, lambda: _phase_one(idx + 1))
+
+        _phase_one(0)
 
     def set_density(self, mode: str = "confortavel"):
         try:
