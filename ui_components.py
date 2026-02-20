@@ -106,19 +106,18 @@ class AppMetricCard(tk.Frame):
         self.body.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.bottom_curve = tk.Canvas(self.body, height=28, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
         self.bottom_curve.pack(side=tk.BOTTOM, fill=tk.X)
-        self.top_row = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"))
-        self.top_row.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
-        self.text_column = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"))
-        self.text_column.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self._donut_consumed_progress = 1.0
+        self._donut_remaining_progress = 1.0
+        self._donut_anim_after = None
+        self.donut_wrap = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"))
         self.donut_canvas = tk.Canvas(
-            self.top_row,
-            width=66,
-            height=66,
+            self.donut_wrap,
+            width=84,
+            height=84,
             bg=UI_THEME.get("surface", "#151A22"),
             highlightthickness=0,
             bd=0,
         )
-        self.donut_canvas.pack(side=tk.RIGHT, padx=(theme_space("space_1", 4), 0))
         self.title_lbl = tk.Label(self.body, textvariable=self.title_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self.value_lbl = tk.Label(self.body, textvariable=self.value_var, bg=UI_THEME.get("surface", "#151A22"), fg=state_colors(tone)[0], font=theme_font("font_xl", "bold"))
         self.trend_lbl = tk.Label(self.body, textvariable=self.trend_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
@@ -164,8 +163,10 @@ class AppMetricCard(tk.Frame):
         px = theme_space("space_1", 4) if compact else theme_space("space_2", 8)
         py_top = theme_space("space_1", 4)
         py_bottom = theme_space("space_1", 4) if compact else theme_space("space_2", 8)
-        self.title_lbl.pack(in_=self.text_column, anchor="w", padx=(0, 0), pady=(0, 0))
-        self.value_lbl.pack(in_=self.text_column, anchor="w", padx=(0, 0), pady=(0, 0))
+        self.title_lbl.pack(anchor="w", padx=px, pady=(py_top, 0))
+        self.value_lbl.pack(anchor="w", padx=px, pady=(0, 0))
+        self.donut_wrap.pack(fill=tk.X, padx=px, pady=(theme_space("space_1", 4), theme_space("space_1", 4)))
+        self.donut_canvas.pack(anchor="center")
         self.trend_lbl.pack(anchor="w", padx=px, pady=(0, 0))
         self.capacity_lbl.pack(anchor="w", padx=px, pady=(0, 0))
         self.meta_lbl.pack(anchor="w", padx=px, pady=(0, py_bottom))
@@ -180,22 +181,36 @@ class AppMetricCard(tk.Frame):
             y0 = (h - size) / 2
             x1 = x0 + size
             y1 = y0 + size
-            bg_ring = UI_THEME.get("surface_alt", "#1B2430")
             fg_ring = UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7"))
+            rem_ring = UI_THEME.get("surface_alt", "#1B2430")
+            consumed = max(0.0, min(1.0, self._capacity_percent * self._donut_consumed_progress))
+            remaining_total = max(0.0, 1.0 - self._capacity_percent)
+            remaining = max(0.0, min(1.0, remaining_total * self._donut_remaining_progress))
 
-            self.donut_canvas.create_oval(x0, y0, x1, y1, fill="", outline=bg_ring, width=7)
-            extent = max(0.0, min(359.99, 360.0 * self._capacity_percent))
-            self.donut_canvas.create_arc(
-                x0,
-                y0,
-                x1,
-                y1,
-                start=90,
-                extent=-extent,
-                style="arc",
-                outline=fg_ring,
-                width=7,
-            )
+            if consumed > 0:
+                self.donut_canvas.create_arc(
+                    x0,
+                    y0,
+                    x1,
+                    y1,
+                    start=90,
+                    extent=-(360.0 * consumed),
+                    style="arc",
+                    outline=fg_ring,
+                    width=9,
+                )
+            if remaining > 0:
+                self.donut_canvas.create_arc(
+                    x0,
+                    y0,
+                    x1,
+                    y1,
+                    start=90 - (360.0 * consumed),
+                    extent=-(360.0 * remaining),
+                    style="arc",
+                    outline=rem_ring,
+                    width=9,
+                )
             self.donut_canvas.create_text(
                 w / 2,
                 h / 2,
@@ -205,6 +220,43 @@ class AppMetricCard(tk.Frame):
             )
         except Exception:
             pass
+
+
+    def animate_capacity_fill(self, on_done=None, phase_one_ms: int = 420, phase_two_ms: int = 360, steps: int = 14):
+        try:
+            if self._donut_anim_after:
+                self.after_cancel(self._donut_anim_after)
+        except Exception:
+            pass
+        self._donut_anim_after = None
+        self._donut_consumed_progress = 0.0
+        self._donut_remaining_progress = 0.0
+        total_steps = max(1, int(steps))
+        interval_one = max(16, int(phase_one_ms / total_steps))
+        interval_two = max(16, int(phase_two_ms / total_steps))
+
+        def _phase_two(idx=0):
+            self._donut_remaining_progress = min(1.0, idx / total_steps)
+            self._draw_donut()
+            if idx >= total_steps:
+                self._donut_anim_after = None
+                if callable(on_done):
+                    try:
+                        on_done()
+                    except Exception:
+                        pass
+                return
+            self._donut_anim_after = self.after(interval_two, lambda: _phase_two(idx + 1))
+
+        def _phase_one(idx=0):
+            self._donut_consumed_progress = min(1.0, idx / total_steps)
+            self._draw_donut()
+            if idx >= total_steps:
+                _phase_two(0)
+                return
+            self._donut_anim_after = self.after(interval_one, lambda: _phase_one(idx + 1))
+
+        _phase_one(0)
 
     def set_density(self, mode: str = "confortavel"):
         try:

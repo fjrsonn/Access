@@ -2835,8 +2835,21 @@ def _build_monitor_ui(container):
         duration_ms = 780
         steps = 20
 
+        def _animate_donuts(pos=0):
+            if pos >= len(order):
+                return
+            card = _ux_cards.get(order[pos])
+            if card is None:
+                _animate_donuts(pos + 1)
+                return
+            try:
+                card.animate_capacity_fill(on_done=lambda: _animate_donuts(pos + 1))
+            except Exception:
+                _animate_donuts(pos + 1)
+
         def _play_next(pos=0):
             if pos >= len(order):
+                _animate_donuts(0)
                 return
             card = _ux_cards.get(order[pos])
             if card is None:
