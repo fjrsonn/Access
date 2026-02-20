@@ -122,8 +122,8 @@ class AppMetricCard(tk.Frame):
         self.donut_wrap.pack_propagate(False)
         self.donut_canvas = tk.Canvas(
             self.donut_wrap,
-            width=152,
-            height=152,
+            width=1,
+            height=1,
             bg=UI_THEME.get("surface", "#151A22"),
             highlightthickness=0,
             bd=0,
@@ -160,7 +160,7 @@ class AppMetricCard(tk.Frame):
         self.title_lbl.pack(in_=self.text_column, anchor="w", padx=(0, 0), pady=(py_top, 0))
         self.value_lbl.pack(in_=self.text_column, anchor="w", padx=(0, 0), pady=(0, 0))
         if self._donut_visible:
-            self.donut_canvas.pack(anchor="center", expand=True)
+            self.donut_canvas.pack(fill=tk.BOTH, expand=True)
         else:
             self.donut_canvas.pack_forget()
         self.trend_lbl.pack(anchor="w", padx=px, pady=(0, 0))
@@ -174,9 +174,11 @@ class AppMetricCard(tk.Frame):
                 return
             w = max(40, int(self.donut_canvas.winfo_width()))
             h = max(40, int(self.donut_canvas.winfo_height()))
-            size = min(w, h) - 10
             base_width = 12
             hover_extra = 6
+            max_stroke = base_width + 3
+            safe_margin = hover_extra + (max_stroke / 2) + 2
+            size = max(20, min(w, h) - (2 * safe_margin))
             x0 = (w - size) / 2
             y0 = (h - size) / 2
             x1 = x0 + size
@@ -226,48 +228,8 @@ class AppMetricCard(tk.Frame):
                 font=theme_font("font_sm", "bold"),
                 tags=("label_center",),
             )
-            self._draw_donut_tooltip(w)
         except Exception:
             pass
-
-    def _draw_donut_tooltip(self, width: int):
-        if self._donut_hover_segment not in {"consumed", "remaining"}:
-            return
-        consumed_value = max(0, int(self._capacity_consumed_n))
-        limit_value = max(1, int(self._capacity_limit_n))
-        remaining_value = max(limit_value - consumed_value, 0)
-        if self._donut_hover_segment == "consumed":
-            text = f"Parte preenchida: {consumed_value} usados ({int(round(self._capacity_percent * 100))}%)"
-        else:
-            pct_remaining = int(round((1.0 - self._capacity_percent) * 100))
-            text = f"Parte vazia: {remaining_value} restantes ({pct_remaining}%)"
-
-        x_center = max(80, int(width / 2))
-        y_center = 18
-        txt = self.donut_canvas.create_text(
-            x_center,
-            y_center,
-            text=text,
-            fill=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
-            font=theme_font("font_sm", "normal"),
-            tags=("tooltip",),
-        )
-        x0, y0, x1, y1 = self.donut_canvas.bbox(txt)
-        if x0 is None:
-            return
-        pad_x = 8
-        pad_y = 4
-        self.donut_canvas.create_rectangle(
-            x0 - pad_x,
-            y0 - pad_y,
-            x1 + pad_x,
-            y1 + pad_y,
-            fill=UI_THEME.get("surface_alt", "#1B2430"),
-            outline=UI_THEME.get("border", "#2B3442"),
-            width=1,
-            tags=("tooltip",),
-        )
-        self.donut_canvas.tag_raise(txt)
 
     def _on_donut_hover(self, _event=None):
         try:
@@ -297,7 +259,7 @@ class AppMetricCard(tk.Frame):
             self._donut_hover_segment = None
         try:
             if self._donut_visible:
-                self.donut_canvas.pack(anchor="center", expand=True)
+                self.donut_canvas.pack(fill=tk.BOTH, expand=True)
             else:
                 self.donut_canvas.pack_forget()
         except Exception:
