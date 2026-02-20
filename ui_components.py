@@ -196,10 +196,10 @@ class AppMetricCard(tk.Frame):
             if consumed > 0:
                 consumed_width = base_width + int(round(4 * consumed_strength))
                 self.donut_canvas.create_arc(
-                    x0,
-                    y0,
-                    x1,
-                    y1,
+                    x0 - consumed_pad,
+                    y0 - consumed_pad,
+                    x1 + consumed_pad,
+                    y1 + consumed_pad,
                     start=90,
                     extent=-(360.0 * consumed),
                     style="arc",
@@ -210,10 +210,10 @@ class AppMetricCard(tk.Frame):
             if remaining > 0:
                 remaining_width = base_width + int(round(4 * remaining_strength))
                 self.donut_canvas.create_arc(
-                    x0,
-                    y0,
-                    x1,
-                    y1,
+                    x0 - remaining_pad,
+                    y0 - remaining_pad,
+                    x1 + remaining_pad,
+                    y1 + remaining_pad,
                     start=90 - (360.0 * consumed),
                     extent=-(360.0 * remaining),
                     style="arc",
