@@ -95,6 +95,8 @@ class AppMetricCard(tk.Frame):
         self.value_var = tk.StringVar(value="")
         self.meta_var = tk.StringVar(value="Atualizado agora")
         self.trend_var = tk.StringVar(value="→ estável")
+        self.capacity_var = tk.StringVar(value="Consumido 0% • 0 usados • 0 restantes")
+        self._capacity_percent = 0.0
         self.accent_wrap = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"), width=4)
         self.accent_wrap.pack(side=tk.LEFT, fill=tk.Y)
         self.accent = tk.Frame(self.accent_wrap, bg=UI_THEME.get(tone, UI_THEME.get("primary", "#2F81F7")))
@@ -104,13 +106,35 @@ class AppMetricCard(tk.Frame):
         self.body.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.bottom_curve = tk.Canvas(self.body, height=28, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
         self.bottom_curve.pack(side=tk.BOTTOM, fill=tk.X)
+        self._donut_consumed_progress = 1.0
+        self._donut_remaining_progress = 1.0
+        self._donut_visible = False
+        self._donut_anim_after = None
+        self.top_row = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"))
+        self.top_row.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
+        self.text_column = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"))
+        self.text_column.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.donut_wrap = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"), width=108)
+        self.donut_wrap.pack(side=tk.RIGHT, fill=tk.Y)
+        self.donut_wrap.pack_propagate(False)
+        self.donut_canvas = tk.Canvas(
+            self.donut_wrap,
+            width=96,
+            height=96,
+            bg=UI_THEME.get("surface", "#151A22"),
+            highlightthickness=0,
+            bd=0,
+        )
         self.title_lbl = tk.Label(self.body, textvariable=self.title_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self.value_lbl = tk.Label(self.body, textvariable=self.value_var, bg=UI_THEME.get("surface", "#151A22"), fg=state_colors(tone)[0], font=theme_font("font_xl", "bold"))
         self.trend_lbl = tk.Label(self.body, textvariable=self.trend_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
+        self.capacity_lbl = tk.Label(self.body, textvariable=self.capacity_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self.meta_lbl = tk.Label(self.body, textvariable=self.meta_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self._apply_density("confortavel")
         self.bottom_curve.bind("<Configure>", self._draw_bottom_curve, add="+")
+        self.donut_canvas.bind("<Configure>", self._draw_donut, add="+")
         self.after(0, self._draw_bottom_curve)
+        self.after(0, self._draw_donut)
 
     def _draw_bottom_curve(self, _event=None):
         try:
@@ -146,10 +170,116 @@ class AppMetricCard(tk.Frame):
         px = theme_space("space_1", 4) if compact else theme_space("space_2", 8)
         py_top = theme_space("space_1", 4)
         py_bottom = theme_space("space_1", 4) if compact else theme_space("space_2", 8)
-        self.title_lbl.pack(anchor="w", padx=px, pady=(py_top, 0))
-        self.value_lbl.pack(anchor="w", padx=px, pady=(0, 0))
+        self.title_lbl.pack(in_=self.text_column, anchor="w", padx=(0, 0), pady=(py_top, 0))
+        self.value_lbl.pack(in_=self.text_column, anchor="w", padx=(0, 0), pady=(0, 0))
+        if self._donut_visible:
+            self.donut_canvas.pack(anchor="center", expand=True)
+        else:
+            self.donut_canvas.pack_forget()
         self.trend_lbl.pack(anchor="w", padx=px, pady=(0, 0))
+        self.capacity_lbl.pack(anchor="w", padx=px, pady=(0, 0))
         self.meta_lbl.pack(anchor="w", padx=px, pady=(0, py_bottom))
+
+    def _draw_donut(self, _event=None):
+        try:
+            self.donut_canvas.delete("all")
+            if not self._donut_visible:
+                return
+            w = max(40, int(self.donut_canvas.winfo_width()))
+            h = max(40, int(self.donut_canvas.winfo_height()))
+            size = min(w, h) - 6
+            x0 = (w - size) / 2
+            y0 = (h - size) / 2
+            x1 = x0 + size
+            y1 = y0 + size
+            fg_ring = UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7"))
+            rem_ring = UI_THEME.get("surface_alt", "#1B2430")
+            consumed = max(0.0, min(1.0, self._capacity_percent * self._donut_consumed_progress))
+            remaining_total = max(0.0, 1.0 - self._capacity_percent)
+            remaining = max(0.0, min(1.0, remaining_total * self._donut_remaining_progress))
+
+            if consumed > 0:
+                self.donut_canvas.create_arc(
+                    x0,
+                    y0,
+                    x1,
+                    y1,
+                    start=90,
+                    extent=-(360.0 * consumed),
+                    style="arc",
+                    outline=fg_ring,
+                    width=9,
+                )
+            if remaining > 0:
+                self.donut_canvas.create_arc(
+                    x0,
+                    y0,
+                    x1,
+                    y1,
+                    start=90 - (360.0 * consumed),
+                    extent=-(360.0 * remaining),
+                    style="arc",
+                    outline=rem_ring,
+                    width=9,
+                )
+            self.donut_canvas.create_text(
+                w / 2,
+                h / 2,
+                text=f"{int(round(self._capacity_percent * 100))}%",
+                fill=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
+                font=theme_font("font_sm", "bold"),
+            )
+        except Exception:
+            pass
+
+    def set_donut_visibility(self, visible: bool):
+        self._donut_visible = bool(visible)
+        try:
+            if self._donut_visible:
+                self.donut_canvas.pack(anchor="center", expand=True)
+            else:
+                self.donut_canvas.pack_forget()
+        except Exception:
+            pass
+        self._draw_donut()
+
+
+    def animate_capacity_fill(self, on_done=None, phase_one_ms: int = 420, phase_two_ms: int = 360, steps: int = 14):
+        try:
+            if self._donut_anim_after:
+                self.after_cancel(self._donut_anim_after)
+        except Exception:
+            pass
+        self._donut_anim_after = None
+        self.set_donut_visibility(True)
+        self._donut_consumed_progress = 0.0
+        self._donut_remaining_progress = 0.0
+        total_steps = max(1, int(steps))
+        interval_one = max(16, int(phase_one_ms / total_steps))
+        interval_two = max(16, int(phase_two_ms / total_steps))
+
+        def _phase_two(idx=0):
+            self._donut_remaining_progress = min(1.0, idx / total_steps)
+            self._draw_donut()
+            if idx >= total_steps:
+                self._donut_anim_after = None
+                if callable(on_done):
+                    try:
+                        on_done()
+                    except Exception:
+                        pass
+                return
+            self._donut_anim_after = self.after(interval_two, lambda: _phase_two(idx + 1))
+
+        def _phase_one(idx=0):
+            self._donut_consumed_progress = min(1.0, idx / total_steps)
+            self._draw_donut()
+            if idx >= total_steps:
+                _phase_two(0)
+                return
+            self._donut_anim_after = self.after(interval_one, lambda: _phase_one(idx + 1))
+
+        _phase_one(0)
 
     def set_density(self, mode: str = "confortavel"):
         try:
@@ -248,6 +378,22 @@ class AppMetricCard(tk.Frame):
 
     def set_meta(self, text: str):
         self.meta_var.set(str(text))
+
+    def set_capacity(self, consumed: int, limit: int):
+        try:
+            consumed_n = max(0, int(consumed))
+        except Exception:
+            consumed_n = 0
+        try:
+            limit_n = max(1, int(limit))
+        except Exception:
+            limit_n = 1
+        remaining = max(limit_n - consumed_n, 0)
+        self._capacity_percent = max(0.0, min(1.0, consumed_n / float(limit_n)))
+        self.capacity_var.set(
+            f"Consumido {int(round(self._capacity_percent * 100))}% • {consumed_n} usados • {remaining} restantes"
+        )
+        self._draw_donut()
 
 
 
