@@ -95,6 +95,8 @@ class AppMetricCard(tk.Frame):
         self.value_var = tk.StringVar(value="")
         self.meta_var = tk.StringVar(value="Atualizado agora")
         self.trend_var = tk.StringVar(value="→ estável")
+        self.capacity_var = tk.StringVar(value="Consumido 0% • 0 usados • 0 restantes")
+        self._capacity_percent = 0.0
         self.accent_wrap = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"), width=4)
         self.accent_wrap.pack(side=tk.LEFT, fill=tk.Y)
         self.accent = tk.Frame(self.accent_wrap, bg=UI_THEME.get(tone, UI_THEME.get("primary", "#2F81F7")))
@@ -104,13 +106,29 @@ class AppMetricCard(tk.Frame):
         self.body.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.bottom_curve = tk.Canvas(self.body, height=28, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
         self.bottom_curve.pack(side=tk.BOTTOM, fill=tk.X)
+        self.top_row = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"))
+        self.top_row.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
+        self.text_column = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"))
+        self.text_column.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.donut_canvas = tk.Canvas(
+            self.top_row,
+            width=66,
+            height=66,
+            bg=UI_THEME.get("surface", "#151A22"),
+            highlightthickness=0,
+            bd=0,
+        )
+        self.donut_canvas.pack(side=tk.RIGHT, padx=(theme_space("space_1", 4), 0))
         self.title_lbl = tk.Label(self.body, textvariable=self.title_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self.value_lbl = tk.Label(self.body, textvariable=self.value_var, bg=UI_THEME.get("surface", "#151A22"), fg=state_colors(tone)[0], font=theme_font("font_xl", "bold"))
         self.trend_lbl = tk.Label(self.body, textvariable=self.trend_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
+        self.capacity_lbl = tk.Label(self.body, textvariable=self.capacity_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self.meta_lbl = tk.Label(self.body, textvariable=self.meta_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self._apply_density("confortavel")
         self.bottom_curve.bind("<Configure>", self._draw_bottom_curve, add="+")
+        self.donut_canvas.bind("<Configure>", self._draw_donut, add="+")
         self.after(0, self._draw_bottom_curve)
+        self.after(0, self._draw_donut)
 
     def _draw_bottom_curve(self, _event=None):
         try:
@@ -146,10 +164,47 @@ class AppMetricCard(tk.Frame):
         px = theme_space("space_1", 4) if compact else theme_space("space_2", 8)
         py_top = theme_space("space_1", 4)
         py_bottom = theme_space("space_1", 4) if compact else theme_space("space_2", 8)
-        self.title_lbl.pack(anchor="w", padx=px, pady=(py_top, 0))
-        self.value_lbl.pack(anchor="w", padx=px, pady=(0, 0))
+        self.title_lbl.pack(in_=self.text_column, anchor="w", padx=(0, 0), pady=(0, 0))
+        self.value_lbl.pack(in_=self.text_column, anchor="w", padx=(0, 0), pady=(0, 0))
         self.trend_lbl.pack(anchor="w", padx=px, pady=(0, 0))
+        self.capacity_lbl.pack(anchor="w", padx=px, pady=(0, 0))
         self.meta_lbl.pack(anchor="w", padx=px, pady=(0, py_bottom))
+
+    def _draw_donut(self, _event=None):
+        try:
+            self.donut_canvas.delete("all")
+            w = max(40, int(self.donut_canvas.winfo_width()))
+            h = max(40, int(self.donut_canvas.winfo_height()))
+            size = min(w, h) - 6
+            x0 = (w - size) / 2
+            y0 = (h - size) / 2
+            x1 = x0 + size
+            y1 = y0 + size
+            bg_ring = UI_THEME.get("surface_alt", "#1B2430")
+            fg_ring = UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7"))
+
+            self.donut_canvas.create_oval(x0, y0, x1, y1, fill="", outline=bg_ring, width=7)
+            extent = max(0.0, min(359.99, 360.0 * self._capacity_percent))
+            self.donut_canvas.create_arc(
+                x0,
+                y0,
+                x1,
+                y1,
+                start=90,
+                extent=-extent,
+                style="arc",
+                outline=fg_ring,
+                width=7,
+            )
+            self.donut_canvas.create_text(
+                w / 2,
+                h / 2,
+                text=f"{int(round(self._capacity_percent * 100))}%",
+                fill=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
+                font=theme_font("font_sm", "bold"),
+            )
+        except Exception:
+            pass
 
     def set_density(self, mode: str = "confortavel"):
         try:
@@ -248,6 +303,22 @@ class AppMetricCard(tk.Frame):
 
     def set_meta(self, text: str):
         self.meta_var.set(str(text))
+
+    def set_capacity(self, consumed: int, limit: int):
+        try:
+            consumed_n = max(0, int(consumed))
+        except Exception:
+            consumed_n = 0
+        try:
+            limit_n = max(1, int(limit))
+        except Exception:
+            limit_n = 1
+        remaining = max(limit_n - consumed_n, 0)
+        self._capacity_percent = max(0.0, min(1.0, consumed_n / float(limit_n)))
+        self.capacity_var.set(
+            f"Consumido {int(round(self._capacity_percent * 100))}% • {consumed_n} usados • {remaining} restantes"
+        )
+        self._draw_donut()
 
 
 
