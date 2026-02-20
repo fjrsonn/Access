@@ -114,13 +114,13 @@ class AppMetricCard(tk.Frame):
         self.top_row.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
         self.text_column = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"))
         self.text_column.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.donut_wrap = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"), width=120)
-        self.donut_wrap.pack(side=tk.RIGHT, fill=tk.Y)
+        self.donut_wrap = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"), width=132)
+        self.donut_wrap.pack(side=tk.RIGHT, fill=tk.Y, anchor="center")
         self.donut_wrap.pack_propagate(False)
         self.donut_canvas = tk.Canvas(
             self.donut_wrap,
-            width=108,
-            height=108,
+            width=120,
+            height=120,
             bg=UI_THEME.get("surface", "#151A22"),
             highlightthickness=0,
             bd=0,
