@@ -114,6 +114,7 @@ class AppMetricCard(tk.Frame):
         self._donut_hover_progress = {"consumed": 0.0, "remaining": 0.0}
         self._donut_hover_anim_after = None
         self._donut_hover_pointer = (0, 0)
+        self._donut_hover_enabled = False
         self._capacity_consumed_n = 0
         self._capacity_limit_n = 1
         self.top_row = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"))
@@ -232,7 +233,39 @@ class AppMetricCard(tk.Frame):
         except Exception:
             pass
 
+    def _hit_test_donut_segment(self, x: int, y: int):
+        try:
+            w = max(40, int(self.donut_canvas.winfo_width()))
+            h = max(40, int(self.donut_canvas.winfo_height()))
+            size = min(w, h) - 10
+            cx = w / 2.0
+            cy = h / 2.0
+            radius = size / 2.0
+            ring_half = 8.0
+            dx = float(x) - cx
+            dy = float(y) - cy
+            dist = (dx * dx + dy * dy) ** 0.5
+            if dist < max(0.0, radius - ring_half) or dist > (radius + ring_half):
+                return None
+
+            consumed = max(0.0, min(1.0, self._capacity_percent * self._donut_consumed_progress))
+            remaining = max(0.0, min(1.0, (1.0 - self._capacity_percent) * self._donut_remaining_progress))
+            if consumed <= 0 and remaining <= 0:
+                return None
+
+            angle = (90.0 - __import__('math').degrees(__import__('math').atan2(dy, dx))) % 360.0
+            consumed_deg = 360.0 * consumed
+            if consumed_deg > 0 and angle <= consumed_deg:
+                return "consumed"
+            if remaining > 0:
+                return "remaining"
+        except Exception:
+            return None
+        return None
+
     def _draw_donut_tooltip(self, width: int, height: int):
+        if not self._donut_hover_enabled:
+            return
         segment = self._donut_hover_segment
         if segment not in {"consumed", "remaining"}:
             return
@@ -296,6 +329,17 @@ class AppMetricCard(tk.Frame):
         self._donut_hover_anim_after = self.after(16, self._animate_donut_hover)
 
     def _set_donut_hover_segment(self, segment):
+        if not self._donut_hover_enabled:
+            self._donut_hover_segment = None
+            self._donut_hover_progress = {"consumed": 0.0, "remaining": 0.0}
+            if self._donut_hover_anim_after:
+                try:
+                    self.after_cancel(self._donut_hover_anim_after)
+                except Exception:
+                    pass
+                self._donut_hover_anim_after = None
+            self._draw_donut()
+            return
         self._donut_hover_segment = segment if segment in {"consumed", "remaining"} else None
         if self._donut_hover_anim_after:
             try:
@@ -309,14 +353,9 @@ class AppMetricCard(tk.Frame):
         try:
             if event is not None:
                 self._donut_hover_pointer = (int(event.x), int(event.y))
-            current = self.donut_canvas.find_withtag("current")
-            segment = None
-            if current:
-                tags = set(self.donut_canvas.gettags(current[0]))
-                if "segment_consumed" in tags:
-                    segment = "consumed"
-                elif "segment_remaining" in tags:
-                    segment = "remaining"
+            if not self._donut_hover_enabled:
+                return
+            segment = self._hit_test_donut_segment(*(self._donut_hover_pointer))
             if segment != self._donut_hover_segment:
                 self._set_donut_hover_segment(segment)
             elif segment is not None:
@@ -325,6 +364,8 @@ class AppMetricCard(tk.Frame):
             pass
 
     def _on_donut_leave(self, _event=None):
+        if not self._donut_hover_enabled:
+            return
         if self._donut_hover_segment is None and all(v <= 0.0 for v in self._donut_hover_progress.values()):
             return
         self._set_donut_hover_segment(None)
@@ -349,6 +390,8 @@ class AppMetricCard(tk.Frame):
             pass
         self._donut_anim_after = None
         self.set_donut_visibility(True)
+        self._donut_hover_enabled = False
+        self._set_donut_hover_segment(None)
         self._donut_consumed_progress = 0.0
         self._donut_remaining_progress = 0.0
         total_steps = max(1, int(steps))
@@ -360,6 +403,7 @@ class AppMetricCard(tk.Frame):
             self._draw_donut()
             if idx >= total_steps:
                 self._donut_anim_after = None
+                self._donut_hover_enabled = True
                 if callable(on_done):
                     try:
                         on_done()
