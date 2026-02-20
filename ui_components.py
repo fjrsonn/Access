@@ -104,7 +104,7 @@ class AppMetricCard(tk.Frame):
         self._accent_anim_after = None
         self.body = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"))
         self.body.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.bottom_curve = tk.Canvas(self.body, height=28, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
+        self.bottom_curve = tk.Canvas(self.body, height=1, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
         self.bottom_curve.pack(side=tk.BOTTOM, fill=tk.X)
         self._donut_consumed_progress = 1.0
         self._donut_remaining_progress = 1.0
@@ -114,13 +114,13 @@ class AppMetricCard(tk.Frame):
         self.top_row.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
         self.text_column = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"))
         self.text_column.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.donut_wrap = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"), width=108)
+        self.donut_wrap = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"), width=120)
         self.donut_wrap.pack(side=tk.RIGHT, fill=tk.Y)
         self.donut_wrap.pack_propagate(False)
         self.donut_canvas = tk.Canvas(
             self.donut_wrap,
-            width=96,
-            height=96,
+            width=108,
+            height=108,
             bg=UI_THEME.get("surface", "#151A22"),
             highlightthickness=0,
             bd=0,
@@ -139,29 +139,11 @@ class AppMetricCard(tk.Frame):
     def _draw_bottom_curve(self, _event=None):
         try:
             w = max(20, int(self.bottom_curve.winfo_width()))
-            h = max(8, int(self.bottom_curve.winfo_height()))
+            h = max(1, int(self.bottom_curve.winfo_height()))
             card_bg = UI_THEME.get("surface", "#151A22")
-            cutout_bg = UI_THEME.get("bg", "#0D1117")
             self.bottom_curve.configure(bg=card_bg)
             self.bottom_curve.delete("all")
-
-            # base reta do retângulo
             self.bottom_curve.create_rectangle(0, 0, w, h, fill=card_bg, outline="")
-
-            # círculo de fundo com metade visível no final do retângulo, sem encostar nele
-            gap_top = 4
-            radius = max(9, min(w // 8, (h - gap_top) // 2))
-            cx = w // 2
-            cy = gap_top
-            self.bottom_curve.create_oval(
-                cx - radius,
-                cy - radius,
-                cx + radius,
-                cy + radius,
-                outline="",
-                width=0,
-                fill=cutout_bg,
-            )
         except Exception:
             pass
 
