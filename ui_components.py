@@ -111,6 +111,9 @@ class AppMetricCard(tk.Frame):
         self._donut_visible = False
         self._donut_anim_after = None
         self._donut_hover_segment = None
+        self._donut_hover_progress = {"consumed": 0.0, "remaining": 0.0}
+        self._donut_hover_anim_after = None
+        self._donut_hover_pointer = (0, 0)
         self._capacity_consumed_n = 0
         self._capacity_limit_n = 1
         self.top_row = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"))
@@ -176,7 +179,6 @@ class AppMetricCard(tk.Frame):
             h = max(40, int(self.donut_canvas.winfo_height()))
             size = min(w, h) - 10
             base_width = 12
-            hover_extra = 6
             x0 = (w - size) / 2
             y0 = (h - size) / 2
             x1 = x0 + size
@@ -187,11 +189,11 @@ class AppMetricCard(tk.Frame):
             remaining_total = max(0.0, 1.0 - self._capacity_percent)
             remaining = max(0.0, min(1.0, remaining_total * self._donut_remaining_progress))
 
-            consumed_hovered = self._donut_hover_segment == "consumed"
-            remaining_hovered = self._donut_hover_segment == "remaining"
+            consumed_strength = float(self._donut_hover_progress.get("consumed", 0.0))
+            remaining_strength = float(self._donut_hover_progress.get("remaining", 0.0))
 
             if consumed > 0:
-                consumed_pad = hover_extra if consumed_hovered else 0
+                consumed_width = base_width + int(round(4 * consumed_strength))
                 self.donut_canvas.create_arc(
                     x0 - consumed_pad,
                     y0 - consumed_pad,
@@ -201,11 +203,11 @@ class AppMetricCard(tk.Frame):
                     extent=-(360.0 * consumed),
                     style="arc",
                     outline=fg_ring,
-                    width=base_width + (3 if consumed_hovered else 0),
+                    width=consumed_width,
                     tags=("segment", "segment_consumed"),
                 )
             if remaining > 0:
-                remaining_pad = hover_extra if remaining_hovered else 0
+                remaining_width = base_width + int(round(4 * remaining_strength))
                 self.donut_canvas.create_arc(
                     x0 - remaining_pad,
                     y0 - remaining_pad,
@@ -215,7 +217,7 @@ class AppMetricCard(tk.Frame):
                     extent=-(360.0 * remaining),
                     style="arc",
                     outline=rem_ring,
-                    width=base_width + (3 if remaining_hovered else 0),
+                    width=remaining_width,
                     tags=("segment", "segment_remaining"),
                 )
             self.donut_canvas.create_text(
@@ -226,30 +228,35 @@ class AppMetricCard(tk.Frame):
                 font=theme_font("font_sm", "bold"),
                 tags=("label_center",),
             )
-            self._draw_donut_tooltip(w)
+            self._draw_donut_tooltip(w, h)
         except Exception:
             pass
 
-    def _draw_donut_tooltip(self, width: int):
-        if self._donut_hover_segment not in {"consumed", "remaining"}:
+    def _draw_donut_tooltip(self, width: int, height: int):
+        segment = self._donut_hover_segment
+        if segment not in {"consumed", "remaining"}:
             return
+        if self._donut_hover_progress.get(segment, 0.0) <= 0.05:
+            return
+
         consumed_value = max(0, int(self._capacity_consumed_n))
         limit_value = max(1, int(self._capacity_limit_n))
         remaining_value = max(limit_value - consumed_value, 0)
-        if self._donut_hover_segment == "consumed":
+        if segment == "consumed":
             text = f"Parte preenchida: {consumed_value} usados ({int(round(self._capacity_percent * 100))}%)"
         else:
             pct_remaining = int(round((1.0 - self._capacity_percent) * 100))
             text = f"Parte vazia: {remaining_value} restantes ({pct_remaining}%)"
 
-        x_center = max(80, int(width / 2))
-        y_center = 18
+        px, py = self._donut_hover_pointer
+        x_center = min(max(80, int(px)), max(80, width - 80))
+        y_center = min(max(18, int(py - 18)), max(18, height - 18))
         txt = self.donut_canvas.create_text(
             x_center,
             y_center,
             text=text,
             fill=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
-            font=theme_font("font_xs", "normal"),
+            font=theme_font("font_sm", "normal"),
             tags=("tooltip",),
         )
         x0, y0, x1, y1 = self.donut_canvas.bbox(txt)
@@ -269,8 +276,39 @@ class AppMetricCard(tk.Frame):
         )
         self.donut_canvas.tag_raise(txt)
 
-    def _on_donut_hover(self, _event=None):
+    def _animate_donut_hover(self):
+        target_consumed = 1.0 if self._donut_hover_segment == "consumed" else 0.0
+        target_remaining = 1.0 if self._donut_hover_segment == "remaining" else 0.0
+        done = True
+        for key, target in (("consumed", target_consumed), ("remaining", target_remaining)):
+            current = float(self._donut_hover_progress.get(key, 0.0))
+            updated = current + ((target - current) * 0.35)
+            if abs(updated - target) < 0.02:
+                updated = target
+            else:
+                done = False
+            self._donut_hover_progress[key] = max(0.0, min(1.0, updated))
+
+        self._draw_donut()
+        if done:
+            self._donut_hover_anim_after = None
+            return
+        self._donut_hover_anim_after = self.after(16, self._animate_donut_hover)
+
+    def _set_donut_hover_segment(self, segment):
+        self._donut_hover_segment = segment if segment in {"consumed", "remaining"} else None
+        if self._donut_hover_anim_after:
+            try:
+                self.after_cancel(self._donut_hover_anim_after)
+            except Exception:
+                pass
+            self._donut_hover_anim_after = None
+        self._animate_donut_hover()
+
+    def _on_donut_hover(self, event=None):
         try:
+            if event is not None:
+                self._donut_hover_pointer = (int(event.x), int(event.y))
             current = self.donut_canvas.find_withtag("current")
             segment = None
             if current:
@@ -280,16 +318,16 @@ class AppMetricCard(tk.Frame):
                 elif "segment_remaining" in tags:
                     segment = "remaining"
             if segment != self._donut_hover_segment:
-                self._donut_hover_segment = segment
+                self._set_donut_hover_segment(segment)
+            elif segment is not None:
                 self._draw_donut()
         except Exception:
             pass
 
     def _on_donut_leave(self, _event=None):
-        if self._donut_hover_segment is None:
+        if self._donut_hover_segment is None and all(v <= 0.0 for v in self._donut_hover_progress.values()):
             return
-        self._donut_hover_segment = None
-        self._draw_donut()
+        self._set_donut_hover_segment(None)
 
     def set_donut_visibility(self, visible: bool):
         self._donut_visible = bool(visible)
