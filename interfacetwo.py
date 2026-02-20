@@ -2829,27 +2829,29 @@ def _build_monitor_ui(container):
         cards_row.grid_columnconfigure(idx, weight=1)
         cards_widgets.append(card)
         attach_tooltip(card, cards_tooltips.get(key, ""))
+        try:
+            card.set_donut_visibility(False)
+        except Exception:
+            pass
 
     def _play_metric_cards_intro_animation():
         order = ["ativos", "pendentes", "sem_contato", "avisado"]
         duration_ms = 780
         steps = 20
 
-        def _animate_donuts(pos=0):
-            if pos >= len(order):
-                return
-            card = _ux_cards.get(order[pos])
-            if card is None:
-                _animate_donuts(pos + 1)
-                return
-            try:
-                card.animate_capacity_fill(on_done=lambda: _animate_donuts(pos + 1))
-            except Exception:
-                _animate_donuts(pos + 1)
+        def _animate_donuts_sync():
+            for key in order:
+                card = _ux_cards.get(key)
+                if card is None:
+                    continue
+                try:
+                    card.animate_capacity_fill()
+                except Exception:
+                    continue
 
         def _play_next(pos=0):
             if pos >= len(order):
-                _animate_donuts(0)
+                _animate_donuts_sync()
                 return
             card = _ux_cards.get(order[pos])
             if card is None:
