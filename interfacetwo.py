@@ -66,6 +66,12 @@ AVISOS_ARQUIVO = os.path.join(BASE_DIR, "avisos.json")
 LOCK_FILE = os.path.join(BASE_DIR, "monitor.lock")
 REFRESH_MS = 2000  # 2s
 PREFS_FILE = os.path.join(BASE_DIR, "config", "ui_monitor_prefs.json")
+CARD_CAPACITY_LIMITS = {
+    "ativos": 1500,
+    "pendentes": 1200,
+    "sem_contato": 800,
+    "avisado": 1000,
+}
 
 # internal reference to Toplevel (quando embutido)
 _monitor_toplevel = None
@@ -378,6 +384,7 @@ def _update_status_cards():
                 previous = int(_metrics_previous_cards.get(k, current))
                 card.set_value(str(current))
                 card.set_trend(current - previous)
+                card.set_capacity(current, CARD_CAPACITY_LIMITS.get(k, 1000))
                 card.set_meta(f"Atualizado às {now_label} • há 0s")
                 card.flash(260)
             except Exception:
@@ -2822,14 +2829,29 @@ def _build_monitor_ui(container):
         cards_row.grid_columnconfigure(idx, weight=1)
         cards_widgets.append(card)
         attach_tooltip(card, cards_tooltips.get(key, ""))
+        try:
+            card.set_donut_visibility(False)
+        except Exception:
+            pass
 
     def _play_metric_cards_intro_animation():
         order = ["ativos", "pendentes", "sem_contato", "avisado"]
         duration_ms = 780
         steps = 20
 
+        def _animate_donuts_sync():
+            for key in order:
+                card = _ux_cards.get(key)
+                if card is None:
+                    continue
+                try:
+                    card.animate_capacity_fill()
+                except Exception:
+                    continue
+
         def _play_next(pos=0):
             if pos >= len(order):
+                _animate_donuts_sync()
                 return
             card = _ux_cards.get(order[pos])
             if card is None:
