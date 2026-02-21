@@ -1,443 +1,317 @@
-"""Reusable UI components built on top of ui_theme tokens."""
-from __future__ import annotations
+"""
+main.py
+Inicializa o sistema:
+ - garante pré-estruturas (analises.json, avisos.json)
+ - dispara análise/avisos no startup
+ - roda um watcher que observa alterações em dadosend.json e encomendasend.json
+ - atualiza analises/avisos por identidade e por encomendas
+ - inicia a UI via interfaceone.iniciar_interface_principal()
+"""
+import os
+import time
+import json
+import hashlib
+import threading
+import traceback
+from collections import deque
 
 try:
-    import tkinter as tk
-    from tkinter import ttk
-except Exception:  # pragma: no cover
-    tk = None
-    ttk = None
+    from runtime_status import report_status, report_log
+except Exception:
+    def report_status(*args, **kwargs):
+        return None
 
-from ui_theme import UI_THEME, theme_font, theme_space, build_card_frame, build_label, state_colors, normalize_tone
+    def report_log(*args, **kwargs):
+        return None
 
+BASE = os.path.dirname(os.path.abspath(__file__))
+DADOSEND = os.path.join(BASE, "dadosend.json")
+ANALISES_JSON = os.path.join(BASE, "analises.json")
+AVISOS_JSON = os.path.join(BASE, "avisos.json")
+ENCOMENDASEND = os.path.join(BASE, "encomendasend.json")
 
-def build_section_title(parent, text: str):
-    return tk.Label(
-        parent,
-        text=text,
-        bg=UI_THEME.get("bg", "#0F1115"),
-        fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
-        font=theme_font("font_xl", "bold"),
-        anchor="w",
-    )
+POLL_INTERVAL = 1.0
+WATCHER_DEBOUNCE_WINDOW = 0.35
 
-
-def build_form_row(parent, label_text: str, control):
-    row = tk.Frame(parent, bg=UI_THEME.get("surface", "#151A22"))
-    lbl = build_label(row, label_text, bg=UI_THEME.get("surface", "#151A22"), font=theme_font("font_md"))
-    lbl.pack(side=tk.LEFT, padx=(theme_space("space_2", 8), theme_space("space_1", 4)), pady=theme_space("space_2", 8))
-    control.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8))
-    return row
+_ANALISES_TEMPLATE = {"registros": [], "encomendas_multiplas_bloco_apartamento": []}
+_AVISOS_TEMPLATE = {"registros": [], "ultimo_aviso_ativo": None}
 
 
-class AppFeedbackBanner(tk.Frame):
-    def __init__(self, parent, text: str = ""):
-        super().__init__(parent, bg=UI_THEME.get("surface_alt", "#1B2430"), highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"))
-        self.var = tk.StringVar(value=text)
-        self.lbl = tk.Label(self, textvariable=self.var, anchor="w", bg=self.cget("bg"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), font=theme_font("font_sm"))
-        self.lbl.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=theme_space("space_1", 4))
-        self._after_id = None
+def _log(level: str, stage: str, message: str, **details):
+    report_log("main", level, message, stage=stage, details=details)
+    print(f"[main] {message}")
 
-    def show(self, text: str, tone: str = "info", icon: str = "ℹ", timeout_ms: int = 2200):
-        self.var.set(f"{icon} {text}".strip())
-        bg, fg = state_colors(tone)
-        self.configure(bg=bg)
-        self.lbl.configure(bg=bg, fg=fg)
+
+def ensure_file(path, template):
+    if not os.path.exists(path):
         try:
-            self.pack_forget()
-            self.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
-        except Exception:
-            pass
-        if self._after_id:
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(template, f, ensure_ascii=False, indent=2)
+            _log("OK", "ensure_file_created", f"Criado: {path}", path=path)
+        except OSError as e:
+            _log("ERROR", "ensure_file_create_failed", "Falha ao criar arquivo", path=path, error=str(e))
+    else:
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if not isinstance(data, dict):
+                raise ValueError("conteúdo inválido")
+        except (OSError, ValueError, json.JSONDecodeError):
             try:
-                self.after_cancel(self._after_id)
-            except Exception:
-                pass
-        self._after_id = self.after(timeout_ms, self.hide)
+                with open(path, "w", encoding="utf-8") as f:
+                    json.dump(template, f, ensure_ascii=False, indent=2)
+                _log("OK", "ensure_file_recreated", f"Recriado (template aplicado): {path}", path=path)
+            except OSError as e:
+                _log("ERROR", "ensure_file_recreate_failed", "Falha ao recriar arquivo", path=path, error=str(e))
 
-    def hide(self):
-        if self._after_id:
+
+def _identity_from_record(rec):
+    def _v(k):
+        return (rec.get(k, "") or "").strip().upper()
+
+    return f"{_v('NOME')}|{_v('SOBRENOME')}|{_v('BLOCO')}|{_v('APARTAMENTO')}"
+
+
+def _get_last_record_identity(dadosend_path):
+    try:
+        with open(dadosend_path, "r", encoding="utf-8") as f:
+            d = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return None
+    regs = []
+    if isinstance(d, dict) and "registros" in d:
+        regs = d.get("registros") or []
+    elif isinstance(d, list):
+        regs = d
+    if not regs:
+        return None
+    def _safe_int_id(value):
+        try:
+            if value is None:
+                return None
+            if isinstance(value, bool):
+                return None
+            text = str(value).strip()
+            if not text:
+                return None
+            return int(text)
+        except (TypeError, ValueError):
+            return None
+
+    try:
+        regs_with_id = []
+        for r in regs:
+            rid = _safe_int_id(r.get("ID"))
+            if rid is not None:
+                regs_with_id.append((r, rid))
+        if regs_with_id:
+            last = max(regs_with_id, key=lambda item: item[1])[0]
+            return _identity_from_record(last)
+    except Exception:
+        pass
+
+    def _dt_key(rec):
+        s = rec.get("DATA_HORA") or rec.get("data_hora") or ""
+        try:
+            from datetime import datetime
+            for fmt in ("%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M"):
+                try:
+                    return datetime.strptime(s, fmt)
+                except ValueError:
+                    pass
+        except Exception:
+            pass
+        return None
+
+    try:
+        regs_with_dt = [(r, _dt_key(r)) for r in regs]
+        regs_with_dt = [t for t in regs_with_dt if t[1] is not None]
+        if regs_with_dt:
+            last = max(regs_with_dt, key=lambda t: t[1])[0]
+            return _identity_from_record(last)
+    except Exception:
+        pass
+
+    try:
+        return _identity_from_record(regs[-1])
+    except Exception:
+        return None
+
+
+def _file_fingerprint(path):
+    """
+    Gera uma assinatura estável do conteúdo para ignorar mudanças apenas de mtime.
+    """
+    try:
+        with open(path, "rb") as f:
+            content = f.read()
+        return hashlib.sha1(content).hexdigest()
+    except OSError:
+        return None
+
+
+def _process_dadosend_change(dadosend_path, analises_mod, avisos_mod):
+    report_status("watcher", "STARTED", stage="dadosend_changed")
+    _log("STARTED", "dadosend_changed", "Alteração detectada em dadosend.json")
+    ident = _get_last_record_identity(dadosend_path)
+    if ident:
+        try:
+            analises_mod.build_analises_for_identity(ident, dadosend_path, ANALISES_JSON)
+            report_status("watcher", "OK", stage="build_analises_for_identity", details={"identidade": ident})
+        except Exception:
+            report_status("watcher", "ERROR", stage="build_analises_for_identity", details={"identidade": ident, "error": traceback.format_exc()})
             try:
-                self.after_cancel(self._after_id)
+                analises_mod.build_analises(dadosend_path, ANALISES_JSON)
+                report_status("watcher", "OK", stage="build_analises_full")
             except Exception:
-                pass
-        self._after_id = None
+                _log("ERROR", "build_analises_full_failed", "erro build_analises (fallback)", error=traceback.format_exc())
+
         try:
-            self.pack_forget()
+            avisos_mod.build_avisos_for_identity(ident, ANALISES_JSON, AVISOS_JSON)
+            report_status("watcher", "OK", stage="build_avisos_for_identity", details={"identidade": ident})
         except Exception:
-            pass
+            report_status("watcher", "ERROR", stage="build_avisos_for_identity", details={"identidade": ident, "error": traceback.format_exc()})
+            try:
+                avisos_mod.build_avisos(ANALISES_JSON, AVISOS_JSON)
+                report_status("watcher", "OK", stage="build_avisos_full")
+            except Exception:
+                _log("ERROR", "build_avisos_full_failed", "erro build_avisos (fallback)", error=traceback.format_exc())
+    else:
+        _log("WARNING", "identity_missing", "não foi possível identificar registro — recalculando tudo")
+        try:
+            analises_mod.build_analises(dadosend_path, ANALISES_JSON)
+            report_status("watcher", "OK", stage="build_analises_full")
+        except Exception:
+            _log("ERROR", "build_analises_full_failed", "erro build_analises", error=traceback.format_exc())
+        try:
+            avisos_mod.build_avisos(ANALISES_JSON, AVISOS_JSON)
+            report_status("watcher", "OK", stage="build_avisos_full")
+        except Exception:
+            _log("ERROR", "build_avisos_full_failed", "erro build_avisos", error=traceback.format_exc())
 
 
-class AppStatusBar(tk.Frame):
-    def __init__(self, parent, text: str = ""):
-        super().__init__(parent, bg=UI_THEME.get("surface_alt", "#1B2430"), highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"))
-        self.var = tk.StringVar(value=text)
-        self.lbl = tk.Label(self, textvariable=self.var, anchor="w", bg=UI_THEME.get("surface_alt", "#1B2430"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), font=theme_font("font_sm"))
-        self.lbl.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=theme_space("space_1", 4))
+def _process_encomendas_change(dadosend_path, analises_mod, avisos_mod):
+    report_status("watcher", "STARTED", stage="encomendas_changed")
+    _log("STARTED", "encomendas_changed", "Alteração detectada em encomendasend.json")
+    try:
+        analises_mod.build_analises(dadosend_path, ANALISES_JSON)
+        report_status("watcher", "OK", stage="build_analises_full")
+    except Exception:
+        report_status("watcher", "ERROR", stage="build_analises_full", details={"error": traceback.format_exc()})
+        _log("ERROR", "build_analises_full_failed", "erro build_analises (encomendas)", error=traceback.format_exc())
+    try:
+        avisos_mod.build_avisos(ANALISES_JSON, AVISOS_JSON)
+        report_status("watcher", "OK", stage="build_avisos_full")
+    except Exception:
+        report_status("watcher", "ERROR", stage="build_avisos_full", details={"error": traceback.format_exc()})
+        _log("ERROR", "build_avisos_full_failed", "erro build_avisos (encomendas)", error=traceback.format_exc())
 
-    def set(self, text: str, tone: str = "info"):
-        self.var.set(text)
-        bg, fg = state_colors(tone)
-        self.configure(bg=bg)
-        self.lbl.configure(bg=bg, fg=fg)
+
+def watcher_thread(dadosend_path, analises_mod, avisos_mod, poll=POLL_INTERVAL, debounce_window=WATCHER_DEBOUNCE_WINDOW):
+    _log("OK", "watcher_started", f"Watcher iniciado para {dadosend_path} e {ENCOMENDASEND}")
+    last_mtime_dadosend = None
+    last_mtime_encomendas = None
+    last_fp_dadosend = None
+    last_fp_encomendas = None
+    pending_events = deque()
+    pending_map = {}
+    while True:
+        now = time.time()
+        try:
+            if os.path.exists(dadosend_path):
+                m_dados = os.path.getmtime(dadosend_path)
+                if last_mtime_dadosend is None:
+                    last_mtime_dadosend = m_dados
+                    last_fp_dadosend = _file_fingerprint(dadosend_path)
+                elif m_dados != last_mtime_dadosend:
+                    last_mtime_dadosend = m_dados
+                    fp_dados = _file_fingerprint(dadosend_path)
+                    if fp_dados is None or fp_dados != last_fp_dadosend:
+                        last_fp_dadosend = fp_dados
+                        pending_map["dadosend"] = now
+
+            if os.path.exists(ENCOMENDASEND):
+                m_encomendas = os.path.getmtime(ENCOMENDASEND)
+                if last_mtime_encomendas is None:
+                    last_mtime_encomendas = m_encomendas
+                    last_fp_encomendas = _file_fingerprint(ENCOMENDASEND)
+                elif m_encomendas != last_mtime_encomendas:
+                    last_mtime_encomendas = m_encomendas
+                    fp_encomendas = _file_fingerprint(ENCOMENDASEND)
+                    if fp_encomendas is None or fp_encomendas != last_fp_encomendas:
+                        last_fp_encomendas = fp_encomendas
+                        pending_map["encomendas"] = now
+
+            for event_name, last_change_ts in list(pending_map.items()):
+                if now - last_change_ts >= debounce_window:
+                    pending_events.append(event_name)
+                    pending_map.pop(event_name, None)
+
+            processed_in_tick = set()
+            while pending_events:
+                event_name = pending_events.popleft()
+                if event_name in processed_in_tick:
+                    continue
+                processed_in_tick.add(event_name)
+                if event_name == "dadosend":
+                    _process_dadosend_change(dadosend_path, analises_mod, avisos_mod)
+                elif event_name == "encomendas" and "dadosend" not in processed_in_tick:
+                    _process_encomendas_change(dadosend_path, analises_mod, avisos_mod)
+        except Exception:
+            _log("ERROR", "watcher_loop_exception", "watcher erro", error=traceback.format_exc())
+        time.sleep(poll)
 
 
-class AppMetricCard(tk.Frame):
-    def __init__(self, parent, title: str, value: str = "0", tone: str = "info", icon: str = "●"):
-        super().__init__(parent, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=1, highlightbackground="#000000")
-        self._tone = tone
-        self._title = title
-        self._icon = icon
-        self._flash_after = None
-        self.title_var = tk.StringVar(value=f"{icon} {title}")
-        self._target_value_text = str(value)
-        self._value_revealed = False
-        self.value_var = tk.StringVar(value="")
-        self.meta_var = tk.StringVar(value="Atualizado agora")
-        self.trend_var = tk.StringVar(value="→ estável")
-        self.capacity_var = tk.StringVar(value="Consumido 0% • 0 usados • 0 restantes")
-        self._capacity_percent = 0.0
-        self.accent_wrap = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"), width=4)
-        self.accent_wrap.pack(side=tk.LEFT, fill=tk.Y)
-        self.accent = tk.Frame(self.accent_wrap, bg=UI_THEME.get(tone, UI_THEME.get("primary", "#2F81F7")))
-        self.accent.place(relx=0.0, rely=1.0, relwidth=1.0, relheight=0.0, anchor="sw")
-        self._accent_anim_after = None
-        self.body = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"))
-        self.body.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.bottom_curve = tk.Canvas(self.body, height=1, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
-        self.bottom_curve.pack(side=tk.BOTTOM, fill=tk.X)
-        self._donut_consumed_progress = 1.0
-        self._donut_remaining_progress = 1.0
-        self._donut_visible = False
-        self._donut_anim_after = None
-        self._donut_hover_segment = None
-        self._capacity_consumed_n = 0
-        self._capacity_limit_n = 1
-        self.top_row = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"))
-        self.top_row.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
-        self.text_column = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"))
-        self.text_column.pack(fill=tk.BOTH, expand=True)
-        self.donut_wrap = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"), height=170)
-        self.donut_wrap.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
-        self.donut_wrap.pack_propagate(False)
-        self.donut_canvas = tk.Canvas(
-            self.donut_wrap,
-            width=1,
-            height=1,
-            bg=UI_THEME.get("surface", "#151A22"),
-            highlightthickness=0,
-            bd=0,
+def initialize_system(start_watcher=True):
+    ensure_file(ANALISES_JSON, _ANALISES_TEMPLATE)
+    ensure_file(AVISOS_JSON, _AVISOS_TEMPLATE)
+    if not os.path.exists(DADOSEND):
+        try:
+            with open(DADOSEND, "w", encoding="utf-8") as f:
+                json.dump({"registros": []}, f, ensure_ascii=False, indent=2)
+            _log("OK", "dadosend_created", "Criado dadosend.json vazio.")
+        except OSError:
+            _log("ERROR", "dadosend_create_failed", "Falha ao criar dadosend.json", error=traceback.format_exc())
+
+    try:
+        import analises
+        import avisos
+    except Exception as e:
+        _log("ERROR", "module_import_failed", "Falha ao importar analises/avisos", error=str(e))
+        raise
+
+    try:
+        _log("STARTED", "build_analises_initial", "Executando build_analises() inicial...")
+        analises.build_analises(DADOSEND, ANALISES_JSON)
+    except Exception:
+        _log("ERROR", "build_analises_initial_failed", "build_analises falhou", error=traceback.format_exc())
+    try:
+        _log("STARTED", "build_avisos_initial", "Executando build_avisos() inicial...")
+        avisos.build_avisos(ANALISES_JSON, AVISOS_JSON)
+    except Exception:
+        _log("ERROR", "build_avisos_initial_failed", "build_avisos falhou", error=traceback.format_exc())
+
+    watcher = None
+    if start_watcher:
+        watcher = threading.Thread(
+            target=watcher_thread,
+            args=(DADOSEND, analises, avisos, POLL_INTERVAL, WATCHER_DEBOUNCE_WINDOW),
+            daemon=True,
         )
-        self.title_lbl = tk.Label(self.body, textvariable=self.title_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
-        self.value_lbl = tk.Label(self.body, textvariable=self.value_var, bg=UI_THEME.get("surface", "#151A22"), fg=state_colors(tone)[0], font=theme_font("font_xl", "bold"))
-        self.trend_lbl = tk.Label(self.body, textvariable=self.trend_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
-        self.capacity_lbl = tk.Label(self.body, textvariable=self.capacity_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
-        self.meta_lbl = tk.Label(self.body, textvariable=self.meta_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
-        self._apply_density("confortavel")
-        self.bottom_curve.bind("<Configure>", self._draw_bottom_curve, add="+")
-        self.donut_canvas.bind("<Configure>", self._draw_donut, add="+")
-        self.donut_canvas.bind("<Motion>", self._on_donut_hover, add="+")
-        self.donut_canvas.bind("<Leave>", self._on_donut_leave, add="+")
-        self.donut_canvas.bind("<Button-1>", self._on_donut_click, add="+")
-        self.after(0, self._draw_bottom_curve)
-        self.after(0, self._draw_donut)
-
-    def _draw_bottom_curve(self, _event=None):
-        try:
-            w = max(20, int(self.bottom_curve.winfo_width()))
-            h = max(1, int(self.bottom_curve.winfo_height()))
-            card_bg = UI_THEME.get("surface", "#151A22")
-            self.bottom_curve.configure(bg=card_bg)
-            self.bottom_curve.delete("all")
-            self.bottom_curve.create_rectangle(0, 0, w, h, fill=card_bg, outline="")
-        except Exception:
-            pass
-
-    def _apply_density(self, mode: str = "confortavel"):
-        compact = str(mode).lower().startswith("compact")
-        px = theme_space("space_1", 4) if compact else theme_space("space_2", 8)
-        py_top = theme_space("space_1", 4)
-        py_bottom = theme_space("space_1", 4) if compact else theme_space("space_2", 8)
-        self.title_lbl.pack(in_=self.text_column, anchor="w", padx=(0, 0), pady=(py_top, 0))
-        self.value_lbl.pack(in_=self.text_column, anchor="w", padx=(0, 0), pady=(0, 0))
-        if self._donut_visible:
-            self.donut_canvas.pack(fill=tk.BOTH, expand=True)
-        else:
-            self.donut_canvas.pack_forget()
-        self.trend_lbl.pack(anchor="w", padx=px, pady=(0, 0))
-        self.capacity_lbl.pack(anchor="w", padx=px, pady=(0, 0))
-        self.meta_lbl.pack(anchor="w", padx=px, pady=(0, py_bottom))
-
-    def _draw_donut(self, _event=None):
-        try:
-            self.donut_canvas.delete("all")
-            if not self._donut_visible:
-                return
-            w = max(40, int(self.donut_canvas.winfo_width()))
-            h = max(40, int(self.donut_canvas.winfo_height()))
-            base_width = 12
-            hover_extra = 6
-            max_stroke = base_width + 3
-            safe_margin = hover_extra + (max_stroke / 2) + 2
-            size = max(20, min(w, h) - (2 * safe_margin))
-            x0 = (w - size) / 2
-            y0 = (h - size) / 2
-            x1 = x0 + size
-            y1 = y0 + size
-            fg_ring = UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7"))
-            rem_ring = UI_THEME.get("surface_alt", "#1B2430")
-            consumed = max(0.0, min(1.0, self._capacity_percent * self._donut_consumed_progress))
-            remaining_total = max(0.0, 1.0 - self._capacity_percent)
-            remaining = max(0.0, min(1.0, remaining_total * self._donut_remaining_progress))
-
-            consumed_hovered = self._donut_hover_segment == "consumed"
-            remaining_hovered = self._donut_hover_segment == "remaining"
-
-            if consumed > 0:
-                consumed_pad = hover_extra if consumed_hovered else 0
-                self.donut_canvas.create_arc(
-                    x0 - consumed_pad,
-                    y0 - consumed_pad,
-                    x1 + consumed_pad,
-                    y1 + consumed_pad,
-                    start=90,
-                    extent=-(360.0 * consumed),
-                    style="arc",
-                    outline=fg_ring,
-                    width=base_width + (3 if consumed_hovered else 0),
-                    tags=("segment", "segment_consumed"),
-                )
-            if remaining > 0:
-                remaining_pad = hover_extra if remaining_hovered else 0
-                self.donut_canvas.create_arc(
-                    x0 - remaining_pad,
-                    y0 - remaining_pad,
-                    x1 + remaining_pad,
-                    y1 + remaining_pad,
-                    start=90 - (360.0 * consumed),
-                    extent=-(360.0 * remaining),
-                    style="arc",
-                    outline=rem_ring,
-                    width=base_width + (3 if remaining_hovered else 0),
-                    tags=("segment", "segment_remaining"),
-                )
-            self.donut_canvas.create_text(
-                w / 2,
-                h / 2,
-                text=self._center_percentage_text(),
-                fill=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
-                font=theme_font("font_sm", "bold"),
-                tags=("label_center",),
-            )
-        except Exception:
-            pass
-
-    def _center_percentage_text(self) -> str:
-        if self._donut_hover_segment == "consumed":
-            return f"{int(round(self._capacity_percent * 100))}%"
-        if self._donut_hover_segment == "remaining":
-            return f"{int(round((1.0 - self._capacity_percent) * 100))}%"
-        return f"{int(round(self._capacity_percent * 100))}%"
-
-    def _on_donut_hover(self, _event=None):
-        try:
-            current = self.donut_canvas.find_withtag("current")
-            segment = None
-            if current:
-                tags = set(self.donut_canvas.gettags(current[0]))
-                if "segment_consumed" in tags:
-                    segment = "consumed"
-                elif "segment_remaining" in tags:
-                    segment = "remaining"
-            if segment != self._donut_hover_segment:
-                self._donut_hover_segment = segment
-                self._draw_donut()
-        except Exception:
-            pass
-
-    def _on_donut_click(self, _event=None):
-        self._on_donut_hover(_event)
-
-    def _on_donut_leave(self, _event=None):
-        if self._donut_hover_segment is None:
-            return
-        self._donut_hover_segment = None
-        self._draw_donut()
-
-    def set_donut_visibility(self, visible: bool):
-        self._donut_visible = bool(visible)
-        if not self._donut_visible:
-            self._donut_hover_segment = None
-        try:
-            if self._donut_visible:
-                self.donut_canvas.pack(fill=tk.BOTH, expand=True)
-            else:
-                self.donut_canvas.pack_forget()
-        except Exception:
-            pass
-        self._draw_donut()
+        watcher.start()
+    return watcher
 
 
-    def animate_capacity_fill(self, on_done=None, phase_one_ms: int = 420, phase_two_ms: int = 360, steps: int = 14):
-        try:
-            if self._donut_anim_after:
-                self.after_cancel(self._donut_anim_after)
-        except Exception:
-            pass
-        self._donut_anim_after = None
-        self.set_donut_visibility(True)
-        self._donut_consumed_progress = 0.0
-        self._donut_remaining_progress = 0.0
-        total_steps = max(1, int(steps))
-        interval_one = max(16, int(phase_one_ms / total_steps))
-        interval_two = max(16, int(phase_two_ms / total_steps))
-
-        def _phase_two(idx=0):
-            self._donut_remaining_progress = min(1.0, idx / total_steps)
-            self._draw_donut()
-            if idx >= total_steps:
-                self._donut_anim_after = None
-                if callable(on_done):
-                    try:
-                        on_done()
-                    except Exception:
-                        pass
-                return
-            self._donut_anim_after = self.after(interval_two, lambda: _phase_two(idx + 1))
-
-        def _phase_one(idx=0):
-            self._donut_consumed_progress = min(1.0, idx / total_steps)
-            self._draw_donut()
-            if idx >= total_steps:
-                _phase_two(0)
-                return
-            self._donut_anim_after = self.after(interval_one, lambda: _phase_one(idx + 1))
-
-        _phase_one(0)
-
-    def set_density(self, mode: str = "confortavel"):
-        try:
-            self._apply_density(mode)
-        except Exception:
-            pass
+def main():
+    initialize_system(start_watcher=True)
+    try:
+        import interfaceone
+        _log("STARTED", "ui_starting", "Inicializando interface grafica (interfaceone)...")
+        interfaceone.iniciar_interface_principal()
+    except Exception:
+        _log("ERROR", "ui_start_failed", "Falha ao iniciar interfaceone", error=traceback.format_exc())
+        raise
 
 
-    def _set_accent_progress(self, progress: float):
-        p = max(0.0, min(1.0, float(progress)))
-        try:
-            self.accent.configure(bg=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")))
-            self.accent.place_configure(relheight=p, rely=1.0, relx=0.0, relwidth=1.0, anchor="sw")
-        except Exception:
-            pass
-
-    def animate_accent_growth(self, duration_ms: int = 360, steps: int = 12, on_done=None):
-        try:
-            if self._accent_anim_after:
-                self.after_cancel(self._accent_anim_after)
-        except Exception:
-            pass
-        self._accent_anim_after = None
-        total_steps = max(1, int(steps))
-        interval = max(16, int(duration_ms / total_steps))
-        self._set_accent_progress(0.0)
-
-        target_text = str(self._target_value_text)
-        digits = "".join(ch for ch in target_text if ch.isdigit())
-        target_value = int(digits) if digits else None
-        value_start_progress = 0.55
-        value_has_started = False
-
-        def _format_value(v: int):
-            if target_text.isdigit():
-                return str(v)
-            return str(v)
-
-        def _tick(step_idx=0):
-            nonlocal value_has_started
-            progress = min(1.0, step_idx / total_steps)
-            self._set_accent_progress(progress)
-
-            if target_value is not None:
-                if progress >= value_start_progress:
-                    if not value_has_started:
-                        value_has_started = True
-                        self._value_revealed = True
-                        self.value_var.set("0")
-                    rel = (progress - value_start_progress) / max(0.001, (1.0 - value_start_progress))
-                    rel = max(0.0, min(1.0, rel))
-                    current = int(round(target_value * rel))
-                    self.value_var.set(_format_value(current))
-
-            if step_idx >= total_steps:
-                self._accent_anim_after = None
-                self._value_revealed = True
-                self.value_var.set(target_text)
-                if callable(on_done):
-                    try:
-                        on_done()
-                    except Exception:
-                        pass
-                return
-            self._accent_anim_after = self.after(interval, lambda: _tick(step_idx + 1))
-
-        _tick(0)
-
-    def set_title(self, title: str, icon: str | None = None):
-        if icon is not None:
-            self._icon = icon
-        self._title = str(title)
-        self.title_var.set(f"{self._icon} {self._title}".strip())
-
-    def flash(self, duration_ms: int = 280):
-        try:
-            self.configure(highlightbackground=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")), highlightthickness=2)
-            if self._flash_after:
-                self.after_cancel(self._flash_after)
-            self._flash_after = self.after(duration_ms, lambda: self.configure(highlightbackground="#000000", highlightthickness=1))
-        except Exception:
-            pass
-
-    def set_value(self, value: str):
-        self._target_value_text = str(value)
-        if self._value_revealed:
-            self.value_var.set(self._target_value_text)
-
-    def set_trend(self, delta: int):
-        if delta > 0:
-            self.trend_var.set(f"↑ +{delta} vs último ciclo")
-        elif delta < 0:
-            self.trend_var.set(f"↓ {delta} vs último ciclo")
-        else:
-            self.trend_var.set("→ estável")
-
-    def set_meta(self, text: str):
-        self.meta_var.set(str(text))
-
-    def set_capacity(self, consumed: int, limit: int):
-        try:
-            consumed_n = max(0, int(consumed))
-        except Exception:
-            consumed_n = 0
-        try:
-            limit_n = max(1, int(limit))
-        except Exception:
-            limit_n = 1
-        remaining = max(limit_n - consumed_n, 0)
-        self._capacity_consumed_n = consumed_n
-        self._capacity_limit_n = limit_n
-        self._capacity_percent = max(0.0, min(1.0, consumed_n / float(limit_n)))
-        self.capacity_var.set(
-            f"Consumido {int(round(self._capacity_percent * 100))}% • {consumed_n} usados • {remaining} restantes"
-        )
-        self._draw_donut()
-
-
-
-def build_app_tree(parent, columns, style="Control.Treeview"):
-    wrap = build_card_frame(parent)
-    tree = ttk.Treeview(wrap, columns=columns, show="headings", style=style)
-    yscroll = ttk.Scrollbar(wrap, orient=tk.VERTICAL, command=tree.yview)
-    tree.configure(yscrollcommand=yscroll.set)
-    tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-    yscroll.pack(side=tk.RIGHT, fill=tk.Y)
-    return wrap, tree
+if __name__ == "__main__":
+    main()
