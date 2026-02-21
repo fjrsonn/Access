@@ -58,6 +58,11 @@ UI_THEME = {
     "on_info": "#FFFFFF",
     "selection_bg": "#1F6FEB",
     "selection_fg": "#E6EDF3",
+    "duration_fast": 220,
+    "duration_medium": 360,
+    "ease_out": "cubic",
+    "shadow_1": "#2B3442",
+    "shadow_2": "#3D4C64",
 }
 
 THEME_PRESETS = {
@@ -113,6 +118,11 @@ THEME_PRESETS = {
         "on_info": "#000000",
         "selection_bg": "#094771",
         "selection_fg": "#FFFFFF",
+        "duration_fast": 220,
+        "duration_medium": 360,
+        "ease_out": "cubic",
+        "shadow_1": "#3C3C3C",
+        "shadow_2": "#4D6A85",
     },
     # Alias de compatibilidade para ambientes ainda com testes legados.
     "vscode": {
@@ -167,6 +177,11 @@ THEME_PRESETS = {
         "on_info": "#000000",
         "selection_bg": "#094771",
         "selection_fg": "#FFFFFF",
+        "duration_fast": 220,
+        "duration_medium": 360,
+        "ease_out": "cubic",
+        "shadow_1": "#3C3C3C",
+        "shadow_2": "#4D6A85",
     },
 }
 
