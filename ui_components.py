@@ -113,6 +113,11 @@ class AppMetricCard(tk.Frame):
         self._donut_hover_segment = None
         self._capacity_consumed_n = 0
         self._capacity_limit_n = 1
+        self._sparkline_points = []
+        self._sparkline_max_points = 24
+        self._sparkline_visible = True
+        self._emphasis_mode = "secondary"
+        self._trend_threshold = 2
         self.top_row = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"))
         self.top_row.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
         self.text_column = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"))
@@ -131,14 +136,20 @@ class AppMetricCard(tk.Frame):
         self.title_lbl = tk.Label(self.body, textvariable=self.title_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self.value_lbl = tk.Label(self.body, textvariable=self.value_var, bg=UI_THEME.get("surface", "#151A22"), fg=state_colors(tone)[0], font=theme_font("font_xl", "bold"))
         self.trend_lbl = tk.Label(self.body, textvariable=self.trend_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
-        self.capacity_lbl = tk.Label(self.body, textvariable=self.capacity_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
-        self.meta_lbl = tk.Label(self.body, textvariable=self.meta_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
+        self.sparkline = tk.Canvas(self.body, height=20, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
+        self.capacity_lbl = tk.Label(self.body, textvariable=self.capacity_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text_soft", UI_THEME.get("muted_text", "#9AA4B2")), font=theme_font("font_sm", "normal"))
+        self.meta_lbl = tk.Label(self.body, textvariable=self.meta_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text_soft", UI_THEME.get("muted_text", "#9AA4B2")), font=theme_font("font_sm", "normal"))
         self._apply_density("confortavel")
         self.bottom_curve.bind("<Configure>", self._draw_bottom_curve, add="+")
         self.donut_canvas.bind("<Configure>", self._draw_donut, add="+")
         self.donut_canvas.bind("<Motion>", self._on_donut_hover, add="+")
         self.donut_canvas.bind("<Leave>", self._on_donut_leave, add="+")
         self.donut_canvas.bind("<Button-1>", self._on_donut_click, add="+")
+        self.sparkline.bind("<Configure>", self._draw_sparkline, add="+")
+        self.bind("<Enter>", lambda _e: self.set_donut_visibility(True), add="+")
+        self.bind("<Leave>", lambda _e: self.set_donut_visibility(False), add="+")
+        self.bind("<FocusIn>", lambda _e: self.set_donut_visibility(True), add="+")
+        self.bind("<FocusOut>", lambda _e: self.set_donut_visibility(False), add="+")
         self.after(0, self._draw_bottom_curve)
         self.after(0, self._draw_donut)
 
@@ -165,8 +176,36 @@ class AppMetricCard(tk.Frame):
         else:
             self.donut_canvas.pack_forget()
         self.trend_lbl.pack(anchor="w", padx=px, pady=(0, 0))
+        if self._sparkline_visible:
+            self.sparkline.pack(fill=tk.X, padx=px, pady=(0, 0))
+        else:
+            self.sparkline.pack_forget()
         self.capacity_lbl.pack(anchor="w", padx=px, pady=(0, 0))
         self.meta_lbl.pack(anchor="w", padx=px, pady=(0, py_bottom))
+        self._draw_sparkline()
+
+    def _draw_sparkline(self, _event=None):
+        try:
+            self.sparkline.delete("all")
+            if not self._sparkline_visible:
+                return
+            points = self._sparkline_points[-self._sparkline_max_points:]
+            if len(points) < 2:
+                return
+            w = max(40, int(self.sparkline.winfo_width()))
+            h = max(12, int(self.sparkline.winfo_height()))
+            vmin = min(points)
+            vmax = max(points)
+            span = max(1.0, float(vmax - vmin))
+            n = len(points) - 1
+            coords = []
+            for i, value in enumerate(points):
+                x = int((i / max(1, n)) * (w - 2)) + 1
+                y = int((1.0 - ((value - vmin) / span)) * (h - 4)) + 2
+                coords.extend((x, y))
+            self.sparkline.create_line(*coords, fill=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")), width=2, smooth=True)
+        except Exception:
+            pass
 
     def _draw_donut(self, _event=None):
         try:
@@ -321,6 +360,32 @@ class AppMetricCard(tk.Frame):
         except Exception:
             pass
 
+    def set_emphasis(self, mode: str = "secondary"):
+        self._emphasis_mode = "primary" if str(mode).lower().startswith("pri") else "secondary"
+        try:
+            if self._emphasis_mode == "primary":
+                self.value_lbl.configure(font=theme_font("font_xl", "bold"))
+                self.configure(highlightthickness=2, highlightbackground=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")))
+            else:
+                self.value_lbl.configure(font=theme_font("font_lg", "bold"))
+                self.configure(highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"))
+        except Exception:
+            pass
+
+    def set_sparkline_visibility(self, visible: bool):
+        self._sparkline_visible = bool(visible)
+        self._apply_density("confortavel")
+
+    def push_history_value(self, value: int | float):
+        try:
+            v = float(value)
+        except Exception:
+            return
+        self._sparkline_points.append(v)
+        if len(self._sparkline_points) > self._sparkline_max_points:
+            self._sparkline_points = self._sparkline_points[-self._sparkline_max_points:]
+        self._draw_sparkline()
+
 
     def _set_accent_progress(self, progress: float):
         p = max(0.0, min(1.0, float(progress)))
@@ -403,6 +468,9 @@ class AppMetricCard(tk.Frame):
             self.value_var.set(self._target_value_text)
 
     def set_trend(self, delta: int):
+        if abs(int(delta)) < self._trend_threshold:
+            self.trend_var.set("→ estável")
+            return
         if delta > 0:
             self.trend_var.set(f"↑ +{delta} vs último ciclo")
         elif delta < 0:

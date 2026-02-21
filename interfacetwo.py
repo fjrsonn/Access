@@ -103,6 +103,9 @@ _layout_density_mode = "confortavel"
 _operation_mode_enabled = False
 _runtime_refresh_ms = REFRESH_MS
 _cards_last_update_at = None
+_metrics_last_global_update_var = None
+_status_distribution_canvas = None
+_status_distribution_legend_var = None
 _control_filtered_count_var = None
 _control_toolbar = None
 _last_quick_filter_kind = None
@@ -369,8 +372,46 @@ def _collect_status_cards_data() -> dict:
     }
 
 
+def _draw_status_distribution(data: dict):
+    global _status_distribution_canvas, _status_distribution_legend_var
+    canvas = _status_distribution_canvas
+    if canvas is None:
+        return
+    try:
+        canvas.delete("all")
+        w = max(220, int(canvas.winfo_width() or 220))
+        h = max(24, int(canvas.winfo_height() or 24))
+        keys = ["ativos", "pendentes", "sem_contato", "avisado"]
+        labels = {"ativos": "Ativos", "pendentes": "Pendentes", "sem_contato": "Sem contato", "avisado": "Avisado"}
+        tones = {"ativos": "info", "pendentes": "warning", "sem_contato": "danger", "avisado": "success"}
+        values = [max(0, int(data.get(k, 0) or 0)) for k in keys]
+        total = sum(values)
+        if total <= 0:
+            canvas.create_rectangle(0, 0, w, h, fill=UI_THEME.get("surface_alt", "#2D2D2D"), outline="")
+            if _status_distribution_legend_var is not None:
+                _status_distribution_legend_var.set("Distribuição por status: sem dados")
+            return
+        x = 0
+        legend_parts = []
+        for idx, k in enumerate(keys):
+            val = values[idx]
+            width = int(round((val / total) * w))
+            if idx == len(keys) - 1:
+                width = max(0, w - x)
+            color = UI_THEME.get(tones[k], UI_THEME.get("primary", "#2F81F7"))
+            if width > 0:
+                canvas.create_rectangle(x, 0, x + width, h, fill=color, outline="")
+            x += width
+            legend_parts.append(f"{labels[k]} {val}")
+        if _status_distribution_legend_var is not None:
+            _status_distribution_legend_var.set(" • ".join(legend_parts))
+    except Exception:
+        pass
+
+
+
 def _update_status_cards():
-    global _metrics_previous_cards, _cards_last_update_at
+    global _metrics_previous_cards, _cards_last_update_at, _metrics_last_global_update_var
     data = _collect_status_cards_data()
     ux = analisar_metricas_ux() if callable(analisar_metricas_ux) else {}
     now = datetime.now()
@@ -386,10 +427,18 @@ def _update_status_cards():
                 card.set_trend(current - previous)
                 card.set_capacity(current, CARD_CAPACITY_LIMITS.get(k, 1000))
                 card.set_meta(f"Atualizado às {now_label} • há 0s")
-                card.flash(260)
+                card.push_history_value(current)
+                card.flash(180)
             except Exception:
                 pass
     _metrics_previous_cards = dict(data)
+
+    if _metrics_last_global_update_var is not None:
+        try:
+            _metrics_last_global_update_var.set(f"Atualização global: {now_label}")
+        except Exception:
+            pass
+    _draw_status_distribution(data)
     if _metrics_accessibility_var is not None:
         try:
             _metrics_accessibility_var.set(
@@ -407,6 +456,7 @@ def _update_status_cards():
 
 
 def _refresh_cards_relative_meta():
+    global _metrics_last_global_update_var
     if _cards_last_update_at is None:
         return
     elapsed = max(int((datetime.now() - _cards_last_update_at).total_seconds()), 0)
@@ -416,6 +466,11 @@ def _refresh_cards_relative_meta():
             if "• há" in base:
                 base = base.split("• há", 1)[0].strip()
             card.set_meta(f"{base} • há {elapsed}s")
+        except Exception:
+            pass
+    if _metrics_last_global_update_var is not None:
+        try:
+            _metrics_last_global_update_var.set(f"Atualização global: {_cards_last_update_at.strftime('%H:%M:%S')} • há {elapsed}s")
         except Exception:
             pass
 
@@ -2712,9 +2767,9 @@ def _build_monitor_ui(container):
 
     def _apply_density(_mode_label=None):
         global _layout_density_mode
-        _layout_density_mode = "confortavel"
-        rowheight = 30
-        gap = theme_space("space_2", 8)
+        _layout_density_mode = "compacto" if _operation_mode_enabled else "confortavel"
+        rowheight = 26 if _layout_density_mode == "compacto" else 30
+        gap = theme_space("space_1", 4) if _layout_density_mode == "compacto" else theme_space("space_2", 8)
         try:
             ttk.Style(container).configure("Control.Treeview", rowheight=rowheight)
         except Exception:
@@ -2802,7 +2857,11 @@ def _build_monitor_ui(container):
     title = build_section_title(title_row, "Painel Operacional")
     title.configure(font=theme_font("font_xl", "bold"))
     title.pack(side=tk.LEFT, fill=tk.X, expand=True)
-    global _control_filtered_count_var
+    global _control_filtered_count_var, _metrics_last_global_update_var
+    _metrics_last_global_update_var = tk.StringVar(value="Atualização global: --:--:--")
+    last_update_label = build_label(title_row, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    last_update_label.configure(textvariable=_metrics_last_global_update_var)
+    last_update_label.pack(side=tk.RIGHT, padx=(0, theme_space("space_2", 8)))
     _control_filtered_count_var = tk.StringVar(value="Registros filtrados: 0 / 0")
     filtered_label = build_label(title_row, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
     filtered_label.configure(textvariable=_control_filtered_count_var)
@@ -2831,8 +2890,47 @@ def _build_monitor_ui(container):
         attach_tooltip(card, cards_tooltips.get(key, ""))
         try:
             card.set_donut_visibility(False)
+            card.set_sparkline_visibility(True)
         except Exception:
             pass
+
+    try:
+        _ux_cards.get("pendentes").set_emphasis("primary")
+        for _k in ("ativos", "sem_contato", "avisado"):
+            _ux_cards.get(_k).set_emphasis("secondary")
+    except Exception:
+        pass
+
+    global _status_distribution_canvas, _status_distribution_legend_var
+    _status_distribution_legend_var = tk.StringVar(value="Distribuição por status: carregando")
+    status_distribution_wrap = tk.Frame(container, bg=UI_THEME["bg"])
+    status_distribution_wrap.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
+    _status_distribution_canvas = tk.Canvas(status_distribution_wrap, height=14, bg=UI_THEME["surface"], highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"), bd=0)
+    _status_distribution_canvas.pack(fill=tk.X)
+    status_distribution_legend = build_label(container, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    status_distribution_legend.configure(textvariable=_status_distribution_legend_var)
+    status_distribution_legend.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+
+    def _layout_cards_responsive(_event=None):
+        width = max(320, int(cards_row.winfo_width() or 0))
+        cols = 4 if width >= 1180 else (2 if width >= 760 else 1)
+        ordered = ["pendentes", "ativos", "sem_contato", "avisado"]
+        for i in range(4):
+            try:
+                cards_row.grid_columnconfigure(i, weight=0)
+            except Exception:
+                pass
+        for idx, key in enumerate(ordered):
+            row = idx // cols
+            col = idx % cols
+            card = _ux_cards.get(key)
+            if card is None:
+                continue
+            card.grid_configure(row=row, column=col, padx=(0, theme_space("space_2", 8)), pady=(0, theme_space("space_2", 8)), sticky="ew")
+            cards_row.grid_columnconfigure(col, weight=1)
+
+    cards_row.bind("<Configure>", _layout_cards_responsive, add="+")
+    container.after(80, _layout_cards_responsive)
 
     def _play_metric_cards_intro_animation():
         order = ["ativos", "pendentes", "sem_contato", "avisado"]
