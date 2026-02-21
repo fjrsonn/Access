@@ -8,7 +8,21 @@ except Exception:  # pragma: no cover
     tk = None
     ttk = None
 
-from ui_theme import UI_THEME, theme_font, theme_space, build_card_frame, build_label, state_colors, normalize_tone, contrast_ratio, resolve_card_variant
+import ui_theme as _ui_theme
+
+UI_THEME = _ui_theme.UI_THEME
+theme_font = _ui_theme.theme_font
+theme_space = _ui_theme.theme_space
+build_card_frame = _ui_theme.build_card_frame
+build_label = _ui_theme.build_label
+state_colors = _ui_theme.state_colors
+normalize_tone = _ui_theme.normalize_tone
+contrast_ratio = _ui_theme.contrast_ratio
+resolve_card_variant = getattr(
+    _ui_theme,
+    "resolve_card_variant",
+    lambda _name: {"density": "confortavel", "show_sparkline": True, "show_legend": True},
+)
 
 
 def build_section_title(parent, text: str):
