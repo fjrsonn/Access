@@ -138,6 +138,7 @@ class AppMetricCard(tk.Frame):
         self.donut_canvas.bind("<Configure>", self._draw_donut, add="+")
         self.donut_canvas.bind("<Motion>", self._on_donut_hover, add="+")
         self.donut_canvas.bind("<Leave>", self._on_donut_leave, add="+")
+        self.donut_canvas.bind("<Button-1>", self._on_donut_click, add="+")
         self.after(0, self._draw_bottom_curve)
         self.after(0, self._draw_donut)
 
@@ -223,13 +224,20 @@ class AppMetricCard(tk.Frame):
             self.donut_canvas.create_text(
                 w / 2,
                 h / 2,
-                text=f"{int(round(self._capacity_percent * 100))}%",
+                text=self._center_percentage_text(),
                 fill=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
                 font=theme_font("font_sm", "bold"),
                 tags=("label_center",),
             )
         except Exception:
             pass
+
+    def _center_percentage_text(self) -> str:
+        if self._donut_hover_segment == "consumed":
+            return f"{int(round(self._capacity_percent * 100))}%"
+        if self._donut_hover_segment == "remaining":
+            return f"{int(round((1.0 - self._capacity_percent) * 100))}%"
+        return f"{int(round(self._capacity_percent * 100))}%"
 
     def _on_donut_hover(self, _event=None):
         try:
@@ -246,6 +254,9 @@ class AppMetricCard(tk.Frame):
                 self._draw_donut()
         except Exception:
             pass
+
+    def _on_donut_click(self, _event=None):
+        self._on_donut_hover(_event)
 
     def _on_donut_leave(self, _event=None):
         if self._donut_hover_segment is None:
