@@ -66,6 +66,10 @@ UI_THEME = {
     "remaining": "#5B6577",
     "remaining_active": "#7C8AA3",
     "low_motion": False,
+    "spring_strength": 0.22,
+    "stagger_step_ms": 50,
+    "hover_throttle_ms": 16,
+    "repaint_frame_budget_ms": 16,
 }
 
 THEME_PRESETS = {
@@ -129,6 +133,10 @@ THEME_PRESETS = {
         "remaining": "#6B7280",
         "remaining_active": "#94A3B8",
         "low_motion": False,
+        "spring_strength": 0.22,
+        "stagger_step_ms": 50,
+        "hover_throttle_ms": 16,
+        "repaint_frame_budget_ms": 16,
     },
     # Alias de compatibilidade para ambientes ainda com testes legados.
     "vscode": {
@@ -191,7 +199,63 @@ THEME_PRESETS = {
         "remaining": "#6B7280",
         "remaining_active": "#94A3B8",
         "low_motion": False,
+        "spring_strength": 0.22,
+        "stagger_step_ms": 50,
+        "hover_throttle_ms": 16,
+        "repaint_frame_budget_ms": 16,
     },
+    "alto_contraste": {
+        "bg": "#000000",
+        "surface": "#000000",
+        "surface_alt": "#111111",
+        "border": "#FFFFFF",
+        "text": "#FFFFFF",
+        "muted_text": "#F5F5F5",
+        "primary": "#00E5FF",
+        "primary_active": "#00B8D4",
+        "on_primary": "#000000",
+        "on_surface": "#FFFFFF",
+        "success": "#00FF85",
+        "on_success": "#000000",
+        "danger": "#FF4D4D",
+        "on_danger": "#000000",
+        "warning": "#FFD166",
+        "on_warning": "#000000",
+        "focus_bg": "#FFFFFF",
+        "focus_text": "#000000",
+        "font_family": "Segoe UI",
+        "font_sm": 10,
+        "font_md": 11,
+        "font_lg": 12,
+        "font_xl": 14,
+        "radius_sm": 3,
+        "radius_md": 6,
+        "space_1": 4,
+        "space_2": 8,
+        "space_3": 12,
+        "space_4": 16,
+        "space_5": 20,
+        "space_6": 24,
+        "disabled_bg": "#222222",
+        "disabled_fg": "#FFFFFF",
+        "info": "#00E5FF",
+        "on_info": "#000000",
+        "selection_bg": "#FFFFFF",
+        "selection_fg": "#000000",
+        "duration_fast": 180,
+        "duration_medium": 300,
+        "ease_out": "cubic",
+        "shadow_1": "#FFFFFF",
+        "shadow_2": "#00E5FF",
+        "remaining": "#777777",
+        "remaining_active": "#BBBBBB",
+        "low_motion": False,
+        "spring_strength": 0.18,
+        "stagger_step_ms": 45,
+        "hover_throttle_ms": 14,
+        "repaint_frame_budget_ms": 16,
+    },
+
 }
 
 _ACTIVE_THEME = "principal"
@@ -214,7 +278,7 @@ CARD_VARIANTS = {
         "show_legend": True,
         "enable_click_lock": True,
         "enable_stagger": False,
-        "chart_type": "donut",
+        "chart_type": "bullet",
     },
     "analitico": {
         "density": "confortavel",
@@ -223,6 +287,30 @@ CARD_VARIANTS = {
         "enable_click_lock": True,
         "enable_stagger": True,
         "chart_type": "radial-bar",
+    },
+    "executivo": {
+        "density": "confortavel",
+        "show_sparkline": True,
+        "show_legend": False,
+        "enable_click_lock": True,
+        "enable_stagger": True,
+        "chart_type": "donut",
+    },
+    "operacional": {
+        "density": "confortavel",
+        "show_sparkline": True,
+        "show_legend": True,
+        "enable_click_lock": True,
+        "enable_stagger": True,
+        "chart_type": "bullet",
+    },
+    "acessivel": {
+        "density": "confortavel",
+        "show_sparkline": True,
+        "show_legend": True,
+        "enable_click_lock": True,
+        "enable_stagger": False,
+        "chart_type": "donut",
     },
 }
 
@@ -239,7 +327,7 @@ TYPOGRAPHY_PRESETS = {
 
 
 def available_theme_names():
-    return ["principal"]
+    return ["principal", "alto_contraste"]
 
 
 def get_active_theme_name():
@@ -259,6 +347,8 @@ def apply_theme(name: str):
     key = (name or "").strip().lower()
     if key == "vscode":
         key = "principal"
+    if key == "acessivel":
+        key = "alto_contraste"
     if key not in THEME_PRESETS:
         key = "principal"
     UI_THEME.clear()

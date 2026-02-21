@@ -116,21 +116,28 @@ class CardMetricData:
     history: list[float] = field(default_factory=lambda: [0.0] * 7)
     status: str = "info"
     meta: str = "Atualizado agora"
+    updated_at: float = 0.0
+    unit: str = "itens"
+    targets: dict[str, float] = field(default_factory=lambda: {"normal_max": 0.7, "warning_max": 0.85})
+    events: list[str] = field(default_factory=list)
+    comparison_id: str = ""
 
 
 class SharedRepaintScheduler:
-    _queue = []
+    _queue = {}
     _after_id = None
     _root = None
     _frame_budget_ms = 16
+    _stats = {"last_frame_ms": 0.0, "avg_frame_ms": 0.0, "samples": 0}
 
     @classmethod
-    def request(cls, widget, callback):
-        cls._queue.append((widget, callback, time.perf_counter()))
+    def request(cls, widget, callback, key: str = "draw"):
+        cls._queue[(id(widget), key)] = (widget, callback, time.perf_counter())
         if cls._after_id:
             return
         try:
             cls._root = widget.winfo_toplevel()
+            cls._frame_budget_ms = int(UI_THEME.get("repaint_frame_budget_ms", cls._frame_budget_ms))
             cls._after_id = cls._root.after(cls._frame_budget_ms, cls._flush)
         except Exception:
             cls._flush()
@@ -138,16 +145,26 @@ class SharedRepaintScheduler:
     @classmethod
     def _flush(cls):
         start = time.perf_counter()
-        tasks = cls._queue[:]
+        tasks = list(cls._queue.values())
         cls._queue.clear()
         cls._after_id = None
-        for _widget, cb, requested_at in tasks:
+        for widget, cb, requested_at in tasks:
             try:
+                if not widget.winfo_ismapped() or widget.winfo_width() <= 1 or widget.winfo_height() <= 1:
+                    continue
                 cb(max(0.0, (time.perf_counter() - requested_at) * 1000.0))
             except Exception:
                 pass
         spent = (time.perf_counter() - start) * 1000.0
-        cls._frame_budget_ms = 24 if spent > 18 else 16
+        prev = cls._stats["avg_frame_ms"]
+        cls._stats["samples"] += 1
+        cls._stats["last_frame_ms"] = spent
+        cls._stats["avg_frame_ms"] = spent if prev == 0 else ((prev * 0.85) + (spent * 0.15))
+        cls._frame_budget_ms = 24 if spent > 18 else int(UI_THEME.get("repaint_frame_budget_ms", 16))
+
+    @classmethod
+    def get_metrics(cls):
+        return dict(cls._stats)
 
 
 class DonutRenderer:
@@ -244,14 +261,14 @@ class SparklineRenderer:
     def __init__(self):
         self._last_snapshot = None
 
-    def draw(self, canvas, values, tone, force=False):
+    def draw(self, canvas, values, tone, force=False, event_labels=None):
         w = max(80, int(canvas.winfo_width()))
         h = max(24, int(canvas.winfo_height()))
         bg = canvas.cget("bg")
         vals = list(values[-7:]) if values else [0.0]
         while len(vals) < 7:
             vals.insert(0, vals[0])
-        snapshot = (w, h, tuple(round(v, 4) for v in vals), tone)
+        snapshot = (w, h, tuple(round(v, 4) for v in vals), tone, tuple(sorted((event_labels or {}).items())))
         if (not force) and snapshot == self._last_snapshot:
             return
         self._last_snapshot = snapshot
@@ -280,7 +297,16 @@ class SparklineRenderer:
         for idx, tag, color in ((peak, "P", UI_THEME.get("warning", "#CCA700")), (trough, "V", UI_THEME.get("info", "#2563EB"))):
             x = pad + (idx * step)
             y = pad + (h - (2 * pad)) * (1.0 - ((vals[idx] - mn) / spread))
-            canvas.create_text(x, max(6, y - 8), text=tag, fill=color, font=theme_font("font_sm", "bold"))
+            tag_color = color if contrast_ratio(color, bg) >= 4.5 else axis_color
+            canvas.create_text(x, max(6, y - 8), text=tag, fill=tag_color, font=theme_font("font_sm", "bold"))
+        if event_labels:
+            for idx, name in event_labels.items():
+                if idx < 0 or idx >= len(vals):
+                    continue
+                x = pad + (idx * step)
+                y = pad + (h - (2 * pad)) * (1.0 - ((vals[idx] - mn) / spread))
+                text = str(name)[:10]
+                canvas.create_text(x, min(h - 4, y + 10), text=text, fill=axis_color, font=theme_font("font_sm", "normal"))
         first = vals[0] if vals[0] != 0 else 1e-6
         delta = ((vals[-1] - vals[0]) / first) * 100.0
         delta_text = f"Δ {delta:+.0f}%"
@@ -288,15 +314,56 @@ class SparklineRenderer:
 
 
 class RadialBarRenderer(DonutRenderer):
-    """Compat renderer plugável que reaproveita o renderer de donut."""
+    def draw(self, canvas, *, tone: str, capacity_percent: float, consumed_progress: float, remaining_progress: float,
+             state: CardState, base_bg: str, density: str = "confortavel", low_motion: bool = False, force: bool = False):
+        w = max(60, int(canvas.winfo_width()))
+        h = max(40, int(canvas.winfo_height()))
+        snapshot = ("radial", w, h, round(capacity_percent, 4), round(consumed_progress, 4), state.selected_segment, tone)
+        if (not force) and self.should_skip(snapshot):
+            return
+        canvas.delete("all")
+        stroke = 14 if not str(density).startswith("compact") else 10
+        margin = 10
+        x0, y0, x1, y1 = margin, margin, w - margin, h - margin
+        arc_extent = max(0.0, min(1.0, capacity_percent * consumed_progress)) * 280.0
+        canvas.create_arc(x0, y0, x1, y1, start=130, extent=-280, style="arc", width=stroke, outline=UI_THEME.get("remaining", "#5B6577"))
+        canvas.create_arc(x0, y0, x1, y1, start=130, extent=-arc_extent, style="arc", width=stroke, outline=UI_THEME.get(tone, UI_THEME.get("primary", "#2F81F7")), tags=("segment", "segment_consumed"))
+        pct = int(round(capacity_percent * 100))
+        text_color = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
+        if contrast_ratio(text_color, base_bg) < 4.5:
+            text_color = UI_THEME.get("focus_text", "#FFFFFF")
+        canvas.create_text(w / 2, h / 2 - 2, text=f"{pct}%", fill=text_color, font=(UI_THEME.get("font_family", "Segoe UI"), 16, "bold"))
+        canvas.create_text(w / 2, h / 2 + 14, text="Radial", fill=text_color, font=(UI_THEME.get("font_family", "Segoe UI"), 9, "normal"))
 
 
 class BulletChartRenderer(DonutRenderer):
-    """Compat renderer plugável que reaproveita o renderer de donut."""
+    def draw(self, canvas, *, tone: str, capacity_percent: float, consumed_progress: float, remaining_progress: float,
+             state: CardState, base_bg: str, density: str = "confortavel", low_motion: bool = False, force: bool = False):
+        w = max(80, int(canvas.winfo_width()))
+        h = max(36, int(canvas.winfo_height()))
+        snapshot = ("bullet", w, h, round(capacity_percent, 4), round(consumed_progress, 4), tone)
+        if (not force) and self.should_skip(snapshot):
+            return
+        canvas.delete("all")
+        pad = 10
+        y = int(h * 0.55)
+        bar_h = 10 if not str(density).startswith("compact") else 8
+        x0, x1 = pad, w - pad
+        span = max(1, x1 - x0)
+        progress = max(0.0, min(1.0, capacity_percent * consumed_progress))
+        fill_x = x0 + int(span * progress)
+        warn_x = x0 + int(span * 0.85)
+        canvas.create_rectangle(x0, y - bar_h, x1, y + bar_h, fill=UI_THEME.get("remaining", "#5B6577"), outline="")
+        canvas.create_rectangle(x0, y - bar_h, fill_x, y + bar_h, fill=UI_THEME.get(tone, UI_THEME.get("primary", "#2F81F7")), outline="", tags=("segment", "segment_consumed"))
+        canvas.create_line(warn_x, y - bar_h - 4, warn_x, y + bar_h + 4, fill=UI_THEME.get("warning", "#D29922"), width=2)
+        txt = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
+        canvas.create_text(x0, y - bar_h - 8, anchor="w", text="Bullet", fill=txt, font=(UI_THEME.get("font_family", "Segoe UI"), 9, "bold"))
+        canvas.create_text(x1, y - bar_h - 8, anchor="e", text=f"{int(round(capacity_percent*100))}%", fill=txt, font=(UI_THEME.get("font_family", "Segoe UI"), 9, "bold"))
 
 
 class AppMetricCard(tk.Frame):
     _pinned_cards = []
+    _comparison_baseline = None
 
     def __init__(self, parent, title: str, value: str = "0", tone: str = "info", icon: str = "●", *,
                  enable_sparkline: bool = True, enable_legend: bool = True, enable_click_lock: bool = True,
@@ -328,7 +395,15 @@ class AppMetricCard(tk.Frame):
         self._focus_targets = []
         self._lift_progress = 0.0
 
-        self._metric_data = CardMetricData()
+        self._metric_data = CardMetricData(updated_at=time.time())
+        self._meta_base_text = "Atualizado agora"
+        self._meta_updated_at = time.time()
+        self._meta_after = None
+        self._is_loading = False
+        self._skeleton_after = None
+        self._skeleton_phase = 0
+        self._event_labels = {}
+        self._details_open = False
 
         self.title_var = tk.StringVar(value=f"{icon} {title}")
         self._target_value_text = str(value)
@@ -394,6 +469,11 @@ class AppMetricCard(tk.Frame):
         self.context_lbl = tk.Label(self.body, textvariable=self.context_var, bg=self._base_surface, fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self.compare_var = tk.StringVar(value="")
         self.compare_lbl = tk.Label(self.body, textvariable=self.compare_var, bg=self._base_surface, fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
+        self.details_frame = tk.Frame(self.body, bg=self._base_surface)
+        self.details_var = tk.StringVar(value="")
+        self.details_lbl = tk.Label(self.details_frame, textvariable=self.details_var, bg=self._base_surface, fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"), justify="left", anchor="w")
+        self.details_lbl.pack(fill=tk.X)
+        self.skeleton_canvas = tk.Canvas(self.body, height=56, highlightthickness=0, bd=0, bg=self._base_surface)
 
         self._apply_density(variant_cfg.get("density", "confortavel"))
         self.bottom_curve.bind("<Configure>", self._draw_bottom_curve, add="+")
@@ -420,9 +500,24 @@ class AppMetricCard(tk.Frame):
         for focus_widget in (self.donut_canvas, self.legend_consumed, self.legend_remaining, self.pin_btn):
             focus_widget.bind("<Left>", self._on_roving_focus, add="+")
             focus_widget.bind("<Right>", self._on_roving_focus, add="+")
+            focus_widget.bind("<Home>", self._on_roving_focus, add="+")
+            focus_widget.bind("<End>", self._on_roving_focus, add="+")
             focus_widget.bind("<Escape>", self._on_clear_selection, add="+")
+            focus_widget.bind("<FocusIn>", self._on_focus_in, add="+")
+            focus_widget.bind("<FocusOut>", self._on_focus_out, add="+")
 
-        self._focus_targets = [self.donut_canvas, self.legend_consumed, self.legend_remaining, self.pin_btn]
+        self.context_lbl.bind("<Button-1>", self._toggle_details, add="+")
+        self.context_lbl.bind("<Return>", self._toggle_details, add="+")
+        self.context_lbl.configure(cursor="hand2", takefocus=1)
+        self.context_lbl.bind("<Left>", self._on_roving_focus, add="+")
+        self.context_lbl.bind("<Right>", self._on_roving_focus, add="+")
+        self.context_lbl.bind("<Home>", self._on_roving_focus, add="+")
+        self.context_lbl.bind("<End>", self._on_roving_focus, add="+")
+        self.context_lbl.bind("<Escape>", self._on_clear_selection, add="+")
+        self.context_lbl.bind("<FocusIn>", self._on_focus_in, add="+")
+        self.context_lbl.bind("<FocusOut>", self._on_focus_out, add="+")
+
+        self._focus_targets = [self.donut_canvas, self.legend_consumed, self.legend_remaining, self.pin_btn, self.context_lbl]
 
         self.bind("<Enter>", self._on_card_hover_enter, add="+")
         self.bind("<Leave>", self._on_card_hover_leave, add="+")
@@ -433,6 +528,7 @@ class AppMetricCard(tk.Frame):
         self.after(0, lambda: self._draw_donut(force=True))
         self.after(0, lambda: self._draw_sparkline(force=True))
         self.after(0, lambda: self._set_card_lift(False))
+        self.after(0, self._schedule_meta_refresh)
 
     def _low_motion(self):
         return bool(UI_THEME.get("low_motion", False)) or self._perf_low_motion
@@ -444,6 +540,9 @@ class AppMetricCard(tk.Frame):
             return 1.0 - ((1.0 - t) ** 2)
         if easing in {"expo", "ease_out_expo"}:
             return 1.0 if t >= 1.0 else 1.0 - (2 ** (-10 * t))
+        if easing in {"spring", "ease_out_spring"}:
+            spring = float(UI_THEME.get("spring_strength", 0.22))
+            return min(1.0, (1.0 - ((1.0 - t) ** 3)) + (spring * (1.0 - t) * (t)))
         return 1.0 - ((1.0 - t) ** 3)
 
     def _truncate_text(self, text: str, limit: int) -> str:
@@ -460,6 +559,77 @@ class AppMetricCard(tk.Frame):
         if contrast_ratio(fb, bg) >= 4.5:
             return fb
         return UI_THEME.get("focus_text", "#FFFFFF")
+
+
+    def _schedule_meta_refresh(self):
+        try:
+            if self._meta_after:
+                self.after_cancel(self._meta_after)
+        except Exception:
+            pass
+
+        def _tick():
+            self._meta_after = None
+            if self._is_loading:
+                self.meta_var.set("Carregando dados…")
+            else:
+                self.meta_var.set(f"{self._meta_base_text} • {self._relative_meta_text()}")
+            self._meta_after = self.after(1000, _tick)
+
+        _tick()
+
+    def _relative_meta_text(self):
+        secs = max(0, int(time.time() - float(self._meta_updated_at or time.time())))
+        if secs < 2:
+            return "Atualizado agora"
+        if secs < 60:
+            return f"Atualizado há {secs}s"
+        mins = secs // 60
+        if mins < 60:
+            return f"Atualizado há {mins}m"
+        hrs = mins // 60
+        return f"Atualizado há {hrs}h"
+
+    def set_loading(self, loading: bool = True):
+        self._is_loading = bool(loading)
+        if self._is_loading:
+            self._start_skeleton()
+        else:
+            self._stop_skeleton()
+            self._draw_sparkline(force=True)
+            self._draw_donut(force=True)
+
+    def _start_skeleton(self):
+        self.skeleton_canvas.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(2, 4))
+        self._skeleton_phase = 0
+        self.value_var.set("--")
+        self.context_var.set("Carregando contexto…")
+        self._draw_skeleton()
+
+    def _stop_skeleton(self):
+        try:
+            if self._skeleton_after:
+                self.after_cancel(self._skeleton_after)
+        except Exception:
+            pass
+        self._skeleton_after = None
+        self.skeleton_canvas.pack_forget()
+
+    def _draw_skeleton(self):
+        if not self._is_loading:
+            return
+        c = self.skeleton_canvas
+        c.delete("all")
+        w = max(80, int(c.winfo_width() or 300))
+        h = max(30, int(c.winfo_height() or 56))
+        base = UI_THEME.get("surface_alt", "#1B2430")
+        active = UI_THEME.get("border", "#2B3442")
+        phase = self._skeleton_phase % 3
+        bars = [(8, 8, int(w*0.55), 18), (8, 24, int(w*0.7), 34), (8, 40, int(w*0.4), 48)]
+        for idx, (x0,y0,x1,y1) in enumerate(bars):
+            c.create_rectangle(x0,y0,x1,y1,fill=(active if idx==phase else base),outline="")
+        self._skeleton_phase += 1
+        self._skeleton_after = self.after(260, self._draw_skeleton)
 
     def set_interaction_mode(self, mode: str = "click-lock"):
         self._state.interaction_mode = "hover" if str(mode).strip().lower() == "hover" else "click-lock"
@@ -482,9 +652,25 @@ class AppMetricCard(tk.Frame):
 
     def set_metric_data(self, metric: CardMetricData):
         self._metric_data = metric if isinstance(metric, CardMetricData) else CardMetricData()
+        if self._metric_data.updated_at <= 0:
+            self._metric_data.updated_at = time.time()
+        self._meta_updated_at = float(self._metric_data.updated_at)
         self.set_history(self._metric_data.history)
         self.set_capacity(self._metric_data.capacity_consumed, self._metric_data.capacity_limit)
         self.set_meta(self._metric_data.meta)
+        if self._metric_data.comparison_id:
+            AppMetricCard._comparison_baseline = self._metric_data.comparison_id
+
+    def get_render_telemetry(self):
+        return SharedRepaintScheduler.get_metrics()
+
+    def set_comparison_baseline(self, comparison_id: str):
+        AppMetricCard._comparison_baseline = str(comparison_id or "").strip() or None
+        self._update_multi_pin_compare()
+
+    def set_event_annotations(self, events):
+        self._metric_data.events = [str(e) for e in list(events or [])]
+        self.set_history(self._sparkline_data)
 
     def set_history(self, points):
         values = []
@@ -499,6 +685,11 @@ class AppMetricCard(tk.Frame):
             values.insert(0, values[0])
         self._sparkline_data = values[-7:]
         self._metric_data.history = list(self._sparkline_data)
+        self._event_labels = {}
+        events = list(self._metric_data.events or [])[-7:]
+        for idx, label in enumerate(events):
+            if label:
+                self._event_labels[idx + max(0, 7 - len(events))] = str(label)
         self._update_inline_context()
         self._draw_sparkline()
 
@@ -512,7 +703,7 @@ class AppMetricCard(tk.Frame):
             self.animate_accent_growth()
             self.animate_capacity_fill(on_done=on_done)
             return
-        delay = max(0, int(order) * max(40, int(base_delay_ms)))
+        delay = max(0, int(order) * max(int(UI_THEME.get("stagger_step_ms", 50)), int(base_delay_ms)))
         self._stagger_after = self.after(delay, lambda: (self.animate_accent_growth(), self.animate_capacity_fill(on_done=on_done)))
 
     def _draw_bottom_curve(self, _event=None):
@@ -525,6 +716,18 @@ class AppMetricCard(tk.Frame):
             self.bottom_curve.create_rectangle(0, 0, w, h, fill=card_bg, outline="")
         except Exception:
             pass
+
+    def _auto_density(self):
+        if str(self._variant.get("density", "")).startswith("compact"):
+            return "compacto"
+        try:
+            w = int(self.winfo_width())
+            h = int(self.winfo_height())
+            if w < 280 or h < 220:
+                return "compacto"
+        except Exception:
+            pass
+        return "confortavel"
 
     def _apply_density(self, mode: str = "confortavel"):
         compact = str(mode).lower().startswith("compact")
@@ -549,22 +752,33 @@ class AppMetricCard(tk.Frame):
         self.trend_lbl.pack(anchor="w", padx=px, pady=(0, 0))
         self.capacity_lbl.pack(anchor="w", padx=px, pady=(0, 0))
         self.context_lbl.pack(anchor="w", padx=px, pady=(0, 0))
+        if self._details_open:
+            self.details_frame.pack(fill=tk.X, padx=px, pady=(0, 0))
+        else:
+            self.details_frame.pack_forget()
         self.compare_lbl.pack(anchor="w", padx=px, pady=(0, 0))
         self.meta_lbl.pack(anchor="w", padx=px, pady=(0, py_bottom))
 
     def _draw_sparkline(self, force=False):
-        if not self._enable_sparkline:
+        if not self._enable_sparkline or self._is_loading:
+            return
+        if not self.winfo_ismapped():
             return
         def _run(latency_ms=0.0):
             self._perf_low_motion = latency_ms > 40.0
-            self._sparkline_renderer.draw(self.sparkline, self._sparkline_data, self._tone, force=force)
+            self._sparkline_renderer.draw(self.sparkline, self._sparkline_data, self._tone, force=force, event_labels=self._event_labels)
             self._update_accessibility_colors()
-        SharedRepaintScheduler.request(self, _run)
+        SharedRepaintScheduler.request(self, _run, key="sparkline")
 
     def _draw_donut(self, force=False):
         try:
+            if self._is_loading:
+                self.donut_canvas.delete("all")
+                return
             if not self._donut_visible:
                 self.donut_canvas.delete("all")
+                return
+            if not self.winfo_ismapped():
                 return
             def _run(latency_ms=0.0):
                 self._perf_low_motion = latency_ms > 40.0
@@ -576,13 +790,14 @@ class AppMetricCard(tk.Frame):
                     remaining_progress=self._donut_remaining_progress,
                     state=self._state,
                     base_bg=self.body.cget("bg"),
+                    density=self._auto_density(),
                     low_motion=self._low_motion(),
                     force=force,
                 )
                 self._update_legend_visual()
                 self._update_inline_context()
                 self._update_accessibility_colors()
-            SharedRepaintScheduler.request(self, _run)
+            SharedRepaintScheduler.request(self, _run, key="donut")
         except Exception:
             pass
 
@@ -630,7 +845,18 @@ class AppMetricCard(tk.Frame):
         base = vals[0] if vals[0] != 0 else 1e-6
         delta = ((last - vals[0]) / base) * 100.0
         label = "Consumido" if self._active_segment() != "remaining" else "Restante"
-        self.context_var.set(f"{label} • Último ciclo {last:.0f} • Média 7d {avg:.0f} • Variação {delta:+.0f}%")
+        percent = self._capacity_percent
+        warning_max = float(self._metric_data.targets.get("warning_max", 0.85))
+        normal_max = float(self._metric_data.targets.get("normal_max", 0.70))
+        if percent >= warning_max:
+            faixa = "Faixa crítica"
+        elif percent >= normal_max:
+            faixa = "Faixa de atenção"
+        else:
+            faixa = "Faixa normal"
+        self.context_var.set(f"{label} • Último ciclo {last:.0f} • Média 7d {avg:.0f} • Variação {delta:+.0f}% • {faixa}")
+        ev = ", ".join(str(e) for e in (self._metric_data.events or [])[-3:]) or "Sem eventos recentes"
+        self.details_var.set(f"7d: min {min(vals):.0f} • max {max(vals):.0f}\n30d: tendência {delta:+.1f}%\nEventos: {ev}")
 
     def _update_accessibility_colors(self):
         bg = self.body.cget("bg")
@@ -640,14 +866,21 @@ class AppMetricCard(tk.Frame):
         self.meta_lbl.configure(fg=muted)
         self.context_lbl.configure(fg=muted)
         self.compare_lbl.configure(fg=muted)
+        self.details_lbl.configure(fg=muted)
 
     def _on_roving_focus(self, event=None):
         if not self._focus_targets:
             return "break"
-        direction = -1 if getattr(event, "keysym", "") == "Left" else 1
+        key = getattr(event, "keysym", "")
         if event.widget in self._focus_targets:
             self._focus_index = self._focus_targets.index(event.widget)
-        self._focus_index = (self._focus_index + direction) % len(self._focus_targets)
+        if key == "Home":
+            self._focus_index = 0
+        elif key == "End":
+            self._focus_index = len(self._focus_targets) - 1
+        else:
+            direction = -1 if key == "Left" else 1
+            self._focus_index = (self._focus_index + direction) % len(self._focus_targets)
         target = self._focus_targets[self._focus_index]
         try:
             target.focus_set()
@@ -665,15 +898,51 @@ class AppMetricCard(tk.Frame):
         self._draw_donut()
         return "break"
 
+    def _on_focus_in(self, event=None):
+        widget = getattr(event, "widget", None)
+        if widget is None:
+            return
+        try:
+            widget.configure(highlightthickness=2, highlightbackground=UI_THEME.get("focus_text", "#FFFFFF"))
+        except Exception:
+            pass
+
+    def _on_focus_out(self, event=None):
+        widget = getattr(event, "widget", None)
+        if widget is None:
+            return
+        try:
+            widget.configure(highlightthickness=0)
+        except Exception:
+            pass
+
+    def _toggle_details(self, _event=None):
+        self._details_open = not self._details_open
+        self._apply_density(self._auto_density())
+        return "break"
+
     def _update_multi_pin_compare(self):
-        if len(AppMetricCard._pinned_cards) < 2:
+        if len(AppMetricCard._pinned_cards) < 2 and not AppMetricCard._comparison_baseline:
             self.compare_var.set("")
             return
-        base = AppMetricCard._pinned_cards[0]
-        if base is self and len(AppMetricCard._pinned_cards) > 1:
-            base = AppMetricCard._pinned_cards[1]
+        base = None
+        baseline_id = AppMetricCard._comparison_baseline
+        if baseline_id:
+            for card in AppMetricCard._pinned_cards:
+                if getattr(card._metric_data, "comparison_id", "") == baseline_id:
+                    base = card
+                    break
+        if base is None and AppMetricCard._pinned_cards:
+            base = AppMetricCard._pinned_cards[0]
+            if base is self and len(AppMetricCard._pinned_cards) > 1:
+                base = AppMetricCard._pinned_cards[1]
+        if base is None:
+            self.compare_var.set("")
+            return
         delta = self._capacity_percent - getattr(base, "_capacity_percent", 0.0)
-        self.compare_var.set(f"Comparativo pinado • Δ {delta*100:+.1f}pp")
+        arrow = "↑" if delta > 0 else ("↓" if delta < 0 else "→")
+        txt = "ganho" if delta > 0 else ("perda" if delta < 0 else "estável")
+        self.compare_var.set(f"Comparativo baseline • {arrow} {delta*100:+.1f}pp ({txt})")
 
     def _schedule_hover_update(self, segment):
         self._pending_hover_segment = segment
@@ -687,7 +956,7 @@ class AppMetricCard(tk.Frame):
             self._hover_after = None
             self._set_hover_segment(self._pending_hover_segment)
 
-        self._hover_after = self.after(16, _apply)
+        self._hover_after = self.after(int(UI_THEME.get("hover_throttle_ms", 16)), _apply)
 
     def _on_donut_hover(self, _event=None):
         try:
@@ -715,12 +984,18 @@ class AppMetricCard(tk.Frame):
             self._state.hover_segment = None
             if self not in AppMetricCard._pinned_cards:
                 AppMetricCard._pinned_cards.append(self)
+            if not AppMetricCard._comparison_baseline:
+                AppMetricCard._comparison_baseline = self._metric_data.comparison_id or f"card-{id(self)}"
+                if not self._metric_data.comparison_id:
+                    self._metric_data.comparison_id = AppMetricCard._comparison_baseline
             if len(AppMetricCard._pinned_cards) > 2:
                 oldest = AppMetricCard._pinned_cards.pop(0)
                 oldest._state.pinned = False
                 oldest._update_legend_visual()
         else:
             AppMetricCard._pinned_cards = [c for c in AppMetricCard._pinned_cards if c is not self]
+            if not AppMetricCard._pinned_cards:
+                AppMetricCard._comparison_baseline = None
         for card in list(AppMetricCard._pinned_cards) + [self]:
             try:
                 card._update_multi_pin_compare()
@@ -766,6 +1041,9 @@ class AppMetricCard(tk.Frame):
         interval_two = max(16, int(p2 / total_steps))
 
         def _phase_two(idx=0):
+            if not self.winfo_ismapped():
+                self._donut_anim_after = None
+                return
             self._donut_remaining_progress = self._ease_by_token(idx / total_steps)
             self._draw_donut()
             if idx >= total_steps:
@@ -779,6 +1057,9 @@ class AppMetricCard(tk.Frame):
             self._donut_anim_after = self.after(interval_two, lambda: _phase_two(idx + 1))
 
         def _phase_one(idx=0):
+            if not self.winfo_ismapped():
+                self._donut_anim_after = None
+                return
             self._donut_consumed_progress = self._ease_by_token(idx / total_steps)
             self._draw_donut()
             if idx >= total_steps:
@@ -790,7 +1071,7 @@ class AppMetricCard(tk.Frame):
 
     def set_density(self, mode: str = "confortavel"):
         try:
-            self._apply_density(mode)
+            self._apply_density(self._auto_density() if mode == "auto" else mode)
         except Exception:
             pass
 
@@ -805,7 +1086,8 @@ class AppMetricCard(tk.Frame):
             h = max(24, int(self.accent_canvas.winfo_height()))
             hue = UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7"))
             top = UI_THEME.get("primary_active", "#1F6FEB")
-            filled_h = int(h * self._accent_gradient_progress)
+            tone_boost = {"success": 0.75, "info": 0.82, "warning": 0.9, "danger": 1.0}.get(self._tone, 0.8)
+            filled_h = int(h * min(1.0, self._accent_gradient_progress * tone_boost + (0.08 if self._state.pinned else 0.0)))
             y_start = h - filled_h
             steps = max(8, filled_h // 4) if filled_h > 0 else 0
             for idx in range(steps):
@@ -839,6 +1121,9 @@ class AppMetricCard(tk.Frame):
 
         def _tick(step_idx=0):
             nonlocal value_has_started
+            if not self.winfo_ismapped():
+                self._accent_anim_after = None
+                return
             progress = self._ease_by_token(step_idx / total_steps)
             self._set_accent_progress(progress)
 
@@ -883,9 +1168,9 @@ class AppMetricCard(tk.Frame):
         border = self._mix_hex(self._shadow_idle, self._shadow_hover, self._lift_progress)
         try:
             self.configure(bg=bg, highlightbackground=border, highlightthickness=1 + int(round(self._lift_progress)))
-            for widget in (self.body, self.text_column, self.top_row, self.donut_wrap, self.legend_wrap, self.accent_wrap):
+            for widget in (self.body, self.text_column, self.top_row, self.donut_wrap, self.legend_wrap, self.accent_wrap, self.details_frame):
                 widget.configure(bg=bg)
-            for widget in (self.sparkline, self.donut_canvas, self.title_lbl, self.value_lbl, self.trend_lbl, self.capacity_lbl, self.context_lbl, self.compare_lbl, self.meta_lbl, self.legend_consumed, self.legend_remaining, self.pin_btn, self.bottom_curve, self.accent_canvas):
+            for widget in (self.sparkline, self.donut_canvas, self.title_lbl, self.value_lbl, self.trend_lbl, self.capacity_lbl, self.context_lbl, self.compare_lbl, self.details_lbl, self.meta_lbl, self.legend_consumed, self.legend_remaining, self.pin_btn, self.bottom_curve, self.accent_canvas, self.skeleton_canvas):
                 widget.configure(bg=bg)
             self._draw_bottom_curve()
             self._draw_donut(force=True)
@@ -975,8 +1260,11 @@ class AppMetricCard(tk.Frame):
             self.trend_var.set("Info • → estável")
 
     def set_meta(self, text: str):
-        self.meta_var.set(self._truncate_text(str(text), 52))
-        self._metric_data.meta = self.meta_var.get()
+        self._meta_base_text = self._truncate_text(str(text), 52)
+        self._meta_updated_at = time.time()
+        self.meta_var.set(f"{self._meta_base_text} • {self._relative_meta_text()}")
+        self._metric_data.meta = self._meta_base_text
+        self._metric_data.updated_at = self._meta_updated_at
 
     def set_capacity(self, consumed: int, limit: int):
         try:
@@ -993,23 +1281,26 @@ class AppMetricCard(tk.Frame):
         self._capacity_percent = max(0.0, min(1.0, consumed_n / float(limit_n)))
         self._state.capacity_percent = self._capacity_percent
 
+        warning_max = float(self._metric_data.targets.get("warning_max", 0.85))
+        normal_max = float(self._metric_data.targets.get("normal_max", 0.70))
         prefix = "Info • "
         if consumed_n > limit_n:
             self._tone = "danger"
             prefix = "Crítico • "
             self._pulse_card_status()
-            self.meta_var.set("Crítico: limite excedido")
-        elif consumed_n >= int(0.85 * limit_n):
+            self.set_meta("Crítico: limite excedido")
+        elif self._capacity_percent >= warning_max:
             self._tone = "warning"
             prefix = "Atenção • "
             self._pulse_card_status()
-            self.meta_var.set("Atenção: próximo do limite")
-        elif consumed_n <= int(0.35 * limit_n):
+            self.set_meta("Atenção: próximo do limite")
+        elif self._capacity_percent <= normal_max * 0.5:
             self._tone = "success"
             prefix = "Saudável • "
         else:
             self._tone = normalize_tone(self._metric_data.status or self._tone)
-        self.capacity_var.set(self._truncate_text(f"{prefix}Consumido {int(round(self._capacity_percent * 100))}% • {consumed_n} usados • {remaining} restantes", 70))
+        unit = self._metric_data.unit or "itens"
+        self.capacity_var.set(self._truncate_text(f"{prefix}Consumido {int(round(self._capacity_percent * 100))}% • {consumed_n} {unit} usados • {remaining} restantes", 78))
 
         self._metric_data.capacity_consumed = consumed_n
         self._metric_data.capacity_limit = limit_n
