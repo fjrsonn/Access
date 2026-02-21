@@ -200,9 +200,30 @@ _ACTIVE_TYPOGRAPHY = "padrao"
 
 
 CARD_VARIANTS = {
-    "default": {"density": "confortavel", "show_sparkline": True, "show_legend": True},
-    "compact": {"density": "compacto", "show_sparkline": False, "show_legend": True},
-    "analitico": {"density": "confortavel", "show_sparkline": True, "show_legend": True},
+    "default": {
+        "density": "confortavel",
+        "show_sparkline": True,
+        "show_legend": True,
+        "enable_click_lock": True,
+        "enable_stagger": True,
+        "chart_type": "donut",
+    },
+    "compact": {
+        "density": "compacto",
+        "show_sparkline": False,
+        "show_legend": True,
+        "enable_click_lock": True,
+        "enable_stagger": False,
+        "chart_type": "donut",
+    },
+    "analitico": {
+        "density": "confortavel",
+        "show_sparkline": True,
+        "show_legend": True,
+        "enable_click_lock": True,
+        "enable_stagger": True,
+        "chart_type": "radial-bar",
+    },
 }
 
 
