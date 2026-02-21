@@ -1,0 +1,6 @@
+{
+  "max_time_to_apply_filter_p95_ms": 100000,
+  "min_edit_save_success_rate": 0.0,
+  "min_keyboard_shortcut_adoption": 0,
+  "max_theme_switch_count": 100000
+}
