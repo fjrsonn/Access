@@ -8,7 +8,21 @@ except Exception:  # pragma: no cover
     tk = None
     ttk = None
 
-from ui_theme import UI_THEME, theme_font, theme_space, build_card_frame, build_label, state_colors, normalize_tone
+import ui_theme as _ui_theme
+
+UI_THEME = _ui_theme.UI_THEME
+theme_font = _ui_theme.theme_font
+theme_space = _ui_theme.theme_space
+build_card_frame = _ui_theme.build_card_frame
+build_label = _ui_theme.build_label
+state_colors = _ui_theme.state_colors
+normalize_tone = _ui_theme.normalize_tone
+contrast_ratio = _ui_theme.contrast_ratio
+resolve_card_variant = getattr(
+    _ui_theme,
+    "resolve_card_variant",
+    lambda _name: {"density": "confortavel", "show_sparkline": True, "show_legend": True},
+)
 
 
 def build_section_title(parent, text: str):
@@ -82,13 +96,166 @@ class AppStatusBar(tk.Frame):
         self.lbl.configure(bg=bg, fg=fg)
 
 
+class CardState:
+    def __init__(self):
+        self.capacity_percent = 0.0
+        self.hover_segment = None
+        self.selected_segment = None
+        self.interaction_mode = "click-lock"
+        self.center_mode = "auto"
+        self.pinned = False
+
+
+class DonutRenderer:
+    def __init__(self):
+        self._last_snapshot = None
+
+    @staticmethod
+    def _effective_segment(state: CardState):
+        return state.selected_segment or state.hover_segment
+
+    def should_skip(self, snapshot):
+        if snapshot == self._last_snapshot:
+            return True
+        self._last_snapshot = snapshot
+        return False
+
+    def draw(self, canvas, *, tone: str, capacity_percent: float, consumed_progress: float, remaining_progress: float,
+             state: CardState, base_bg: str, low_motion: bool = False, force: bool = False):
+        w = max(40, int(canvas.winfo_width()))
+        h = max(40, int(canvas.winfo_height()))
+        active = self._effective_segment(state)
+        snapshot = (w, h, round(capacity_percent, 4), round(consumed_progress, 4), round(remaining_progress, 4), active, tone, state.center_mode)
+        if (not force) and self.should_skip(snapshot):
+            return
+        canvas.delete("all")
+        base_width = 12
+        hover_extra = 0 if low_motion else 6
+        max_stroke = base_width + 3
+        safe_margin = hover_extra + (max_stroke / 2) + 2
+        size = max(20, min(w, h) - (2 * safe_margin))
+        x0 = (w - size) / 2
+        y0 = (h - size) / 2
+        x1 = x0 + size
+        y1 = y0 + size
+        fg_ring = UI_THEME.get(tone, UI_THEME.get("primary", "#2F81F7"))
+        rem_ring = UI_THEME.get("remaining", "#5B6577")
+        rem_ring_active = UI_THEME.get("remaining_active", "#7C8AA3")
+        consumed = max(0.0, min(1.0, capacity_percent * consumed_progress))
+        remaining_total = max(0.0, 1.0 - capacity_percent)
+        remaining = max(0.0, min(1.0, remaining_total * remaining_progress))
+
+        consumed_hovered = active == "consumed"
+        remaining_hovered = active == "remaining"
+
+        if consumed > 0:
+            consumed_pad = hover_extra if consumed_hovered else 0
+            canvas.create_arc(
+                x0 - consumed_pad, y0 - consumed_pad, x1 + consumed_pad, y1 + consumed_pad,
+                start=90, extent=-(360.0 * consumed), style="arc", outline=fg_ring,
+                width=base_width + (3 if consumed_hovered else 0), tags=("segment", "segment_consumed"),
+            )
+        if remaining > 0:
+            remaining_pad = hover_extra if remaining_hovered else 0
+            canvas.create_arc(
+                x0 - remaining_pad, y0 - remaining_pad, x1 + remaining_pad, y1 + remaining_pad,
+                start=90 - (360.0 * consumed), extent=-(360.0 * remaining), style="arc", outline=(rem_ring_active if remaining_hovered else rem_ring),
+                width=base_width + (3 if remaining_hovered else 0), tags=("segment", "segment_remaining"),
+            )
+
+        mode = state.center_mode
+        active_mode = active
+        if mode in {"consumed", "remaining"}:
+            active_mode = mode
+        if active_mode == "remaining":
+            pct_text = f"{int(round((1.0 - capacity_percent) * 100))}%"
+            subtitle = "Restante"
+        else:
+            pct_text = f"{int(round(capacity_percent * 100))}%"
+            subtitle = "Consumido"
+
+        numeric = max(18, min(32, int(size * 0.18)))
+        subtitle_size = max(8, min(12, int(numeric * 0.45)))
+        text_color = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
+        if contrast_ratio(text_color, base_bg) < 4.5:
+            text_color = UI_THEME.get("text", "#E6EDF3")
+            if contrast_ratio(text_color, base_bg) < 4.5:
+                text_color = UI_THEME.get("focus_text", "#111827")
+        sub_color = UI_THEME.get("muted_text", "#9AA4B2")
+        if contrast_ratio(sub_color, base_bg) < 4.5:
+            sub_color = text_color
+
+        canvas.create_text(w / 2, (h / 2) - 8, text=pct_text, fill=text_color, font=(UI_THEME.get("font_family", "Segoe UI"), numeric, "bold"), tags=("label_center",))
+        canvas.create_text(w / 2, (h / 2) + 10, text=subtitle, fill=sub_color, font=(UI_THEME.get("font_family", "Segoe UI"), subtitle_size, "normal"), tags=("label_center",))
+
+        if state.selected_segment in {"consumed", "remaining"}:
+            consumed_n = int(round(capacity_percent * 100))
+            ctx = f"{consumed_n}/100" if state.selected_segment == "consumed" else f"{100-consumed_n}/100"
+            canvas.create_text(w / 2, (h / 2) + 24, text=ctx, fill=sub_color, font=(UI_THEME.get("font_family", "Segoe UI"), max(8, subtitle_size - 1), "normal"), tags=("label_center",))
+
+
+class SparklineRenderer:
+    def __init__(self):
+        self._last_snapshot = None
+
+    def draw(self, canvas, values, tone, force=False):
+        w = max(80, int(canvas.winfo_width()))
+        h = max(24, int(canvas.winfo_height()))
+        vals = list(values[-7:]) if values else [0.0]
+        while len(vals) < 7:
+            vals.insert(0, vals[0])
+        snapshot = (w, h, tuple(round(v, 4) for v in vals), tone)
+        if (not force) and snapshot == self._last_snapshot:
+            return
+        self._last_snapshot = snapshot
+        canvas.delete("all")
+        mn, mx = min(vals), max(vals)
+        spread = max(1e-6, mx - mn)
+        pad = 4
+        step = (w - (2 * pad)) / max(1, len(vals) - 1)
+        pts = []
+        for idx, val in enumerate(vals):
+            x = pad + (idx * step)
+            y = pad + (h - (2 * pad)) * (1.0 - ((val - mn) / spread))
+            pts.extend([x, y])
+        line_color = UI_THEME.get(tone, UI_THEME.get("primary", "#2F81F7"))
+        canvas.create_line(*pts, smooth=True, width=2, fill=line_color)
+        avg = sum(vals) / len(vals)
+        y_avg = pad + (h - (2 * pad)) * (1.0 - ((avg - mn) / spread))
+        canvas.create_line(pad, y_avg, w - pad, y_avg, fill=UI_THEME.get("muted_text", "#9AA4B2"), dash=(2, 2))
+        if pts:
+            canvas.create_oval(pts[-2] - 2, pts[-1] - 2, pts[-2] + 2, pts[-1] + 2, fill=line_color, outline="")
+        first = vals[0] if vals[0] != 0 else 1e-6
+        delta = ((vals[-1] - vals[0]) / first) * 100.0
+        delta_text = f"Δ {delta:+.0f}%"
+        canvas.create_text(w - 4, 4, anchor="ne", text=delta_text, fill=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
+
+
 class AppMetricCard(tk.Frame):
-    def __init__(self, parent, title: str, value: str = "0", tone: str = "info", icon: str = "●"):
-        super().__init__(parent, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=1, highlightbackground="#000000")
-        self._tone = tone
+    def __init__(self, parent, title: str, value: str = "0", tone: str = "info", icon: str = "●", *,
+                 enable_sparkline: bool = True, enable_legend: bool = True, enable_click_lock: bool = True,
+                 enable_stagger: bool = True, variant: str = "default"):
+        variant_cfg = resolve_card_variant(variant)
+        self._base_surface = UI_THEME.get("surface", "#151A22")
+        self._lift_surface = UI_THEME.get("surface_alt", "#1B2430")
+        self._shadow_idle = UI_THEME.get("shadow_1", UI_THEME.get("border", "#2B3442"))
+        self._shadow_hover = UI_THEME.get("shadow_2", UI_THEME.get("primary", "#2F81F7"))
+        super().__init__(parent, bg=self._base_surface, highlightthickness=1, highlightbackground=self._shadow_idle)
+        self._tone = normalize_tone(tone)
         self._title = title
         self._icon = icon
+        self._enable_sparkline = bool(enable_sparkline)
+        self._enable_legend = bool(enable_legend)
+        self._enable_click_lock = bool(enable_click_lock)
+        self._enable_stagger = bool(enable_stagger)
+        self._variant = variant_cfg
+
         self._flash_after = None
+        self._stagger_after = None
+        self._pulse_after = None
+        self._hover_after = None
+        self._pending_hover_segment = None
+
         self.title_var = tk.StringVar(value=f"{icon} {title}")
         self._target_value_text = str(value)
         self._value_revealed = False
@@ -97,55 +264,142 @@ class AppMetricCard(tk.Frame):
         self.trend_var = tk.StringVar(value="→ estável")
         self.capacity_var = tk.StringVar(value="Consumido 0% • 0 usados • 0 restantes")
         self._capacity_percent = 0.0
-        self.accent_wrap = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"), width=4)
+        self._capacity_consumed_n = 0
+        self._capacity_limit_n = 1
+        self._state = CardState()
+        self._state.interaction_mode = "click-lock" if self._enable_click_lock else "hover"
+
+        self._donut_renderer = DonutRenderer()
+        self._sparkline_renderer = SparklineRenderer()
+
+        self.accent_wrap = tk.Frame(self, bg=self._base_surface, width=6)
         self.accent_wrap.pack(side=tk.LEFT, fill=tk.Y)
-        self.accent = tk.Frame(self.accent_wrap, bg=UI_THEME.get(tone, UI_THEME.get("primary", "#2F81F7")))
-        self.accent.place(relx=0.0, rely=1.0, relwidth=1.0, relheight=0.0, anchor="sw")
+        self.accent_canvas = tk.Canvas(self.accent_wrap, width=6, highlightthickness=0, bd=0, bg=self._base_surface)
+        self.accent_canvas.pack(fill=tk.BOTH, expand=True)
         self._accent_anim_after = None
-        self.body = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"))
+        self._accent_gradient_progress = 0.0
+
+        self.body = tk.Frame(self, bg=self._base_surface)
         self.body.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        self.bottom_curve = tk.Canvas(self.body, height=1, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
+        self.bottom_curve = tk.Canvas(self.body, height=1, bg=self._base_surface, highlightthickness=0, bd=0)
         self.bottom_curve.pack(side=tk.BOTTOM, fill=tk.X)
+
         self._donut_consumed_progress = 1.0
         self._donut_remaining_progress = 1.0
         self._donut_visible = False
         self._donut_anim_after = None
-        self._donut_hover_segment = None
-        self._capacity_consumed_n = 0
-        self._capacity_limit_n = 1
-        self.top_row = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"))
+
+        self.top_row = tk.Frame(self.body, bg=self._base_surface)
         self.top_row.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
-        self.text_column = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"))
+        self.text_column = tk.Frame(self.top_row, bg=self._base_surface)
         self.text_column.pack(fill=tk.BOTH, expand=True)
-        self.donut_wrap = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"), height=170)
+        self.pin_btn = tk.Label(self.top_row, text="📌", bg=self._base_surface, fg=UI_THEME.get("muted_text", "#9AA4B2"), cursor="hand2", takefocus=1)
+        self.pin_btn.pack(side=tk.RIGHT)
+
+        self.sparkline = tk.Canvas(self.text_column, height=32, highlightthickness=0, bd=0, bg=self._base_surface)
+        self._sparkline_data = [0, 0, 0, 0, 0, 0, 0]
+
+        self.donut_wrap = tk.Frame(self.body, bg=self._base_surface, height=170)
         self.donut_wrap.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
         self.donut_wrap.pack_propagate(False)
-        self.donut_canvas = tk.Canvas(
-            self.donut_wrap,
-            width=152,
-            height=152,
-            bg=UI_THEME.get("surface", "#151A22"),
-            highlightthickness=0,
-            bd=0,
-        )
-        self.title_lbl = tk.Label(self.body, textvariable=self.title_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
-        self.value_lbl = tk.Label(self.body, textvariable=self.value_var, bg=UI_THEME.get("surface", "#151A22"), fg=state_colors(tone)[0], font=theme_font("font_xl", "bold"))
-        self.trend_lbl = tk.Label(self.body, textvariable=self.trend_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
-        self.capacity_lbl = tk.Label(self.body, textvariable=self.capacity_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
-        self.meta_lbl = tk.Label(self.body, textvariable=self.meta_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
-        self._apply_density("confortavel")
+        self.donut_canvas = tk.Canvas(self.donut_wrap, width=1, height=1, bg=self._base_surface, highlightthickness=0, bd=0, takefocus=1)
+
+        self.legend_wrap = tk.Frame(self.body, bg=self._base_surface)
+        self.legend_consumed = tk.Label(self.legend_wrap, text="● Consumido", bg=self._base_surface, fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"), cursor="hand2", takefocus=1)
+        self.legend_remaining = tk.Label(self.legend_wrap, text="● Restante", bg=self._base_surface, fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"), cursor="hand2", takefocus=1)
+        self.legend_consumed.pack(side=tk.LEFT, padx=(0, theme_space("space_2", 8)))
+        self.legend_remaining.pack(side=tk.LEFT)
+
+        self.title_lbl = tk.Label(self.body, textvariable=self.title_var, bg=self._base_surface, fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
+        self.value_lbl = tk.Label(self.body, textvariable=self.value_var, bg=self._base_surface, fg=state_colors(self._tone)[0], font=theme_font("font_xl", "bold"))
+        self.trend_lbl = tk.Label(self.body, textvariable=self.trend_var, bg=self._base_surface, fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
+        self.capacity_lbl = tk.Label(self.body, textvariable=self.capacity_var, bg=self._base_surface, fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
+        self.meta_lbl = tk.Label(self.body, textvariable=self.meta_var, bg=self._base_surface, fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
+
+        self._apply_density(variant_cfg.get("density", "confortavel"))
         self.bottom_curve.bind("<Configure>", self._draw_bottom_curve, add="+")
-        self.donut_canvas.bind("<Configure>", self._draw_donut, add="+")
+        self.donut_canvas.bind("<Configure>", lambda _e: self._draw_donut(force=True), add="+")
         self.donut_canvas.bind("<Motion>", self._on_donut_hover, add="+")
         self.donut_canvas.bind("<Leave>", self._on_donut_leave, add="+")
+        self.donut_canvas.bind("<Button-1>", self._on_donut_click, add="+")
+        self.donut_canvas.bind("<Return>", lambda _e: self._on_donut_click(_e), add="+")
+        self.donut_canvas.bind("<space>", lambda _e: self._on_donut_click(_e), add="+")
+        self.sparkline.bind("<Configure>", lambda _e: self._draw_sparkline(force=True), add="+")
+
+        self.legend_consumed.bind("<Enter>", lambda _e: self._set_hover_segment("consumed"), add="+")
+        self.legend_remaining.bind("<Enter>", lambda _e: self._set_hover_segment("remaining"), add="+")
+        self.legend_consumed.bind("<Leave>", lambda _e: self._set_hover_segment(None), add="+")
+        self.legend_remaining.bind("<Leave>", lambda _e: self._set_hover_segment(None), add="+")
+        self.legend_consumed.bind("<Button-1>", lambda _e: self._toggle_selected_segment("consumed"), add="+")
+        self.legend_remaining.bind("<Button-1>", lambda _e: self._toggle_selected_segment("remaining"), add="+")
+        self.legend_consumed.bind("<Return>", lambda _e: self._toggle_selected_segment("consumed"), add="+")
+        self.legend_remaining.bind("<Return>", lambda _e: self._toggle_selected_segment("remaining"), add="+")
+
+        self.pin_btn.bind("<Button-1>", self._toggle_pin, add="+")
+        self.pin_btn.bind("<Return>", self._toggle_pin, add="+")
+
+        self.bind("<Enter>", self._on_card_hover_enter, add="+")
+        self.bind("<Leave>", self._on_card_hover_leave, add="+")
+        self.body.bind("<Enter>", self._on_card_hover_enter, add="+")
+        self.body.bind("<Leave>", self._on_card_hover_leave, add="+")
+
         self.after(0, self._draw_bottom_curve)
-        self.after(0, self._draw_donut)
+        self.after(0, lambda: self._draw_donut(force=True))
+        self.after(0, lambda: self._draw_sparkline(force=True))
+        self.after(0, lambda: self._set_card_lift(False))
+
+    def _low_motion(self):
+        return bool(UI_THEME.get("low_motion", False))
+
+    def _ease_out_cubic(self, t: float) -> float:
+        t = max(0.0, min(1.0, float(t)))
+        return 1.0 - ((1.0 - t) ** 3)
+
+    def set_interaction_mode(self, mode: str = "click-lock"):
+        self._state.interaction_mode = "hover" if str(mode).strip().lower() == "hover" else "click-lock"
+        if self._state.interaction_mode == "hover":
+            self._state.selected_segment = None
+            self._draw_donut()
+
+    def set_center_mode(self, mode: str = "auto"):
+        value = str(mode or "auto").strip().lower()
+        if value not in {"auto", "consumed", "remaining"}:
+            value = "auto"
+        self._state.center_mode = value
+        self._draw_donut()
+
+    def set_history(self, points):
+        values = []
+        for item in list(points or [])[:7]:
+            try:
+                values.append(float(item))
+            except Exception:
+                values.append(0.0)
+        if not values:
+            values = [0.0]
+        while len(values) < 7:
+            values.insert(0, values[0])
+        self._sparkline_data = values[-7:]
+        self._draw_sparkline()
+
+    def animate_entry_stagger(self, order: int = 0, base_delay_ms: int = 50, on_done=None):
+        try:
+            if self._stagger_after:
+                self.after_cancel(self._stagger_after)
+        except Exception:
+            pass
+        if not self._enable_stagger or self._low_motion():
+            self.animate_accent_growth()
+            self.animate_capacity_fill(on_done=on_done)
+            return
+        delay = max(0, int(order) * max(40, int(base_delay_ms)))
+        self._stagger_after = self.after(delay, lambda: (self.animate_accent_growth(), self.animate_capacity_fill(on_done=on_done)))
 
     def _draw_bottom_curve(self, _event=None):
         try:
             w = max(20, int(self.bottom_curve.winfo_width()))
             h = max(1, int(self.bottom_curve.winfo_height()))
-            card_bg = UI_THEME.get("surface", "#151A22")
+            card_bg = self.body.cget("bg")
             self.bottom_curve.configure(bg=card_bg)
             self.bottom_curve.delete("all")
             self.bottom_curve.create_rectangle(0, 0, w, h, fill=card_bg, outline="")
@@ -159,154 +413,143 @@ class AppMetricCard(tk.Frame):
         py_bottom = theme_space("space_1", 4) if compact else theme_space("space_2", 8)
         self.title_lbl.pack(in_=self.text_column, anchor="w", padx=(0, 0), pady=(py_top, 0))
         self.value_lbl.pack(in_=self.text_column, anchor="w", padx=(0, 0), pady=(0, 0))
+        if self._enable_sparkline:
+            self.sparkline.pack(in_=self.text_column, fill=tk.X, pady=(2, 4))
+        else:
+            self.sparkline.pack_forget()
         if self._donut_visible:
-            self.donut_canvas.pack(anchor="center", expand=True)
+            self.donut_canvas.pack(fill=tk.BOTH, expand=True)
+            if self._enable_legend:
+                self.legend_wrap.pack(fill=tk.X, padx=px, pady=(2, 0))
+            else:
+                self.legend_wrap.pack_forget()
         else:
             self.donut_canvas.pack_forget()
+            self.legend_wrap.pack_forget()
         self.trend_lbl.pack(anchor="w", padx=px, pady=(0, 0))
         self.capacity_lbl.pack(anchor="w", padx=px, pady=(0, 0))
         self.meta_lbl.pack(anchor="w", padx=px, pady=(0, py_bottom))
 
-    def _draw_donut(self, _event=None):
+    def _draw_sparkline(self, force=False):
+        if not self._enable_sparkline:
+            return
+        self._sparkline_renderer.draw(self.sparkline, self._sparkline_data, self._tone, force=force)
+
+    def _draw_donut(self, force=False):
         try:
-            self.donut_canvas.delete("all")
             if not self._donut_visible:
+                self.donut_canvas.delete("all")
                 return
-            w = max(40, int(self.donut_canvas.winfo_width()))
-            h = max(40, int(self.donut_canvas.winfo_height()))
-            size = min(w, h) - 10
-            base_width = 12
-            hover_extra = 6
-            x0 = (w - size) / 2
-            y0 = (h - size) / 2
-            x1 = x0 + size
-            y1 = y0 + size
-            fg_ring = UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7"))
-            rem_ring = UI_THEME.get("surface_alt", "#1B2430")
-            consumed = max(0.0, min(1.0, self._capacity_percent * self._donut_consumed_progress))
-            remaining_total = max(0.0, 1.0 - self._capacity_percent)
-            remaining = max(0.0, min(1.0, remaining_total * self._donut_remaining_progress))
-
-            consumed_hovered = self._donut_hover_segment == "consumed"
-            remaining_hovered = self._donut_hover_segment == "remaining"
-
-            if consumed > 0:
-                consumed_pad = hover_extra if consumed_hovered else 0
-                self.donut_canvas.create_arc(
-                    x0 - consumed_pad,
-                    y0 - consumed_pad,
-                    x1 + consumed_pad,
-                    y1 + consumed_pad,
-                    start=90,
-                    extent=-(360.0 * consumed),
-                    style="arc",
-                    outline=fg_ring,
-                    width=base_width + (3 if consumed_hovered else 0),
-                    tags=("segment", "segment_consumed"),
-                )
-            if remaining > 0:
-                remaining_pad = hover_extra if remaining_hovered else 0
-                self.donut_canvas.create_arc(
-                    x0 - remaining_pad,
-                    y0 - remaining_pad,
-                    x1 + remaining_pad,
-                    y1 + remaining_pad,
-                    start=90 - (360.0 * consumed),
-                    extent=-(360.0 * remaining),
-                    style="arc",
-                    outline=rem_ring,
-                    width=base_width + (3 if remaining_hovered else 0),
-                    tags=("segment", "segment_remaining"),
-                )
-            self.donut_canvas.create_text(
-                w / 2,
-                h / 2,
-                text=f"{int(round(self._capacity_percent * 100))}%",
-                fill=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
-                font=theme_font("font_sm", "bold"),
-                tags=("label_center",),
+            self._donut_renderer.draw(
+                self.donut_canvas,
+                tone=self._tone,
+                capacity_percent=self._capacity_percent,
+                consumed_progress=self._donut_consumed_progress,
+                remaining_progress=self._donut_remaining_progress,
+                state=self._state,
+                base_bg=self.body.cget("bg"),
+                low_motion=self._low_motion(),
+                force=force,
             )
-            self._draw_donut_tooltip(w)
+            self._update_legend_visual()
         except Exception:
             pass
 
-    def _draw_donut_tooltip(self, width: int):
-        if self._donut_hover_segment not in {"consumed", "remaining"}:
-            return
-        consumed_value = max(0, int(self._capacity_consumed_n))
-        limit_value = max(1, int(self._capacity_limit_n))
-        remaining_value = max(limit_value - consumed_value, 0)
-        if self._donut_hover_segment == "consumed":
-            text = f"Parte preenchida: {consumed_value} usados ({int(round(self._capacity_percent * 100))}%)"
-        else:
-            pct_remaining = int(round((1.0 - self._capacity_percent) * 100))
-            text = f"Parte vazia: {remaining_value} restantes ({pct_remaining}%)"
+    def _segment_from_current(self):
+        current = self.donut_canvas.find_withtag("current")
+        if not current:
+            return None
+        tags = set(self.donut_canvas.gettags(current[0]))
+        if "segment_consumed" in tags:
+            return "consumed"
+        if "segment_remaining" in tags:
+            return "remaining"
+        return None
 
-        x_center = max(80, int(width / 2))
-        y_center = 18
-        txt = self.donut_canvas.create_text(
-            x_center,
-            y_center,
-            text=text,
-            fill=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
-            font=theme_font("font_sm", "normal"),
-            tags=("tooltip",),
-        )
-        x0, y0, x1, y1 = self.donut_canvas.bbox(txt)
-        if x0 is None:
+    def _set_hover_segment(self, segment):
+        if self._state.pinned:
             return
-        pad_x = 8
-        pad_y = 4
-        self.donut_canvas.create_rectangle(
-            x0 - pad_x,
-            y0 - pad_y,
-            x1 + pad_x,
-            y1 + pad_y,
-            fill=UI_THEME.get("surface_alt", "#1B2430"),
-            outline=UI_THEME.get("border", "#2B3442"),
-            width=1,
-            tags=("tooltip",),
-        )
-        self.donut_canvas.tag_raise(txt)
+        if self._state.hover_segment == segment:
+            return
+        self._state.hover_segment = segment
+        self._draw_donut()
+
+    def _toggle_selected_segment(self, segment):
+        selected = self._state.selected_segment
+        self._state.selected_segment = None if selected == segment else segment
+        self._draw_donut()
+
+    def _active_segment(self):
+        return self._state.selected_segment or self._state.hover_segment
+
+    def _update_legend_visual(self):
+        tone_fg = UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7"))
+        base_fg = UI_THEME.get("muted_text", "#9AA4B2")
+        active = self._active_segment()
+        self.legend_consumed.configure(fg=tone_fg if active == "consumed" else base_fg)
+        rem_fg = UI_THEME.get("remaining_active", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+        self.legend_remaining.configure(fg=rem_fg if active == "remaining" else base_fg)
+        self.pin_btn.configure(fg=tone_fg if self._state.pinned else base_fg)
+
+    def _schedule_hover_update(self, segment):
+        self._pending_hover_segment = segment
+        try:
+            if self._hover_after:
+                return
+        except Exception:
+            pass
+
+        def _apply():
+            self._hover_after = None
+            self._set_hover_segment(self._pending_hover_segment)
+
+        self._hover_after = self.after(16, _apply)
 
     def _on_donut_hover(self, _event=None):
         try:
-            current = self.donut_canvas.find_withtag("current")
-            segment = None
-            if current:
-                tags = set(self.donut_canvas.gettags(current[0]))
-                if "segment_consumed" in tags:
-                    segment = "consumed"
-                elif "segment_remaining" in tags:
-                    segment = "remaining"
-            if segment != self._donut_hover_segment:
-                self._donut_hover_segment = segment
-                self._draw_donut()
+            self._schedule_hover_update(self._segment_from_current())
         except Exception:
             pass
 
-    def _on_donut_leave(self, _event=None):
-        if self._donut_hover_segment is None:
+    def _on_donut_click(self, _event=None):
+        segment = self._segment_from_current()
+        if self._state.interaction_mode == "hover":
+            self._set_hover_segment(segment)
             return
-        self._donut_hover_segment = None
+        if segment in {"consumed", "remaining"}:
+            self._toggle_selected_segment(segment)
+        else:
+            self._state.selected_segment = None
+            self._draw_donut()
+
+    def _on_donut_leave(self, _event=None):
+        self._set_hover_segment(None)
+
+    def _toggle_pin(self, _event=None):
+        self._state.pinned = not self._state.pinned
+        if self._state.pinned:
+            self._state.hover_segment = None
+        self._update_legend_visual()
         self._draw_donut()
 
     def set_donut_visibility(self, visible: bool):
         self._donut_visible = bool(visible)
         if not self._donut_visible:
-            self._donut_hover_segment = None
+            self._state.hover_segment = None
+            self._state.selected_segment = None
         try:
             if self._donut_visible:
-                self.donut_canvas.pack(anchor="center", expand=True)
+                self.donut_canvas.pack(fill=tk.BOTH, expand=True)
+                if self._enable_legend:
+                    self.legend_wrap.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(2, 0))
             else:
                 self.donut_canvas.pack_forget()
+                self.legend_wrap.pack_forget()
         except Exception:
             pass
-        self._draw_donut()
-
+        self._draw_donut(force=True)
 
     def animate_capacity_fill(self, on_done=None, phase_one_ms: int = 420, phase_two_ms: int = 360, steps: int = 14):
-        """Versão segura: garante donut visível sem animação de entrada suscetível a flicker."""
         try:
             if self._donut_anim_after:
                 self.after_cancel(self._donut_anim_after)
@@ -314,14 +557,39 @@ class AppMetricCard(tk.Frame):
             pass
         self._donut_anim_after = None
         self.set_donut_visibility(True)
-        self._donut_consumed_progress = 1.0
-        self._donut_remaining_progress = 1.0
-        self._draw_donut()
-        if callable(on_done):
-            try:
-                on_done()
-            except Exception:
-                pass
+        self._donut_consumed_progress = 0.0
+        self._donut_remaining_progress = 0.0
+        total_steps = max(1, int(steps))
+        p1 = int(UI_THEME.get("duration_medium", phase_one_ms))
+        p2 = int(UI_THEME.get("duration_fast", phase_two_ms))
+        if self._low_motion():
+            p1 = min(p1, 180)
+            p2 = min(p2, 140)
+        interval_one = max(16, int(p1 / total_steps))
+        interval_two = max(16, int(p2 / total_steps))
+
+        def _phase_two(idx=0):
+            self._donut_remaining_progress = self._ease_out_cubic(idx / total_steps)
+            self._draw_donut()
+            if idx >= total_steps:
+                self._donut_anim_after = None
+                if callable(on_done):
+                    try:
+                        on_done()
+                    except Exception:
+                        pass
+                return
+            self._donut_anim_after = self.after(interval_two, lambda: _phase_two(idx + 1))
+
+        def _phase_one(idx=0):
+            self._donut_consumed_progress = self._ease_out_cubic(idx / total_steps)
+            self._draw_donut()
+            if idx >= total_steps:
+                _phase_two(0)
+                return
+            self._donut_anim_after = self.after(interval_one, lambda: _phase_one(idx + 1))
+
+        _phase_one(0)
 
     def set_density(self, mode: str = "confortavel"):
         try:
@@ -329,12 +597,26 @@ class AppMetricCard(tk.Frame):
         except Exception:
             pass
 
-
     def _set_accent_progress(self, progress: float):
-        p = max(0.0, min(1.0, float(progress)))
+        self._accent_gradient_progress = self._ease_out_cubic(progress)
+        self._draw_accent_gradient()
+
+    def _draw_accent_gradient(self):
         try:
-            self.accent.configure(bg=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")))
-            self.accent.place_configure(relheight=p, rely=1.0, relx=0.0, relwidth=1.0, anchor="sw")
+            self.accent_canvas.delete("all")
+            w = max(2, int(self.accent_canvas.winfo_width()))
+            h = max(24, int(self.accent_canvas.winfo_height()))
+            hue = UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7"))
+            top = UI_THEME.get("primary_active", "#1F6FEB")
+            filled_h = int(h * self._accent_gradient_progress)
+            y_start = h - filled_h
+            steps = max(8, filled_h // 4) if filled_h > 0 else 0
+            for idx in range(steps):
+                t = idx / max(1, steps - 1)
+                c = hue if t < 0.5 else top
+                y0 = y_start + int((filled_h * idx) / max(1, steps))
+                y1 = y_start + int((filled_h * (idx + 1)) / max(1, steps))
+                self.accent_canvas.create_rectangle(0, y0, w, y1, fill=c, outline="")
         except Exception:
             pass
 
@@ -346,7 +628,10 @@ class AppMetricCard(tk.Frame):
             pass
         self._accent_anim_after = None
         total_steps = max(1, int(steps))
-        interval = max(16, int(duration_ms / total_steps))
+        dur = int(UI_THEME.get("duration_medium", duration_ms))
+        if self._low_motion():
+            dur = min(dur, 180)
+        interval = max(16, int(dur / total_steps))
         self._set_accent_progress(0.0)
 
         target_text = str(self._target_value_text)
@@ -355,26 +640,19 @@ class AppMetricCard(tk.Frame):
         value_start_progress = 0.55
         value_has_started = False
 
-        def _format_value(v: int):
-            if target_text.isdigit():
-                return str(v)
-            return str(v)
-
         def _tick(step_idx=0):
             nonlocal value_has_started
-            progress = min(1.0, step_idx / total_steps)
+            progress = self._ease_out_cubic(step_idx / total_steps)
             self._set_accent_progress(progress)
 
-            if target_value is not None:
-                if progress >= value_start_progress:
-                    if not value_has_started:
-                        value_has_started = True
-                        self._value_revealed = True
-                        self.value_var.set("0")
-                    rel = (progress - value_start_progress) / max(0.001, (1.0 - value_start_progress))
-                    rel = max(0.0, min(1.0, rel))
-                    current = int(round(target_value * rel))
-                    self.value_var.set(_format_value(current))
+            if target_value is not None and progress >= value_start_progress:
+                if not value_has_started:
+                    value_has_started = True
+                    self._value_revealed = True
+                    self.value_var.set("0")
+                rel = (progress - value_start_progress) / max(0.001, (1.0 - value_start_progress))
+                rel = max(0.0, min(1.0, rel))
+                self.value_var.set(str(int(round(target_value * rel))))
 
             if step_idx >= total_steps:
                 self._accent_anim_after = None
@@ -390,6 +668,54 @@ class AppMetricCard(tk.Frame):
 
         _tick(0)
 
+    def _set_card_lift(self, lifted: bool):
+        bg = self._lift_surface if lifted else self._base_surface
+        border = self._shadow_hover if lifted else self._shadow_idle
+        try:
+            self.configure(bg=bg, highlightbackground=border, highlightthickness=2 if lifted else 1)
+            for widget in (self.body, self.text_column, self.top_row, self.donut_wrap, self.legend_wrap, self.accent_wrap):
+                widget.configure(bg=bg)
+            self.sparkline.configure(bg=bg)
+            self.donut_canvas.configure(bg=bg)
+            self.title_lbl.configure(bg=bg)
+            self.value_lbl.configure(bg=bg)
+            self.trend_lbl.configure(bg=bg)
+            self.capacity_lbl.configure(bg=bg)
+            self.meta_lbl.configure(bg=bg)
+            self.legend_consumed.configure(bg=bg)
+            self.legend_remaining.configure(bg=bg)
+            self.pin_btn.configure(bg=bg)
+            self.bottom_curve.configure(bg=bg)
+            self.accent_canvas.configure(bg=bg)
+            self._draw_bottom_curve()
+            self._draw_donut(force=True)
+            self._draw_sparkline(force=True)
+        except Exception:
+            pass
+
+    def _on_card_hover_enter(self, _event=None):
+        self._set_card_lift(True)
+
+    def _on_card_hover_leave(self, _event=None):
+        self._set_card_lift(False)
+
+    def _pulse_card_status(self):
+        try:
+            if self._pulse_after:
+                self.after_cancel(self._pulse_after)
+        except Exception:
+            pass
+
+        def _off():
+            self._set_card_lift(False)
+            self._pulse_after = None
+
+        self._set_card_lift(True)
+        dur = int(UI_THEME.get("duration_fast", 220))
+        if self._low_motion():
+            dur = min(dur, 120)
+        self._pulse_after = self.after(dur, _off)
+
     def set_title(self, title: str, icon: str | None = None):
         if icon is not None:
             self._icon = icon
@@ -401,7 +727,7 @@ class AppMetricCard(tk.Frame):
             self.configure(highlightbackground=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")), highlightthickness=2)
             if self._flash_after:
                 self.after_cancel(self._flash_after)
-            self._flash_after = self.after(duration_ms, lambda: self.configure(highlightbackground="#000000", highlightthickness=1))
+            self._flash_after = self.after(duration_ms, lambda: self.configure(highlightbackground=self._shadow_idle, highlightthickness=1))
         except Exception:
             pass
 
@@ -434,10 +760,24 @@ class AppMetricCard(tk.Frame):
         self._capacity_consumed_n = consumed_n
         self._capacity_limit_n = limit_n
         self._capacity_percent = max(0.0, min(1.0, consumed_n / float(limit_n)))
-        self.capacity_var.set(
-            f"Consumido {int(round(self._capacity_percent * 100))}% • {consumed_n} usados • {remaining} restantes"
-        )
-        self._draw_donut()
+        self._state.capacity_percent = self._capacity_percent
+
+        prefix = ""
+        if consumed_n > limit_n:
+            self._tone = "danger"
+            prefix = "Crítico • "
+            self._pulse_card_status()
+            self.meta_var.set("Crítico: limite excedido")
+        elif consumed_n >= int(0.85 * limit_n):
+            self._tone = "warning"
+            prefix = "Atenção • "
+            self._pulse_card_status()
+            self.meta_var.set("Atenção: próximo do limite")
+        self.capacity_var.set(f"{prefix}Consumido {int(round(self._capacity_percent * 100))}% • {consumed_n} usados • {remaining} restantes")
+
+        self.value_lbl.configure(fg=state_colors(self._tone)[0])
+        self._draw_sparkline()
+        self._draw_donut(force=True)
 
 
 
