@@ -194,9 +194,13 @@ class AppMetricCard(tk.Frame):
             remaining_hovered = self._donut_hover_segment == "remaining"
 
             shadow_outline = self._blend_hex(
-                UI_THEME.get("surface", "#151A22"),
-                UI_THEME.get("surface_alt", "#1B2430"),
-                0.72,
+                self._blend_hex(
+                    UI_THEME.get("surface", "#151A22"),
+                    UI_THEME.get("surface_alt", "#1B2430"),
+                    0.72,
+                ),
+                "#000000",
+                0.28,
             )
             shadow_shift_x = 1.8
             shadow_shift_y = 2.4
