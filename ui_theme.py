@@ -63,6 +63,9 @@ UI_THEME = {
     "ease_out": "cubic",
     "shadow_1": "#2B3442",
     "shadow_2": "#3D4C64",
+    "remaining": "#5B6577",
+    "remaining_active": "#7C8AA3",
+    "low_motion": False,
 }
 
 THEME_PRESETS = {
@@ -123,6 +126,9 @@ THEME_PRESETS = {
         "ease_out": "cubic",
         "shadow_1": "#3C3C3C",
         "shadow_2": "#4D6A85",
+        "remaining": "#6B7280",
+        "remaining_active": "#94A3B8",
+        "low_motion": False,
     },
     # Alias de compatibilidade para ambientes ainda com testes legados.
     "vscode": {
@@ -182,11 +188,27 @@ THEME_PRESETS = {
         "ease_out": "cubic",
         "shadow_1": "#3C3C3C",
         "shadow_2": "#4D6A85",
+        "remaining": "#6B7280",
+        "remaining_active": "#94A3B8",
+        "low_motion": False,
     },
 }
 
 _ACTIVE_THEME = "principal"
 _ACTIVE_TYPOGRAPHY = "padrao"
+
+
+
+CARD_VARIANTS = {
+    "default": {"density": "confortavel", "show_sparkline": True, "show_legend": True},
+    "compact": {"density": "compacto", "show_sparkline": False, "show_legend": True},
+    "analitico": {"density": "confortavel", "show_sparkline": True, "show_legend": True},
+}
+
+
+def resolve_card_variant(name: str):
+    key = str(name or "default").strip().lower()
+    return CARD_VARIANTS.get(key, CARD_VARIANTS["default"])
 
 TYPOGRAPHY_PRESETS = {
     "compacto": {"font_sm": 8, "font_md": 9, "font_lg": 10, "font_xl": 11},
