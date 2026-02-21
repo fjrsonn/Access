@@ -1311,6 +1311,34 @@ class AppMetricCard(tk.Frame):
             except Exception:
                 pass
 
+    def _on_sparkline_hover(self, event=None):
+        try:
+            w = max(1, int(self.sparkline.winfo_width()))
+            x = max(0, min(int(getattr(event, "x", 0)), w))
+            idx = int(round((x / max(1, w - 1)) * (len(self._sparkline_data) - 1)))
+            val = self._sparkline_data[idx]
+            evt = (self._event_labels or {}).get(idx, "")
+            self._sparkline_hover_idx = idx
+            self._sparkline_hover_text = f"D-{len(self._sparkline_data)-1-idx} {val:.0f} {evt}".strip()
+            self._draw_sparkline()
+        except Exception:
+            pass
+
+    def _on_sparkline_leave(self, _event=None):
+        self._sparkline_hover_idx = None
+        self._sparkline_hover_text = ""
+        self._draw_sparkline()
+
+    def set_action(self, callback):
+        self._on_activate = callback
+
+    def _on_card_activate(self, _event=None):
+        if callable(self._on_activate):
+            try:
+                self._on_activate()
+            except Exception:
+                pass
+
     def _pulse_card_status(self):
         try:
             if self._pulse_after:
