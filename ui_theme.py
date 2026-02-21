@@ -58,6 +58,18 @@ UI_THEME = {
     "on_info": "#FFFFFF",
     "selection_bg": "#1F6FEB",
     "selection_fg": "#E6EDF3",
+    "duration_fast": 220,
+    "duration_medium": 360,
+    "ease_out": "cubic",
+    "shadow_1": "#2B3442",
+    "shadow_2": "#3D4C64",
+    "remaining": "#5B6577",
+    "remaining_active": "#7C8AA3",
+    "low_motion": False,
+    "spring_strength": 0.22,
+    "stagger_step_ms": 50,
+    "hover_throttle_ms": 16,
+    "repaint_frame_budget_ms": 16,
 }
 
 THEME_PRESETS = {
@@ -113,6 +125,18 @@ THEME_PRESETS = {
         "on_info": "#000000",
         "selection_bg": "#094771",
         "selection_fg": "#FFFFFF",
+        "duration_fast": 220,
+        "duration_medium": 360,
+        "ease_out": "cubic",
+        "shadow_1": "#3C3C3C",
+        "shadow_2": "#4D6A85",
+        "remaining": "#6B7280",
+        "remaining_active": "#94A3B8",
+        "low_motion": False,
+        "spring_strength": 0.22,
+        "stagger_step_ms": 50,
+        "hover_throttle_ms": 16,
+        "repaint_frame_budget_ms": 16,
     },
     # Alias de compatibilidade para ambientes ainda com testes legados.
     "vscode": {
@@ -167,11 +191,133 @@ THEME_PRESETS = {
         "on_info": "#000000",
         "selection_bg": "#094771",
         "selection_fg": "#FFFFFF",
+        "duration_fast": 220,
+        "duration_medium": 360,
+        "ease_out": "cubic",
+        "shadow_1": "#3C3C3C",
+        "shadow_2": "#4D6A85",
+        "remaining": "#6B7280",
+        "remaining_active": "#94A3B8",
+        "low_motion": False,
+        "spring_strength": 0.22,
+        "stagger_step_ms": 50,
+        "hover_throttle_ms": 16,
+        "repaint_frame_budget_ms": 16,
     },
+    "alto_contraste": {
+        "bg": "#000000",
+        "surface": "#000000",
+        "surface_alt": "#111111",
+        "border": "#FFFFFF",
+        "text": "#FFFFFF",
+        "muted_text": "#F5F5F5",
+        "primary": "#00E5FF",
+        "primary_active": "#00B8D4",
+        "on_primary": "#000000",
+        "on_surface": "#FFFFFF",
+        "success": "#00FF85",
+        "on_success": "#000000",
+        "danger": "#FF4D4D",
+        "on_danger": "#000000",
+        "warning": "#FFD166",
+        "on_warning": "#000000",
+        "focus_bg": "#FFFFFF",
+        "focus_text": "#000000",
+        "font_family": "Segoe UI",
+        "font_sm": 10,
+        "font_md": 11,
+        "font_lg": 12,
+        "font_xl": 14,
+        "radius_sm": 3,
+        "radius_md": 6,
+        "space_1": 4,
+        "space_2": 8,
+        "space_3": 12,
+        "space_4": 16,
+        "space_5": 20,
+        "space_6": 24,
+        "disabled_bg": "#222222",
+        "disabled_fg": "#FFFFFF",
+        "info": "#00E5FF",
+        "on_info": "#000000",
+        "selection_bg": "#FFFFFF",
+        "selection_fg": "#000000",
+        "duration_fast": 180,
+        "duration_medium": 300,
+        "ease_out": "cubic",
+        "shadow_1": "#FFFFFF",
+        "shadow_2": "#00E5FF",
+        "remaining": "#777777",
+        "remaining_active": "#BBBBBB",
+        "low_motion": False,
+        "spring_strength": 0.18,
+        "stagger_step_ms": 45,
+        "hover_throttle_ms": 14,
+        "repaint_frame_budget_ms": 16,
+    },
+
 }
 
 _ACTIVE_THEME = "principal"
 _ACTIVE_TYPOGRAPHY = "padrao"
+
+
+
+CARD_VARIANTS = {
+    "default": {
+        "density": "confortavel",
+        "show_sparkline": True,
+        "show_legend": True,
+        "enable_click_lock": True,
+        "enable_stagger": True,
+        "chart_type": "donut",
+    },
+    "compact": {
+        "density": "compacto",
+        "show_sparkline": False,
+        "show_legend": True,
+        "enable_click_lock": True,
+        "enable_stagger": False,
+        "chart_type": "bullet",
+    },
+    "analitico": {
+        "density": "confortavel",
+        "show_sparkline": True,
+        "show_legend": True,
+        "enable_click_lock": True,
+        "enable_stagger": True,
+        "chart_type": "radial-bar",
+    },
+    "executivo": {
+        "density": "confortavel",
+        "show_sparkline": True,
+        "show_legend": False,
+        "enable_click_lock": True,
+        "enable_stagger": True,
+        "chart_type": "donut",
+    },
+    "operacional": {
+        "density": "confortavel",
+        "show_sparkline": True,
+        "show_legend": True,
+        "enable_click_lock": True,
+        "enable_stagger": True,
+        "chart_type": "bullet",
+    },
+    "acessivel": {
+        "density": "confortavel",
+        "show_sparkline": True,
+        "show_legend": True,
+        "enable_click_lock": True,
+        "enable_stagger": False,
+        "chart_type": "donut",
+    },
+}
+
+
+def resolve_card_variant(name: str):
+    key = str(name or "default").strip().lower()
+    return CARD_VARIANTS.get(key, CARD_VARIANTS["default"])
 
 TYPOGRAPHY_PRESETS = {
     "compacto": {"font_sm": 8, "font_md": 9, "font_lg": 10, "font_xl": 11},
@@ -181,7 +327,7 @@ TYPOGRAPHY_PRESETS = {
 
 
 def available_theme_names():
-    return ["principal"]
+    return ["principal", "alto_contraste"]
 
 
 def get_active_theme_name():
@@ -201,6 +347,8 @@ def apply_theme(name: str):
     key = (name or "").strip().lower()
     if key == "vscode":
         key = "principal"
+    if key == "acessivel":
+        key = "alto_contraste"
     if key not in THEME_PRESETS:
         key = "principal"
     UI_THEME.clear()
