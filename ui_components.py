@@ -8,7 +8,7 @@ except Exception:  # pragma: no cover
     tk = None
     ttk = None
 
-from ui_theme import UI_THEME, theme_font, theme_space, build_card_frame, build_label, state_colors, normalize_tone
+from ui_theme import UI_THEME, theme_font, theme_space, build_card_frame, build_label, state_colors, normalize_tone, attach_tooltip
 
 
 def build_section_title(parent, text: str):
@@ -95,7 +95,7 @@ class AppMetricCard(tk.Frame):
         self.value_var = tk.StringVar(value="")
         self.meta_var = tk.StringVar(value="Atualizado agora")
         self.trend_var = tk.StringVar(value="→ estável")
-        self.capacity_var = tk.StringVar(value="Consumido 0% • 0 usados • 0 restantes")
+        self.capacity_var = tk.StringVar(value="0%")
         self._capacity_percent = 0.0
         self.accent_wrap = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"), width=4)
         self.accent_wrap.pack(side=tk.LEFT, fill=tk.Y)
@@ -118,6 +118,10 @@ class AppMetricCard(tk.Frame):
         self._sparkline_visible = True
         self._emphasis_mode = "secondary"
         self._trend_threshold = 2
+        self._meta_visible = True
+        self._operation_focus = False
+        self._is_critical = False
+        self._capacity_tooltip_bound = False
         self.top_row = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"))
         self.top_row.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
         self.text_column = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"))
@@ -181,7 +185,10 @@ class AppMetricCard(tk.Frame):
         else:
             self.sparkline.pack_forget()
         self.capacity_lbl.pack(anchor="w", padx=px, pady=(0, 0))
-        self.meta_lbl.pack(anchor="w", padx=px, pady=(0, py_bottom))
+        if self._meta_visible:
+            self.meta_lbl.pack(anchor="w", padx=px, pady=(0, py_bottom))
+        else:
+            self.meta_lbl.pack_forget()
         self._draw_sparkline()
 
     def _draw_sparkline(self, _event=None):
@@ -203,7 +210,11 @@ class AppMetricCard(tk.Frame):
                 x = int((i / max(1, n)) * (w - 2)) + 1
                 y = int((1.0 - ((value - vmin) / span)) * (h - 4)) + 2
                 coords.extend((x, y))
-            self.sparkline.create_line(*coords, fill=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")), width=2, smooth=True)
+            median = sorted(points)[len(points) // 2]
+            median_y = int((1.0 - ((median - vmin) / span)) * (h - 4)) + 2
+            self.sparkline.create_line(1, median_y, w - 1, median_y, fill=UI_THEME.get("muted_text_soft", UI_THEME.get("muted_text", "#9AA4B2")), dash=(3, 2), width=1)
+            self.sparkline.create_line(*coords, fill=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")), width=2, smooth=False)
+            self.sparkline.create_oval(coords[-2] - 2, coords[-1] - 2, coords[-2] + 2, coords[-1] + 2, fill=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")), outline="")
         except Exception:
             pass
 
@@ -376,6 +387,27 @@ class AppMetricCard(tk.Frame):
         self._sparkline_visible = bool(visible)
         self._apply_density("confortavel")
 
+    def set_meta_visibility(self, visible: bool):
+        self._meta_visible = bool(visible)
+        self._apply_density("confortavel")
+
+    def set_operation_focus(self, enabled: bool, critical: bool = False):
+        self._operation_focus = bool(enabled)
+        self._is_critical = bool(critical)
+        try:
+            if self._operation_focus and not self._is_critical:
+                muted = UI_THEME.get("muted_text_soft", UI_THEME.get("muted_text", "#9AA4B2"))
+                self.value_lbl.configure(fg=muted)
+                self.trend_lbl.configure(fg=muted)
+                self.title_lbl.configure(fg=muted)
+            else:
+                tone_color = UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7"))
+                self.value_lbl.configure(fg=tone_color)
+                self.trend_lbl.configure(fg=UI_THEME.get("muted_text", "#9AA4B2"))
+                self.title_lbl.configure(fg=UI_THEME.get("muted_text", "#9AA4B2"))
+        except Exception:
+            pass
+
     def push_history_value(self, value: int | float):
         try:
             v = float(value)
@@ -467,16 +499,31 @@ class AppMetricCard(tk.Frame):
         if self._value_revealed:
             self.value_var.set(self._target_value_text)
 
-    def set_trend(self, delta: int):
-        if abs(int(delta)) < self._trend_threshold:
+    def set_trend(self, delta: int, metric_key: str | None = None, threshold: int | None = None):
+        metric = str(metric_key or "").lower().strip()
+        local_threshold = int(threshold) if threshold is not None else int(self._trend_threshold)
+        if abs(int(delta)) < local_threshold:
             self.trend_var.set("→ estável")
+            self.trend_lbl.configure(fg=UI_THEME.get("muted_text", "#9AA4B2"))
             return
+        impact_up_bad = metric in {"pendentes", "sem_contato"}
+        impact_up_good = metric in {"avisado"}
+        trend_tone = "info"
         if delta > 0:
             self.trend_var.set(f"↑ +{delta} vs último ciclo")
+            if impact_up_bad:
+                trend_tone = "danger"
+            elif impact_up_good:
+                trend_tone = "success"
         elif delta < 0:
             self.trend_var.set(f"↓ {delta} vs último ciclo")
+            if impact_up_bad:
+                trend_tone = "success"
+            elif impact_up_good:
+                trend_tone = "danger"
         else:
             self.trend_var.set("→ estável")
+        self.trend_lbl.configure(fg=UI_THEME.get(trend_tone, UI_THEME.get("muted_text", "#9AA4B2")))
 
     def set_meta(self, text: str):
         self.meta_var.set(str(text))
@@ -494,9 +541,11 @@ class AppMetricCard(tk.Frame):
         self._capacity_consumed_n = consumed_n
         self._capacity_limit_n = limit_n
         self._capacity_percent = max(0.0, min(1.0, consumed_n / float(limit_n)))
-        self.capacity_var.set(
-            f"Consumido {int(round(self._capacity_percent * 100))}% • {consumed_n} usados • {remaining} restantes"
-        )
+        short_txt = f"{int(round(self._capacity_percent * 100))}%"
+        self.capacity_var.set(short_txt)
+        if not self._capacity_tooltip_bound:
+            attach_tooltip(self.capacity_lbl, "Capacidade do card: percentual consumido do limite configurado.")
+            self._capacity_tooltip_bound = True
         self._draw_donut()
 
 

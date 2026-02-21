@@ -35,6 +35,7 @@ from ui_theme import (
     get_active_theme_name,
     validate_theme_contrast,
     state_colors,
+    THEME_PRESETS,
 )
 
 from ui_components import AppMetricCard, AppStatusBar, AppFeedbackBanner, build_section_title
@@ -72,6 +73,14 @@ CARD_CAPACITY_LIMITS = {
     "sem_contato": 800,
     "avisado": 1000,
 }
+CARD_TREND_THRESHOLDS = {
+    "ativos": 5,
+    "pendentes": 2,
+    "sem_contato": 1,
+    "avisado": 2,
+}
+SEM_CONTATO_PRIORITY_THRESHOLD = 10
+META_DELAY_SECONDS = 15
 
 # internal reference to Toplevel (quando embutido)
 _monitor_toplevel = None
@@ -106,6 +115,8 @@ _cards_last_update_at = None
 _metrics_last_global_update_var = None
 _status_distribution_canvas = None
 _status_distribution_legend_var = None
+_status_distribution_legend_widget = None
+_previous_status_distribution = {}
 _control_filtered_count_var = None
 _control_toolbar = None
 _last_quick_filter_kind = None
@@ -372,8 +383,28 @@ def _collect_status_cards_data() -> dict:
     }
 
 
-def _draw_status_distribution(data: dict):
-    global _status_distribution_canvas, _status_distribution_legend_var
+def _kpi_primary_key(data: dict) -> str:
+    sem_contato = int(data.get("sem_contato", 0) or 0)
+    pendentes = int(data.get("pendentes", 0) or 0)
+    if sem_contato >= SEM_CONTATO_PRIORITY_THRESHOLD and sem_contato >= pendentes:
+        return "sem_contato"
+    return "pendentes"
+
+
+def _apply_cards_operational_focus(data: dict):
+    primary = _kpi_primary_key(data)
+    critical = {"pendentes", "sem_contato"}
+    for key, card in _ux_cards.items():
+        try:
+            card.set_emphasis("primary" if key == primary else "secondary")
+            card.set_operation_focus(_operation_mode_enabled, critical=(key in critical))
+        except Exception:
+            pass
+
+
+
+def _draw_status_distribution(data: dict, previous: dict | None = None):
+    global _status_distribution_canvas, _status_distribution_legend_var, _status_distribution_legend_widget
     canvas = _status_distribution_canvas
     if canvas is None:
         return
@@ -382,6 +413,8 @@ def _draw_status_distribution(data: dict):
         w = max(220, int(canvas.winfo_width() or 220))
         h = max(24, int(canvas.winfo_height() or 24))
         keys = ["ativos", "pendentes", "sem_contato", "avisado"]
+        if _operation_mode_enabled:
+            keys = ["sem_contato", "pendentes", "ativos", "avisado"]
         labels = {"ativos": "Ativos", "pendentes": "Pendentes", "sem_contato": "Sem contato", "avisado": "Avisado"}
         tones = {"ativos": "info", "pendentes": "warning", "sem_contato": "danger", "avisado": "success"}
         values = [max(0, int(data.get(k, 0) or 0)) for k in keys]
@@ -402,7 +435,10 @@ def _draw_status_distribution(data: dict):
             if width > 0:
                 canvas.create_rectangle(x, 0, x + width, h, fill=color, outline="")
             x += width
-            legend_parts.append(f"{labels[k]} {val}")
+            prev_val = max(0, int((previous or {}).get(k, val) or 0))
+            delta = val - prev_val
+            delta_txt = f" {delta:+d}" if delta else ""
+            legend_parts.append(f"{labels[k]} {val}{delta_txt}")
         if _status_distribution_legend_var is not None:
             _status_distribution_legend_var.set(" • ".join(legend_parts))
     except Exception:
@@ -411,7 +447,7 @@ def _draw_status_distribution(data: dict):
 
 
 def _update_status_cards():
-    global _metrics_previous_cards, _cards_last_update_at, _metrics_last_global_update_var
+    global _metrics_previous_cards, _cards_last_update_at, _metrics_last_global_update_var, _previous_status_distribution
     data = _collect_status_cards_data()
     ux = analisar_metricas_ux() if callable(analisar_metricas_ux) else {}
     now = datetime.now()
@@ -424,13 +460,17 @@ def _update_status_cards():
                 current = int(data.get(k, 0))
                 previous = int(_metrics_previous_cards.get(k, current))
                 card.set_value(str(current))
-                card.set_trend(current - previous)
+                delta = current - previous
+                card.set_trend(delta, metric_key=k, threshold=CARD_TREND_THRESHOLDS.get(k, 2))
                 card.set_capacity(current, CARD_CAPACITY_LIMITS.get(k, 1000))
                 card.set_meta(f"Atualizado às {now_label} • há 0s")
+                card.set_meta_visibility(False)
                 card.push_history_value(current)
                 card.flash(180)
             except Exception:
                 pass
+    _apply_cards_operational_focus(data)
+    _previous_status_distribution = dict(_metrics_previous_cards)
     _metrics_previous_cards = dict(data)
 
     if _metrics_last_global_update_var is not None:
@@ -438,7 +478,7 @@ def _update_status_cards():
             _metrics_last_global_update_var.set(f"Atualização global: {now_label}")
         except Exception:
             pass
-    _draw_status_distribution(data)
+    _draw_status_distribution(data, previous=_previous_status_distribution)
     if _metrics_accessibility_var is not None:
         try:
             _metrics_accessibility_var.set(
@@ -450,7 +490,10 @@ def _update_status_cards():
         try:
             p95 = ((ux.get("time_to_apply_filter_ms") or {}).get("p95") or 0)
             ok = ux.get("edit_save_success_rate") or 0
-            _status_bar.set(f"UX: p95 filtro {p95}ms • sucesso edição {round(ok*100,1)}% • trocas de tema {ux.get('theme_switch_count',0)}", tone="info")
+            shortcut = ux.get("keyboard_shortcut_adoption", 0)
+            theme_switch = ux.get("theme_switch_count", 0)
+            status_tone = "warning" if int(theme_switch) > 20 else "info"
+            _status_bar.set(f"UX: p95 filtro {p95}ms • sucesso edição {round(ok*100,1)}% • atalhos {shortcut} • trocas de tema {theme_switch}", tone=status_tone)
         except Exception:
             pass
 
@@ -465,7 +508,16 @@ def _refresh_cards_relative_meta():
             base = str(card.meta_var.get() or "")
             if "• há" in base:
                 base = base.split("• há", 1)[0].strip()
-            card.set_meta(f"{base} • há {elapsed}s")
+            if elapsed >= META_DELAY_SECONDS:
+                card.set_meta(f"{base} • há {elapsed}s")
+                card.set_meta_visibility(True)
+            else:
+                card.set_meta_visibility(False)
+        except Exception:
+            pass
+    if _metrics_last_global_update_var is not None:
+        try:
+            _metrics_last_global_update_var.set(f"Atualização global: {_cards_last_update_at.strftime('%H:%M:%S')} • há {elapsed}s")
         except Exception:
             pass
     if _metrics_last_global_update_var is not None:
@@ -2675,6 +2727,21 @@ def _build_monitor_ui(container):
     )
     style.configure("Encomenda.Text", background=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]))
     report_status("ux_metrics", "OK", stage="theme_contrast_check", details=validate_theme_contrast())
+    try:
+        contrast_by_theme = {}
+        contrast_alerts = {}
+        for _theme_name, _theme_data in (THEME_PRESETS.items() if isinstance(THEME_PRESETS, dict) else []):
+            result = validate_theme_contrast(_theme_data)
+            contrast_by_theme[_theme_name] = result.get("ratios", {})
+            warns = result.get("warnings", {})
+            if warns:
+                contrast_alerts[_theme_name] = warns
+        if contrast_alerts:
+            report_status("ux_metrics", "ERROR", stage="theme_contrast_alert", details={"themes": contrast_alerts, "target": "AA>=4.5"})
+        else:
+            report_status("ux_metrics", "OK", stage="theme_contrast_alert", details={"themes": contrast_by_theme, "target": "AA>=4.5"})
+    except Exception:
+        pass
     style.configure("Control.Treeview", background=UI_THEME["surface"], fieldbackground=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), bordercolor=UI_THEME["border"], rowheight=28)
     style.configure("Control.Treeview.Heading", background=UI_THEME["surface_alt"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), relief="flat", font=theme_font("font_md"))
     style.map("Control.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME["primary"]))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("on_primary", UI_THEME["text"])))])
@@ -2816,6 +2883,10 @@ def _build_monitor_ui(container):
             report_status("ux_metrics", "OK", stage="operation_mode_enabled", details={"theme": get_active_theme_name(), "refresh_ms": _runtime_refresh_ms})
             try:
                 hints.pack_forget()
+                metrics_accessibility_label.pack_forget()
+                info_label.pack_forget()
+                if _status_distribution_legend_widget is not None:
+                    _status_distribution_legend_widget.pack_forget()
             except Exception:
                 pass
             try:
@@ -2827,10 +2898,17 @@ def _build_monitor_ui(container):
             focus_mode_var.set(False)
             try:
                 hints.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+                metrics_accessibility_label.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+                if _status_distribution_legend_widget is not None:
+                    _status_distribution_legend_widget.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
             except Exception:
                 pass
             report_status("ux_metrics", "OK", stage="operation_mode_disabled", details={"refresh_ms": _runtime_refresh_ms})
         _persist_ui_state({"operation_mode": _operation_mode_enabled})
+        try:
+            _apply_cards_operational_focus(_metrics_previous_cards or {})
+        except Exception:
+            pass
         _refresh_theme_in_place()
         _apply_density()
 
@@ -2840,10 +2918,16 @@ def _build_monitor_ui(container):
             if enabled:
                 hints.pack_forget()
                 info_label.pack_forget()
+                metrics_accessibility_label.pack_forget()
+                if _status_distribution_legend_widget is not None:
+                    _status_distribution_legend_widget.pack_forget()
             else:
                 info_label.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
                 if not _operation_mode_enabled:
                     hints.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+                metrics_accessibility_label.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+                if _status_distribution_legend_widget is not None:
+                    _status_distribution_legend_widget.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
         except Exception:
             pass
         report_status("ux_metrics", "OK", stage="focus_mode_toggle", details={"enabled": enabled})
@@ -2894,14 +2978,7 @@ def _build_monitor_ui(container):
         except Exception:
             pass
 
-    try:
-        _ux_cards.get("pendentes").set_emphasis("primary")
-        for _k in ("ativos", "sem_contato", "avisado"):
-            _ux_cards.get(_k).set_emphasis("secondary")
-    except Exception:
-        pass
-
-    global _status_distribution_canvas, _status_distribution_legend_var
+    global _status_distribution_canvas, _status_distribution_legend_var, _status_distribution_legend_widget
     _status_distribution_legend_var = tk.StringVar(value="Distribuição por status: carregando")
     status_distribution_wrap = tk.Frame(container, bg=UI_THEME["bg"])
     status_distribution_wrap.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
@@ -2910,6 +2987,7 @@ def _build_monitor_ui(container):
     status_distribution_legend = build_label(container, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
     status_distribution_legend.configure(textvariable=_status_distribution_legend_var)
     status_distribution_legend.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+    _status_distribution_legend_widget = status_distribution_legend
 
     def _layout_cards_responsive(_event=None):
         width = max(320, int(cards_row.winfo_width() or 0))
