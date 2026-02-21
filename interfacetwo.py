@@ -520,6 +520,11 @@ def _refresh_cards_relative_meta():
             _metrics_last_global_update_var.set(f"Atualização global: {_cards_last_update_at.strftime('%H:%M:%S')} • há {elapsed}s")
         except Exception:
             pass
+    if _metrics_last_global_update_var is not None:
+        try:
+            _metrics_last_global_update_var.set(f"Atualização global: {_cards_last_update_at.strftime('%H:%M:%S')} • há {elapsed}s")
+        except Exception:
+            pass
 
 
 
