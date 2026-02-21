@@ -98,13 +98,9 @@ class AppMetricCard(tk.Frame):
         self.capacity_var = tk.StringVar(value="Consumido 0% • 0 usados • 0 restantes")
         self._capacity_percent = 0.0
         card_shadow = self._blend_hex(
-            self._blend_hex(
-                UI_THEME.get("surface", "#151A22"),
-                UI_THEME.get("surface_alt", "#1B2430"),
-                0.72,
-            ),
-            "#000000",
-            0.28,
+            UI_THEME.get("surface", "#151A22"),
+            UI_THEME.get("surface_alt", "#1B2430"),
+            0.72,
         )
         self.configure(bg=card_shadow)
         self.card_shell = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
@@ -465,7 +461,7 @@ class AppMetricCard(tk.Frame):
             self.configure(highlightbackground=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")), highlightthickness=2)
             if self._flash_after:
                 self.after_cancel(self._flash_after)
-            self._flash_after = self.after(duration_ms, lambda: self.configure(highlightbackground="#000000", highlightthickness=1))
+            self._flash_after = self.after(duration_ms, lambda: self.configure(highlightthickness=0))
         except Exception:
             pass
 
