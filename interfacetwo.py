@@ -97,6 +97,7 @@ _ux_cards = {}
 _status_bar = None
 _feedback_banner = None
 _metrics_previous_cards = {}
+_metrics_history_cards = {}
 _last_filter_snapshot = {}
 _filter_auto_apply_after = {}
 _layout_density_mode = "confortavel"
@@ -370,7 +371,7 @@ def _collect_status_cards_data() -> dict:
 
 
 def _update_status_cards():
-    global _metrics_previous_cards, _cards_last_update_at
+    global _metrics_previous_cards, _cards_last_update_at, _metrics_history_cards
     data = _collect_status_cards_data()
     ux = analisar_metricas_ux() if callable(analisar_metricas_ux) else {}
     now = datetime.now()
@@ -382,10 +383,18 @@ def _update_status_cards():
             try:
                 current = int(data.get(k, 0))
                 previous = int(_metrics_previous_cards.get(k, current))
+                history = list(_metrics_history_cards.get(k, []))
+                history.append(current)
+                if len(history) > 14:
+                    history = history[-14:]
+                _metrics_history_cards[k] = history
                 card.set_value(str(current))
                 card.set_trend(current - previous)
                 card.set_capacity(current, CARD_CAPACITY_LIMITS.get(k, 1000))
                 card.set_meta(f"Atualizado às {now_label} • há 0s")
+                card.set_history(history[-7:])
+                card.set_event_annotations([f"{now.strftime('%d/%m')}" for _ in history[-7:]])
+                card.set_temporal_compare("vs ontem • média 7d")
                 card.flash(260)
             except Exception:
                 pass
@@ -393,7 +402,7 @@ def _update_status_cards():
     if _metrics_accessibility_var is not None:
         try:
             _metrics_accessibility_var.set(
-                f"Métricas: Ativos {data.get('ativos',0)}, Pendentes {data.get('pendentes',0)}, Sem contato {data.get('sem_contato',0)}, Avisado {data.get('avisado',0)}"
+                f"Métricas: Ativos {data.get('ativos',0)}, Pendentes {data.get('pendentes',0)}, Sem contato {data.get('sem_contato',0)}, Avisado {data.get('avisado',0)}, Alta severidade {data.get('alta_severidade',0)}"
             )
         except Exception:
             pass
@@ -2672,6 +2681,9 @@ def _build_monitor_ui(container):
     focus_mode_var = tk.BooleanVar(value=False)
     focus_mode_chk = tk.Checkbutton(theme_bar, text="Focus mode", variable=focus_mode_var, bg=UI_THEME["bg"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), selectcolor=UI_THEME["surface"], activebackground=UI_THEME["bg"])
     focus_mode_chk.pack(side=tk.LEFT, padx=(8, 0))
+    card_variant_var = tk.StringVar(value=str((_load_prefs().get("card_variant") or "executivo")))
+    card_variant_combo = ttk.Combobox(theme_bar, state="readonly", width=12, values=["default", "compact", "analitico", "executivo", "operacional", "acessivel"], textvariable=card_variant_var)
+    card_variant_combo.pack(side=tk.LEFT, padx=(8, 0))
 
     def _refresh_theme_in_place():
         try:
@@ -2712,9 +2724,13 @@ def _build_monitor_ui(container):
 
     def _apply_density(_mode_label=None):
         global _layout_density_mode
-        _layout_density_mode = "confortavel"
-        rowheight = 30
-        gap = theme_space("space_2", 8)
+        try:
+            cw = int(container.winfo_width() or 0)
+        except Exception:
+            cw = 0
+        _layout_density_mode = "compacto" if cw and cw < 1280 else "confortavel"
+        rowheight = 26 if _layout_density_mode == "compacto" else 30
+        gap = theme_space("space_1", 4) if _layout_density_mode == "compacto" else theme_space("space_2", 8)
         try:
             ttk.Style(container).configure("Control.Treeview", rowheight=rowheight)
         except Exception:
@@ -2811,11 +2827,12 @@ def _build_monitor_ui(container):
     cards_row = tk.Frame(container, bg=UI_THEME["bg"])
     cards_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), 0))
     global _ux_cards, _status_bar
+    active_variant = str(card_variant_var.get() or "executivo")
     _ux_cards = {
-        "ativos": AppMetricCard(cards_row, "Ativos", tone="info", icon="📦"),
-        "pendentes": AppMetricCard(cards_row, "Pendentes", tone="warning", icon="⏳"),
-        "sem_contato": AppMetricCard(cards_row, "Sem contato", tone="danger", icon="☎"),
-        "avisado": AppMetricCard(cards_row, "Avisado", tone="success", icon="✅"),
+        "ativos": AppMetricCard(cards_row, "Ativos", tone="info", icon="📦", variant=active_variant),
+        "pendentes": AppMetricCard(cards_row, "Pendentes", tone="warning", icon="⏳", variant=active_variant),
+        "sem_contato": AppMetricCard(cards_row, "Sem contato", tone="danger", icon="☎", variant=active_variant),
+        "avisado": AppMetricCard(cards_row, "Avisado", tone="success", icon="✅", variant=active_variant),
     }
     cards_tooltips = {
         "ativos": "Total de avisos atualmente ativos no sistema.",
@@ -2823,6 +2840,29 @@ def _build_monitor_ui(container):
         "sem_contato": "Registros com status marcado como SEM CONTATO.",
         "avisado": "Registros com status marcado como AVISADO.",
     }
+    def _apply_card_drilldown(kind: str):
+        payload = dict(_filter_state.get("controle") or _default_filters())
+        if kind == "sem_contato":
+            payload["status"] = "SEM CONTATO"
+        elif kind == "pendentes":
+            payload["status"] = "PENDENTE"
+        elif kind == "avisado":
+            payload["status"] = "AVISADO"
+        elif kind == "ativos":
+            payload["query"] = "ativo"
+        _filter_state["controle"] = payload
+        for widget, src in list(_monitor_sources.items()):
+            if str((src or {}).get("filter_key")) != "controle":
+                continue
+            try:
+                _populate_text(widget, info_label)
+            except Exception:
+                continue
+        try:
+            _feedback_banner.show(f"Drill-down aplicado no card: {kind}", tone="info", icon="🎯")
+        except Exception:
+            pass
+
     for idx, key in enumerate(["ativos", "pendentes", "sem_contato", "avisado"]):
         card = _ux_cards[key]
         card.grid(row=0, column=idx, padx=(0, theme_space("space_2", 8)), sticky="ew")
@@ -2830,9 +2870,34 @@ def _build_monitor_ui(container):
         cards_widgets.append(card)
         attach_tooltip(card, cards_tooltips.get(key, ""))
         try:
-            card.set_donut_visibility(False)
+            card.set_action(lambda k=key: _apply_card_drilldown(k))
+            card.set_donut_visibility(key in {"pendentes", "sem_contato"})
         except Exception:
             pass
+
+    def _on_card_variant_change(_event=None):
+        selected_variant = str(card_variant_var.get() or "executivo")
+        _persist_ui_state({"card_variant": selected_variant})
+        for key, old_card in list(_ux_cards.items()):
+            try:
+                old_card.destroy()
+            except Exception:
+                pass
+        _ux_cards.clear()
+        order = ["ativos", "pendentes", "sem_contato", "avisado"]
+        tones = {"ativos": ("info", "📦"), "pendentes": ("warning", "⏳"), "sem_contato": ("danger", "☎"), "avisado": ("success", "✅")}
+        for idx, key in enumerate(order):
+            tone, icon = tones[key]
+            card = AppMetricCard(cards_row, key.replace("_", " ").title(), tone=tone, icon=icon, variant=selected_variant)
+            card.grid(row=0, column=idx, padx=(0, theme_space("space_2", 8)), sticky="ew")
+            card.set_action(lambda k=key: _apply_card_drilldown(k))
+            card.set_donut_visibility(key in {"pendentes", "sem_contato"})
+            _ux_cards[key] = card
+            if card not in cards_widgets:
+                cards_widgets.append(card)
+        _update_status_cards()
+
+    card_variant_combo.bind("<<ComboboxSelected>>", _on_card_variant_change, add="+")
 
     def _play_metric_cards_intro_animation():
         order = ["ativos", "pendentes", "sem_contato", "avisado"]
@@ -3163,6 +3228,7 @@ def _build_monitor_ui(container):
         _persist_ui_state({"onboarding_seen": True})
 
     _apply_density()
+    container.bind("<Configure>", lambda _e: _apply_density(), add="+")
     if op_mode_var.get():
         _toggle_operation_mode()
     try:
