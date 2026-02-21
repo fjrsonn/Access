@@ -261,14 +261,14 @@ class SparklineRenderer:
     def __init__(self):
         self._last_snapshot = None
 
-    def draw(self, canvas, values, tone, force=False, event_labels=None):
+    def draw(self, canvas, values, tone, force=False, event_labels=None, targets=None, hover_index=None, hover_text=""):
         w = max(80, int(canvas.winfo_width()))
         h = max(24, int(canvas.winfo_height()))
         bg = canvas.cget("bg")
         vals = list(values[-7:]) if values else [0.0]
         while len(vals) < 7:
             vals.insert(0, vals[0])
-        snapshot = (w, h, tuple(round(v, 4) for v in vals), tone, tuple(sorted((event_labels or {}).items())))
+        snapshot = (w, h, tuple(round(v, 4) for v in vals), tone, tuple(sorted((event_labels or {}).items())), tuple(sorted((targets or {}).items())), hover_index, hover_text)
         if (not force) and snapshot == self._last_snapshot:
             return
         self._last_snapshot = snapshot
@@ -286,6 +286,13 @@ class SparklineRenderer:
         axis_color = UI_THEME.get("muted_text", "#9AA4B2")
         if contrast_ratio(axis_color, bg) < 4.5:
             axis_color = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
+        warning_max = float((targets or {}).get("warning_max", 0.85))
+        normal_max = float((targets or {}).get("normal_max", 0.70))
+        if mx > mn:
+            y_warn = pad + (h - (2 * pad)) * (1.0 - warning_max)
+            y_normal = pad + (h - (2 * pad)) * (1.0 - normal_max)
+            canvas.create_rectangle(pad, y_warn, w - pad, h - pad, fill=UI_THEME.get("risk_critical", UI_THEME.get("danger", "#DA3633")), outline="", stipple="gray50")
+            canvas.create_rectangle(pad, y_normal, w - pad, y_warn, fill=UI_THEME.get("risk_warning", UI_THEME.get("warning", "#D29922")), outline="", stipple="gray25")
         canvas.create_line(*pts, smooth=True, width=2, fill=line_color)
         avg = sum(vals) / len(vals)
         y_avg = pad + (h - (2 * pad)) * (1.0 - ((avg - mn) / spread))
@@ -307,10 +314,26 @@ class SparklineRenderer:
                 y = pad + (h - (2 * pad)) * (1.0 - ((vals[idx] - mn) / spread))
                 text = str(name)[:10]
                 canvas.create_text(x, min(h - 4, y + 10), text=text, fill=axis_color, font=theme_font("font_sm", "normal"))
+        spread_sigma = (sum((v - avg) ** 2 for v in vals) / max(1, len(vals))) ** 0.5
+        anomaly_gate = max(1.0, spread_sigma * 1.5)
+        for idx, val in enumerate(vals):
+            if abs(val - avg) < anomaly_gate:
+                continue
+            x = pad + (idx * step)
+            y = pad + (h - (2 * pad)) * (1.0 - ((val - mn) / spread))
+            canvas.create_oval(x - 4, y - 4, x + 4, y + 4, outline=UI_THEME.get("risk_critical", UI_THEME.get("danger", "#DA3633")), width=1)
+            canvas.create_text(x + 7, y - 7, text="!", fill=UI_THEME.get("risk_critical", UI_THEME.get("danger", "#DA3633")), font=theme_font("font_sm", "bold"), anchor="w")
         first = vals[0] if vals[0] != 0 else 1e-6
         delta = ((vals[-1] - vals[0]) / first) * 100.0
         delta_text = f"Δ {delta:+.0f}%"
         canvas.create_text(w - 4, 4, anchor="ne", text=delta_text, fill=axis_color, font=theme_font("font_sm", "normal"))
+        if hover_index is not None and 0 <= int(hover_index) < len(vals):
+            idx = int(hover_index)
+            x = pad + (idx * step)
+            y = pad + (h - (2 * pad)) * (1.0 - ((vals[idx] - mn) / spread))
+            canvas.create_line(x, h - 4, x, 4, fill=axis_color, dash=(2, 2))
+            tip = hover_text or f"Ponto {idx+1}: {vals[idx]:.0f}"
+            canvas.create_text(min(w - 4, x + 8), 12, anchor="nw", text=tip[:28], fill=axis_color, font=theme_font("font_sm", "bold"))
 
 
 class RadialBarRenderer(DonutRenderer):
@@ -352,7 +375,8 @@ class BulletChartRenderer(DonutRenderer):
         span = max(1, x1 - x0)
         progress = max(0.0, min(1.0, capacity_percent * consumed_progress))
         fill_x = x0 + int(span * progress)
-        warn_x = x0 + int(span * 0.85)
+        warning_threshold = max(0.0, min(1.0, float(getattr(state, "warning_threshold", UI_THEME.get("bullet_warning_threshold", 0.85)))))
+        warn_x = x0 + int(span * warning_threshold)
         canvas.create_rectangle(x0, y - bar_h, x1, y + bar_h, fill=UI_THEME.get("remaining", "#5B6577"), outline="")
         canvas.create_rectangle(x0, y - bar_h, fill_x, y + bar_h, fill=UI_THEME.get(tone, UI_THEME.get("primary", "#2F81F7")), outline="", tags=("segment", "segment_consumed"))
         canvas.create_line(warn_x, y - bar_h - 4, warn_x, y + bar_h + 4, fill=UI_THEME.get("warning", "#D29922"), width=2)
@@ -404,6 +428,12 @@ class AppMetricCard(tk.Frame):
         self._skeleton_phase = 0
         self._event_labels = {}
         self._details_open = False
+        self._on_activate = None
+        self._period_compare_label = "vs período anterior"
+        self._sparkline_hover_idx = None
+        self._sparkline_hover_text = ""
+        self._last_flash_at = 0.0
+        self._last_pulse_at = 0.0
 
         self.title_var = tk.StringVar(value=f"{icon} {title}")
         self._target_value_text = str(value)
@@ -484,6 +514,8 @@ class AppMetricCard(tk.Frame):
         self.donut_canvas.bind("<Return>", lambda _e: self._on_donut_click(_e), add="+")
         self.donut_canvas.bind("<space>", lambda _e: self._on_donut_click(_e), add="+")
         self.sparkline.bind("<Configure>", lambda _e: self._draw_sparkline(force=True), add="+")
+        self.sparkline.bind("<Motion>", self._on_sparkline_hover, add="+")
+        self.sparkline.bind("<Leave>", self._on_sparkline_leave, add="+")
 
         self.legend_consumed.bind("<Enter>", lambda _e: self._set_hover_segment("consumed"), add="+")
         self.legend_remaining.bind("<Enter>", lambda _e: self._set_hover_segment("remaining"), add="+")
@@ -521,8 +553,10 @@ class AppMetricCard(tk.Frame):
 
         self.bind("<Enter>", self._on_card_hover_enter, add="+")
         self.bind("<Leave>", self._on_card_hover_leave, add="+")
+        self.bind("<Button-1>", self._on_card_activate, add="+")
         self.body.bind("<Enter>", self._on_card_hover_enter, add="+")
         self.body.bind("<Leave>", self._on_card_hover_leave, add="+")
+        self.body.bind("<Button-1>", self._on_card_activate, add="+")
 
         self.after(0, self._draw_bottom_curve)
         self.after(0, lambda: self._draw_donut(force=True))
@@ -766,7 +800,7 @@ class AppMetricCard(tk.Frame):
             return
         def _run(latency_ms=0.0):
             self._perf_low_motion = latency_ms > 40.0
-            self._sparkline_renderer.draw(self.sparkline, self._sparkline_data, self._tone, force=force, event_labels=self._event_labels)
+            self._sparkline_renderer.draw(self.sparkline, self._sparkline_data, self._tone, force=force, event_labels=self._event_labels, targets=self._metric_data.targets, hover_index=self._sparkline_hover_idx, hover_text=self._sparkline_hover_text)
             self._update_accessibility_colors()
         SharedRepaintScheduler.request(self, _run, key="sparkline")
 
@@ -854,7 +888,14 @@ class AppMetricCard(tk.Frame):
             faixa = "Faixa de atenção"
         else:
             faixa = "Faixa normal"
-        self.context_var.set(f"{label} • Último ciclo {last:.0f} • Média 7d {avg:.0f} • Variação {delta:+.0f}% • {faixa}")
+        vs_ontem = (last - vals[-2]) if len(vals) > 1 else 0.0
+        risco_txt = "Risco baixo"
+        if avg > 0:
+            tendencia_dia = max(0.0, last - avg)
+            if tendencia_dia > 0:
+                dias = int(max(1.0, (self._capacity_limit_n - self._capacity_consumed_n) / tendencia_dia))
+                risco_txt = f"Risco de estourar em ~{dias}d"
+        self.context_var.set(f"{label} • Último ciclo {last:.0f} • Média 7d {avg:.0f} • vs ontem {vs_ontem:+.0f} • Variação {delta:+.0f}% • {faixa} • {risco_txt}")
         ev = ", ".join(str(e) for e in (self._metric_data.events or [])[-3:]) or "Sem eventos recentes"
         self.details_var.set(f"7d: min {min(vals):.0f} • max {max(vals):.0f}\n30d: tendência {delta:+.1f}%\nEventos: {ev}")
 
@@ -1212,6 +1253,34 @@ class AppMetricCard(tk.Frame):
     def _on_card_hover_leave(self, _event=None):
         self._animate_card_lift(False)
 
+    def _on_sparkline_hover(self, event=None):
+        try:
+            w = max(1, int(self.sparkline.winfo_width()))
+            x = max(0, min(int(getattr(event, "x", 0)), w))
+            idx = int(round((x / max(1, w - 1)) * (len(self._sparkline_data) - 1)))
+            val = self._sparkline_data[idx]
+            evt = (self._event_labels or {}).get(idx, "")
+            self._sparkline_hover_idx = idx
+            self._sparkline_hover_text = f"D-{len(self._sparkline_data)-1-idx} {val:.0f} {evt}".strip()
+            self._draw_sparkline()
+        except Exception:
+            pass
+
+    def _on_sparkline_leave(self, _event=None):
+        self._sparkline_hover_idx = None
+        self._sparkline_hover_text = ""
+        self._draw_sparkline()
+
+    def set_action(self, callback):
+        self._on_activate = callback
+
+    def _on_card_activate(self, _event=None):
+        if callable(self._on_activate):
+            try:
+                self._on_activate()
+            except Exception:
+                pass
+
     def _pulse_card_status(self):
         try:
             if self._pulse_after:
@@ -1238,7 +1307,10 @@ class AppMetricCard(tk.Frame):
         self.title_var.set(f"{self._icon} {text}".strip())
 
     def flash(self, duration_ms: int = 280):
+        if (time.time() - self._last_flash_at) < 1.6:
+            return
         try:
+            self._last_flash_at = time.time()
             self.configure(highlightbackground=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")), highlightthickness=2)
             if self._flash_after:
                 self.after_cancel(self._flash_after)
@@ -1253,11 +1325,15 @@ class AppMetricCard(tk.Frame):
 
     def set_trend(self, delta: int):
         if delta > 0:
-            self.trend_var.set(f"Atenção • ↑ +{delta} vs último ciclo")
+            self.trend_var.set(f"Atenção • ↑ +{delta} {self._period_compare_label}")
         elif delta < 0:
-            self.trend_var.set(f"Crítico • ↓ {delta} vs último ciclo")
+            self.trend_var.set(f"Crítico • ↓ {delta} {self._period_compare_label}")
         else:
-            self.trend_var.set("Info • → estável")
+            self.trend_var.set(f"Info • → estável {self._period_compare_label}")
+
+    def set_temporal_compare(self, label: str):
+        self._period_compare_label = str(label or "vs período anterior")
+        self.compare_var.set(f"Comparação temporal • {self._period_compare_label}")
 
     def set_meta(self, text: str):
         self._meta_base_text = self._truncate_text(str(text), 52)
@@ -1281,18 +1357,23 @@ class AppMetricCard(tk.Frame):
         self._capacity_percent = max(0.0, min(1.0, consumed_n / float(limit_n)))
         self._state.capacity_percent = self._capacity_percent
 
-        warning_max = float(self._metric_data.targets.get("warning_max", 0.85))
+        warning_max = float(self._metric_data.targets.get("warning_max", UI_THEME.get("bullet_warning_threshold", 0.85)))
         normal_max = float(self._metric_data.targets.get("normal_max", 0.70))
+        self._state.warning_threshold = warning_max
         prefix = "Info • "
         if consumed_n > limit_n:
             self._tone = "danger"
             prefix = "Crítico • "
-            self._pulse_card_status()
+            if (time.time() - self._last_pulse_at) > 3.0:
+                self._last_pulse_at = time.time()
+                self._pulse_card_status()
             self.set_meta("Crítico: limite excedido")
         elif self._capacity_percent >= warning_max:
             self._tone = "warning"
             prefix = "Atenção • "
-            self._pulse_card_status()
+            if (time.time() - self._last_pulse_at) > 3.0:
+                self._last_pulse_at = time.time()
+                self._pulse_card_status()
             self.set_meta("Atenção: próximo do limite")
         elif self._capacity_percent <= normal_max * 0.5:
             self._tone = "success"
