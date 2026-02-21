@@ -281,6 +281,17 @@ class AppMetricCard(tk.Frame):
                     remaining_hovered,
                 )
                 self.donut_canvas.create_arc(
+                    x0 - remaining_pad + shadow_shift_x,
+                    y0 - remaining_pad + shadow_shift_y,
+                    x1 + remaining_pad + shadow_shift_x,
+                    y1 + remaining_pad + shadow_shift_y,
+                    start=90 - (360.0 * consumed),
+                    extent=-(360.0 * remaining),
+                    style="arc",
+                    outline=shadow_outline,
+                    width=base_width + (5 if remaining_hovered else 3),
+                )
+                self.donut_canvas.create_arc(
                     x0 - remaining_pad,
                     y0 - remaining_pad,
                     x1 + remaining_pad,
