@@ -163,29 +163,25 @@ class AppMetricCard(tk.Frame):
             shift_x = max(1.0, float(self._card_shadow_shift_x))
             shift_y = max(1.0, float(self._card_shadow_shift_y))
             steps = max(2, int(self._card_shadow_steps))
-            self.card_shell.update_idletasks()
-            card_w = max(8, int(self.card_shell.winfo_reqwidth()))
-            card_h = max(8, int(self.card_shell.winfo_reqheight()))
-            canvas.coords(self._card_shell_window, 0, 0)
 
-            extra_x = int(round(shift_x + (steps * 0.6) + 1))
-            extra_y = int(round(shift_y + (steps * 0.6) + 1))
-            req_w = card_w + extra_x
-            req_h = card_h + extra_y
-            if int(canvas.cget("width")) != req_w or int(canvas.cget("height")) != req_h:
-                canvas.configure(width=req_w, height=req_h)
+            w = max(24, int(canvas.winfo_width()))
+            h = max(24, int(canvas.winfo_height()))
+            shadow_span = (steps * 0.6) + max(shift_x, shift_y)
+            content_w = max(8, int(w - shadow_span - 1))
+            content_h = max(8, int(h - shadow_span - 1))
+
+            canvas.coords(self._card_shell_window, 0, 0)
+            canvas.itemconfigure(self._card_shell_window, width=content_w, height=content_h)
 
             base_bg = UI_THEME.get("surface", "#151A22")
-            right_start_y = 0
-            bottom_start_x = 0
             for idx in range(steps):
                 opacity = 1.0 - (idx / float(steps - 1))
                 tone = self._blend_hex("#000000", base_bg, 1.0 - opacity)
                 spread = idx * 0.6
-                x = card_w + shift_x + spread
-                y = card_h + shift_y + spread
-                canvas.create_line(x, right_start_y, x, y, fill=tone, tags=("card_shadow",))
-                canvas.create_line(bottom_start_x, y, x, y, fill=tone, tags=("card_shadow",))
+                x = content_w + shift_x + spread
+                y = content_h + shift_y + spread
+                canvas.create_line(x, 0, x, y, fill=tone, tags=("card_shadow",))
+                canvas.create_line(0, y, x, y, fill=tone, tags=("card_shadow",))
         except Exception:
             pass
 
