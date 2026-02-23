@@ -165,8 +165,8 @@ class AppMetricCard(tk.Frame):
             shift_x = max(1, int(self._card_shadow_shift_x))
             shift_y = max(1, int(self._card_shadow_shift_y))
             steps = max(2, int(self._card_shadow_steps))
-            card_w = max(8, w - shift_x - steps)
-            card_h = max(8, h - shift_y - steps)
+            card_w = max(8, w - shift_x)
+            card_h = max(8, h - shift_y)
             canvas.itemconfigure(self._card_shell_window, width=card_w, height=card_h)
             canvas.coords(self._card_shell_window, 0, 0)
 
@@ -224,7 +224,7 @@ class AppMetricCard(tk.Frame):
             x1 = x0 + size
             y1 = y0 + size
             fg_ring = UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7"))
-            rem_ring = UI_THEME.get("surface_alt", "#1B2430")
+            rem_ring = self._blend_hex(UI_THEME.get("surface_alt", "#1B2430"), UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), 0.18)
             consumed = max(0.0, min(1.0, self._capacity_percent * self._donut_consumed_progress))
             remaining_total = max(0.0, 1.0 - self._capacity_percent)
             remaining = max(0.0, min(1.0, remaining_total * self._donut_remaining_progress))
@@ -238,20 +238,24 @@ class AppMetricCard(tk.Frame):
             shadow_bg = UI_THEME.get("surface", "#151A22")
 
             def _draw_shadow_arc(start_angle: float, extent_angle: float, pad: float, hovered: bool):
+                if abs(extent_angle) <= 0.001:
+                    return
+                base_shadow_width = (base_width + 3) if hovered else (base_width + 1)
                 for shadow_idx in range(shadow_steps):
                     opacity = 1.0 - (shadow_idx / float(shadow_steps - 1))
                     shadow_tone = self._blend_hex("#000000", shadow_bg, 1.0 - opacity)
-                    extra_pad = pad + shadow_idx
+                    spread = shadow_idx * 0.6
+                    stroke = max(1, int(round(base_shadow_width - (shadow_idx * 0.5))))
                     self.donut_canvas.create_arc(
-                        x0 - extra_pad + shadow_shift_x,
-                        y0 - extra_pad + shadow_shift_y,
-                        x1 + extra_pad + shadow_shift_x,
-                        y1 + extra_pad + shadow_shift_y,
+                        x0 - pad - spread + shadow_shift_x,
+                        y0 - pad - spread + shadow_shift_y,
+                        x1 + pad + spread + shadow_shift_x,
+                        y1 + pad + spread + shadow_shift_y,
                         start=start_angle,
                         extent=extent_angle,
                         style="arc",
                         outline=shadow_tone,
-                        width=base_width + (4 if hovered else 2),
+                        width=stroke,
                     )
 
             if consumed > 0:
@@ -279,17 +283,6 @@ class AppMetricCard(tk.Frame):
                     -(360.0 * remaining),
                     remaining_pad,
                     remaining_hovered,
-                )
-                self.donut_canvas.create_arc(
-                    x0 - remaining_pad + shadow_shift_x,
-                    y0 - remaining_pad + shadow_shift_y,
-                    x1 + remaining_pad + shadow_shift_x,
-                    y1 + remaining_pad + shadow_shift_y,
-                    start=90 - (360.0 * consumed),
-                    extent=-(360.0 * remaining),
-                    style="arc",
-                    outline=shadow_outline,
-                    width=base_width + (5 if remaining_hovered else 3),
                 )
                 self.donut_canvas.create_arc(
                     x0 - remaining_pad,
