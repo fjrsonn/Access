@@ -97,8 +97,8 @@ class AppMetricCard(tk.Frame):
         self.trend_var = tk.StringVar(value="→ estável")
         self.capacity_var = tk.StringVar(value="Consumido 0% • 0 usados • 0 restantes")
         self._capacity_percent = 0.0
-        self._card_shadow_shift_x = 2
-        self._card_shadow_shift_y = 3
+        self._card_shadow_shift_x = 1.8
+        self._card_shadow_shift_y = 2.4
         self._card_shadow_steps = 7
         self._card_shadow_canvas = tk.Canvas(
             self,
@@ -160,22 +160,28 @@ class AppMetricCard(tk.Frame):
         try:
             canvas = self._card_shadow_canvas
             canvas.delete("card_shadow")
-            w = max(20, int(canvas.winfo_width()))
-            h = max(20, int(canvas.winfo_height()))
-            shift_x = max(1, int(self._card_shadow_shift_x))
-            shift_y = max(1, int(self._card_shadow_shift_y))
+            shift_x = max(1.0, float(self._card_shadow_shift_x))
+            shift_y = max(1.0, float(self._card_shadow_shift_y))
             steps = max(2, int(self._card_shadow_steps))
-            card_w = max(8, w - shift_x)
-            card_h = max(8, h - shift_y)
-            canvas.itemconfigure(self._card_shell_window, width=card_w, height=card_h)
+            self.card_shell.update_idletasks()
+            card_w = max(8, int(self.card_shell.winfo_reqwidth()))
+            card_h = max(8, int(self.card_shell.winfo_reqheight()))
             canvas.coords(self._card_shell_window, 0, 0)
+
+            extra_x = int(round(shift_x + (steps * 0.6) + 1))
+            extra_y = int(round(shift_y + (steps * 0.6) + 1))
+            req_w = card_w + extra_x
+            req_h = card_h + extra_y
+            if int(canvas.cget("width")) != req_w or int(canvas.cget("height")) != req_h:
+                canvas.configure(width=req_w, height=req_h)
 
             base_bg = UI_THEME.get("surface", "#151A22")
             for idx in range(steps):
                 opacity = 1.0 - (idx / float(steps - 1))
                 tone = self._blend_hex("#000000", base_bg, 1.0 - opacity)
-                x = card_w + shift_x + idx
-                y = card_h + shift_y + idx
+                spread = idx * 0.6
+                x = card_w + shift_x + spread
+                y = card_h + shift_y + spread
                 canvas.create_line(x, shift_y, x, y, fill=tone, tags=("card_shadow",))
                 canvas.create_line(shift_x, y, x, y, fill=tone, tags=("card_shadow",))
         except Exception:
