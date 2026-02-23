@@ -176,14 +176,16 @@ class AppMetricCard(tk.Frame):
                 canvas.configure(width=req_w, height=req_h)
 
             base_bg = UI_THEME.get("surface", "#151A22")
+            right_start_y = 0
+            bottom_start_x = 0
             for idx in range(steps):
                 opacity = 1.0 - (idx / float(steps - 1))
                 tone = self._blend_hex("#000000", base_bg, 1.0 - opacity)
                 spread = idx * 0.6
                 x = card_w + shift_x + spread
                 y = card_h + shift_y + spread
-                canvas.create_line(x, shift_y, x, y, fill=tone, tags=("card_shadow",))
-                canvas.create_line(shift_x, y, x, y, fill=tone, tags=("card_shadow",))
+                canvas.create_line(x, right_start_y, x, y, fill=tone, tags=("card_shadow",))
+                canvas.create_line(bottom_start_x, y, x, y, fill=tone, tags=("card_shadow",))
         except Exception:
             pass
 
