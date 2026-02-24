@@ -100,9 +100,14 @@ class AppMetricCard(tk.Frame):
         self._card_shadow_shift_x = 1.8
         self._card_shadow_shift_y = 2.4
         self._card_shadow_steps = 7
+        container_bg = UI_THEME.get("bg", "#0F1115")
+        try:
+            container_bg = parent.cget("bg")
+        except Exception:
+            pass
         self._card_shadow_canvas = tk.Canvas(
             self,
-            bg=UI_THEME.get("surface", "#151A22"),
+            bg=container_bg,
             highlightthickness=0,
             bd=0,
         )
@@ -160,6 +165,10 @@ class AppMetricCard(tk.Frame):
         try:
             canvas = self._card_shadow_canvas
             canvas.delete("card_shadow")
+            try:
+                canvas.configure(bg=self.master.cget("bg"))
+            except Exception:
+                pass
             shift_x = max(1.0, float(self._card_shadow_shift_x))
             shift_y = max(1.0, float(self._card_shadow_shift_y))
             steps = max(2, int(self._card_shadow_steps))
