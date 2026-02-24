@@ -164,19 +164,27 @@ class AppMetricCard(tk.Frame):
             shift_y = max(1.0, float(self._card_shadow_shift_y))
             steps = max(2, int(self._card_shadow_steps))
 
-            w = max(24, int(canvas.winfo_width()))
-            h = max(24, int(canvas.winfo_height()))
+            self.card_shell.update_idletasks()
+            content_w = max(8, int(self.card_shell.winfo_reqwidth()))
+            content_h = max(8, int(self.card_shell.winfo_reqheight()))
 
             canvas.coords(self._card_shell_window, 0, 0)
-            canvas.itemconfigure(self._card_shell_window, width=w, height=h)
+            canvas.itemconfigure(self._card_shell_window, width=content_w, height=content_h)
+
+            shadow_span = (steps * 0.6) + max(shift_x, shift_y)
+            total_w = int(round(content_w + shadow_span + 1))
+            total_h = int(round(content_h + shadow_span + 1))
+            canvas.configure(scrollregion=(0, 0, total_w, total_h))
+            if int(canvas.winfo_width()) < total_w or int(canvas.winfo_height()) < total_h:
+                canvas.configure(width=max(int(canvas.winfo_width()), total_w), height=max(int(canvas.winfo_height()), total_h))
 
             base_bg = UI_THEME.get("surface", "#151A22")
             for idx in range(steps):
                 opacity = 1.0 - (idx / float(steps - 1))
                 tone = self._blend_hex("#000000", base_bg, 1.0 - opacity)
                 spread = idx * 0.6
-                x = max(0.0, (w - 1) - shift_x - spread)
-                y = max(0.0, (h - 1) - shift_y - spread)
+                x = content_w + shift_x + spread
+                y = content_h + shift_y + spread
                 canvas.create_line(x, 0, x, y, fill=tone, tags=("card_shadow",))
                 canvas.create_line(0, y, x, y, fill=tone, tags=("card_shadow",))
         except Exception:
