@@ -778,7 +778,9 @@
             "IDENTIFICACAO": "7927640780810",
             "_entrada_id": 65,
             "DATA_HORA": "17/02/2026 09:10:34",
-            "ID": 65
+            "ID": 65,
+            "STATUS_ENCOMENDA": "AVISADO",
+            "STATUS_DATA_HORA": "21/02/2026 15:19:17"
         },
         {
             "NOME": "VANESSA",
@@ -850,7 +852,9 @@
             "IDENTIFICACAO": "HFBMPSC6WNBR",
             "_entrada_id": 71,
             "DATA_HORA": "17/02/2026 09:10:46",
-            "ID": 71
+            "ID": 71,
+            "STATUS_ENCOMENDA": "SEM CONTATO",
+            "STATUS_DATA_HORA": "21/02/2026 15:20:16"
         },
         {
             "NOME": "MARCOS",
@@ -874,7 +878,9 @@
             "IDENTIFICACAO": "9C3R4DUHASD",
             "_entrada_id": 73,
             "DATA_HORA": "17/02/2026 09:10:50",
-            "ID": 73
+            "ID": 73,
+            "STATUS_ENCOMENDA": "SEM CONTATO",
+            "STATUS_DATA_HORA": "21/02/2026 15:20:11"
         },
         {
             "NOME": "MARIA",
@@ -886,7 +892,9 @@
             "IDENTIFICACAO": "768853798203",
             "_entrada_id": 74,
             "DATA_HORA": "17/02/2026 09:10:52",
-            "ID": 74
+            "ID": 74,
+            "STATUS_ENCOMENDA": "SEM CONTATO",
+            "STATUS_DATA_HORA": "21/02/2026 15:20:08"
         },
         {
             "NOME": "JÚLIA",
@@ -898,7 +906,9 @@
             "IDENTIFICACAO": "EXKUEVYEH5XJBR",
             "_entrada_id": 75,
             "DATA_HORA": "17/02/2026 09:10:54",
-            "ID": 75
+            "ID": 75,
+            "STATUS_ENCOMENDA": "SEM CONTATO",
+            "STATUS_DATA_HORA": "21/02/2026 15:20:01"
         },
         {
             "NOME": "PAULO",
@@ -910,7 +920,9 @@
             "IDENTIFICACAO": "AUCNHLYUD7EW3U",
             "_entrada_id": 76,
             "DATA_HORA": "17/02/2026 09:10:56",
-            "ID": 76
+            "ID": 76,
+            "STATUS_ENCOMENDA": "SEM CONTATO",
+            "STATUS_DATA_HORA": "21/02/2026 15:19:57"
         },
         {
             "NOME": "CARLOS",
@@ -922,7 +934,9 @@
             "IDENTIFICACAO": "9189068917",
             "_entrada_id": 77,
             "DATA_HORA": "17/02/2026 09:10:58",
-            "ID": 77
+            "ID": 77,
+            "STATUS_ENCOMENDA": "AVISADO",
+            "STATUS_DATA_HORA": "21/02/2026 15:19:26"
         },
         {
             "NOME": "RAFAEL",
@@ -934,7 +948,9 @@
             "IDENTIFICACAO": "RRGUSAUBYMYE4",
             "_entrada_id": 78,
             "DATA_HORA": "17/02/2026 09:11:00",
-            "ID": 78
+            "ID": 78,
+            "STATUS_ENCOMENDA": "AVISADO",
+            "STATUS_DATA_HORA": "21/02/2026 15:19:45"
         },
         {
             "NOME": "BRUNO",
@@ -946,7 +962,9 @@
             "IDENTIFICACAO": "40622321615",
             "_entrada_id": 79,
             "DATA_HORA": "17/02/2026 09:11:02",
-            "ID": 79
+            "ID": 79,
+            "STATUS_ENCOMENDA": "AVISADO",
+            "STATUS_DATA_HORA": "21/02/2026 15:19:20"
         },
         {
             "NOME": "ALINE",
@@ -958,7 +976,9 @@
             "IDENTIFICACAO": "LMMNN5S0GN4EBBR",
             "_entrada_id": 80,
             "DATA_HORA": "17/02/2026 09:11:04",
-            "ID": 80
+            "ID": 80,
+            "STATUS_ENCOMENDA": "AVISADO",
+            "STATUS_DATA_HORA": "21/02/2026 15:19:38"
         },
         {
             "NOME": "JOÃO",
@@ -970,7 +990,9 @@
             "IDENTIFICACAO": "N1R1FQ80EGGXZFVBR",
             "_entrada_id": 81,
             "DATA_HORA": "17/02/2026 09:11:06",
-            "ID": 81
+            "ID": 81,
+            "STATUS_ENCOMENDA": "AVISADO",
+            "STATUS_DATA_HORA": "21/02/2026 15:19:24"
         },
         {
             "NOME": "LUCAS",
@@ -982,7 +1004,9 @@
             "IDENTIFICACAO": "ZLPCMETMIB3BLY0",
             "_entrada_id": 82,
             "DATA_HORA": "17/02/2026 09:11:08",
-            "ID": 82
+            "ID": 82,
+            "STATUS_ENCOMENDA": "AVISADO",
+            "STATUS_DATA_HORA": "21/02/2026 15:19:35"
         },
         {
             "NOME": "LUCAS",

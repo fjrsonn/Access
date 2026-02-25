@@ -1480,28 +1480,6 @@
       ]
     },
     {
-      "identidade": "ENCOMENDA|15|101|SEM_STATUS",
-      "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
-      "origem_status": "SEM_STATUS",
-      "bloco": "15",
-      "apartamento": "101",
-      "quantidade": 1,
-      "registros": [
-        {
-          "NOME": "GABRIEL",
-          "SOBRENOME": "RODRIGUES",
-          "BLOCO": "15",
-          "APARTAMENTO": "101",
-          "TIPO": "SACOLA",
-          "LOJA": "TERABYTE",
-          "IDENTIFICACAO": "7927640780810",
-          "_entrada_id": 65,
-          "DATA_HORA": "17/02/2026 09:10:34",
-          "ID": 65
-        }
-      ]
-    },
-    {
       "identidade": "ENCOMENDA|9|118|SEM_STATUS",
       "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
       "origem_status": "SEM_STATUS",
@@ -1612,9 +1590,9 @@
       ]
     },
     {
-      "identidade": "ENCOMENDA|11|131|SEM_STATUS",
+      "identidade": "ENCOMENDA|11|131|SEM_CONTATO",
       "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
-      "origem_status": "SEM_STATUS",
+      "origem_status": "SEM_CONTATO",
       "bloco": "11",
       "apartamento": "131",
       "quantidade": 1,
@@ -1629,7 +1607,9 @@
           "IDENTIFICACAO": "HFBMPSC6WNBR",
           "_entrada_id": 71,
           "DATA_HORA": "17/02/2026 09:10:46",
-          "ID": 71
+          "ID": 71,
+          "STATUS_ENCOMENDA": "SEM CONTATO",
+          "STATUS_DATA_HORA": "21/02/2026 15:20:16"
         }
       ]
     },
@@ -1656,9 +1636,9 @@
       ]
     },
     {
-      "identidade": "ENCOMENDA|7|86|SEM_STATUS",
+      "identidade": "ENCOMENDA|7|86|SEM_CONTATO",
       "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
-      "origem_status": "SEM_STATUS",
+      "origem_status": "SEM_CONTATO",
       "bloco": "7",
       "apartamento": "86",
       "quantidade": 1,
@@ -1673,14 +1653,16 @@
           "IDENTIFICACAO": "9C3R4DUHASD",
           "_entrada_id": 73,
           "DATA_HORA": "17/02/2026 09:10:50",
-          "ID": 73
+          "ID": 73,
+          "STATUS_ENCOMENDA": "SEM CONTATO",
+          "STATUS_DATA_HORA": "21/02/2026 15:20:11"
         }
       ]
     },
     {
-      "identidade": "ENCOMENDA|3|73|SEM_STATUS",
+      "identidade": "ENCOMENDA|3|73|SEM_CONTATO",
       "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
-      "origem_status": "SEM_STATUS",
+      "origem_status": "SEM_CONTATO",
       "bloco": "3",
       "apartamento": "73",
       "quantidade": 1,
@@ -1695,14 +1677,16 @@
           "IDENTIFICACAO": "768853798203",
           "_entrada_id": 74,
           "DATA_HORA": "17/02/2026 09:10:52",
-          "ID": 74
+          "ID": 74,
+          "STATUS_ENCOMENDA": "SEM CONTATO",
+          "STATUS_DATA_HORA": "21/02/2026 15:20:08"
         }
       ]
     },
     {
-      "identidade": "ENCOMENDA|4|88|SEM_STATUS",
+      "identidade": "ENCOMENDA|4|88|SEM_CONTATO",
       "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
-      "origem_status": "SEM_STATUS",
+      "origem_status": "SEM_CONTATO",
       "bloco": "4",
       "apartamento": "88",
       "quantidade": 1,
@@ -1717,14 +1701,16 @@
           "IDENTIFICACAO": "EXKUEVYEH5XJBR",
           "_entrada_id": 75,
           "DATA_HORA": "17/02/2026 09:10:54",
-          "ID": 75
+          "ID": 75,
+          "STATUS_ENCOMENDA": "SEM CONTATO",
+          "STATUS_DATA_HORA": "21/02/2026 15:20:01"
         }
       ]
     },
     {
-      "identidade": "ENCOMENDA|2|161|SEM_STATUS",
+      "identidade": "ENCOMENDA|2|161|SEM_CONTATO",
       "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
-      "origem_status": "SEM_STATUS",
+      "origem_status": "SEM_CONTATO",
       "bloco": "2",
       "apartamento": "161",
       "quantidade": 1,
@@ -1739,139 +1725,9 @@
           "IDENTIFICACAO": "AUCNHLYUD7EW3U",
           "_entrada_id": 76,
           "DATA_HORA": "17/02/2026 09:10:56",
-          "ID": 76
-        }
-      ]
-    },
-    {
-      "identidade": "ENCOMENDA|3|147|SEM_STATUS",
-      "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
-      "origem_status": "SEM_STATUS",
-      "bloco": "3",
-      "apartamento": "147",
-      "quantidade": 1,
-      "registros": [
-        {
-          "NOME": "CARLOS",
-          "SOBRENOME": "MELO",
-          "BLOCO": "3",
-          "APARTAMENTO": "147",
-          "TIPO": "ENVELOPE",
-          "LOJA": "MAGAZINE LUIZA",
-          "IDENTIFICACAO": "9189068917",
-          "_entrada_id": 77,
-          "DATA_HORA": "17/02/2026 09:10:58",
-          "ID": 77
-        }
-      ]
-    },
-    {
-      "identidade": "ENCOMENDA|14|71|SEM_STATUS",
-      "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
-      "origem_status": "SEM_STATUS",
-      "bloco": "14",
-      "apartamento": "71",
-      "quantidade": 1,
-      "registros": [
-        {
-          "NOME": "RAFAEL",
-          "SOBRENOME": "LOPES",
-          "BLOCO": "14",
-          "APARTAMENTO": "71",
-          "TIPO": "CAIXA",
-          "LOJA": "CEA",
-          "IDENTIFICACAO": "RRGUSAUBYMYE4",
-          "_entrada_id": 78,
-          "DATA_HORA": "17/02/2026 09:11:00",
-          "ID": 78
-        }
-      ]
-    },
-    {
-      "identidade": "ENCOMENDA|14|197|SEM_STATUS",
-      "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
-      "origem_status": "SEM_STATUS",
-      "bloco": "14",
-      "apartamento": "197",
-      "quantidade": 1,
-      "registros": [
-        {
-          "NOME": "BRUNO",
-          "SOBRENOME": "FERREIRA",
-          "BLOCO": "14",
-          "APARTAMENTO": "197",
-          "TIPO": "PACOTE",
-          "LOJA": "CEA",
-          "IDENTIFICACAO": "40622321615",
-          "_entrada_id": 79,
-          "DATA_HORA": "17/02/2026 09:11:02",
-          "ID": 79
-        }
-      ]
-    },
-    {
-      "identidade": "ENCOMENDA|15|62|SEM_STATUS",
-      "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
-      "origem_status": "SEM_STATUS",
-      "bloco": "15",
-      "apartamento": "62",
-      "quantidade": 1,
-      "registros": [
-        {
-          "NOME": "ALINE",
-          "SOBRENOME": "SOUZA",
-          "BLOCO": "15",
-          "APARTAMENTO": "62",
-          "TIPO": "ENVELOPE",
-          "LOJA": "TIKTOK",
-          "IDENTIFICACAO": "LMMNN5S0GN4EBBR",
-          "_entrada_id": 80,
-          "DATA_HORA": "17/02/2026 09:11:04",
-          "ID": 80
-        }
-      ]
-    },
-    {
-      "identidade": "ENCOMENDA|8|71|SEM_STATUS",
-      "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
-      "origem_status": "SEM_STATUS",
-      "bloco": "8",
-      "apartamento": "71",
-      "quantidade": 1,
-      "registros": [
-        {
-          "NOME": "JOÃO",
-          "SOBRENOME": "CARVALHO",
-          "BLOCO": "8",
-          "APARTAMENTO": "71",
-          "TIPO": "SACOLA",
-          "LOJA": "CORREIOS",
-          "IDENTIFICACAO": "N1R1FQ80EGGXZFVBR",
-          "_entrada_id": 81,
-          "DATA_HORA": "17/02/2026 09:11:06",
-          "ID": 81
-        }
-      ]
-    },
-    {
-      "identidade": "ENCOMENDA|13|25|SEM_STATUS",
-      "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
-      "origem_status": "SEM_STATUS",
-      "bloco": "13",
-      "apartamento": "25",
-      "quantidade": 1,
-      "registros": [
-        {
-          "NOME": "LUCAS",
-          "SOBRENOME": "SILVA",
-          "BLOCO": "13",
-          "APARTAMENTO": "25",
-          "TIPO": "SACOLA",
-          "LOJA": "MAGAZINE LUIZA",
-          "IDENTIFICACAO": "ZLPCMETMIB3BLY0",
-          "_entrada_id": 82,
-          "DATA_HORA": "17/02/2026 09:11:08",
-          "ID": 82
+          "ID": 76,
+          "STATUS_ENCOMENDA": "SEM CONTATO",
+          "STATUS_DATA_HORA": "21/02/2026 15:19:57"
         }
       ]
     },
