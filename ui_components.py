@@ -143,11 +143,13 @@ class AppMetricCard(tk.Frame):
         self.capacity_lbl = tk.Label(self.body, textvariable=self.capacity_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self.meta_lbl = tk.Label(self.body, textvariable=self.meta_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self._apply_density("confortavel")
+        self._card_shadow_canvas.bind("<Configure>", self._draw_card_shadow, add="+")
         self.bottom_curve.bind("<Configure>", self._draw_bottom_curve, add="+")
         self.donut_canvas.bind("<Configure>", self._draw_donut, add="+")
         self.donut_canvas.bind("<Motion>", self._on_donut_hover, add="+")
         self.donut_canvas.bind("<Leave>", self._on_donut_leave, add="+")
         self.donut_canvas.bind("<Button-1>", self._on_donut_click, add="+")
+        self.after(0, self._draw_card_shadow)
         self.after(0, self._draw_bottom_curve)
         self.after(0, self._draw_donut)
 
