@@ -87,7 +87,7 @@ class AppMetricCard(tk.Frame):
         super().__init__(
             parent,
             bg=UI_THEME.get("surface", "#151A22"),
-            highlightthickness=1,
+            highlightthickness=0,
             highlightbackground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
             bd=0,
         )
