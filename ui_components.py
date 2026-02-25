@@ -84,7 +84,7 @@ class AppStatusBar(tk.Frame):
 
 class AppMetricCard(tk.Frame):
     def __init__(self, parent, title: str, value: str = "0", tone: str = "info", icon: str = "●"):
-        super().__init__(parent, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=1, highlightbackground="#000000")
+        super().__init__(parent, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
         self._tone = tone
         self._title = title
         self._icon = icon
@@ -97,12 +97,29 @@ class AppMetricCard(tk.Frame):
         self.trend_var = tk.StringVar(value="→ estável")
         self.capacity_var = tk.StringVar(value="Consumido 0% • 0 usados • 0 restantes")
         self._capacity_percent = 0.0
-        self.accent_wrap = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"), width=4)
+        self._card_shadow_shift_x = 1.8
+        self._card_shadow_shift_y = 2.4
+        self._card_shadow_steps = 7
+        container_bg = UI_THEME.get("bg", "#0F1115")
+        try:
+            container_bg = parent.cget("bg")
+        except Exception:
+            pass
+        self._card_shadow_canvas = tk.Canvas(
+            self,
+            bg=container_bg,
+            highlightthickness=0,
+            bd=0,
+        )
+        self._card_shadow_canvas.pack(fill=tk.BOTH, expand=True)
+        self.card_shell = tk.Frame(self._card_shadow_canvas, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
+        self._card_shell_window = self._card_shadow_canvas.create_window(0, 0, anchor="nw", window=self.card_shell)
+        self.accent_wrap = tk.Frame(self.card_shell, bg=UI_THEME.get("surface", "#151A22"), width=4)
         self.accent_wrap.pack(side=tk.LEFT, fill=tk.Y)
         self.accent = tk.Frame(self.accent_wrap, bg=UI_THEME.get(tone, UI_THEME.get("primary", "#2F81F7")))
         self.accent.place(relx=0.0, rely=1.0, relwidth=1.0, relheight=0.0, anchor="sw")
         self._accent_anim_after = None
-        self.body = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"))
+        self.body = tk.Frame(self.card_shell, bg=UI_THEME.get("surface", "#151A22"))
         self.body.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         self.bottom_curve = tk.Canvas(self.body, height=1, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
         self.bottom_curve.pack(side=tk.BOTTOM, fill=tk.X)
@@ -134,13 +151,53 @@ class AppMetricCard(tk.Frame):
         self.capacity_lbl = tk.Label(self.body, textvariable=self.capacity_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self.meta_lbl = tk.Label(self.body, textvariable=self.meta_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self._apply_density("confortavel")
+        self._card_shadow_canvas.bind("<Configure>", self._draw_card_shadow, add="+")
         self.bottom_curve.bind("<Configure>", self._draw_bottom_curve, add="+")
         self.donut_canvas.bind("<Configure>", self._draw_donut, add="+")
         self.donut_canvas.bind("<Motion>", self._on_donut_hover, add="+")
         self.donut_canvas.bind("<Leave>", self._on_donut_leave, add="+")
         self.donut_canvas.bind("<Button-1>", self._on_donut_click, add="+")
+        self.after(0, self._draw_card_shadow)
         self.after(0, self._draw_bottom_curve)
         self.after(0, self._draw_donut)
+
+    def _draw_card_shadow(self, _event=None):
+        try:
+            canvas = self._card_shadow_canvas
+            canvas.delete("card_shadow")
+            try:
+                canvas.configure(bg=self.master.cget("bg"))
+            except Exception:
+                pass
+            shift_x = max(1.0, float(self._card_shadow_shift_x))
+            shift_y = max(1.0, float(self._card_shadow_shift_y))
+            steps = max(2, int(self._card_shadow_steps))
+
+            self.card_shell.update_idletasks()
+            content_w = max(8, int(self.card_shell.winfo_reqwidth()))
+            content_h = max(8, int(self.card_shell.winfo_reqheight()))
+
+            canvas.coords(self._card_shell_window, 0, 0)
+            canvas.itemconfigure(self._card_shell_window, width=content_w, height=content_h)
+
+            shadow_span = (steps * 0.6) + max(shift_x, shift_y)
+            total_w = int(round(content_w + shadow_span + 1))
+            total_h = int(round(content_h + shadow_span + 1))
+            canvas.configure(scrollregion=(0, 0, total_w, total_h))
+            if int(canvas.winfo_width()) < total_w or int(canvas.winfo_height()) < total_h:
+                canvas.configure(width=max(int(canvas.winfo_width()), total_w), height=max(int(canvas.winfo_height()), total_h))
+
+            base_bg = UI_THEME.get("surface", "#151A22")
+            for idx in range(steps):
+                opacity = 1.0 - (idx / float(steps - 1))
+                tone = self._blend_hex("#000000", base_bg, 1.0 - opacity)
+                spread = idx * 0.6
+                x = content_w + shift_x + spread
+                y = content_h + shift_y + spread
+                canvas.create_line(x, shift_y, x, y, fill=tone, tags=("card_shadow",))
+                canvas.create_line(shift_x, y, x, y, fill=tone, tags=("card_shadow",))
+        except Exception:
+            pass
 
     def _draw_bottom_curve(self, _event=None):
         try:
@@ -185,13 +242,43 @@ class AppMetricCard(tk.Frame):
             x1 = x0 + size
             y1 = y0 + size
             fg_ring = UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7"))
-            rem_ring = UI_THEME.get("surface_alt", "#1B2430")
+            rem_ring = self._blend_hex(UI_THEME.get("surface_alt", "#1B2430"), UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), 0.18)
             consumed = max(0.0, min(1.0, self._capacity_percent * self._donut_consumed_progress))
             remaining_total = max(0.0, 1.0 - self._capacity_percent)
             remaining = max(0.0, min(1.0, remaining_total * self._donut_remaining_progress))
 
             consumed_hovered = self._donut_hover_segment == "consumed"
             remaining_hovered = self._donut_hover_segment == "remaining"
+
+            shadow_shift_x = float(self._card_shadow_shift_x)
+            shadow_shift_y = float(self._card_shadow_shift_y)
+            shadow_steps = int(self._card_shadow_steps)
+            shadow_bg = UI_THEME.get("surface", "#151A22")
+
+            def _draw_shadow_arc(start_angle: float, extent_angle: float, pad: float, hovered: bool):
+                if abs(extent_angle) <= 0.001:
+                    return
+                base_shadow_width = (base_width + 3) if hovered else (base_width + 1)
+                for shadow_idx in range(shadow_steps):
+                    opacity = 1.0 - (shadow_idx / float(shadow_steps - 1))
+                    shadow_tone = self._blend_hex("#000000", shadow_bg, 1.0 - opacity)
+                    spread = shadow_idx * 0.6
+                    stroke = max(1, int(round(base_shadow_width - (shadow_idx * 0.5))))
+                    self.donut_canvas.create_arc(
+                        x0 - pad - spread + shadow_shift_x,
+                        y0 - pad - spread + shadow_shift_y,
+                        x1 + pad + spread + shadow_shift_x,
+                        y1 + pad + spread + shadow_shift_y,
+                        start=start_angle,
+                        extent=extent_angle,
+                        style="arc",
+                        outline=shadow_tone,
+                        width=stroke,
+                    )
+
+            if consumed > 0:
+                consumed_pad = hover_extra if consumed_hovered else 0
+                _draw_shadow_arc(90, -(360.0 * consumed), consumed_pad, consumed_hovered)
 
             if consumed > 0:
                 consumed_pad = hover_extra if consumed_hovered else 0
@@ -209,6 +296,12 @@ class AppMetricCard(tk.Frame):
                 )
             if remaining > 0:
                 remaining_pad = hover_extra if remaining_hovered else 0
+                _draw_shadow_arc(
+                    90 - (360.0 * consumed),
+                    -(360.0 * remaining),
+                    remaining_pad,
+                    remaining_hovered,
+                )
                 self.donut_canvas.create_arc(
                     x0 - remaining_pad,
                     y0 - remaining_pad,
@@ -231,6 +324,29 @@ class AppMetricCard(tk.Frame):
             )
         except Exception:
             pass
+
+    @staticmethod
+    def _blend_hex(color_a: str, color_b: str, amount: float) -> str:
+        def _to_rgb(value: str) -> tuple[int, int, int]:
+            clean = str(value).strip().lstrip("#")
+            if len(clean) == 3:
+                clean = "".join(ch * 2 for ch in clean)
+            if len(clean) != 6:
+                return (0, 0, 0)
+            try:
+                return tuple(int(clean[idx:idx + 2], 16) for idx in (0, 2, 4))
+            except ValueError:
+                return (0, 0, 0)
+
+        mix = max(0.0, min(1.0, float(amount)))
+        a_r, a_g, a_b = _to_rgb(color_a)
+        b_r, b_g, b_b = _to_rgb(color_b)
+        out = (
+            int(round((a_r * (1.0 - mix)) + (b_r * mix))),
+            int(round((a_g * (1.0 - mix)) + (b_g * mix))),
+            int(round((a_b * (1.0 - mix)) + (b_b * mix))),
+        )
+        return f"#{out[0]:02x}{out[1]:02x}{out[2]:02x}"
 
     def _center_percentage_text(self) -> str:
         if self._donut_hover_segment == "consumed":
@@ -393,7 +509,7 @@ class AppMetricCard(tk.Frame):
             self.configure(highlightbackground=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")), highlightthickness=2)
             if self._flash_after:
                 self.after_cancel(self._flash_after)
-            self._flash_after = self.after(duration_ms, lambda: self.configure(highlightbackground="#000000", highlightthickness=1))
+            self._flash_after = self.after(duration_ms, lambda: self.configure(highlightthickness=0))
         except Exception:
             pass
 
