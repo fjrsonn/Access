@@ -194,8 +194,8 @@ class AppMetricCard(tk.Frame):
                 spread = idx * 0.6
                 x = content_w + shift_x + spread
                 y = content_h + shift_y + spread
-                canvas.create_line(x, 0, x, y, fill=tone, tags=("card_shadow",))
-                canvas.create_line(0, y, x, y, fill=tone, tags=("card_shadow",))
+                canvas.create_line(shift_x, shift_y, x, y, fill=tone, tags=("card_shadow",))
+                canvas.create_line(shift_x, y, x, y, fill=tone, tags=("card_shadow",))
         except Exception:
             pass
 
@@ -250,9 +250,9 @@ class AppMetricCard(tk.Frame):
             consumed_hovered = self._donut_hover_segment == "consumed"
             remaining_hovered = self._donut_hover_segment == "remaining"
 
-            shadow_shift_x = 1.8
-            shadow_shift_y = 2.4
-            shadow_steps = 7
+            shadow_shift_x = float(self._card_shadow_shift_x)
+            shadow_shift_y = float(self._card_shadow_shift_y)
+            shadow_steps = int(self._card_shadow_steps)
             shadow_bg = UI_THEME.get("surface", "#151A22")
 
             def _draw_shadow_arc(start_angle: float, extent_angle: float, pad: float, hovered: bool):
