@@ -84,7 +84,13 @@ class AppStatusBar(tk.Frame):
 
 class AppMetricCard(tk.Frame):
     def __init__(self, parent, title: str, value: str = "0", tone: str = "info", icon: str = "●"):
-        super().__init__(parent, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
+        super().__init__(
+            parent,
+            bg=UI_THEME.get("surface", "#151A22"),
+            highlightthickness=0,
+            highlightbackground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
+            bd=0,
+        )
         self._tone = tone
         self._title = title
         self._icon = icon
@@ -100,12 +106,26 @@ class AppMetricCard(tk.Frame):
         self._card_shadow_shift_x = 1.8
         self._card_shadow_shift_y = 2.4
         self._card_shadow_steps = 7
-        self._card_shadow_canvas = None
-        self._card_shell_window = None
-        border_color = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
-        self.configure(highlightthickness=1, highlightbackground=border_color, highlightcolor=border_color)
-        self.card_shell = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
-        self.card_shell.pack(fill=tk.BOTH, expand=True)
+        container_bg = UI_THEME.get("bg", "#0F1115")
+        try:
+            container_bg = parent.cget("bg")
+        except Exception:
+            pass
+        self._card_shadow_canvas = tk.Canvas(
+            self,
+            bg=container_bg,
+            highlightthickness=0,
+            bd=0,
+        )
+        self._card_shadow_canvas.pack(fill=tk.BOTH, expand=True)
+        self.card_shell = tk.Frame(
+            self._card_shadow_canvas,
+            bg=UI_THEME.get("surface", "#151A22"),
+            highlightthickness=1,
+            highlightbackground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
+            bd=0,
+        )
+        self._card_shell_window = self._card_shadow_canvas.create_window(0, 0, anchor="nw", window=self.card_shell)
         self.accent_wrap = tk.Frame(self.card_shell, bg=UI_THEME.get("surface", "#151A22"), width=4)
         self.accent_wrap.pack(side=tk.LEFT, fill=tk.Y)
         self.accent = tk.Frame(self.accent_wrap, bg=UI_THEME.get(tone, UI_THEME.get("primary", "#2F81F7")))
@@ -154,8 +174,18 @@ class AppMetricCard(tk.Frame):
         self.after(0, self._draw_donut)
 
     def _draw_card_shadow(self, _event=None):
-        """Mantido por compatibilidade após remoção da sombra dos cards."""
-        return
+        try:
+            canvas = self._card_shadow_canvas
+            canvas.delete("card_shadow")
+            self.card_shell.update_idletasks()
+            content_w = max(8, int(self.card_shell.winfo_reqwidth()))
+            content_h = max(8, int(self.card_shell.winfo_reqheight()))
+
+            canvas.coords(self._card_shell_window, 0, 0)
+            canvas.itemconfigure(self._card_shell_window, width=content_w, height=content_h)
+            canvas.configure(scrollregion=(0, 0, content_w, content_h), width=content_w, height=content_h)
+        except Exception:
+            pass
 
     def _draw_bottom_curve(self, _event=None):
         try:
@@ -467,7 +497,7 @@ class AppMetricCard(tk.Frame):
             self.configure(highlightbackground=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")), highlightthickness=2)
             if self._flash_after:
                 self.after_cancel(self._flash_after)
-            self._flash_after = self.after(duration_ms, lambda: self.configure(highlightthickness=1, highlightbackground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), highlightcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))))
+            self._flash_after = self.after(duration_ms, lambda: self.configure(highlightthickness=0))
         except Exception:
             pass
 
