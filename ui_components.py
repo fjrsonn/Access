@@ -194,7 +194,7 @@ class AppMetricCard(tk.Frame):
                 spread = idx * 0.6
                 x = content_w + shift_x + spread
                 y = content_h + shift_y + spread
-                canvas.create_line(shift_x, shift_y, x, y, fill=tone, tags=("card_shadow",))
+                canvas.create_line(x, shift_y, x, y, fill=tone, tags=("card_shadow",))
                 canvas.create_line(shift_x, y, x, y, fill=tone, tags=("card_shadow",))
         except Exception:
             pass
