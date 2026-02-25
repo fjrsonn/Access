@@ -100,20 +100,10 @@ class AppMetricCard(tk.Frame):
         self._card_shadow_shift_x = 1.8
         self._card_shadow_shift_y = 2.4
         self._card_shadow_steps = 7
-        container_bg = UI_THEME.get("bg", "#0F1115")
-        try:
-            container_bg = parent.cget("bg")
-        except Exception:
-            pass
-        self._card_shadow_canvas = tk.Canvas(
-            self,
-            bg=container_bg,
-            highlightthickness=0,
-            bd=0,
-        )
-        self._card_shadow_canvas.pack(fill=tk.BOTH, expand=True)
-        self.card_shell = tk.Frame(self._card_shadow_canvas, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
-        self._card_shell_window = self._card_shadow_canvas.create_window(0, 0, anchor="nw", window=self.card_shell)
+        border_color = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
+        self.configure(highlightthickness=1, highlightbackground=border_color, highlightcolor=border_color)
+        self.card_shell = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
+        self.card_shell.pack(fill=tk.BOTH, expand=True)
         self.accent_wrap = tk.Frame(self.card_shell, bg=UI_THEME.get("surface", "#151A22"), width=4)
         self.accent_wrap.pack(side=tk.LEFT, fill=tk.Y)
         self.accent = tk.Frame(self.accent_wrap, bg=UI_THEME.get(tone, UI_THEME.get("primary", "#2F81F7")))
@@ -509,7 +499,7 @@ class AppMetricCard(tk.Frame):
             self.configure(highlightbackground=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")), highlightthickness=2)
             if self._flash_after:
                 self.after_cancel(self._flash_after)
-            self._flash_after = self.after(duration_ms, lambda: self.configure(highlightthickness=0))
+            self._flash_after = self.after(duration_ms, lambda: self.configure(highlightthickness=1, highlightbackground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), highlightcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))))
         except Exception:
             pass
 
