@@ -100,6 +100,8 @@ class AppMetricCard(tk.Frame):
         self._card_shadow_shift_x = 1.8
         self._card_shadow_shift_y = 2.4
         self._card_shadow_steps = 7
+        self._card_shadow_canvas = None
+        self._card_shell_window = None
         border_color = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
         self.configure(highlightthickness=1, highlightbackground=border_color, highlightcolor=border_color)
         self.card_shell = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
