@@ -3521,6 +3521,7 @@ def _build_monitor_ui(container):
 
     consumo_graph_frame = tk.Frame(container, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
     consumo_graph_frame.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), theme_space("space_3", 16)))
+    consumo_breakdown_canvas = None
 
     consumo_hint = build_label(consumo_graph_frame, "Cada ponto representa um dia. Clique para atualizar os gráficos; a bolinha vazada indica o estado atual.", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
     consumo_hint.pack(fill=tk.X, pady=(0, theme_space("space_1", 4)), anchor="w")
@@ -3628,8 +3629,11 @@ def _build_monitor_ui(container):
             _draw_days_timeline()
 
         def _draw_selected_day_breakdown(day_key: str):
-            consumo_breakdown_canvas.delete("all")
-            width_b = max(320, int(consumo_breakdown_canvas.winfo_width() or 320))
+            canvas = consumo_breakdown_canvas
+            if canvas is None:
+                return
+            canvas.delete("all")
+            width_b = max(320, int(canvas.winfo_width() or 320))
             bar_x0 = 16
             bar_x1 = width_b - 16
             bar_y0 = 24
@@ -3639,9 +3643,9 @@ def _build_monitor_ui(container):
             proporcao = min(1.0, max(0.0, total_sel / 2400 if 2400 else 0.0))
             split_x = bar_x0 + (bar_x1 - bar_x0) * proporcao
 
-            consumo_breakdown_canvas.create_rectangle(bar_x0, bar_y0, bar_x1, bar_y1, fill="#1C2733", outline="#2D3B4C", width=1)
-            consumo_breakdown_canvas.create_rectangle(bar_x0, bar_y0, split_x, bar_y1, fill="#FFFFFF", outline="")
-            consumo_breakdown_canvas.create_text(
+            canvas.create_rectangle(bar_x0, bar_y0, bar_x1, bar_y1, fill="#1C2733", outline="#2D3B4C", width=1)
+            canvas.create_rectangle(bar_x0, bar_y0, split_x, bar_y1, fill="#FFFFFF", outline="")
+            canvas.create_text(
                 bar_x0,
                 10,
                 anchor="w",
@@ -3649,7 +3653,7 @@ def _build_monitor_ui(container):
                 fill="#FFFFFF",
                 font=theme_font("font_sm"),
             )
-            consumo_breakdown_canvas.create_text(
+            canvas.create_text(
                 bar_x1,
                 10,
                 anchor="e",
@@ -3657,7 +3661,7 @@ def _build_monitor_ui(container):
                 fill=point_default,
                 font=theme_font("font_sm"),
             )
-            consumo_breakdown_canvas.create_text(
+            canvas.create_text(
                 split_x + 4,
                 bar_y1 + 12,
                 anchor="w",
@@ -3721,7 +3725,8 @@ def _build_monitor_ui(container):
         _draw_selected_day_breakdown(consumo_selected_day)
 
     consumo_days_canvas.bind("<Configure>", _draw_days_timeline, add="+")
-    consumo_breakdown_canvas.bind("<Configure>", _draw_days_timeline, add="+")
+    if consumo_breakdown_canvas is not None:
+        consumo_breakdown_canvas.bind("<Configure>", _draw_days_timeline, add="+")
     container.after(80, _draw_days_timeline)
 
     global _metrics_accessibility_var
