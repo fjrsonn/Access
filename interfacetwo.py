@@ -2809,7 +2809,7 @@ def _build_monitor_ui(container):
     filtered_label.pack(side=tk.RIGHT)
 
     cards_row = tk.Frame(container, bg=UI_THEME["bg"])
-    cards_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), 0))
+    cards_row.pack(fill=tk.X, padx=0, pady=(theme_space("space_2", 8), 0))
     global _ux_cards, _status_bar
     _ux_cards = {
         "ativos": AppMetricCard(cards_row, "Ativos", tone="info", icon="📦"),
