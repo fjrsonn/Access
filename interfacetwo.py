@@ -614,6 +614,78 @@ def _carregar_consumo_24h(day_key: str) -> list[int]:
 
 
 
+_consumo_24h_por_dia = {}
+
+
+def _gerar_consumo_24h_base(day_key: str) -> list[int]:
+    digest = hashlib.sha256(day_key.encode("utf-8")).hexdigest()
+    values = []
+    for hour in range(24):
+        seed = int(digest[(hour % 16) * 4:((hour % 16) * 4) + 4], 16)
+        wave = 22 + int(13 * (1 + math.sin((hour / 24) * 6.28318 - 1.0)))
+        noise = seed % 16
+        values.append(max(0, min(100, wave + noise)))
+    return values
+
+
+def _normalizar_24h(points) -> list[int]:
+    base = [0] * 24
+    src = list(points or [])[:24]
+    for idx, val in enumerate(src):
+        try:
+            base[idx] = max(0, min(100, int(val)))
+        except Exception:
+            base[idx] = 0
+    return base
+
+
+def _save_consumo_24h_data():
+    try:
+        os.makedirs(os.path.dirname(CONSUMO_24H_FILE), exist_ok=True)
+        with open(CONSUMO_24H_FILE, "w", encoding="utf-8") as f:
+            json.dump(_consumo_24h_por_dia, f, ensure_ascii=False, indent=2)
+    except Exception:
+        return
+
+
+def _load_consumo_24h_data():
+    global _consumo_24h_por_dia
+    if _consumo_24h_por_dia:
+        return
+    data = {}
+    try:
+        with open(CONSUMO_24H_FILE, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if isinstance(raw, dict):
+            for day_key, points in raw.items():
+                data[str(day_key)] = _normalizar_24h(points)
+    except Exception:
+        data = {}
+
+    if not data:
+        today = datetime.now().date()
+        for back in range(13, -1, -1):
+            day_key = (today - timedelta(days=back)).strftime("%Y-%m-%d")
+            data[day_key] = _gerar_consumo_24h_base(day_key)
+        _consumo_24h_por_dia = data
+        _save_consumo_24h_data()
+        return
+
+    _consumo_24h_por_dia = data
+
+
+def _carregar_consumo_24h(day_key: str) -> list[int]:
+    _load_consumo_24h_data()
+    points = _consumo_24h_por_dia.get(day_key)
+    if points is None:
+        points = _gerar_consumo_24h_base(day_key)
+        _consumo_24h_por_dia[day_key] = points
+        _save_consumo_24h_data()
+    return list(points)
+
+
+
+
 
 def _summarize_sticky_header(formatter, record: dict, position: int | None = None) -> str:
     try:
@@ -3400,23 +3472,27 @@ def _build_monitor_ui(container):
             sum(points[12:18]),
             sum(points[18:24]),
         ]
+        status_data = _collect_status_cards_data()
         card_order = ["ativos", "pendentes", "sem_contato", "avisado"]
         for idx, card_key in enumerate(card_order):
             card = _ux_cards.get(card_key)
             if card is None:
                 continue
-            value = quarter_sums[idx]
+            consumo = quarter_sums[idx]
+            disponivel = max(0, 600 - consumo)
+            valor_operacional = int(status_data.get(card_key, 0))
+            anterior = int(_metrics_previous_cards.get(card_key, valor_operacional))
             try:
-                card.set_value(str(value))
-                disponivel = max(0, 600 - value)
-                card.set_meta(f"{day_key} • Consumo: {value} • Disponível: {disponivel}")
-                card.set_capacity(value, 600)
+                card.set_value(str(valor_operacional))
+                card.set_trend(valor_operacional - anterior)
+                card.set_capacity(valor_operacional, CARD_CAPACITY_LIMITS.get(card_key, 1000))
+                card.set_meta(f"{day_key} • Consumo: {consumo} • Disponível: {disponivel}")
                 card.flash(220)
                 card.animate_capacity_fill()
             except Exception:
                 continue
         try:
-            _status_bar.set(f"Consumo do dia {day_key} aplicado nos cards (total: {total})", tone="info")
+            _status_bar.set(f"Consumo do dia {day_key} aplicado (total: {total}) mantendo totais operacionais", tone="info")
         except Exception:
             pass
 
