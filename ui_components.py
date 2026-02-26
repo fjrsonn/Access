@@ -146,7 +146,7 @@ class AppMetricCard(tk.Frame):
         self.top_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4) // 2, 0))
         self.text_column = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"))
         self.text_column.pack(fill=tk.BOTH, expand=True)
-        self.donut_wrap = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"), height=132)
+        self.donut_wrap = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"), height=120)
         self.donut_wrap.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4) // 2, 0))
         self.donut_wrap.pack_propagate(False)
         self.donut_canvas = tk.Canvas(
@@ -228,6 +228,7 @@ class AppMetricCard(tk.Frame):
         self.capacity_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, 0))
         self.meta_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, py_bottom))
         self._apply_text_wrap()
+        self.after_idle(self._draw_card_shadow)
 
     def _draw_donut(self, _event=None):
         try:
@@ -396,6 +397,7 @@ class AppMetricCard(tk.Frame):
         except Exception:
             pass
         self._draw_donut()
+        self.after_idle(self._draw_card_shadow)
 
 
     def animate_capacity_fill(self, on_done=None, phase_one_ms: int = 420, phase_two_ms: int = 360, steps: int = 14):
