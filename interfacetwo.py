@@ -3531,6 +3531,7 @@ def _build_monitor_ui(container):
 
     _load_consumo_24h_data()
     consumo_selected_day = max(_consumo_24h_por_dia.keys()) if _consumo_24h_por_dia else datetime.now().strftime("%Y-%m-%d")
+    consumo_selected_keep_total = False
 
     def _save_day_points(day_key: str, points: list[int]):
         _consumo_24h_por_dia[day_key] = _normalizar_24h(points)
@@ -3577,7 +3578,7 @@ def _build_monitor_ui(container):
             pass
 
     def _draw_days_timeline(_event=None):
-        nonlocal consumo_selected_day
+        nonlocal consumo_selected_day, consumo_selected_keep_total
         consumo_days_canvas.delete("all")
         day_keys = sorted(_consumo_24h_por_dia.keys())
         if not day_keys:
@@ -3613,8 +3614,9 @@ def _build_monitor_ui(container):
             consumo_days_canvas.create_line(*line_points, fill="#FFFFFF", width=2.0, smooth=True)
 
         def _on_day_click(day_key: str, keep_total: bool = False):
-            nonlocal consumo_selected_day
+            nonlocal consumo_selected_day, consumo_selected_keep_total
             consumo_selected_day = day_key
+            consumo_selected_keep_total = keep_total
             total_sel = sum(_carregar_consumo_24h(day_key))
             restante_sel = max(0, 2400 - total_sel)
             prefixo = "AGORA" if keep_total else "Dia selecionado"
@@ -3711,8 +3713,8 @@ def _build_monitor_ui(container):
         consumo_days_canvas.create_text(width - 8, 10, text="", anchor="ne", tags="hoverday", fill=point_default, font=theme_font("font_sm"))
         total_selected = sum(_carregar_consumo_24h(consumo_selected_day))
         restante_selected = max(0, 2400 - total_selected)
-        consumo_day_var.set(f"Dia selecionado: {consumo_selected_day} • Consumo total: {total_selected} • Restante total: {restante_selected}")
-        _draw_selected_day_breakdown(consumo_selected_day)
+        prefixo_selected = "AGORA" if consumo_selected_keep_total else "Dia selecionado"
+        consumo_day_var.set(f"{prefixo_selected}: {consumo_selected_day} • Consumo total: {total_selected} • Restante total: {restante_selected}")
 
     consumo_days_canvas.bind("<Configure>", _draw_days_timeline, add="+")
     consumo_breakdown_canvas.bind("<Configure>", _draw_days_timeline, add="+")
