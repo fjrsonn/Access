@@ -157,11 +157,11 @@ class AppMetricCard(tk.Frame):
             highlightthickness=0,
             bd=0,
         )
-        self.title_lbl = tk.Label(self.body, textvariable=self.title_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
-        self.value_lbl = tk.Label(self.body, textvariable=self.value_var, bg=UI_THEME.get("surface", "#151A22"), fg=state_colors(tone)[0], font=theme_font("font_xl", "bold"))
-        self.trend_lbl = tk.Label(self.body, textvariable=self.trend_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
-        self.capacity_lbl = tk.Label(self.body, textvariable=self.capacity_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
-        self.meta_lbl = tk.Label(self.body, textvariable=self.meta_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
+        self.title_lbl = tk.Label(self.body, textvariable=self.title_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"), anchor="w", justify="left")
+        self.value_lbl = tk.Label(self.body, textvariable=self.value_var, bg=UI_THEME.get("surface", "#151A22"), fg=state_colors(tone)[0], font=theme_font("font_xl", "bold"), anchor="w", justify="left")
+        self.trend_lbl = tk.Label(self.body, textvariable=self.trend_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"), anchor="w", justify="left")
+        self.capacity_lbl = tk.Label(self.body, textvariable=self.capacity_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"), anchor="w", justify="left")
+        self.meta_lbl = tk.Label(self.body, textvariable=self.meta_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"), anchor="w", justify="left")
         self._apply_density("confortavel")
         self._card_shadow_canvas.bind("<Configure>", self._draw_card_shadow, add="+")
         self.body.bind("<Configure>", self._apply_text_wrap, add="+")
@@ -207,6 +207,7 @@ class AppMetricCard(tk.Frame):
         try:
             body_w = max(120, int(self.body.winfo_width()))
             wrap = max(90, body_w - (2 * theme_space("space_3", 10)))
+            self.title_lbl.configure(wraplength=wrap)
             for lbl in (self.trend_lbl, self.capacity_lbl, self.meta_lbl):
                 lbl.configure(wraplength=wrap, justify="left")
         except Exception:
@@ -217,8 +218,8 @@ class AppMetricCard(tk.Frame):
         px = theme_space("space_1", 4) if compact else theme_space("space_3", 10)
         py_top = theme_space("space_1", 4)
         py_bottom = theme_space("space_1", 4) if compact else theme_space("space_3", 10)
-        self.title_lbl.pack(in_=self.text_column, anchor="w", padx=(0, 0), pady=(py_top, 0))
-        self.value_lbl.pack(in_=self.text_column, anchor="w", padx=(0, 0), pady=(0, 0))
+        self.title_lbl.pack(in_=self.text_column, fill=tk.X, anchor="w", padx=(0, 0), pady=(py_top, 0))
+        self.value_lbl.pack(in_=self.text_column, fill=tk.X, anchor="w", padx=(0, 0), pady=(0, 0))
         if self._donut_visible:
             self.donut_canvas.pack(fill=tk.BOTH, expand=True)
         else:
