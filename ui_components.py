@@ -164,6 +164,7 @@ class AppMetricCard(tk.Frame):
         self.meta_lbl = tk.Label(self.body, textvariable=self.meta_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self._apply_density("confortavel")
         self._card_shadow_canvas.bind("<Configure>", self._draw_card_shadow, add="+")
+        self.body.bind("<Configure>", self._apply_text_wrap, add="+")
         self.bottom_curve.bind("<Configure>", self._draw_bottom_curve, add="+")
         self.donut_canvas.bind("<Configure>", self._draw_donut, add="+")
         self.donut_canvas.bind("<Motion>", self._on_donut_hover, add="+")
@@ -197,6 +198,15 @@ class AppMetricCard(tk.Frame):
             self.bottom_curve.configure(bg=card_bg)
             self.bottom_curve.delete("all")
             self.bottom_curve.create_rectangle(0, 0, w, h, fill=card_bg, outline="")
+        except Exception:
+            pass
+
+    def _apply_text_wrap(self, _event=None):
+        try:
+            body_w = max(120, int(self.body.winfo_width()))
+            wrap = max(90, body_w - (2 * theme_space("space_2", 8)))
+            for lbl in (self.trend_lbl, self.capacity_lbl, self.meta_lbl):
+                lbl.configure(wraplength=wrap, justify="left")
         except Exception:
             pass
 
