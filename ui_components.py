@@ -88,7 +88,7 @@ class AppMetricCard(tk.Frame):
             parent,
             bg=UI_THEME.get("surface", "#151A22"),
             highlightthickness=0,
-            highlightbackground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
+            highlightbackground=UI_THEME.get("border", "#2B3442"),
             bd=0,
         )
         self._tone = tone
@@ -122,7 +122,7 @@ class AppMetricCard(tk.Frame):
             self._card_shadow_canvas,
             bg=UI_THEME.get("surface", "#151A22"),
             highlightthickness=1,
-            highlightbackground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
+            highlightbackground=UI_THEME.get("border", "#2B3442"),
             bd=0,
         )
         self._card_shell_window = self._card_shadow_canvas.create_window(0, 0, anchor="nw", window=self.card_shell)
