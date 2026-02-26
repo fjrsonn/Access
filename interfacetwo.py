@@ -133,6 +133,7 @@ AVISOS_ARQUIVO = os.path.join(BASE_DIR, "avisos.json")
 LOCK_FILE = os.path.join(BASE_DIR, "monitor.lock")
 REFRESH_MS = 2000  # 2s
 PREFS_FILE = os.path.join(BASE_DIR, "config", "ui_monitor_prefs.json")
+CONSUMO_24H_FILE = os.path.join(BASE_DIR, "config", "consumo_24h.json")
 CARD_CAPACITY_LIMITS = {
     "ativos": 1500,
     "pendentes": 1200,
@@ -190,17 +191,65 @@ def _gerar_consumo_24h_base(day_key: str) -> list[int]:
     values = []
     for hour in range(24):
         seed = int(digest[(hour % 16) * 4:((hour % 16) * 4) + 4], 16)
-        wave = 18 + int(14 * (1 + math.sin((hour / 24) * 6.28318 - 1.2)))
-        noise = seed % 12
-        values.append(max(6, min(98, wave + noise)))
+        wave = 22 + int(13 * (1 + math.sin((hour / 24) * 6.28318 - 1.0)))
+        noise = seed % 16
+        values.append(max(0, min(100, wave + noise)))
     return values
 
 
+def _normalizar_24h(points) -> list[int]:
+    base = [0] * 24
+    src = list(points or [])[:24]
+    for idx, val in enumerate(src):
+        try:
+            base[idx] = max(0, min(100, int(val)))
+        except Exception:
+            base[idx] = 0
+    return base
+
+
+def _save_consumo_24h_data():
+    try:
+        os.makedirs(os.path.dirname(CONSUMO_24H_FILE), exist_ok=True)
+        with open(CONSUMO_24H_FILE, "w", encoding="utf-8") as f:
+            json.dump(_consumo_24h_por_dia, f, ensure_ascii=False, indent=2)
+    except Exception:
+        return
+
+
+def _load_consumo_24h_data():
+    global _consumo_24h_por_dia
+    if _consumo_24h_por_dia:
+        return
+    data = {}
+    try:
+        with open(CONSUMO_24H_FILE, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if isinstance(raw, dict):
+            for day_key, points in raw.items():
+                data[str(day_key)] = _normalizar_24h(points)
+    except Exception:
+        data = {}
+
+    if not data:
+        today = datetime.now().date()
+        for back in range(13, -1, -1):
+            d = (today - timedelta(days=back)).strftime("%Y-%m-%d")
+            data[d] = _gerar_consumo_24h_base(d)
+        _consumo_24h_por_dia = data
+        _save_consumo_24h_data()
+        return
+
+    _consumo_24h_por_dia = data
+
+
 def _carregar_consumo_24h(day_key: str) -> list[int]:
+    _load_consumo_24h_data()
     points = _consumo_24h_por_dia.get(day_key)
     if points is None:
         points = _gerar_consumo_24h_base(day_key)
         _consumo_24h_por_dia[day_key] = points
+        _save_consumo_24h_data()
     return list(points)
 
 
@@ -2957,67 +3006,59 @@ def _build_monitor_ui(container):
     consumo_header.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_3", 16), 0))
     consumo_title = build_label(consumo_header, "Consumo (24h)", bg=UI_THEME["bg"], font=theme_font("font_lg", "bold"))
     consumo_title.pack(side=tk.LEFT)
-    consumo_day_var = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d"))
+    consumo_day_var = tk.StringVar(value="")
     consumo_day_label = build_label(consumo_header, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
     consumo_day_label.configure(textvariable=consumo_day_var)
     consumo_day_label.pack(side=tk.RIGHT)
 
-    consumo_graph_frame = tk.Frame(container, bg=UI_THEME.get("surface", UI_THEME["bg"]), highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"), bd=0)
+    consumo_graph_frame = tk.Frame(container, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
     consumo_graph_frame.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), theme_space("space_3", 16)))
 
-    consumo_controls = tk.Frame(consumo_graph_frame, bg=UI_THEME.get("surface", UI_THEME["bg"]))
-    consumo_controls.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
-    btn_prev_day = build_secondary_button(consumo_controls, "◀ Dia anterior", lambda: None)
-    btn_prev_day.pack(side=tk.LEFT)
-    btn_next_day = build_secondary_button(consumo_controls, "Próximo dia ▶", lambda: None)
-    btn_next_day.pack(side=tk.LEFT, padx=(theme_space("space_1", 4), 0))
-    consumo_hint = build_label(consumo_controls, "Clique em um ponto para editar o consumo daquela hora.", muted=True, bg=UI_THEME.get("surface", UI_THEME["bg"]), font=theme_font("font_sm"))
-    consumo_hint.pack(side=tk.RIGHT)
+    consumo_controls = tk.Frame(consumo_graph_frame, bg=UI_THEME["bg"])
+    consumo_controls.pack(fill=tk.X, padx=0, pady=(0, theme_space("space_1", 4)))
+    consumo_hint = build_label(consumo_controls, "Cada ponto representa um dia. Clique no dia para atualizar o gráfico de 24h.", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    consumo_hint.pack(side=tk.LEFT)
 
-    consumo_canvas = tk.Canvas(consumo_graph_frame, bg=UI_THEME.get("surface", UI_THEME["bg"]), height=170, highlightthickness=0, bd=0)
-    consumo_canvas.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), theme_space("space_2", 8)))
-    consumo_selected_day = datetime.now().date()
+    consumo_days_canvas = tk.Canvas(consumo_graph_frame, bg=UI_THEME["bg"], height=92, highlightthickness=0, bd=0)
+    consumo_days_canvas.pack(fill=tk.X, padx=0, pady=(0, theme_space("space_1", 4)))
 
-    def _redraw_consumo_graph(_event=None):
-        nonlocal consumo_selected_day
-        day_key = consumo_selected_day.strftime("%Y-%m-%d")
-        consumo_day_var.set(f"Dia selecionado: {day_key}")
+    consumo_canvas = tk.Canvas(consumo_graph_frame, bg=UI_THEME["bg"], height=168, highlightthickness=0, bd=0)
+    consumo_canvas.pack(fill=tk.X, padx=0, pady=(0, theme_space("space_2", 8)))
+
+    _load_consumo_24h_data()
+    consumo_selected_day = max(_consumo_24h_por_dia.keys()) if _consumo_24h_por_dia else datetime.now().strftime("%Y-%m-%d")
+
+    def _save_day_points(day_key: str, points: list[int]):
+        _consumo_24h_por_dia[day_key] = _normalizar_24h(points)
+        _save_consumo_24h_data()
+
+    def _draw_hourly_graph(day_key: str):
         points = _carregar_consumo_24h(day_key)
         consumo_canvas.delete("all")
         width = max(360, int(consumo_canvas.winfo_width() or 360))
         height = max(140, int(consumo_canvas.winfo_height() or 140))
-        margin_x = 18
-        margin_y = 18
+        margin_x = 14
+        margin_y = 14
         plot_w = max(10, width - margin_x * 2)
         plot_h = max(10, height - margin_y * 2)
-        x_step = plot_w / 23
-        line_color = UI_THEME.get("primary", "#2F81F7")
-        point_fill = UI_THEME.get("surface", "#151A22")
-        point_outline = UI_THEME.get("primary", "#2F81F7")
-        txt_color = UI_THEME.get("muted_text", "#9AA4B2")
-
+        step = plot_w / 23
         coords = []
-        for hour, value in enumerate(points):
-            x = margin_x + (x_step * hour)
-            y = margin_y + (plot_h * (1 - (value / 100)))
-            coords.append((x, y, hour, value))
+        for idx, value in enumerate(points):
+            x = margin_x + idx * step
+            y = margin_y + plot_h * (1 - (value / 100))
+            coords.append((x, y, idx, value))
 
-        for hour_line in [0, 6, 12, 18, 23]:
-            x = margin_x + (x_step * hour_line)
-            consumo_canvas.create_line(x, margin_y, x, margin_y + plot_h, fill=UI_THEME.get("border", "#2B3442"), dash=(2, 4))
-            consumo_canvas.create_text(x, margin_y + plot_h + 10, text=f"{hour_line:02d}h", fill=txt_color, font=theme_font("font_sm"))
-
-        flat = []
-        for x, y, _, _ in coords:
-            flat.extend([x, y])
-        consumo_canvas.create_line(*flat, fill=line_color, width=2, smooth=True)
+        if len(coords) >= 2:
+            flat = []
+            for x, y, _, _ in coords:
+                flat.extend([x, y])
+            consumo_canvas.create_line(*flat, fill="#FFFFFF", width=2.0, smooth=True)
 
         def _on_point_click(hour_index: int):
-            day_now = consumo_selected_day.strftime("%Y-%m-%d")
-            current = _carregar_consumo_24h(day_now)
+            current = _carregar_consumo_24h(day_key)
             value = simpledialog.askinteger(
                 "Editar consumo",
-                f"Informe o consumo para {day_now} às {hour_index:02d}h (0-100):",
+                f"{day_key} às {hour_index:02d}h (0-100):",
                 parent=container.winfo_toplevel(),
                 minvalue=0,
                 maxvalue=100,
@@ -3026,25 +3067,81 @@ def _build_monitor_ui(container):
             if value is None:
                 return
             current[hour_index] = int(value)
-            _consumo_24h_por_dia[day_now] = current
-            _redraw_consumo_graph()
+            _save_day_points(day_key, current)
+            _draw_hourly_graph(day_key)
+            _draw_days_timeline()
 
         for x, y, hour, value in coords:
-            item = consumo_canvas.create_oval(x - 4, y - 4, x + 4, y + 4, fill=point_fill, outline=point_outline, width=2)
+            r = 4
+            item = consumo_canvas.create_oval(x - r, y - r, x + r, y + r, fill="#FFFFFF", outline="#FFFFFF", width=1)
             consumo_canvas.tag_bind(item, "<Button-1>", lambda _evt, h=hour: _on_point_click(h))
-            consumo_canvas.tag_bind(item, "<Enter>", lambda _evt, h=hour, v=value: consumo_canvas.itemconfigure("consumo_hover", text=f"{h:02d}h: {v}"))
+            consumo_canvas.tag_bind(item, "<Enter>", lambda _evt, h=hour, v=value: consumo_canvas.itemconfigure("hover24h", text=f"{h:02d}h: {v}"))
 
-        consumo_canvas.create_text(width - 8, 10, text="", anchor="ne", tags="consumo_hover", fill=txt_color, font=theme_font("font_sm"))
+        consumo_canvas.create_text(width - 8, 10, text="", anchor="ne", tags="hover24h", fill="#FFFFFF", font=theme_font("font_sm"))
 
-    def _change_consumo_day(delta: int):
+    def _draw_days_timeline(_event=None):
         nonlocal consumo_selected_day
-        consumo_selected_day = consumo_selected_day + timedelta(days=delta)
-        _redraw_consumo_graph()
+        consumo_days_canvas.delete("all")
+        day_keys = sorted(_consumo_24h_por_dia.keys())
+        if not day_keys:
+            return
+        if consumo_selected_day not in _consumo_24h_por_dia:
+            consumo_selected_day = day_keys[-1]
 
-    btn_prev_day.configure(command=lambda: _change_consumo_day(-1))
-    btn_next_day.configure(command=lambda: _change_consumo_day(1))
-    consumo_canvas.bind("<Configure>", _redraw_consumo_graph, add="+")
-    container.after(80, _redraw_consumo_graph)
+        width = max(360, int(consumo_days_canvas.winfo_width() or 360))
+        height = max(72, int(consumo_days_canvas.winfo_height() or 72))
+        margin_x = 18
+        mid_y = max(22, int(height * 0.52))
+        plot_w = max(10, width - margin_x * 2)
+        step = plot_w / max(1, len(day_keys) - 1)
+        totals = [sum(_carregar_consumo_24h(day)) for day in day_keys]
+        min_total, max_total = min(totals), max(totals)
+
+        coords = []
+        for idx, day_key in enumerate(day_keys):
+            x = margin_x + idx * step
+            total = totals[idx]
+            if max_total == min_total:
+                radius = 5
+            else:
+                ratio = (total - min_total) / (max_total - min_total)
+                radius = 4 + int(ratio * 7)
+            coords.append((x, mid_y, day_key, radius, total))
+
+        if len(coords) >= 2:
+            line_points = []
+            for x, y, *_ in coords:
+                line_points.extend([x, y])
+            consumo_days_canvas.create_line(*line_points, fill="#FFFFFF", width=2.0, smooth=True)
+
+        def _on_day_click(day_key: str):
+            nonlocal consumo_selected_day
+            consumo_selected_day = day_key
+            consumo_day_var.set(f"Dia selecionado: {day_key}")
+            _draw_days_timeline()
+            _draw_hourly_graph(day_key)
+
+        for x, y, day_key, radius, total in coords:
+            is_selected = day_key == consumo_selected_day
+            radius_sel = radius + 2 if is_selected else radius
+            item = consumo_days_canvas.create_oval(
+                x - radius_sel,
+                y - radius_sel,
+                x + radius_sel,
+                y + radius_sel,
+                fill="#FFFFFF",
+                outline="#FFFFFF",
+                width=2 if is_selected else 1,
+            )
+            consumo_days_canvas.tag_bind(item, "<Button-1>", lambda _evt, d=day_key: _on_day_click(d))
+            consumo_days_canvas.tag_bind(item, "<Enter>", lambda _evt, d=day_key, t=total: consumo_days_canvas.itemconfigure("hoverday", text=f"{d} total: {t}"))
+
+        consumo_days_canvas.create_text(width - 8, 10, text="", anchor="ne", tags="hoverday", fill="#FFFFFF", font=theme_font("font_sm"))
+        consumo_day_var.set(f"Dia selecionado: {consumo_selected_day}")
+
+    consumo_days_canvas.bind("<Configure>", _draw_days_timeline, add="+")
+    consumo_canvas.bind("<Configure>", lambda _e: _draw_hourly_graph(consumo_selected_day), add="+")
+    container.after(80, lambda: (_draw_days_timeline(), _draw_hourly_graph(consumo_selected_day)))
 
     global _metrics_accessibility_var
     _metrics_accessibility_var = tk.StringVar(value="Métricas: carregando")
