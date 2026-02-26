@@ -84,7 +84,13 @@ class AppStatusBar(tk.Frame):
 
 class AppMetricCard(tk.Frame):
     def __init__(self, parent, title: str, value: str = "0", tone: str = "info", icon: str = "●"):
-        super().__init__(parent, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
+        super().__init__(
+            parent,
+            bg=UI_THEME.get("surface", "#151A22"),
+            highlightthickness=0,
+            highlightbackground=UI_THEME.get("border", "#2B3442"),
+            bd=0,
+        )
         self._tone = tone
         self._title = title
         self._icon = icon
@@ -100,12 +106,26 @@ class AppMetricCard(tk.Frame):
         self._card_shadow_shift_x = 1.8
         self._card_shadow_shift_y = 2.4
         self._card_shadow_steps = 7
-        self._card_shadow_canvas = None
-        self._card_shell_window = None
-        border_color = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
-        self.configure(highlightthickness=1, highlightbackground=border_color, highlightcolor=border_color)
-        self.card_shell = tk.Frame(self, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=0, bd=0)
-        self.card_shell.pack(fill=tk.BOTH, expand=True)
+        container_bg = UI_THEME.get("bg", "#0F1115")
+        try:
+            container_bg = parent.cget("bg")
+        except Exception:
+            pass
+        self._card_shadow_canvas = tk.Canvas(
+            self,
+            bg=container_bg,
+            highlightthickness=0,
+            bd=0,
+        )
+        self._card_shadow_canvas.pack(fill=tk.BOTH, expand=True)
+        self.card_shell = tk.Frame(
+            self._card_shadow_canvas,
+            bg=UI_THEME.get("surface", "#151A22"),
+            highlightthickness=1,
+            highlightbackground=UI_THEME.get("border", "#2B3442"),
+            bd=0,
+        )
+        self._card_shell_window = self._card_shadow_canvas.create_window(0, 0, anchor="nw", window=self.card_shell)
         self.accent_wrap = tk.Frame(self.card_shell, bg=UI_THEME.get("surface", "#151A22"), width=4)
         self.accent_wrap.pack(side=tk.LEFT, fill=tk.Y)
         self.accent = tk.Frame(self.accent_wrap, bg=UI_THEME.get(tone, UI_THEME.get("primary", "#2F81F7")))
@@ -123,11 +143,11 @@ class AppMetricCard(tk.Frame):
         self._capacity_consumed_n = 0
         self._capacity_limit_n = 1
         self.top_row = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"))
-        self.top_row.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
+        self.top_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), 0))
         self.text_column = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"))
         self.text_column.pack(fill=tk.BOTH, expand=True)
-        self.donut_wrap = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"), height=170)
-        self.donut_wrap.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
+        self.donut_wrap = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"), height=184)
+        self.donut_wrap.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), 0))
         self.donut_wrap.pack_propagate(False)
         self.donut_canvas = tk.Canvas(
             self.donut_wrap,
@@ -144,6 +164,7 @@ class AppMetricCard(tk.Frame):
         self.meta_lbl = tk.Label(self.body, textvariable=self.meta_var, bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm", "normal"))
         self._apply_density("confortavel")
         self._card_shadow_canvas.bind("<Configure>", self._draw_card_shadow, add="+")
+        self.body.bind("<Configure>", self._apply_text_wrap, add="+")
         self.bottom_curve.bind("<Configure>", self._draw_bottom_curve, add="+")
         self.donut_canvas.bind("<Configure>", self._draw_donut, add="+")
         self.donut_canvas.bind("<Motion>", self._on_donut_hover, add="+")
@@ -154,8 +175,22 @@ class AppMetricCard(tk.Frame):
         self.after(0, self._draw_donut)
 
     def _draw_card_shadow(self, _event=None):
-        """Mantido por compatibilidade após remoção da sombra dos cards."""
-        return
+        try:
+            canvas = self._card_shadow_canvas
+            canvas.delete("card_shadow")
+            self.card_shell.update_idletasks()
+            content_w = max(8, int(self.card_shell.winfo_reqwidth()))
+            content_h = max(8, int(self.card_shell.winfo_reqheight()))
+            canvas_w = int(canvas.winfo_width())
+            canvas_h = int(canvas.winfo_height())
+            available_w = content_w if canvas_w <= 1 else max(8, canvas_w)
+            available_h = content_h if canvas_h <= 1 else max(content_h, canvas_h)
+
+            canvas.coords(self._card_shell_window, 0, 0)
+            canvas.itemconfigure(self._card_shell_window, width=available_w, height=content_h)
+            canvas.configure(scrollregion=(0, 0, available_w, available_h))
+        except Exception:
+            pass
 
     def _draw_bottom_curve(self, _event=None):
         try:
@@ -168,20 +203,30 @@ class AppMetricCard(tk.Frame):
         except Exception:
             pass
 
+    def _apply_text_wrap(self, _event=None):
+        try:
+            body_w = max(120, int(self.body.winfo_width()))
+            wrap = max(90, body_w - (2 * theme_space("space_3", 10)))
+            for lbl in (self.trend_lbl, self.capacity_lbl, self.meta_lbl):
+                lbl.configure(wraplength=wrap, justify="left")
+        except Exception:
+            pass
+
     def _apply_density(self, mode: str = "confortavel"):
         compact = str(mode).lower().startswith("compact")
-        px = theme_space("space_1", 4) if compact else theme_space("space_2", 8)
+        px = theme_space("space_1", 4) if compact else theme_space("space_3", 10)
         py_top = theme_space("space_1", 4)
-        py_bottom = theme_space("space_1", 4) if compact else theme_space("space_2", 8)
+        py_bottom = theme_space("space_1", 4) if compact else theme_space("space_3", 10)
         self.title_lbl.pack(in_=self.text_column, anchor="w", padx=(0, 0), pady=(py_top, 0))
         self.value_lbl.pack(in_=self.text_column, anchor="w", padx=(0, 0), pady=(0, 0))
         if self._donut_visible:
             self.donut_canvas.pack(fill=tk.BOTH, expand=True)
         else:
             self.donut_canvas.pack_forget()
-        self.trend_lbl.pack(anchor="w", padx=px, pady=(0, 0))
-        self.capacity_lbl.pack(anchor="w", padx=px, pady=(0, 0))
-        self.meta_lbl.pack(anchor="w", padx=px, pady=(0, py_bottom))
+        self.trend_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, 0))
+        self.capacity_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, 0))
+        self.meta_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, py_bottom))
+        self._apply_text_wrap()
 
     def _draw_donut(self, _event=None):
         try:
@@ -467,7 +512,7 @@ class AppMetricCard(tk.Frame):
             self.configure(highlightbackground=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")), highlightthickness=2)
             if self._flash_after:
                 self.after_cancel(self._flash_after)
-            self._flash_after = self.after(duration_ms, lambda: self.configure(highlightthickness=1, highlightbackground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), highlightcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))))
+            self._flash_after = self.after(duration_ms, lambda: self.configure(highlightthickness=0))
         except Exception:
             pass
 
