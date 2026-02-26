@@ -3528,48 +3528,57 @@ def _build_monitor_ui(container):
     consumo_days_canvas = tk.Canvas(consumo_graph_frame, bg=UI_THEME["bg"], height=180, highlightthickness=0, bd=0)
     consumo_days_canvas.pack(fill=tk.X, padx=0, pady=(0, theme_space("space_2", 8)))
 
+
     _load_consumo_24h_data()
     consumo_selected_day = max(_consumo_24h_por_dia.keys()) if _consumo_24h_por_dia else datetime.now().strftime("%Y-%m-%d")
+    consumo_selected_keep_total = False
 
     def _save_day_points(day_key: str, points: list[int]):
         _consumo_24h_por_dia[day_key] = _normalizar_24h(points)
         _save_consumo_24h_data()
 
-    def _animate_cards_for_day(day_key: str):
+    def _animate_cards_for_day(day_key: str, keep_total: bool = False):
         points = _carregar_consumo_24h(day_key)
         total = sum(points)
+        restante_total = max(0, 2400 - total)
         quarter_sums = [
             sum(points[0:6]),
             sum(points[6:12]),
             sum(points[12:18]),
             sum(points[18:24]),
         ]
-        status_data = _collect_status_cards_data()
         card_order = ["ativos", "pendentes", "sem_contato", "avisado"]
         for idx, card_key in enumerate(card_order):
             card = _ux_cards.get(card_key)
             if card is None:
                 continue
             consumo = quarter_sums[idx]
-            disponivel = max(0, 600 - consumo)
-            valor_operacional = int(status_data.get(card_key, 0))
-            anterior = int(_metrics_previous_cards.get(card_key, valor_operacional))
+            restante = max(0, 600 - consumo)
             try:
-                card.set_value(str(valor_operacional))
-                card.set_trend(valor_operacional - anterior)
-                card.set_capacity(valor_operacional, CARD_CAPACITY_LIMITS.get(card_key, 1000))
-                card.set_meta(f"{day_key} • Consumo: {consumo} • Disponível: {disponivel}")
+                if keep_total:
+                    card.set_value(str(total))
+                    card.set_trend(0)
+                    card.set_capacity(total, 2400)
+                    card.set_meta(f"AGORA {day_key} • Consumido total: {total} • Restante total: {restante_total}")
+                else:
+                    card.set_value(str(consumo))
+                    card.set_trend(0)
+                    card.set_capacity(consumo, 600)
+                    card.set_meta(f"{day_key} • Consumido: {consumo} • Restante: {restante}")
                 card.flash(220)
                 card.animate_capacity_fill()
             except Exception:
                 continue
         try:
-            _status_bar.set(f"Consumo do dia {day_key} aplicado (total: {total}) mantendo totais operacionais", tone="info")
+            if keep_total:
+                _status_bar.set(f"AGORA {day_key} aplicado (consumido total: {total} • restante total: {restante_total})", tone="info")
+            else:
+                _status_bar.set(f"Consumo do dia {day_key} aplicado (24h: {total})", tone="info")
         except Exception:
             pass
 
     def _draw_days_timeline(_event=None):
-        nonlocal consumo_selected_day
+        nonlocal consumo_selected_day, consumo_selected_keep_total
         consumo_days_canvas.delete("all")
         day_keys = sorted(_consumo_24h_por_dia.keys())
         if not day_keys:
@@ -3604,13 +3613,15 @@ def _build_monitor_ui(container):
                 line_points.extend([x, y])
             consumo_days_canvas.create_line(*line_points, fill="#FFFFFF", width=2.0, smooth=True)
 
-        def _on_day_click(day_key: str):
-            nonlocal consumo_selected_day
+        def _on_day_click(day_key: str, keep_total: bool = False):
+            nonlocal consumo_selected_day, consumo_selected_keep_total
             consumo_selected_day = day_key
+            consumo_selected_keep_total = keep_total
             total_sel = sum(_carregar_consumo_24h(day_key))
             restante_sel = max(0, 2400 - total_sel)
-            consumo_day_var.set(f"Dia selecionado: {day_key} • Consumo total: {total_sel} • Restante total: {restante_sel}")
-            _animate_cards_for_day(day_key)
+            prefixo = "AGORA" if keep_total else "Dia selecionado"
+            consumo_day_var.set(f"{prefixo}: {day_key} • Consumo total: {total_sel} • Restante total: {restante_sel}")
+            _animate_cards_for_day(day_key, keep_total=keep_total)
             _draw_days_timeline()
 
         point_default = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
@@ -3653,7 +3664,7 @@ def _build_monitor_ui(container):
             fill=point_default,
             font=theme_font("font_sm"),
         )
-        consumo_days_canvas.tag_bind(marker_item, "<Button-1>", lambda _evt, d=last_day_key: _on_day_click(d))
+        consumo_days_canvas.tag_bind(marker_item, "<Button-1>", lambda _evt, d=last_day_key: _on_day_click(d, keep_total=True))
         consumo_days_canvas.tag_bind(
             marker_item,
             "<Enter>",
@@ -3663,7 +3674,8 @@ def _build_monitor_ui(container):
         consumo_days_canvas.create_text(width - 8, 10, text="", anchor="ne", tags="hoverday", fill=point_default, font=theme_font("font_sm"))
         total_selected = sum(_carregar_consumo_24h(consumo_selected_day))
         restante_selected = max(0, 2400 - total_selected)
-        consumo_day_var.set(f"Dia selecionado: {consumo_selected_day} • Consumo total: {total_selected} • Restante total: {restante_selected}")
+        prefixo_selected = "AGORA" if consumo_selected_keep_total else "Dia selecionado"
+        consumo_day_var.set(f"{prefixo_selected}: {consumo_selected_day} • Consumo total: {total_selected} • Restante total: {restante_selected}")
 
     consumo_days_canvas.bind("<Configure>", _draw_days_timeline, add="+")
     container.after(80, _draw_days_timeline)
