@@ -143,11 +143,11 @@ class AppMetricCard(tk.Frame):
         self._capacity_consumed_n = 0
         self._capacity_limit_n = 1
         self.top_row = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"))
-        self.top_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
+        self.top_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4) // 2, 0))
         self.text_column = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"))
         self.text_column.pack(fill=tk.BOTH, expand=True)
-        self.donut_wrap = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"), height=156)
-        self.donut_wrap.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
+        self.donut_wrap = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"), height=132)
+        self.donut_wrap.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4) // 2, 0))
         self.donut_wrap.pack_propagate(False)
         self.donut_canvas = tk.Canvas(
             self.donut_wrap,
@@ -217,7 +217,7 @@ class AppMetricCard(tk.Frame):
         compact = str(mode).lower().startswith("compact")
         px = theme_space("space_1", 4) if compact else theme_space("space_3", 10)
         py_top = theme_space("space_1", 4)
-        py_bottom = theme_space("space_1", 4) if compact else theme_space("space_3", 10)
+        py_bottom = theme_space("space_1", 4) if compact else theme_space("space_1", 4)
         self.title_lbl.pack(in_=self.text_column, fill=tk.X, anchor="w", padx=(0, 0), pady=(py_top, 0))
         self.value_lbl.pack(in_=self.text_column, fill=tk.X, anchor="w", padx=(0, 0), pady=(0, 0))
         if self._donut_visible:
@@ -510,10 +510,19 @@ class AppMetricCard(tk.Frame):
 
     def flash(self, duration_ms: int = 280):
         try:
-            self.configure(highlightbackground=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")), highlightthickness=2)
+            self.card_shell.configure(
+                highlightbackground=UI_THEME.get(self._tone, UI_THEME.get("primary", "#2F81F7")),
+                highlightthickness=2,
+            )
             if self._flash_after:
                 self.after_cancel(self._flash_after)
-            self._flash_after = self.after(duration_ms, lambda: self.configure(highlightthickness=0))
+            self._flash_after = self.after(
+                duration_ms,
+                lambda: self.card_shell.configure(
+                    highlightbackground=UI_THEME.get("border", "#2B3442"),
+                    highlightthickness=1,
+                ),
+            )
         except Exception:
             pass
 
