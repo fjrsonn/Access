@@ -3622,6 +3622,45 @@ def _build_monitor_ui(container):
             _animate_cards_for_day(day_key, keep_total=keep_total)
             _draw_days_timeline()
 
+        def _draw_selected_day_breakdown(day_key: str):
+            consumo_breakdown_canvas.delete("all")
+            width_b = max(320, int(consumo_breakdown_canvas.winfo_width() or 320))
+            bar_x0 = 16
+            bar_x1 = width_b - 16
+            bar_y0 = 24
+            bar_y1 = 44
+            total_sel = sum(_carregar_consumo_24h(day_key))
+            restante_sel = max(0, 2400 - total_sel)
+            proporcao = min(1.0, max(0.0, total_sel / 2400 if 2400 else 0.0))
+            split_x = bar_x0 + (bar_x1 - bar_x0) * proporcao
+
+            consumo_breakdown_canvas.create_rectangle(bar_x0, bar_y0, bar_x1, bar_y1, fill="#1C2733", outline="#2D3B4C", width=1)
+            consumo_breakdown_canvas.create_rectangle(bar_x0, bar_y0, split_x, bar_y1, fill="#FFFFFF", outline="")
+            consumo_breakdown_canvas.create_text(
+                bar_x0,
+                10,
+                anchor="w",
+                text=f"{day_key} • Consumido: {total_sel}",
+                fill="#FFFFFF",
+                font=theme_font("font_sm"),
+            )
+            consumo_breakdown_canvas.create_text(
+                bar_x1,
+                10,
+                anchor="e",
+                text=f"Restante: {restante_sel}",
+                fill=point_default,
+                font=theme_font("font_sm"),
+            )
+            consumo_breakdown_canvas.create_text(
+                split_x + 4,
+                bar_y1 + 12,
+                anchor="w",
+                text=f"{int(round(proporcao * 100))}%",
+                fill=point_default,
+                font=theme_font("font_sm"),
+            )
+
         point_default = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
         for x, y, day_key, total in coords:
             is_selected = day_key == consumo_selected_day
@@ -3673,8 +3712,10 @@ def _build_monitor_ui(container):
         total_selected = sum(_carregar_consumo_24h(consumo_selected_day))
         restante_selected = max(0, 2400 - total_selected)
         consumo_day_var.set(f"Dia selecionado: {consumo_selected_day} • Consumo total: {total_selected} • Restante total: {restante_selected}")
+        _draw_selected_day_breakdown(consumo_selected_day)
 
     consumo_days_canvas.bind("<Configure>", _draw_days_timeline, add="+")
+    consumo_breakdown_canvas.bind("<Configure>", _draw_days_timeline, add="+")
     container.after(80, _draw_days_timeline)
 
     global _metrics_accessibility_var
