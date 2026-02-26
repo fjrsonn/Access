@@ -2809,7 +2809,7 @@ def _build_monitor_ui(container):
     filtered_label.pack(side=tk.RIGHT)
 
     cards_row = tk.Frame(container, bg=UI_THEME["bg"])
-    cards_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), 0))
+    cards_row.pack(fill=tk.X, padx=0, pady=(theme_space("space_2", 8), 0))
     global _ux_cards, _status_bar
     _ux_cards = {
         "ativos": AppMetricCard(cards_row, "Ativos", tone="info", icon="📦"),
@@ -2827,8 +2827,8 @@ def _build_monitor_ui(container):
     for idx, key in enumerate(["ativos", "pendentes", "sem_contato", "avisado"]):
         card = _ux_cards[key]
         right_gap = card_gap if idx < 3 else 0
-        card.grid(row=0, column=idx, padx=(0, right_gap), sticky="ew")
-        cards_row.grid_columnconfigure(idx, weight=1)
+        card.grid(row=0, column=idx, padx=(0, right_gap), sticky="nsew")
+        cards_row.grid_columnconfigure(idx, weight=1, uniform="metric_cards")
         cards_widgets.append(card)
         attach_tooltip(card, cards_tooltips.get(key, ""))
         try:

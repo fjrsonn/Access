@@ -180,10 +180,12 @@ class AppMetricCard(tk.Frame):
             self.card_shell.update_idletasks()
             content_w = max(8, int(self.card_shell.winfo_reqwidth()))
             content_h = max(8, int(self.card_shell.winfo_reqheight()))
+            available_w = max(content_w, int(canvas.winfo_width()))
+            available_h = max(content_h, int(canvas.winfo_height()))
 
             canvas.coords(self._card_shell_window, 0, 0)
-            canvas.itemconfigure(self._card_shell_window, width=content_w, height=content_h)
-            canvas.configure(scrollregion=(0, 0, content_w, content_h), width=content_w, height=content_h)
+            canvas.itemconfigure(self._card_shell_window, width=available_w, height=content_h)
+            canvas.configure(scrollregion=(0, 0, available_w, available_h))
         except Exception:
             pass
 
