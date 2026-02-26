@@ -3521,12 +3521,16 @@ def _build_monitor_ui(container):
 
     consumo_graph_frame = tk.Frame(container, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
     consumo_graph_frame.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), theme_space("space_3", 16)))
+    consumo_breakdown_canvas = None
 
     consumo_hint = build_label(consumo_graph_frame, "Cada ponto representa um dia. Clique para atualizar os gráficos; a bolinha vazada indica o estado atual.", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
     consumo_hint.pack(fill=tk.X, pady=(0, theme_space("space_1", 4)), anchor="w")
 
     consumo_days_canvas = tk.Canvas(consumo_graph_frame, bg=UI_THEME["bg"], height=180, highlightthickness=0, bd=0)
     consumo_days_canvas.pack(fill=tk.X, padx=0, pady=(0, theme_space("space_2", 8)))
+
+    consumo_breakdown_canvas = tk.Canvas(consumo_graph_frame, bg=UI_THEME["bg"], height=64, highlightthickness=0, bd=0)
+    consumo_breakdown_canvas.pack(fill=tk.X, padx=0, pady=(0, theme_space("space_2", 8)))
 
 
 
@@ -3670,6 +3674,7 @@ def _build_monitor_ui(container):
         restante_selected = max(0, 2400 - total_selected)
         prefixo_selected = "AGORA" if consumo_selected_keep_total else "Dia selecionado"
         consumo_day_var.set(f"{prefixo_selected}: {consumo_selected_day} • Consumo total: {total_selected} • Restante total: {restante_selected}")
+        _draw_selected_day_breakdown(consumo_selected_day)
 
     consumo_days_canvas.bind("<Configure>", _draw_days_timeline, add="+")
     container.after(80, _draw_days_timeline)
