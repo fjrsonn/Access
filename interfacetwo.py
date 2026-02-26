@@ -37,7 +37,73 @@ from ui_theme import (
     state_colors,
 )
 
-from ui_components import AppMetricCard, AppStatusBar, AppFeedbackBanner, build_section_title
+try:
+    from ui_components import AppMetricCard, AppStatusBar, AppFeedbackBanner, build_section_title
+except Exception:
+    class AppMetricCard(tk.Frame):
+        def __init__(self, parent, title: str, value: str = "0", tone: str = "info", icon: str = "●"):
+            super().__init__(parent, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"), bd=0)
+            self.value_var = tk.StringVar(value=str(value))
+            self.meta_var = tk.StringVar(value="Atualizado agora")
+            self._tone = tone
+            self._title = title
+            self._icon = icon
+            self._label = tk.Label(self, text=f"{icon} {title}", anchor="w", bg=self.cget("bg"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm"))
+            self._label.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
+            self._value = tk.Label(self, textvariable=self.value_var, anchor="w", bg=self.cget("bg"), fg=state_colors(tone)[0], font=theme_font("font_xl", "bold"))
+            self._value.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(0, theme_space("space_1", 4)))
+
+        def set_value(self, value: str):
+            self.value_var.set(str(value))
+
+        def set_trend(self, _delta):
+            return None
+
+        def set_capacity(self, _used, _limit):
+            return None
+
+        def set_meta(self, text: str):
+            self.meta_var.set(str(text))
+
+        def flash(self, _duration_ms=220):
+            return None
+
+        def set_density(self, _mode: str = "confortavel"):
+            return None
+
+        def set_donut_visibility(self, _visible: bool):
+            return None
+
+        def animate_capacity_fill(self, on_done=None, **_kwargs):
+            if callable(on_done):
+                on_done()
+
+        def animate_accent_growth(self, on_done=None, **_kwargs):
+            if callable(on_done):
+                on_done()
+
+    class AppStatusBar(tk.Frame):
+        def __init__(self, parent, text: str = ""):
+            super().__init__(parent, bg=UI_THEME.get("surface_alt", "#1B2430"), highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"))
+            self.var = tk.StringVar(value=text)
+            self.lbl = tk.Label(self, textvariable=self.var, anchor="w", bg=self.cget("bg"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), font=theme_font("font_sm"))
+            self.lbl.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=theme_space("space_1", 4))
+
+        def set(self, text: str, tone: str = "info"):
+            self.var.set(text)
+            bg, fg = state_colors(tone)
+            self.configure(bg=bg)
+            self.lbl.configure(bg=bg, fg=fg)
+
+    class AppFeedbackBanner(AppStatusBar):
+        def show(self, text: str, tone: str = "info", icon: str = "ℹ", timeout_ms: int = 2200):
+            self.set(f"{icon} {text}".strip(), tone=tone)
+
+        def hide(self):
+            return None
+
+    def build_section_title(parent, text: str):
+        return tk.Label(parent, text=text, bg=UI_THEME.get("bg", "#0F1115"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), font=theme_font("font_xl", "bold"), anchor="w")
 
 try:
     from text_classifier import build_structured_fields, log_audit_event
@@ -2809,7 +2875,7 @@ def _build_monitor_ui(container):
     filtered_label.pack(side=tk.RIGHT)
 
     cards_row = tk.Frame(container, bg=UI_THEME["bg"])
-    cards_row.pack(fill=tk.X, padx=0, pady=(theme_space("space_2", 8), 0))
+    cards_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), 0))
     global _ux_cards, _status_bar
     _ux_cards = {
         "ativos": AppMetricCard(cards_row, "Ativos", tone="info", icon="📦"),
