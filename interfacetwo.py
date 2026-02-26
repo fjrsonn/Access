@@ -8,11 +8,12 @@ Monitor de dados:
 import os
 import json
 import tempfile
-from datetime import datetime
+from datetime import datetime, timedelta
 import tkinter as tk
 from tkinter import messagebox, ttk, simpledialog
 import re
 import hashlib
+import math
 
 from ui_theme import (
     UI_THEME,
@@ -132,6 +133,7 @@ AVISOS_ARQUIVO = os.path.join(BASE_DIR, "avisos.json")
 LOCK_FILE = os.path.join(BASE_DIR, "monitor.lock")
 REFRESH_MS = 2000  # 2s
 PREFS_FILE = os.path.join(BASE_DIR, "config", "ui_monitor_prefs.json")
+CONSUMO_24H_FILE = os.path.join(BASE_DIR, "config", "consumo_24h.json")
 CARD_CAPACITY_LIMITS = {
     "ativos": 1500,
     "pendentes": 1200,
@@ -181,6 +183,78 @@ _text_hover_marker = {}
 _record_num_tag_map = {}
 _text_record_ranges = {}
 _sticky_header_state = {}
+
+
+
+_consumo_24h_por_dia = {}
+
+
+def _gerar_consumo_24h_base(day_key: str) -> list[int]:
+    digest = hashlib.sha256(day_key.encode("utf-8")).hexdigest()
+    values = []
+    for hour in range(24):
+        seed = int(digest[(hour % 16) * 4:((hour % 16) * 4) + 4], 16)
+        wave = 22 + int(13 * (1 + math.sin((hour / 24) * 6.28318 - 1.0)))
+        noise = seed % 16
+        values.append(max(0, min(100, wave + noise)))
+    return values
+
+
+def _normalizar_24h(points) -> list[int]:
+    base = [0] * 24
+    src = list(points or [])[:24]
+    for idx, val in enumerate(src):
+        try:
+            base[idx] = max(0, min(100, int(val)))
+        except Exception:
+            base[idx] = 0
+    return base
+
+
+def _save_consumo_24h_data():
+    try:
+        os.makedirs(os.path.dirname(CONSUMO_24H_FILE), exist_ok=True)
+        with open(CONSUMO_24H_FILE, "w", encoding="utf-8") as f:
+            json.dump(_consumo_24h_por_dia, f, ensure_ascii=False, indent=2)
+    except Exception:
+        return
+
+
+def _load_consumo_24h_data():
+    global _consumo_24h_por_dia
+    if _consumo_24h_por_dia:
+        return
+    data = {}
+    try:
+        with open(CONSUMO_24H_FILE, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if isinstance(raw, dict):
+            for day_key, points in raw.items():
+                data[str(day_key)] = _normalizar_24h(points)
+    except Exception:
+        data = {}
+
+    if not data:
+        today = datetime.now().date()
+        for back in range(13, -1, -1):
+            day_key = (today - timedelta(days=back)).strftime("%Y-%m-%d")
+            data[day_key] = _gerar_consumo_24h_base(day_key)
+        _consumo_24h_por_dia = data
+        _save_consumo_24h_data()
+        return
+
+    _consumo_24h_por_dia = data
+
+
+def _carregar_consumo_24h(day_key: str) -> list[int]:
+    _load_consumo_24h_data()
+    points = _consumo_24h_por_dia.get(day_key)
+    if points is None:
+        points = _gerar_consumo_24h_base(day_key)
+        _consumo_24h_por_dia[day_key] = points
+        _save_consumo_24h_data()
+    return list(points)
+
 
 
 
@@ -2932,6 +3006,144 @@ def _build_monitor_ui(container):
 
         _play_next(0)
 
+    consumo_header = tk.Frame(container, bg=UI_THEME["bg"])
+    consumo_header.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_3", 16), 0))
+    consumo_title = build_label(consumo_header, "Consumo por dia", bg=UI_THEME["bg"], font=theme_font("font_lg", "bold"))
+    consumo_title.pack(side=tk.LEFT)
+    consumo_day_var = tk.StringVar(value="")
+    consumo_day_label = build_label(consumo_header, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    consumo_day_label.configure(textvariable=consumo_day_var)
+    consumo_day_label.pack(side=tk.RIGHT)
+
+    consumo_graph_frame = tk.Frame(container, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
+    consumo_graph_frame.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), theme_space("space_3", 16)))
+
+    consumo_hint = build_label(consumo_graph_frame, "Cada ponto representa um dia. Clique para atualizar os gráficos; a bolinha vazada indica o estado atual.", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    consumo_hint.pack(fill=tk.X, pady=(0, theme_space("space_1", 4)), anchor="w")
+
+    consumo_days_canvas = tk.Canvas(consumo_graph_frame, bg=UI_THEME["bg"], height=180, highlightthickness=0, bd=0)
+    consumo_days_canvas.pack(fill=tk.X, padx=0, pady=(0, theme_space("space_2", 8)))
+
+    _load_consumo_24h_data()
+    consumo_selected_day = max(_consumo_24h_por_dia.keys()) if _consumo_24h_por_dia else datetime.now().strftime("%Y-%m-%d")
+
+    def _save_day_points(day_key: str, points: list[int]):
+        _consumo_24h_por_dia[day_key] = _normalizar_24h(points)
+        _save_consumo_24h_data()
+
+    def _animate_cards_for_day(day_key: str):
+        points = _carregar_consumo_24h(day_key)
+        total = sum(points)
+        quarter_sums = [
+            sum(points[0:6]),
+            sum(points[6:12]),
+            sum(points[12:18]),
+            sum(points[18:24]),
+        ]
+        card_order = ["ativos", "pendentes", "sem_contato", "avisado"]
+        for idx, card_key in enumerate(card_order):
+            card = _ux_cards.get(card_key)
+            if card is None:
+                continue
+            value = quarter_sums[idx]
+            try:
+                card.set_value(str(value))
+                card.set_meta(f"{day_key} • Faixa {idx + 1}")
+                card.set_capacity(value, 600)
+                card.flash(220)
+                card.animate_capacity_fill()
+            except Exception:
+                continue
+        try:
+            _status_bar.set(f"Consumo do dia {day_key} aplicado nos cards (total: {total})", tone="info")
+        except Exception:
+            pass
+
+    def _draw_days_timeline(_event=None):
+        nonlocal consumo_selected_day
+        consumo_days_canvas.delete("all")
+        day_keys = sorted(_consumo_24h_por_dia.keys())
+        if not day_keys:
+            return
+        if consumo_selected_day not in _consumo_24h_por_dia:
+            consumo_selected_day = day_keys[-1]
+
+        width = max(360, int(consumo_days_canvas.winfo_width() or 360))
+        height = max(140, int(consumo_days_canvas.winfo_height() or 140))
+        margin_x = 18
+        margin_y = 18
+        plot_w = max(10, width - margin_x * 2)
+        plot_h = max(10, height - margin_y * 2)
+        step = plot_w / max(1, len(day_keys) - 1)
+        totals = [sum(_carregar_consumo_24h(day)) for day in day_keys]
+        min_total, max_total = min(totals), max(totals)
+
+        coords = []
+        for idx, day_key in enumerate(day_keys):
+            x = margin_x + idx * step
+            total = totals[idx]
+            if max_total == min_total:
+                y = margin_y + (plot_h * 0.5)
+            else:
+                ratio = (total - min_total) / (max_total - min_total)
+                y = margin_y + plot_h * (1 - ratio)
+            coords.append((x, y, day_key, total))
+
+        if len(coords) >= 2:
+            line_points = []
+            for x, y, *_ in coords:
+                line_points.extend([x, y])
+            consumo_days_canvas.create_line(*line_points, fill="#FFFFFF", width=2.0, smooth=True)
+
+        def _on_day_click(day_key: str):
+            nonlocal consumo_selected_day
+            consumo_selected_day = day_key
+            total_sel = sum(_carregar_consumo_24h(day_key))
+            restante_sel = max(0, 2400 - total_sel)
+            consumo_day_var.set(f"Dia selecionado: {day_key} • Consumo total: {total_sel} • Restante total: {restante_sel}")
+            _animate_cards_for_day(day_key)
+            _draw_days_timeline()
+
+        point_default = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
+        for x, y, day_key, total in coords:
+            is_selected = day_key == consumo_selected_day
+            radius = 6 if is_selected else 5
+            color = "#FFFFFF" if is_selected else point_default
+            item = consumo_days_canvas.create_oval(
+                x - radius,
+                y - radius,
+                x + radius,
+                y + radius,
+                fill=color,
+                outline=color,
+                width=2 if is_selected else 1,
+            )
+            consumo_days_canvas.tag_bind(item, "<Button-1>", lambda _evt, d=day_key: _on_day_click(d))
+            consumo_days_canvas.tag_bind(item, "<Enter>", lambda _evt, d=day_key, t=total: consumo_days_canvas.itemconfigure("hoverday", text=f"{d} total: {t}"))
+
+        # Estado atual: bolinha vazada sempre à frente do último dia
+        last_x, last_y, _, _ = coords[-1]
+        marker_x = min(width - margin_x, last_x + max(12, step * 0.45))
+        marker_r = 6
+        consumo_days_canvas.create_oval(
+            marker_x - marker_r,
+            last_y - marker_r,
+            marker_x + marker_r,
+            last_y + marker_r,
+            fill="",
+            outline="#FFFFFF",
+            width=2,
+        )
+        consumo_days_canvas.create_text(marker_x, last_y + 14, text="agora", fill=point_default, font=theme_font("font_sm"))
+
+        consumo_days_canvas.create_text(width - 8, 10, text="", anchor="ne", tags="hoverday", fill=point_default, font=theme_font("font_sm"))
+        total_selected = sum(_carregar_consumo_24h(consumo_selected_day))
+        restante_selected = max(0, 2400 - total_selected)
+        consumo_day_var.set(f"Dia selecionado: {consumo_selected_day} • Consumo total: {total_selected} • Restante total: {restante_selected}")
+
+    consumo_days_canvas.bind("<Configure>", _draw_days_timeline, add="+")
+    container.after(80, lambda: (_draw_days_timeline(), _animate_cards_for_day(consumo_selected_day)))
+
     global _metrics_accessibility_var
     _metrics_accessibility_var = tk.StringVar(value="Métricas: carregando")
     metrics_accessibility_label = build_label(container, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
@@ -2967,7 +3179,7 @@ def _build_monitor_ui(container):
     _feedback_banner = AppFeedbackBanner(container, text="")
 
     records_panel = tk.Frame(container, bg=UI_THEME["surface"])
-    records_panel.pack(fill=tk.BOTH, expand=True, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), theme_space("space_3", 10)))
+    records_panel.pack(fill=tk.BOTH, expand=True, padx=theme_space("space_3", 10), pady=(theme_space("space_4", 20), theme_space("space_3", 10)))
 
     tab_button_bar = tk.Frame(records_panel, bg=UI_THEME["surface"])
     tab_button_bar.pack(fill=tk.X, padx=0, pady=(0, 0))
