@@ -2823,9 +2823,11 @@ def _build_monitor_ui(container):
         "sem_contato": "Registros com status marcado como SEM CONTATO.",
         "avisado": "Registros com status marcado como AVISADO.",
     }
+    card_gap = theme_space("space_1", 4)
     for idx, key in enumerate(["ativos", "pendentes", "sem_contato", "avisado"]):
         card = _ux_cards[key]
-        card.grid(row=0, column=idx, padx=(0, theme_space("space_2", 8)), sticky="ew")
+        right_gap = card_gap if idx < 3 else 0
+        card.grid(row=0, column=idx, padx=(0, right_gap), sticky="ew")
         cards_row.grid_columnconfigure(idx, weight=1)
         cards_widgets.append(card)
         attach_tooltip(card, cards_tooltips.get(key, ""))
