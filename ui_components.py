@@ -181,8 +181,10 @@ class AppMetricCard(tk.Frame):
             self.card_shell.update_idletasks()
             content_w = max(8, int(self.card_shell.winfo_reqwidth()))
             content_h = max(8, int(self.card_shell.winfo_reqheight()))
-            available_w = max(content_w, int(canvas.winfo_width()))
-            available_h = max(content_h, int(canvas.winfo_height()))
+            canvas_w = int(canvas.winfo_width())
+            canvas_h = int(canvas.winfo_height())
+            available_w = content_w if canvas_w <= 1 else max(8, canvas_w)
+            available_h = content_h if canvas_h <= 1 else max(content_h, canvas_h)
 
             canvas.coords(self._card_shell_window, 0, 0)
             canvas.itemconfigure(self._card_shell_window, width=available_w, height=content_h)
@@ -204,7 +206,7 @@ class AppMetricCard(tk.Frame):
     def _apply_text_wrap(self, _event=None):
         try:
             body_w = max(120, int(self.body.winfo_width()))
-            wrap = max(90, body_w - (2 * theme_space("space_2", 8)))
+            wrap = max(90, body_w - (2 * theme_space("space_3", 10)))
             for lbl in (self.trend_lbl, self.capacity_lbl, self.meta_lbl):
                 lbl.configure(wraplength=wrap, justify="left")
         except Exception:
@@ -221,9 +223,10 @@ class AppMetricCard(tk.Frame):
             self.donut_canvas.pack(fill=tk.BOTH, expand=True)
         else:
             self.donut_canvas.pack_forget()
-        self.trend_lbl.pack(anchor="w", padx=px, pady=(0, 0))
-        self.capacity_lbl.pack(anchor="w", padx=px, pady=(0, 0))
-        self.meta_lbl.pack(anchor="w", padx=px, pady=(0, py_bottom))
+        self.trend_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, 0))
+        self.capacity_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, 0))
+        self.meta_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, py_bottom))
+        self._apply_text_wrap()
 
     def _draw_donut(self, _event=None):
         try:
