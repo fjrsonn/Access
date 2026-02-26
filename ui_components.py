@@ -143,11 +143,11 @@ class AppMetricCard(tk.Frame):
         self._capacity_consumed_n = 0
         self._capacity_limit_n = 1
         self.top_row = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"))
-        self.top_row.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
+        self.top_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), 0))
         self.text_column = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"))
         self.text_column.pack(fill=tk.BOTH, expand=True)
-        self.donut_wrap = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"), height=170)
-        self.donut_wrap.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
+        self.donut_wrap = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"), height=184)
+        self.donut_wrap.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), 0))
         self.donut_wrap.pack_propagate(False)
         self.donut_canvas = tk.Canvas(
             self.donut_wrap,
@@ -200,9 +200,9 @@ class AppMetricCard(tk.Frame):
 
     def _apply_density(self, mode: str = "confortavel"):
         compact = str(mode).lower().startswith("compact")
-        px = theme_space("space_1", 4) if compact else theme_space("space_2", 8)
+        px = theme_space("space_1", 4) if compact else theme_space("space_3", 10)
         py_top = theme_space("space_1", 4)
-        py_bottom = theme_space("space_1", 4) if compact else theme_space("space_2", 8)
+        py_bottom = theme_space("space_1", 4) if compact else theme_space("space_3", 10)
         self.title_lbl.pack(in_=self.text_column, anchor="w", padx=(0, 0), pady=(py_top, 0))
         self.value_lbl.pack(in_=self.text_column, anchor="w", padx=(0, 0), pady=(0, 0))
         if self._donut_visible:
