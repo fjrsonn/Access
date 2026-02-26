@@ -542,6 +542,78 @@ def _carregar_consumo_24h(day_key: str) -> list[int]:
 
 
 
+_consumo_24h_por_dia = {}
+
+
+def _gerar_consumo_24h_base(day_key: str) -> list[int]:
+    digest = hashlib.sha256(day_key.encode("utf-8")).hexdigest()
+    values = []
+    for hour in range(24):
+        seed = int(digest[(hour % 16) * 4:((hour % 16) * 4) + 4], 16)
+        wave = 22 + int(13 * (1 + math.sin((hour / 24) * 6.28318 - 1.0)))
+        noise = seed % 16
+        values.append(max(0, min(100, wave + noise)))
+    return values
+
+
+def _normalizar_24h(points) -> list[int]:
+    base = [0] * 24
+    src = list(points or [])[:24]
+    for idx, val in enumerate(src):
+        try:
+            base[idx] = max(0, min(100, int(val)))
+        except Exception:
+            base[idx] = 0
+    return base
+
+
+def _save_consumo_24h_data():
+    try:
+        os.makedirs(os.path.dirname(CONSUMO_24H_FILE), exist_ok=True)
+        with open(CONSUMO_24H_FILE, "w", encoding="utf-8") as f:
+            json.dump(_consumo_24h_por_dia, f, ensure_ascii=False, indent=2)
+    except Exception:
+        return
+
+
+def _load_consumo_24h_data():
+    global _consumo_24h_por_dia
+    if _consumo_24h_por_dia:
+        return
+    data = {}
+    try:
+        with open(CONSUMO_24H_FILE, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if isinstance(raw, dict):
+            for day_key, points in raw.items():
+                data[str(day_key)] = _normalizar_24h(points)
+    except Exception:
+        data = {}
+
+    if not data:
+        today = datetime.now().date()
+        for back in range(13, -1, -1):
+            day_key = (today - timedelta(days=back)).strftime("%Y-%m-%d")
+            data[day_key] = _gerar_consumo_24h_base(day_key)
+        _consumo_24h_por_dia = data
+        _save_consumo_24h_data()
+        return
+
+    _consumo_24h_por_dia = data
+
+
+def _carregar_consumo_24h(day_key: str) -> list[int]:
+    _load_consumo_24h_data()
+    points = _consumo_24h_por_dia.get(day_key)
+    if points is None:
+        points = _gerar_consumo_24h_base(day_key)
+        _consumo_24h_por_dia[day_key] = points
+        _save_consumo_24h_data()
+    return list(points)
+
+
+
+
 
 def _summarize_sticky_header(formatter, record: dict, position: int | None = None) -> str:
     try:
@@ -3336,7 +3408,8 @@ def _build_monitor_ui(container):
             value = quarter_sums[idx]
             try:
                 card.set_value(str(value))
-                card.set_meta(f"{day_key} • Faixa {idx + 1}")
+                disponivel = max(0, 600 - value)
+                card.set_meta(f"{day_key} • Consumo: {value} • Disponível: {disponivel}")
                 card.set_capacity(value, 600)
                 card.flash(220)
                 card.animate_capacity_fill()
@@ -3407,15 +3480,15 @@ def _build_monitor_ui(container):
                 width=2 if is_selected else 1,
             )
             consumo_days_canvas.tag_bind(item, "<Button-1>", lambda _evt, d=day_key: _on_day_click(d))
-            consumo_days_canvas.tag_bind(item, "<Enter>", lambda _evt, d=day_key, t=total: consumo_days_canvas.itemconfigure("hoverday", text=f"{d} • Consumo: {t} • Usado: {t} • Restante: {max(0, 2400 - t)}"))
+            consumo_days_canvas.tag_bind(item, "<Enter>", lambda _evt, d=day_key, t=total: consumo_days_canvas.itemconfigure("hoverday", text=f"{d} • Consumo: {t} • Disponível: {max(0, 2400 - t)}"))
             if is_selected:
                 consumo_days_canvas.create_text(x, y - 14, text=f"{total}", fill="#FFFFFF", font=theme_font("font_sm"))
 
         # Estado atual: bolinha vazada sempre à frente do último dia
-        last_x, last_y, _, _ = coords[-1]
+        last_x, last_y, last_day_key, last_total = coords[-1]
         marker_x = min(width - margin_x, last_x + max(12, step * 0.45))
         marker_r = 6
-        consumo_days_canvas.create_oval(
+        marker_item = consumo_days_canvas.create_oval(
             marker_x - marker_r,
             last_y - marker_r,
             marker_x + marker_r,
@@ -3424,7 +3497,20 @@ def _build_monitor_ui(container):
             outline="#FFFFFF",
             width=2,
         )
-        consumo_days_canvas.create_text(marker_x, last_y + 14, text="agora", fill=point_default, font=theme_font("font_sm"))
+        marker_restante = max(0, 2400 - last_total)
+        consumo_days_canvas.create_text(
+            marker_x,
+            last_y + 14,
+            text=f"C:{last_total} D:{marker_restante}",
+            fill=point_default,
+            font=theme_font("font_sm"),
+        )
+        consumo_days_canvas.tag_bind(marker_item, "<Button-1>", lambda _evt, d=last_day_key: _on_day_click(d))
+        consumo_days_canvas.tag_bind(
+            marker_item,
+            "<Enter>",
+            lambda _evt, d=last_day_key, t=last_total, r=marker_restante: consumo_days_canvas.itemconfigure("hoverday", text=f"Atual {d} • Consumo: {t} • Disponível: {r}"),
+        )
 
         consumo_days_canvas.create_text(width - 8, 10, text="", anchor="ne", tags="hoverday", fill=point_default, font=theme_font("font_sm"))
         total_selected = sum(_carregar_consumo_24h(consumo_selected_day))
