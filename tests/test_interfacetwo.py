@@ -238,6 +238,50 @@ class InterfaceTwoTests(unittest.TestCase):
             interfacetwo.PREFS_FILE = old_prefs
             os.remove(tmp.name)
 
+    def test_consumo_load_keeps_empty_file_without_regenerating_history(self):
+        import json, os, tempfile
+
+        with tempfile.NamedTemporaryFile('w', encoding='utf-8', suffix='.json', delete=False) as tf:
+            json.dump({}, tf)
+            path = tf.name
+
+        old_file = interfacetwo.CONSUMO_24H_FILE
+        old_cache = dict(interfacetwo._consumo_24h_por_dia)
+        interfacetwo.CONSUMO_24H_FILE = path
+        interfacetwo._consumo_24h_por_dia = {}
+        try:
+            interfacetwo._load_consumo_24h_data()
+            self.assertEqual(interfacetwo._consumo_24h_por_dia, {})
+            with open(path, 'r', encoding='utf-8') as f:
+                payload = json.load(f)
+            self.assertEqual(payload, {})
+        finally:
+            interfacetwo.CONSUMO_24H_FILE = old_file
+            interfacetwo._consumo_24h_por_dia = old_cache
+            os.remove(path)
+
+    def test_carregar_consumo_returns_zeroes_without_persisting_new_day(self):
+        import json, os, tempfile
+
+        with tempfile.NamedTemporaryFile('w', encoding='utf-8', suffix='.json', delete=False) as tf:
+            json.dump({}, tf)
+            path = tf.name
+
+        old_file = interfacetwo.CONSUMO_24H_FILE
+        old_cache = dict(interfacetwo._consumo_24h_por_dia)
+        interfacetwo.CONSUMO_24H_FILE = path
+        interfacetwo._consumo_24h_por_dia = {}
+        try:
+            data = interfacetwo._carregar_consumo_24h('2099-12-31')
+            self.assertEqual(data, [0] * 24)
+            with open(path, 'r', encoding='utf-8') as f:
+                payload = json.load(f)
+            self.assertEqual(payload, {})
+        finally:
+            interfacetwo.CONSUMO_24H_FILE = old_file
+            interfacetwo._consumo_24h_por_dia = old_cache
+            os.remove(path)
+
     def test_filter_bar_has_auto_apply_and_preset_management(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_filter_bar)
