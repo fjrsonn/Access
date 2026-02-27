@@ -3534,6 +3534,7 @@ def _build_monitor_ui(container):
 
 
 
+
     _load_consumo_24h_data()
     consumo_selected_day = max(_consumo_24h_por_dia.keys()) if _consumo_24h_por_dia else datetime.now().strftime("%Y-%m-%d")
     consumo_selected_keep_total = False
@@ -3667,6 +3668,32 @@ def _build_monitor_ui(container):
             marker_item,
             "<Enter>",
             lambda _evt, d=last_day_key, t=last_total, r=marker_restante: consumo_days_canvas.itemconfigure("hoverday", text=f"AGORA {d} • Consumo: {t} • Disponível: {r}"),
+        )
+
+        # Nova bolinha fixa à frente da última para destacar o total real
+        real_marker_x = min(width - margin_x, marker_x + max(12, step * 0.35))
+        real_marker_r = 5
+        real_marker_item = consumo_days_canvas.create_oval(
+            real_marker_x - real_marker_r,
+            last_y - real_marker_r,
+            real_marker_x + real_marker_r,
+            last_y + real_marker_r,
+            fill="#FFFFFF",
+            outline="#FFFFFF",
+            width=1,
+        )
+        consumo_days_canvas.create_text(
+            real_marker_x,
+            last_y + 14,
+            text=f"Total real: {last_total}",
+            fill="#FFFFFF",
+            font=theme_font("font_sm"),
+        )
+        consumo_days_canvas.tag_bind(real_marker_item, "<Button-1>", lambda _evt, d=last_day_key: _on_day_click(d, keep_total=True))
+        consumo_days_canvas.tag_bind(
+            real_marker_item,
+            "<Enter>",
+            lambda _evt, d=last_day_key, t=last_total, r=marker_restante: consumo_days_canvas.itemconfigure("hoverday", text=f"TOTAL REAL {d} • Consumo: {t} • Restante: {r}"),
         )
 
         consumo_days_canvas.create_text(width - 8, 10, text="", anchor="ne", tags="hoverday", fill=point_default, font=theme_font("font_sm"))
