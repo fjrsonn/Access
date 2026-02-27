@@ -3455,23 +3455,26 @@ def _build_monitor_ui(container):
         _play_next(0)
 
     consumo_header = tk.Frame(container, bg=UI_THEME["bg"])
-    consumo_header.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_3", 16), 0))
+    consumo_header.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), 0))
     consumo_title = build_label(consumo_header, "Consumo por dia", bg=UI_THEME["bg"], font=theme_font("font_lg", "bold"))
     consumo_title.pack(side=tk.LEFT)
+
+    consumo_info_row = tk.Frame(container, bg=UI_THEME["bg"])
+    consumo_info_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
+    consumo_hint = build_label(consumo_info_row, "Cada ponto representa um dia. Clique para atualizar os gráficos; a bolinha vazada indica o estado atual.", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    consumo_hint.pack(side=tk.LEFT, anchor="w")
+
     consumo_day_var = tk.StringVar(value="")
-    consumo_day_label = build_label(consumo_header, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    consumo_day_label = build_label(consumo_info_row, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
     consumo_day_label.configure(textvariable=consumo_day_var)
-    consumo_day_label.pack(side=tk.RIGHT)
+    consumo_day_label.pack(side=tk.RIGHT, anchor="e")
 
     consumo_graph_frame = tk.Frame(container, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
-    consumo_graph_frame.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), theme_space("space_2", 8)))
+    consumo_graph_frame.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
     consumo_breakdown_canvas = None
 
-    consumo_hint = build_label(consumo_graph_frame, "Cada ponto representa um dia. Clique para atualizar os gráficos; a bolinha vazada indica o estado atual.", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
-    consumo_hint.pack(fill=tk.X, pady=(0, theme_space("space_1", 4)), anchor="w")
-
-    consumo_days_canvas = tk.Canvas(consumo_graph_frame, bg=UI_THEME["bg"], height=40, highlightthickness=0, bd=0)
-    consumo_days_canvas.pack(fill=tk.X, padx=0, pady=(0, theme_space("space_2", 8)))
+    consumo_days_canvas = tk.Canvas(consumo_graph_frame, bg=UI_THEME["bg"], height=56, highlightthickness=0, bd=0)
+    consumo_days_canvas.pack(fill=tk.X, padx=0, pady=(0, theme_space("space_1", 4)))
 
     consumo_breakdown_canvas = None
 
@@ -3792,7 +3795,7 @@ def _build_monitor_ui(container):
     _feedback_banner = AppFeedbackBanner(container, text="")
 
     records_panel = tk.Frame(container, bg=UI_THEME["surface"])
-    records_panel.pack(fill=tk.BOTH, expand=True, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), theme_space("space_2", 8)))
+    records_panel.pack(fill=tk.BOTH, expand=True, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), theme_space("space_1", 4)))
 
     tab_button_bar = tk.Frame(records_panel, bg=UI_THEME["surface"])
     tab_button_bar.pack(fill=tk.X, padx=0, pady=(0, 0))
