@@ -3455,14 +3455,12 @@ def _build_monitor_ui(container):
         _play_next(0)
 
     consumo_header = tk.Frame(container, bg=UI_THEME["bg"])
-    consumo_header.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), 0))
+    consumo_header.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), theme_space("space_1", 4)))
     consumo_title = build_label(consumo_header, "Consumo por dia", bg=UI_THEME["bg"], font=theme_font("font_lg", "bold"))
     consumo_title.pack(side=tk.LEFT)
 
-    consumo_info_row = tk.Frame(container, bg=UI_THEME["bg"])
-    consumo_info_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
-    consumo_hint = build_label(consumo_info_row, "Cada ponto representa um dia. Clique para atualizar os gráficos; a bolinha vazada indica o estado atual.", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
-    consumo_hint.pack(side=tk.LEFT, anchor="w")
+    consumo_hint = build_label(consumo_header, "Cada ponto representa um dia. Clique para atualizar os gráficos; a bolinha vazada indica o estado atual.", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    consumo_hint.pack(side=tk.LEFT, anchor="w", padx=(theme_space("space_2", 8), 0))
 
     consumo_day_var = tk.StringVar(value="")
     consumo_day_label = build_label(consumo_info_row, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
@@ -4049,7 +4047,7 @@ def _build_monitor_ui(container):
         if filter_key == "controle":
             details_var = tk.StringVar(value="Selecione um registro para ver detalhes.")
             details = tk.Label(frame, textvariable=details_var, bg=UI_THEME["surface_alt"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), anchor="w", justify="left", wraplength=920, padx=theme_space("space_3", 10), pady=theme_space("space_2", 8), font=theme_font("font_md"))
-            details.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 6)), before=text_widget)
+            details.pack(side=tk.BOTTOM, fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 6)))
             _control_details_var[text_widget] = details_var
         monitor_widgets.append(text_widget)
         _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter, "filter_key": filter_key, "widget": text_widget}
