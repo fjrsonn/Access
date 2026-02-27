@@ -3,24 +3,22 @@
     {
       "id": 1,
       "tipo": "ORIENTACAO",
-      "texto": "Às 22:30, o morador Flavio Junior, residente no Bloco 10, Apartamento 10, foi orientado após registro de barulho alto. A ocorrência foi tratada no local e o morador devidamente orientado quanto às normas internas.",
+      "texto": "Orientação 1: ELISA ROCHA, bloco 2, apto 105, instruído sobre acesso de visitantes.",
       "campos_extraidos_confirmados": {
         "BLOCO": [
-          "10"
+          "2"
         ],
         "APARTAMENTO": [
-          "10"
+          "105"
         ],
         "NOME": [
-          "FLAVIO",
-          "DEVIDAMENTE"
+          "ELISA"
         ],
         "SOBRENOME": [
-          "JUNIOR",
-          "ORIENTADO QUANTO ÀS NORMAS INTERNAS"
+          "ROCHA"
         ],
         "HORARIO": [
-          "22:30"
+          "07:19"
         ],
         "VEICULO": [],
         "COR": [],
@@ -38,59 +36,53 @@
       },
       "campos_extraidos": {
         "BLOCO": [
-          "10"
+          "2"
         ],
         "APARTAMENTO": [
-          "10"
+          "105"
         ],
         "NOME": [
-          "FLAVIO",
-          "DEVIDAMENTE"
+          "ELISA"
         ],
         "SOBRENOME": [
-          "JUNIOR",
-          "ORIENTADO QUANTO ÀS NORMAS INTERNAS"
+          "ROCHA"
         ],
         "HORARIO": [
-          "22:30"
+          "07:19"
         ],
         "VEICULO": [],
         "COR": [],
         "PLACA": []
       },
-      "data_hora": "17/02/2026 09:07:54",
+      "data_hora": "28/02/2026 07:19:03",
       "processado": true,
-      "motivo_roteamento": "scores={'orientacoes': 7.4, 'observacoes': 2.0999999999999996, 'encomendas': 0.8}; escolhido=orientacoes",
+      "motivo_roteamento": "dataset_teste_800",
       "versao_regras": "v2.0",
-      "confianca_classificacao": 0.773,
+      "confianca_classificacao": 0.904,
       "ambiguo": false
     },
     {
       "id": 2,
       "tipo": "ORIENTACAO",
-      "texto": "Às 21:10, MARIA Souza, moradora do Bloco B, Apartamento 202, foi orientada na portaria após relato de discussão no corredor. A situação foi acompanhada e a moradora recebeu as devidas orientações.",
+      "texto": "Orientação 2: GABRIELA MARTINS, bloco 4, apto 111, instruído sobre acesso de visitantes.",
       "campos_extraidos_confirmados": {
         "BLOCO": [
-          "B"
+          "4"
         ],
         "APARTAMENTO": [
-          "202"
+          "111"
         ],
         "NOME": [
-          "DO",
-          "RECEBEU"
+          "GABRIELA"
         ],
         "SOBRENOME": [
-          "BLOCO",
-          "AS DEVIDAS ORIENTAÇÕES"
+          "MARTINS"
         ],
         "HORARIO": [
-          "21:10"
+          "09:23"
         ],
         "VEICULO": [],
-        "COR": [
-          "REDOR"
-        ],
+        "COR": [],
         "PLACA": []
       },
       "campos_extraidos_inferidos": {
@@ -105,50 +97,50 @@
       },
       "campos_extraidos": {
         "BLOCO": [
-          "B"
+          "4"
         ],
         "APARTAMENTO": [
-          "202"
+          "111"
         ],
         "NOME": [
-          "DO",
-          "RECEBEU"
+          "GABRIELA"
         ],
         "SOBRENOME": [
-          "BLOCO",
-          "AS DEVIDAS ORIENTAÇÕES"
+          "MARTINS"
         ],
         "HORARIO": [
-          "21:10"
+          "09:23"
         ],
         "VEICULO": [],
-        "COR": [
-          "REDOR"
-        ],
+        "COR": [],
         "PLACA": []
       },
-      "data_hora": "17/02/2026 09:07:56",
+      "data_hora": "28/02/2026 09:23:56",
       "processado": true,
-      "motivo_roteamento": "scores={'orientacoes': 5.4, 'observacoes': 2.0999999999999996, 'encomendas': 0.0}; escolhido=orientacoes",
+      "motivo_roteamento": "dataset_teste_800",
       "versao_regras": "v2.0",
-      "confianca_classificacao": 0.714,
+      "confianca_classificacao": 0.892,
       "ambiguo": false
     },
     {
       "id": 3,
       "tipo": "ORIENTACAO",
-      "texto": "Às 19:40, CARLOS Lima, residente no Bloco C, Apartamento 303, foi alvo de orientação formal em decorrência de som alto. A medida foi aplicada conforme as normas estabelecidas.",
+      "texto": "Orientação 3: IVAN RIBEIRO, bloco 6, apto 117, instruído sobre acesso de visitantes.",
       "campos_extraidos_confirmados": {
         "BLOCO": [
-          "C"
+          "6"
         ],
         "APARTAMENTO": [
-          "303"
+          "117"
         ],
-        "NOME": [],
-        "SOBRENOME": [],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
         "HORARIO": [
-          "19:40"
+          "11:26"
         ],
         "VEICULO": [],
         "COR": [],
@@ -166,48 +158,50 @@
       },
       "campos_extraidos": {
         "BLOCO": [
-          "C"
+          "6"
         ],
         "APARTAMENTO": [
-          "303"
+          "117"
         ],
-        "NOME": [],
-        "SOBRENOME": [],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
         "HORARIO": [
-          "19:40"
+          "11:26"
         ],
         "VEICULO": [],
         "COR": [],
         "PLACA": []
       },
-      "data_hora": "17/02/2026 09:07:58",
+      "data_hora": "28/02/2026 11:26:59",
       "processado": true,
-      "motivo_roteamento": "scores={'orientacoes': 4.0, 'observacoes': 1.4, 'encomendas': 0.0}; escolhido=orientacoes",
+      "motivo_roteamento": "dataset_teste_800",
       "versao_regras": "v2.0",
-      "confianca_classificacao": 0.732,
+      "confianca_classificacao": 0.926,
       "ambiguo": false
     },
     {
       "id": 4,
       "tipo": "ORIENTACAO",
-      "texto": "Às 20:05, ANA Pereira, moradora do Bloco D, Apartamento 404, recebeu orientação após registro de conduta inadequada. A situação foi tratada e a moradora devidamente orientada.",
+      "texto": "Orientação 4: ANA SILVA, bloco 8, apto 123, instruído sobre acesso de visitantes.",
       "campos_extraidos_confirmados": {
         "BLOCO": [
-          "D"
+          "8"
         ],
         "APARTAMENTO": [
-          "404"
+          "123"
         ],
         "NOME": [
-          "DO",
-          "DEVIDAMENTE"
+          "ANA"
         ],
         "SOBRENOME": [
-          "BLOCO",
-          "ORIENTADA"
+          "SILVA"
         ],
         "HORARIO": [
-          "20:05"
+          "13:05"
         ],
         "VEICULO": [],
         "COR": [],
@@ -225,52 +219,50 @@
       },
       "campos_extraidos": {
         "BLOCO": [
-          "D"
+          "8"
         ],
         "APARTAMENTO": [
-          "404"
+          "123"
         ],
         "NOME": [
-          "DO",
-          "DEVIDAMENTE"
+          "ANA"
         ],
         "SOBRENOME": [
-          "BLOCO",
-          "ORIENTADA"
+          "SILVA"
         ],
         "HORARIO": [
-          "20:05"
+          "13:05"
         ],
         "VEICULO": [],
         "COR": [],
         "PLACA": []
       },
-      "data_hora": "17/02/2026 09:08:00",
+      "data_hora": "28/02/2026 13:05:14",
       "processado": true,
-      "motivo_roteamento": "scores={'orientacoes': 8.0, 'observacoes': 2.0999999999999996, 'encomendas': 0.0}; escolhido=orientacoes",
+      "motivo_roteamento": "dataset_teste_800",
       "versao_regras": "v2.0",
-      "confianca_classificacao": 0.786,
+      "confianca_classificacao": 0.956,
       "ambiguo": false
     },
     {
       "id": 5,
       "tipo": "ORIENTACAO",
-      "texto": "Às 18:15, JOÃO Silva, residente no Bloco A, Apartamento 101, foi orientado em razão de uso indevido da garagem. A ocorrência foi registrada e o morador recebeu as orientações necessárias.",
+      "texto": "Orientação 5: CARLA MENDES, bloco 10, apto 129, instruído sobre acesso de visitantes.",
       "campos_extraidos_confirmados": {
         "BLOCO": [
-          "A"
+          "10"
         ],
         "APARTAMENTO": [
-          "101"
+          "129"
         ],
         "NOME": [
-          "RECEBEU"
+          "CARLA"
         ],
         "SOBRENOME": [
-          "AS ORIENTAÇÕES NECESSÁRIAS"
+          "MENDES"
         ],
         "HORARIO": [
-          "18:15"
+          "15:38"
         ],
         "VEICULO": [],
         "COR": [],
@@ -288,29 +280,7654 @@
       },
       "campos_extraidos": {
         "BLOCO": [
-          "A"
+          "10"
         ],
         "APARTAMENTO": [
-          "101"
+          "129"
         ],
         "NOME": [
-          "RECEBEU"
+          "CARLA"
         ],
         "SOBRENOME": [
-          "AS ORIENTAÇÕES NECESSÁRIAS"
+          "MENDES"
         ],
         "HORARIO": [
-          "18:15"
+          "15:38"
         ],
         "VEICULO": [],
         "COR": [],
         "PLACA": []
       },
-      "data_hora": "17/02/2026 09:08:02",
+      "data_hora": "28/02/2026 15:38:12",
       "processado": true,
-      "motivo_roteamento": "scores={'orientacoes': 5.4, 'observacoes': 2.0999999999999996, 'encomendas': 0.0}; escolhido=orientacoes",
+      "motivo_roteamento": "dataset_teste_800",
       "versao_regras": "v2.0",
-      "confianca_classificacao": 0.714,
+      "confianca_classificacao": 0.98,
+      "ambiguo": false
+    },
+    {
+      "id": 6,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 6: JULIA NUNES, bloco 7, apto 130, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "130"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "12:20"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "130"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "12:20"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "01/03/2026 12:20:49",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.891,
+      "ambiguo": false
+    },
+    {
+      "id": 7,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 7: BRUNO COSTA, bloco 9, apto 136, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "136"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "14:28"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "136"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "14:28"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "01/03/2026 14:28:37",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.933,
+      "ambiguo": false
+    },
+    {
+      "id": 8,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 8: DIEGO LIMA, bloco 11, apto 142, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "142"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "16:20"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "142"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "16:20"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "01/03/2026 16:20:05",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.913,
+      "ambiguo": false
+    },
+    {
+      "id": 9,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 9: FELIPE SOUZA, bloco 13, apto 148, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "148"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "18:55"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "148"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "18:55"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "01/03/2026 18:55:03",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.887,
+      "ambiguo": false
+    },
+    {
+      "id": 10,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 10: DIEGO LIMA, bloco 11, apto 150, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "150"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "16:08"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "150"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "16:08"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "02/03/2026 16:08:39",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.911,
+      "ambiguo": false
+    },
+    {
+      "id": 11,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 11: FELIPE SOUZA, bloco 13, apto 156, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "156"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "18:34"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "156"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "18:34"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "02/03/2026 18:34:01",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.895,
+      "ambiguo": false
+    },
+    {
+      "id": 12,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 12: HUGO ALVES, bloco 15, apto 162, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "162"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "20:08"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "162"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "20:08"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "02/03/2026 20:08:45",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.903,
+      "ambiguo": false
+    },
+    {
+      "id": 13,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 13: JULIA NUNES, bloco 17, apto 168, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "168"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "22:49"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "168"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "22:49"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "02/03/2026 22:49:08",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.959,
+      "ambiguo": false
+    },
+    {
+      "id": 14,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 14: HUGO ALVES, bloco 15, apto 100, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "100"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "20:22"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "100"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "20:22"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "03/03/2026 20:22:49",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.989,
+      "ambiguo": false
+    },
+    {
+      "id": 15,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 15: JULIA NUNES, bloco 17, apto 106, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "106"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "22:47"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "106"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "22:47"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "03/03/2026 22:47:57",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.894,
+      "ambiguo": false
+    },
+    {
+      "id": 16,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 16: BRUNO COSTA, bloco 19, apto 112, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "112"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "07:50"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "112"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "07:50"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "03/03/2026 07:50:56",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.966,
+      "ambiguo": false
+    },
+    {
+      "id": 17,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 17: DIEGO LIMA, bloco 1, apto 118, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "118"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "09:00"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "118"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "09:00"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "03/03/2026 09:00:38",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.942,
+      "ambiguo": false
+    },
+    {
+      "id": 18,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 18: FELIPE SOUZA, bloco 3, apto 124, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "124"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "11:33"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "124"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "11:33"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "03/03/2026 11:33:19",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.947,
+      "ambiguo": false
+    },
+    {
+      "id": 19,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 19: HUGO ALVES, bloco 5, apto 130, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "5"
+        ],
+        "APARTAMENTO": [
+          "130"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "13:13"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "5"
+        ],
+        "APARTAMENTO": [
+          "130"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "13:13"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "03/03/2026 13:13:43",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.881,
+      "ambiguo": false
+    },
+    {
+      "id": 20,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 20: JULIA NUNES, bloco 7, apto 136, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "136"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "15:54"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "136"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "15:54"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "03/03/2026 15:54:53",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.922,
+      "ambiguo": false
+    },
+    {
+      "id": 21,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 21: BRUNO COSTA, bloco 9, apto 142, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "142"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "17:39"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "142"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "17:39"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "03/03/2026 17:39:38",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.923,
+      "ambiguo": false
+    },
+    {
+      "id": 22,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 22: FELIPE SOUZA, bloco 3, apto 140, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "140"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "11:32"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "140"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "11:32"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "04/03/2026 11:32:09",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.946,
+      "ambiguo": false
+    },
+    {
+      "id": 23,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 23: HUGO ALVES, bloco 5, apto 146, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "5"
+        ],
+        "APARTAMENTO": [
+          "146"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "13:12"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "5"
+        ],
+        "APARTAMENTO": [
+          "146"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "13:12"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "04/03/2026 13:12:32",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.937,
+      "ambiguo": false
+    },
+    {
+      "id": 24,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 24: JULIA NUNES, bloco 7, apto 152, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "152"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "15:01"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "152"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "15:01"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "04/03/2026 15:01:45",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.962,
+      "ambiguo": false
+    },
+    {
+      "id": 25,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 25: BRUNO COSTA, bloco 9, apto 158, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "158"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "17:31"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "158"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "17:31"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "04/03/2026 17:31:48",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.899,
+      "ambiguo": false
+    },
+    {
+      "id": 26,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 26: DIEGO LIMA, bloco 11, apto 164, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "164"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "19:35"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "164"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "19:35"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "04/03/2026 19:35:10",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.958,
+      "ambiguo": false
+    },
+    {
+      "id": 27,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 27: FELIPE SOUZA, bloco 13, apto 100, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "100"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "21:39"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "100"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "21:39"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "04/03/2026 21:39:25",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.899,
+      "ambiguo": false
+    },
+    {
+      "id": 28,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 28: BRUNO COSTA, bloco 9, apto 100, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "100"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "17:29"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "100"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "17:29"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "05/03/2026 17:29:48",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.932,
+      "ambiguo": false
+    },
+    {
+      "id": 29,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 29: DIEGO LIMA, bloco 11, apto 106, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "106"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "19:52"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "106"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "19:52"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "05/03/2026 19:52:03",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.957,
+      "ambiguo": false
+    },
+    {
+      "id": 30,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 30: FELIPE SOUZA, bloco 13, apto 112, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "112"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "21:11"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "112"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "21:11"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "05/03/2026 21:11:00",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.936,
+      "ambiguo": false
+    },
+    {
+      "id": 31,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 31: HUGO ALVES, bloco 15, apto 118, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "118"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "06:00"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "118"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "06:00"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "05/03/2026 06:00:51",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.933,
+      "ambiguo": false
+    },
+    {
+      "id": 32,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 32: FELIPE SOUZA, bloco 13, apto 120, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "120"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "21:15"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "120"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "21:15"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "06/03/2026 21:15:43",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.937,
+      "ambiguo": false
+    },
+    {
+      "id": 33,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 33: HUGO ALVES, bloco 15, apto 126, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "126"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "06:03"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "126"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "06:03"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "06/03/2026 06:03:05",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.946,
+      "ambiguo": false
+    },
+    {
+      "id": 34,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 34: JULIA NUNES, bloco 17, apto 132, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "132"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "08:45"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "132"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "08:45"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "06/03/2026 08:45:04",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.973,
+      "ambiguo": false
+    },
+    {
+      "id": 35,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 35: BRUNO COSTA, bloco 19, apto 138, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "138"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "10:05"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "138"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "10:05"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "06/03/2026 10:05:30",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.911,
+      "ambiguo": false
+    },
+    {
+      "id": 36,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 36: DIEGO LIMA, bloco 1, apto 144, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "144"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "12:17"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "144"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "12:17"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "06/03/2026 12:17:29",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.894,
+      "ambiguo": false
+    },
+    {
+      "id": 37,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 37: ANA SILVA, bloco 18, apto 145, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "145"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "09:10"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "145"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "09:10"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "07/03/2026 09:10:49",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.941,
+      "ambiguo": false
+    },
+    {
+      "id": 38,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 38: CARLA MENDES, bloco 20, apto 151, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "151"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "11:41"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "151"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "11:41"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "07/03/2026 11:41:43",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.903,
+      "ambiguo": false
+    },
+    {
+      "id": 39,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 39: ELISA ROCHA, bloco 2, apto 157, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "157"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "13:26"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "157"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "13:26"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "07/03/2026 13:26:15",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.904,
+      "ambiguo": false
+    },
+    {
+      "id": 40,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 40: GABRIELA MARTINS, bloco 4, apto 163, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "163"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "15:27"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "163"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "15:27"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "07/03/2026 15:27:24",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.88,
+      "ambiguo": false
+    },
+    {
+      "id": 41,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 41: IVAN RIBEIRO, bloco 6, apto 169, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "169"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "17:50"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "169"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "17:50"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "07/03/2026 17:50:51",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.988,
+      "ambiguo": false
+    },
+    {
+      "id": 42,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 42: ANA SILVA, bloco 8, apto 105, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "105"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "19:44"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "105"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "19:44"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "07/03/2026 19:44:24",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.919,
+      "ambiguo": false
+    },
+    {
+      "id": 43,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 43: CARLA MENDES, bloco 10, apto 111, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "111"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "21:59"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "111"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "21:59"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "07/03/2026 21:59:38",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.889,
+      "ambiguo": false
+    },
+    {
+      "id": 44,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 44: ELISA ROCHA, bloco 12, apto 117, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "117"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "06:33"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "117"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "06:33"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "07/03/2026 06:33:16",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.962,
+      "ambiguo": false
+    },
+    {
+      "id": 45,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 45: GABRIELA MARTINS, bloco 14, apto 123, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "123"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "08:12"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "123"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "08:12"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "07/03/2026 08:12:54",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.909,
+      "ambiguo": false
+    },
+    {
+      "id": 46,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 46: JULIA NUNES, bloco 7, apto 120, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "120"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "18:36"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "120"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "18:36"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "08/03/2026 18:36:33",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.907,
+      "ambiguo": false
+    },
+    {
+      "id": 47,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 47: BRUNO COSTA, bloco 9, apto 126, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "126"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "20:21"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "126"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "20:21"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "08/03/2026 20:21:36",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.929,
+      "ambiguo": false
+    },
+    {
+      "id": 48,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 48: DIEGO LIMA, bloco 11, apto 132, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "132"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "22:25"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "132"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "22:25"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "08/03/2026 22:25:39",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.927,
+      "ambiguo": false
+    },
+    {
+      "id": 49,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 49: FELIPE SOUZA, bloco 13, apto 138, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "138"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "07:26"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "138"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "07:26"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "08/03/2026 07:26:58",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.976,
+      "ambiguo": false
+    },
+    {
+      "id": 50,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 50: HUGO ALVES, bloco 15, apto 144, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "144"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "09:02"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "144"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "09:02"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "08/03/2026 09:02:32",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.898,
+      "ambiguo": false
+    },
+    {
+      "id": 51,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 51: ELISA ROCHA, bloco 12, apto 145, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "145"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "06:29"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "145"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "06:29"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "09/03/2026 06:29:32",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.926,
+      "ambiguo": false
+    },
+    {
+      "id": 52,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 52: GABRIELA MARTINS, bloco 14, apto 151, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "151"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "08:26"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "151"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "08:26"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "09/03/2026 08:26:53",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.989,
+      "ambiguo": false
+    },
+    {
+      "id": 53,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 53: GABRIELA MARTINS, bloco 14, apto 155, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "155"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "08:06"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "155"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "08:06"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "10/03/2026 08:06:44",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.981,
+      "ambiguo": false
+    },
+    {
+      "id": 54,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 54: IVAN RIBEIRO, bloco 16, apto 161, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "161"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "10:18"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "161"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "10:18"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "10/03/2026 10:18:01",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.981,
+      "ambiguo": false
+    },
+    {
+      "id": 55,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 55: ANA SILVA, bloco 18, apto 167, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "167"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "12:31"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "167"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "12:31"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "10/03/2026 12:31:55",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.89,
+      "ambiguo": false
+    },
+    {
+      "id": 56,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 56: CARLA MENDES, bloco 20, apto 103, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "103"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "14:11"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "103"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "14:11"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "10/03/2026 14:11:33",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.964,
+      "ambiguo": false
+    },
+    {
+      "id": 57,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 57: ELISA ROCHA, bloco 2, apto 109, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "109"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "16:55"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "109"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "16:55"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "10/03/2026 16:55:22",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.897,
+      "ambiguo": false
+    },
+    {
+      "id": 58,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 58: BRUNO COSTA, bloco 19, apto 110, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "110"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "13:04"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "110"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "13:04"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "11/03/2026 13:04:16",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.907,
+      "ambiguo": false
+    },
+    {
+      "id": 59,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 59: DIEGO LIMA, bloco 1, apto 116, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "116"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "15:15"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "116"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "15:15"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "11/03/2026 15:15:28",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.915,
+      "ambiguo": false
+    },
+    {
+      "id": 60,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 60: FELIPE SOUZA, bloco 3, apto 122, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "122"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "17:28"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "122"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "17:28"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "11/03/2026 17:28:33",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.883,
+      "ambiguo": false
+    },
+    {
+      "id": 61,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 61: HUGO ALVES, bloco 5, apto 128, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "5"
+        ],
+        "APARTAMENTO": [
+          "128"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "19:15"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "5"
+        ],
+        "APARTAMENTO": [
+          "128"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "19:15"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "11/03/2026 19:15:01",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.912,
+      "ambiguo": false
+    },
+    {
+      "id": 62,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 62: JULIA NUNES, bloco 7, apto 134, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "134"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "21:00"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "134"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "21:00"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "11/03/2026 21:00:35",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.961,
+      "ambiguo": false
+    },
+    {
+      "id": 63,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 63: BRUNO COSTA, bloco 9, apto 140, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "140"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "06:45"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "140"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "06:45"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "11/03/2026 06:45:53",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.981,
+      "ambiguo": false
+    },
+    {
+      "id": 64,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 64: HUGO ALVES, bloco 5, apto 140, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "5"
+        ],
+        "APARTAMENTO": [
+          "140"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "19:42"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "5"
+        ],
+        "APARTAMENTO": [
+          "140"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "19:42"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "12/03/2026 19:42:12",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.888,
+      "ambiguo": false
+    },
+    {
+      "id": 65,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 65: IVAN RIBEIRO, bloco 6, apto 145, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "145"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "20:30"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "145"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "20:30"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "13/03/2026 20:30:44",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.948,
+      "ambiguo": false
+    },
+    {
+      "id": 66,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 66: ANA SILVA, bloco 8, apto 151, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "151"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "22:47"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "151"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "22:47"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "13/03/2026 22:47:20",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.914,
+      "ambiguo": false
+    },
+    {
+      "id": 67,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 67: CARLA MENDES, bloco 10, apto 157, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "157"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "07:15"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "157"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "07:15"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "13/03/2026 07:15:13",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.903,
+      "ambiguo": false
+    },
+    {
+      "id": 68,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 68: ELISA ROCHA, bloco 12, apto 163, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "163"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "09:31"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "163"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "09:31"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "13/03/2026 09:31:05",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.937,
+      "ambiguo": false
+    },
+    {
+      "id": 69,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 69: GABRIELA MARTINS, bloco 14, apto 169, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "169"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "11:42"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "169"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "11:42"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "13/03/2026 11:42:12",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.957,
+      "ambiguo": false
+    },
+    {
+      "id": 70,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 70: IVAN RIBEIRO, bloco 16, apto 105, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "105"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "13:59"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "105"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "13:59"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "13/03/2026 13:59:05",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.964,
+      "ambiguo": false
+    },
+    {
+      "id": 71,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 71: ELISA ROCHA, bloco 12, apto 105, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "105"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "09:49"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "105"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "09:49"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "14/03/2026 09:49:52",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.928,
+      "ambiguo": false
+    },
+    {
+      "id": 72,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 72: GABRIELA MARTINS, bloco 14, apto 111, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "111"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "11:29"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "111"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "11:29"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "14/03/2026 11:29:53",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.917,
+      "ambiguo": false
+    },
+    {
+      "id": 73,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 73: IVAN RIBEIRO, bloco 16, apto 117, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "117"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "13:49"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "117"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "13:49"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "14/03/2026 13:49:46",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.929,
+      "ambiguo": false
+    },
+    {
+      "id": 74,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 74: ANA SILVA, bloco 18, apto 123, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "123"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "15:29"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "123"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "15:29"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "14/03/2026 15:29:49",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.927,
+      "ambiguo": false
+    },
+    {
+      "id": 75,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 75: IVAN RIBEIRO, bloco 16, apto 125, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "125"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "13:52"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "125"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "13:52"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "15/03/2026 13:52:05",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.891,
+      "ambiguo": false
+    },
+    {
+      "id": 76,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 76: ANA SILVA, bloco 18, apto 131, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "131"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "15:12"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "131"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "15:12"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "15/03/2026 15:12:45",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.948,
+      "ambiguo": false
+    },
+    {
+      "id": 77,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 77: ANA SILVA, bloco 18, apto 135, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "135"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "15:13"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "135"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "15:13"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "16/03/2026 15:13:15",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.94,
+      "ambiguo": false
+    },
+    {
+      "id": 78,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 78: CARLA MENDES, bloco 20, apto 141, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "141"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "17:42"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "141"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "17:42"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "16/03/2026 17:42:39",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.907,
+      "ambiguo": false
+    },
+    {
+      "id": 79,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 79: ELISA ROCHA, bloco 2, apto 147, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "147"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "19:25"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "147"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "19:25"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "16/03/2026 19:25:38",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.899,
+      "ambiguo": false
+    },
+    {
+      "id": 80,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 80: GABRIELA MARTINS, bloco 4, apto 153, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "153"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "21:21"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "153"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "21:21"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "16/03/2026 21:21:24",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.922,
+      "ambiguo": false
+    },
+    {
+      "id": 81,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 81: IVAN RIBEIRO, bloco 6, apto 159, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "159"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "06:40"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "159"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "06:40"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "16/03/2026 06:40:53",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.959,
+      "ambiguo": false
+    },
+    {
+      "id": 82,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 82: ANA SILVA, bloco 8, apto 165, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "165"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "08:39"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "165"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "08:39"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "16/03/2026 08:39:20",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.969,
+      "ambiguo": false
+    },
+    {
+      "id": 83,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 83: CARLA MENDES, bloco 10, apto 101, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "101"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "10:27"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "101"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "10:27"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "16/03/2026 10:27:38",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.9,
+      "ambiguo": false
+    },
+    {
+      "id": 84,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 84: ELISA ROCHA, bloco 12, apto 107, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "107"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "12:45"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "107"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "12:45"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "16/03/2026 12:45:13",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.981,
+      "ambiguo": false
+    },
+    {
+      "id": 85,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 85: IVAN RIBEIRO, bloco 6, apto 105, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "105"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "06:47"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "105"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "06:47"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/03/2026 06:47:14",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.884,
+      "ambiguo": false
+    },
+    {
+      "id": 86,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 86: ANA SILVA, bloco 8, apto 111, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "111"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "08:30"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "111"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "08:30"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/03/2026 08:30:25",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.927,
+      "ambiguo": false
+    },
+    {
+      "id": 87,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 87: CARLA MENDES, bloco 10, apto 117, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "117"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "10:41"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "117"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "10:41"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/03/2026 10:41:18",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.966,
+      "ambiguo": false
+    },
+    {
+      "id": 88,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 88: ELISA ROCHA, bloco 12, apto 123, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "123"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "12:28"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "123"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "12:28"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/03/2026 12:28:16",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.981,
+      "ambiguo": false
+    },
+    {
+      "id": 89,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 89: GABRIELA MARTINS, bloco 14, apto 129, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "129"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "14:53"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "129"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "14:53"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/03/2026 14:53:35",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.98,
+      "ambiguo": false
+    },
+    {
+      "id": 90,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 90: IVAN RIBEIRO, bloco 16, apto 135, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "135"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "16:34"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "135"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "16:34"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/03/2026 16:34:38",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.96,
+      "ambiguo": false
+    },
+    {
+      "id": 91,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 91: ANA SILVA, bloco 18, apto 141, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "141"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "18:21"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "141"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "18:21"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/03/2026 18:21:23",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.974,
+      "ambiguo": false
+    },
+    {
+      "id": 92,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 92: CARLA MENDES, bloco 20, apto 147, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "147"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "20:02"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "147"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "20:02"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/03/2026 20:02:59",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.916,
+      "ambiguo": false
+    },
+    {
+      "id": 93,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 93: GABRIELA MARTINS, bloco 14, apto 145, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "145"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "14:08"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "145"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "14:08"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "19/03/2026 14:08:11",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.97,
+      "ambiguo": false
+    },
+    {
+      "id": 94,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 94: IVAN RIBEIRO, bloco 16, apto 151, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "151"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "16:21"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "151"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "16:21"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "19/03/2026 16:21:13",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.948,
+      "ambiguo": false
+    },
+    {
+      "id": 95,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 95: ANA SILVA, bloco 18, apto 157, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "157"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "18:41"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "157"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "18:41"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "19/03/2026 18:41:47",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.971,
+      "ambiguo": false
+    },
+    {
+      "id": 96,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 96: CARLA MENDES, bloco 20, apto 163, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "163"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "20:15"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "163"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "20:15"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "19/03/2026 20:15:32",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.917,
+      "ambiguo": false
+    },
+    {
+      "id": 97,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 97: ELISA ROCHA, bloco 2, apto 169, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "169"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "22:19"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "169"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "22:19"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "19/03/2026 22:19:11",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.924,
+      "ambiguo": false
+    },
+    {
+      "id": 98,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 98: BRUNO COSTA, bloco 19, apto 100, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "100"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "19:12"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "100"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "19:12"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "21/03/2026 19:12:47",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.987,
+      "ambiguo": false
+    },
+    {
+      "id": 99,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 99: DIEGO LIMA, bloco 1, apto 106, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "106"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "21:13"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "106"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "21:13"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "21/03/2026 21:13:29",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.897,
+      "ambiguo": false
+    },
+    {
+      "id": 100,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 100: FELIPE SOUZA, bloco 3, apto 112, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "112"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "06:56"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "112"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "06:56"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "21/03/2026 06:56:50",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.896,
+      "ambiguo": false
+    },
+    {
+      "id": 101,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 101: HUGO ALVES, bloco 5, apto 118, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "5"
+        ],
+        "APARTAMENTO": [
+          "118"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "08:47"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "5"
+        ],
+        "APARTAMENTO": [
+          "118"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "08:47"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "21/03/2026 08:47:28",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.905,
+      "ambiguo": false
+    },
+    {
+      "id": 102,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 102: JULIA NUNES, bloco 7, apto 124, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "124"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "10:30"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "124"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "10:30"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "21/03/2026 10:30:52",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.947,
+      "ambiguo": false
+    },
+    {
+      "id": 103,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 103: BRUNO COSTA, bloco 9, apto 130, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "130"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "12:55"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "130"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "12:55"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "21/03/2026 12:55:16",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.901,
+      "ambiguo": false
+    },
+    {
+      "id": 104,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 104: DIEGO LIMA, bloco 11, apto 136, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "136"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "14:45"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "136"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "14:45"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "21/03/2026 14:45:07",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.939,
+      "ambiguo": false
+    },
+    {
+      "id": 105,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 105: FELIPE SOUZA, bloco 13, apto 142, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "142"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "16:41"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "142"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "16:41"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "21/03/2026 16:41:40",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.909,
+      "ambiguo": false
+    },
+    {
+      "id": 106,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 106: JULIA NUNES, bloco 7, apto 140, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "140"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "10:28"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "140"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "10:28"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "22/03/2026 10:28:46",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.964,
+      "ambiguo": false
+    },
+    {
+      "id": 107,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 107: BRUNO COSTA, bloco 9, apto 146, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "146"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "12:01"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "146"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "12:01"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "22/03/2026 12:01:16",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.955,
+      "ambiguo": false
+    },
+    {
+      "id": 108,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 108: DIEGO LIMA, bloco 11, apto 152, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "152"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "14:25"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "152"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "14:25"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "22/03/2026 14:25:23",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.923,
+      "ambiguo": false
+    },
+    {
+      "id": 109,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 109: FELIPE SOUZA, bloco 13, apto 158, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "158"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "16:32"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "158"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "16:32"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "22/03/2026 16:32:12",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.961,
+      "ambiguo": false
+    },
+    {
+      "id": 110,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 110: DIEGO LIMA, bloco 11, apto 160, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "160"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "14:30"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "160"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "14:30"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "23/03/2026 14:30:53",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.937,
+      "ambiguo": false
+    },
+    {
+      "id": 111,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 111: FELIPE SOUZA, bloco 13, apto 166, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "166"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "16:24"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "166"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "16:24"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "23/03/2026 16:24:02",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.962,
+      "ambiguo": false
+    },
+    {
+      "id": 112,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 112: HUGO ALVES, bloco 15, apto 102, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "102"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "18:46"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "102"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "18:46"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "23/03/2026 18:46:24",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.913,
+      "ambiguo": false
+    },
+    {
+      "id": 113,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 113: JULIA NUNES, bloco 17, apto 108, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "108"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "20:47"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "108"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "20:47"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "23/03/2026 20:47:42",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.935,
+      "ambiguo": false
+    },
+    {
+      "id": 114,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 114: BRUNO COSTA, bloco 19, apto 114, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "114"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "22:03"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "114"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "22:03"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "23/03/2026 22:03:08",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.938,
+      "ambiguo": false
+    },
+    {
+      "id": 115,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 115: DIEGO LIMA, bloco 1, apto 120, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "120"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "07:34"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "120"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "07:34"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "23/03/2026 07:34:32",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.915,
+      "ambiguo": false
+    },
+    {
+      "id": 116,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 116: JULIA NUNES, bloco 17, apto 120, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "120"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "20:37"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "120"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "20:37"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "24/03/2026 20:37:18",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.919,
+      "ambiguo": false
+    },
+    {
+      "id": 117,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 117: BRUNO COSTA, bloco 19, apto 126, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "126"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "22:13"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "126"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "22:13"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "24/03/2026 22:13:34",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.915,
+      "ambiguo": false
+    },
+    {
+      "id": 118,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 118: DIEGO LIMA, bloco 1, apto 132, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "132"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "07:50"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "132"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "07:50"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "24/03/2026 07:50:20",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.917,
+      "ambiguo": false
+    },
+    {
+      "id": 119,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 119: CARLA MENDES, bloco 20, apto 135, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "135"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "06:40"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "135"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "06:40"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "25/03/2026 06:40:15",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.903,
+      "ambiguo": false
+    },
+    {
+      "id": 120,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 120: ELISA ROCHA, bloco 2, apto 141, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "141"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "08:14"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "141"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "08:14"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "25/03/2026 08:14:13",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.892,
+      "ambiguo": false
+    },
+    {
+      "id": 121,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 121: GABRIELA MARTINS, bloco 4, apto 147, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "147"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "10:22"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "147"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "10:22"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "25/03/2026 10:22:21",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.984,
+      "ambiguo": false
+    },
+    {
+      "id": 122,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 122: IVAN RIBEIRO, bloco 6, apto 153, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "153"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "12:27"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "153"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [
+          "12:27"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "25/03/2026 12:27:10",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.882,
+      "ambiguo": false
+    },
+    {
+      "id": 123,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 123: ANA SILVA, bloco 8, apto 159, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "159"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "14:47"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "159"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "14:47"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "25/03/2026 14:47:31",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.961,
+      "ambiguo": false
+    },
+    {
+      "id": 124,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 124: CARLA MENDES, bloco 10, apto 165, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "165"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "16:19"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "165"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "16:19"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "25/03/2026 16:19:02",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.897,
+      "ambiguo": false
+    },
+    {
+      "id": 125,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 125: ELISA ROCHA, bloco 12, apto 101, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "101"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "18:36"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "101"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "18:36"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "25/03/2026 18:36:04",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.931,
+      "ambiguo": false
+    },
+    {
+      "id": 126,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 126: JULIA NUNES, bloco 7, apto 100, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "100"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "13:56"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "100"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [
+          "13:56"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "27/03/2026 13:56:25",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.966,
+      "ambiguo": false
+    },
+    {
+      "id": 127,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 127: BRUNO COSTA, bloco 9, apto 106, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "106"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "15:51"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "106"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "15:51"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "27/03/2026 15:51:05",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.908,
+      "ambiguo": false
+    },
+    {
+      "id": 128,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 128: DIEGO LIMA, bloco 11, apto 112, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "112"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "17:41"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "112"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "17:41"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "27/03/2026 17:41:05",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.914,
+      "ambiguo": false
+    },
+    {
+      "id": 129,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 129: FELIPE SOUZA, bloco 13, apto 118, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "118"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "19:28"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "118"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "19:28"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "27/03/2026 19:28:06",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.881,
+      "ambiguo": false
+    },
+    {
+      "id": 130,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientação 130: HUGO ALVES, bloco 15, apto 124, instruído sobre acesso de visitantes.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "124"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "21:13"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "124"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "21:13"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "27/03/2026 21:13:47",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.94,
       "ambiguo": false
     }
   ]

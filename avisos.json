@@ -75,11 +75,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:08:27",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -502,11 +502,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:08:29",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -544,11 +544,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:08:31",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -586,11 +586,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:08:33",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -628,11 +628,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:08:35",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -670,11 +670,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:08:37",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -712,11 +712,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:08:39",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -754,11 +754,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:08:41",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -796,11 +796,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:08:43",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -838,11 +838,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:08:45",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -880,11 +880,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:08:47",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -922,11 +922,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:08:49",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -964,11 +964,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:08:51",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1006,11 +1006,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:08:53",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1048,11 +1048,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:08:55",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1090,11 +1090,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:08:57",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1132,11 +1132,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:08:59",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1174,11 +1174,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:01",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1216,11 +1216,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:03",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1258,11 +1258,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:05",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1300,11 +1300,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:07",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1342,11 +1342,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:09",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1384,11 +1384,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:16",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1426,11 +1426,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:16",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1468,11 +1468,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:16",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1510,11 +1510,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:18",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1552,11 +1552,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:19",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1594,11 +1594,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:21",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1636,11 +1636,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:23",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1678,11 +1678,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:25",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1720,11 +1720,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:27",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1762,11 +1762,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:29",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1804,11 +1804,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:31",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1846,11 +1846,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:33",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1888,11 +1888,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:35",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1930,11 +1930,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:37",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -1972,11 +1972,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:39",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2014,11 +2014,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:41",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2056,11 +2056,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:45",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2098,11 +2098,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:47",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2140,11 +2140,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:49",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2182,11 +2182,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:51",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2194,7 +2194,7 @@
       "identidade": "ENCOMENDA|10|158|SEM_STATUS",
       "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
       "nivel": "warn",
-      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 10 APARTAMENTO 158 DATA E HORA 17/02/2026 09:09:52!",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 10 APARTAMENTO 158 DATA E HORA 04/03/2026 18:55:43!",
       "ui": {
         "background_color": "#FFFF00",
         "opacity": 0.7,
@@ -2206,20 +2206,21 @@
         "bloco": "10",
         "apartamento": "158",
         "quantidade": 1,
-        "ultimo_registro_id": 44,
+        "ultimo_registro_id": 27,
         "origem_status": "SEM_STATUS"
       },
       "ultimo_registro": {
-        "NOME": "ALINE",
-        "SOBRENOME": "OLIVEIRA",
+        "NOME": "BRUNO",
+        "SOBRENOME": "COSTA",
         "BLOCO": "10",
         "APARTAMENTO": "158",
-        "TIPO": "PACOTE",
-        "LOJA": "RIACHUELO",
-        "IDENTIFICACAO": "UUX2AV16LHEBR",
-        "_entrada_id": 44,
-        "DATA_HORA": "17/02/2026 09:09:52",
-        "ID": 44
+        "TIPO": "ENVELOPE",
+        "LOJA": "MERCADO LIVRE",
+        "IDENTIFICACAO": "PKG000029",
+        "_entrada_id": 27,
+        "DATA_HORA": "04/03/2026 18:55:43",
+        "ID": 27,
+        "STATUS_ENCOMENDA": ""
       },
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:53",
@@ -2266,11 +2267,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:55",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2308,11 +2309,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:57",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2350,11 +2351,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:59",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2392,11 +2393,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:01",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2434,11 +2435,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:03",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2476,11 +2477,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:05",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2518,11 +2519,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:08",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2560,11 +2561,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:09",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2602,11 +2603,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:11",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2644,11 +2645,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:13",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2686,11 +2687,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:15",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2728,11 +2729,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:17",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2770,11 +2771,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:19",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2812,11 +2813,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:21",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2854,11 +2855,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:23",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2896,11 +2897,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:25",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2938,11 +2939,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:27",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -2980,11 +2981,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:29",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -3022,11 +3023,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:31",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -3064,11 +3065,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:33",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -3148,11 +3149,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:37",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -3190,11 +3191,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:39",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -3232,11 +3233,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:41",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -3274,11 +3275,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:43",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -3316,11 +3317,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:45",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -3400,11 +3401,11 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:10:49",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -4294,7 +4295,7 @@
       "identidade": "ENCOMENDA|5|109|SEM_STATUS",
       "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
       "nivel": "warn",
-      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 5 APARTAMENTO 109 DATA E HORA 17/02/2026 09:11:32!",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 5 APARTAMENTO 109 DATA E HORA 19/03/2026 08:43:37!",
       "ui": {
         "background_color": "#FFFF00",
         "opacity": 0.7,
@@ -4306,25 +4307,26 @@
         "bloco": "5",
         "apartamento": "109",
         "quantidade": 1,
-        "ultimo_registro_id": 94,
+        "ultimo_registro_id": 50,
         "origem_status": "SEM_STATUS"
       },
       "ultimo_registro": {
-        "NOME": "LETICIA",
+        "NOME": "DIEGO",
         "SOBRENOME": "LIMA",
         "BLOCO": "5",
         "APARTAMENTO": "109",
-        "TIPO": "CAIXA",
-        "LOJA": "CORREIOS",
-        "IDENTIFICACAO": "S0HK177DSOJ12BR",
-        "_entrada_id": 94,
-        "DATA_HORA": "17/02/2026 09:11:32",
-        "ID": 94
+        "TIPO": "ENVELOPE",
+        "LOJA": "RIACHUELO",
+        "IDENTIFICACAO": "PKG00049",
+        "_entrada_id": 50,
+        "DATA_HORA": "19/03/2026 08:43:37",
+        "ID": 50,
+        "STATUS_ENCOMENDA": ""
       },
       "timestamps": {
         "gerado_em": "17/02/2026 09:11:33",
         "exibido_em": null,
-        "fechado_em": "20/02/2026 02:50:55"
+        "fechado_em": "27/02/2026 17:53:30"
       },
       "status": {
         "ativo": false,
@@ -4620,11 +4622,11 @@
       "timestamps": {
         "gerado_em": "19/02/2026 06:11:27",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -4664,11 +4666,11 @@
       "timestamps": {
         "gerado_em": "19/02/2026 06:11:55",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -4708,11 +4710,11 @@
       "timestamps": {
         "gerado_em": "20/02/2026 02:50:41",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -4752,11 +4754,11 @@
       "timestamps": {
         "gerado_em": "20/02/2026 02:50:55",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -4796,11 +4798,11 @@
       "timestamps": {
         "gerado_em": "20/02/2026 02:51:08",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -4840,11 +4842,11 @@
       "timestamps": {
         "gerado_em": "20/02/2026 02:52:20",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -4884,11 +4886,11 @@
       "timestamps": {
         "gerado_em": "20/02/2026 02:52:30",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -4928,11 +4930,11 @@
       "timestamps": {
         "gerado_em": "20/02/2026 02:54:23",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -4972,11 +4974,11 @@
       "timestamps": {
         "gerado_em": "21/02/2026 15:19:57",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -5016,11 +5018,11 @@
       "timestamps": {
         "gerado_em": "21/02/2026 15:20:01",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -5060,11 +5062,11 @@
       "timestamps": {
         "gerado_em": "21/02/2026 15:20:08",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -5104,11 +5106,11 @@
       "timestamps": {
         "gerado_em": "21/02/2026 15:20:11",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "27/02/2026 17:32:02"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -5148,6 +5150,4794 @@
       "timestamps": {
         "gerado_em": "21/02/2026 15:20:16",
         "exibido_em": null,
+        "fechado_em": "27/02/2026 17:32:02"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000122",
+      "identidade": "ENCOMENDA|2|101|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 2 APARTAMENTO 101 DATA E HORA 28/02/2026 08:07:13!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "2",
+        "apartamento": "101",
+        "quantidade": 1,
+        "ultimo_registro_id": 2,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "LIMA",
+        "BLOCO": "2",
+        "APARTAMENTO": "101",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MERCADO LIVRE",
+        "IDENTIFICACAO": "PKG00001",
+        "_entrada_id": 2,
+        "DATA_HORA": "28/02/2026 08:07:13",
+        "ID": 2,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000123",
+      "identidade": "ENCOMENDA|3|102|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 3 APARTAMENTO 102 DATA E HORA 01/03/2026 09:14:26!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "3",
+        "apartamento": "102",
+        "quantidade": 1,
+        "ultimo_registro_id": 3,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ELISA",
+        "SOBRENOME": "ROCHA",
+        "BLOCO": "3",
+        "APARTAMENTO": "102",
+        "TIPO": "CAIXA",
+        "LOJA": "SHOPEE",
+        "IDENTIFICACAO": "PKG00002",
+        "_entrada_id": 3,
+        "DATA_HORA": "01/03/2026 09:14:26",
+        "ID": 3,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000124",
+      "identidade": "ENCOMENDA|5|104|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 5 APARTAMENTO 104 DATA E HORA 03/03/2026 11:28:52 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "5",
+        "apartamento": "104",
+        "quantidade": 1,
+        "ultimo_registro_id": 5,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "GABRIELA",
+        "SOBRENOME": "MARTINS",
+        "BLOCO": "5",
+        "APARTAMENTO": "104",
+        "TIPO": "CAIXA",
+        "LOJA": "RIACHUELO",
+        "IDENTIFICACAO": "PKG00004",
+        "_entrada_id": 5,
+        "DATA_HORA": "03/03/2026 11:28:52",
+        "ID": 5,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000125",
+      "identidade": "ENCOMENDA|6|105|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 6 APARTAMENTO 105 DATA E HORA 04/03/2026 12:35:05!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "6",
+        "apartamento": "105",
+        "quantidade": 1,
+        "ultimo_registro_id": 6,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "HUGO",
+        "SOBRENOME": "ALVES",
+        "BLOCO": "6",
+        "APARTAMENTO": "105",
+        "TIPO": "ENVELOPE",
+        "LOJA": "AMAZON",
+        "IDENTIFICACAO": "PKG00005",
+        "_entrada_id": 6,
+        "DATA_HORA": "04/03/2026 12:35:05",
+        "ID": 6,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000126",
+      "identidade": "ENCOMENDA|8|107|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 8 APARTAMENTO 107 DATA E HORA 06/03/2026 14:49:31!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "8",
+        "apartamento": "107",
+        "quantidade": 1,
+        "ultimo_registro_id": 8,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "BRUNO",
+        "SOBRENOME": "COSTA",
+        "BLOCO": "8",
+        "APARTAMENTO": "107",
+        "TIPO": "ENVELOPE",
+        "LOJA": "SHOPEE",
+        "IDENTIFICACAO": "PKG00007",
+        "_entrada_id": 8,
+        "DATA_HORA": "06/03/2026 14:49:31",
+        "ID": 8,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000127",
+      "identidade": "ENCOMENDA|9|108|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 9 APARTAMENTO 108 DATA E HORA 07/03/2026 15:56:44 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "9",
+        "apartamento": "108",
+        "quantidade": 1,
+        "ultimo_registro_id": 9,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "CARLA",
+        "SOBRENOME": "MENDES",
+        "BLOCO": "9",
+        "APARTAMENTO": "108",
+        "TIPO": "CAIXA",
+        "LOJA": "MAGALU",
+        "IDENTIFICACAO": "PKG00008",
+        "_entrada_id": 9,
+        "DATA_HORA": "07/03/2026 15:56:44",
+        "ID": 9,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000128",
+      "identidade": "ENCOMENDA|11|110|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 11 APARTAMENTO 110 DATA E HORA 09/03/2026 17:10:10!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "11",
+        "apartamento": "110",
+        "quantidade": 1,
+        "ultimo_registro_id": 11,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ELISA",
+        "SOBRENOME": "ROCHA",
+        "BLOCO": "11",
+        "APARTAMENTO": "110",
+        "TIPO": "CAIXA",
+        "LOJA": "AMAZON",
+        "IDENTIFICACAO": "PKG00010",
+        "_entrada_id": 11,
+        "DATA_HORA": "09/03/2026 17:10:10",
+        "ID": 11,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000129",
+      "identidade": "ENCOMENDA|12|111|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 12 APARTAMENTO 111 DATA E HORA 10/03/2026 18:17:23!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "12",
+        "apartamento": "111",
+        "quantidade": 1,
+        "ultimo_registro_id": 12,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "FELIPE",
+        "SOBRENOME": "SOUZA",
+        "BLOCO": "12",
+        "APARTAMENTO": "111",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MERCADO LIVRE",
+        "IDENTIFICACAO": "PKG00011",
+        "_entrada_id": 12,
+        "DATA_HORA": "10/03/2026 18:17:23",
+        "ID": 12,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000130",
+      "identidade": "ENCOMENDA|14|113|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 14 APARTAMENTO 113 DATA E HORA 12/03/2026 08:31:49!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "14",
+        "apartamento": "113",
+        "quantidade": 1,
+        "ultimo_registro_id": 14,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "HUGO",
+        "SOBRENOME": "ALVES",
+        "BLOCO": "14",
+        "APARTAMENTO": "113",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MAGALU",
+        "IDENTIFICACAO": "PKG00013",
+        "_entrada_id": 14,
+        "DATA_HORA": "12/03/2026 08:31:49",
+        "ID": 14,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000131",
+      "identidade": "ENCOMENDA|15|114|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 15 APARTAMENTO 114 DATA E HORA 13/03/2026 09:38:02!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "15",
+        "apartamento": "114",
+        "quantidade": 1,
+        "ultimo_registro_id": 15,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ANA",
+        "SOBRENOME": "SILVA",
+        "BLOCO": "15",
+        "APARTAMENTO": "114",
+        "TIPO": "CAIXA",
+        "LOJA": "RIACHUELO",
+        "IDENTIFICACAO": "PKG00014",
+        "_entrada_id": 15,
+        "DATA_HORA": "13/03/2026 09:38:02",
+        "ID": 15,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000132",
+      "identidade": "ENCOMENDA|2|116|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 2 APARTAMENTO 116 DATA E HORA 15/03/2026 11:52:28 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "2",
+        "apartamento": "116",
+        "quantidade": 1,
+        "ultimo_registro_id": 17,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "CARLA",
+        "SOBRENOME": "MENDES",
+        "BLOCO": "2",
+        "APARTAMENTO": "116",
+        "TIPO": "CAIXA",
+        "LOJA": "MERCADO LIVRE",
+        "IDENTIFICACAO": "PKG00016",
+        "_entrada_id": 17,
+        "DATA_HORA": "15/03/2026 11:52:28",
+        "ID": 17,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000133",
+      "identidade": "ENCOMENDA|3|117|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 3 APARTAMENTO 117 DATA E HORA 16/03/2026 12:59:41!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "3",
+        "apartamento": "117",
+        "quantidade": 1,
+        "ultimo_registro_id": 18,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "LIMA",
+        "BLOCO": "3",
+        "APARTAMENTO": "117",
+        "TIPO": "ENVELOPE",
+        "LOJA": "SHOPEE",
+        "IDENTIFICACAO": "PKG00017",
+        "_entrada_id": 18,
+        "DATA_HORA": "16/03/2026 12:59:41",
+        "ID": 18,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000134",
+      "identidade": "ENCOMENDA|5|119|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 5 APARTAMENTO 119 DATA E HORA 18/03/2026 14:13:07!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "5",
+        "apartamento": "119",
+        "quantidade": 1,
+        "ultimo_registro_id": 20,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "FELIPE",
+        "SOBRENOME": "SOUZA",
+        "BLOCO": "5",
+        "APARTAMENTO": "119",
+        "TIPO": "ENVELOPE",
+        "LOJA": "RIACHUELO",
+        "IDENTIFICACAO": "PKG00019",
+        "_entrada_id": 20,
+        "DATA_HORA": "18/03/2026 14:13:07",
+        "ID": 20,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000135",
+      "identidade": "ENCOMENDA|6|120|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 6 APARTAMENTO 120 DATA E HORA 06/03/2026 17:53:45 | 07/03/2026 17:03:11 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "6",
+        "apartamento": "120",
+        "quantidade": 2,
+        "ultimo_registro_id": 45,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "HUGO",
+        "SOBRENOME": "ALVES",
+        "BLOCO": "6",
+        "APARTAMENTO": "120",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MAGALU",
+        "IDENTIFICACAO": "PKG000045",
+        "_entrada_id": 45,
+        "DATA_HORA": "07/03/2026 17:03:11",
+        "ID": 45,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000136",
+      "identidade": "ENCOMENDA|8|122|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 8 APARTAMENTO 122 DATA E HORA 21/03/2026 17:34:46!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "8",
+        "apartamento": "122",
+        "quantidade": 1,
+        "ultimo_registro_id": 23,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ANA",
+        "SOBRENOME": "SILVA",
+        "BLOCO": "8",
+        "APARTAMENTO": "122",
+        "TIPO": "CAIXA",
+        "LOJA": "SHOPEE",
+        "IDENTIFICACAO": "PKG00022",
+        "_entrada_id": 23,
+        "DATA_HORA": "21/03/2026 17:34:46",
+        "ID": 23,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000137",
+      "identidade": "ENCOMENDA|9|123|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 9 APARTAMENTO 123 DATA E HORA 22/03/2026 18:41:59!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "9",
+        "apartamento": "123",
+        "quantidade": 1,
+        "ultimo_registro_id": 24,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "BRUNO",
+        "SOBRENOME": "COSTA",
+        "BLOCO": "9",
+        "APARTAMENTO": "123",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MAGALU",
+        "IDENTIFICACAO": "PKG00023",
+        "_entrada_id": 24,
+        "DATA_HORA": "22/03/2026 18:41:59",
+        "ID": 24,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000138",
+      "identidade": "ENCOMENDA|11|125|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 11 APARTAMENTO 125 DATA E HORA 24/03/2026 08:55:25!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "11",
+        "apartamento": "125",
+        "quantidade": 1,
+        "ultimo_registro_id": 26,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "LIMA",
+        "BLOCO": "11",
+        "APARTAMENTO": "125",
+        "TIPO": "ENVELOPE",
+        "LOJA": "AMAZON",
+        "IDENTIFICACAO": "PKG00025",
+        "_entrada_id": 26,
+        "DATA_HORA": "24/03/2026 08:55:25",
+        "ID": 26,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000139",
+      "identidade": "ENCOMENDA|12|126|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 12 APARTAMENTO 126 DATA E HORA 25/03/2026 09:02:38!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "12",
+        "apartamento": "126",
+        "quantidade": 1,
+        "ultimo_registro_id": 27,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ELISA",
+        "SOBRENOME": "ROCHA",
+        "BLOCO": "12",
+        "APARTAMENTO": "126",
+        "TIPO": "CAIXA",
+        "LOJA": "MERCADO LIVRE",
+        "IDENTIFICACAO": "PKG00026",
+        "_entrada_id": 27,
+        "DATA_HORA": "25/03/2026 09:02:38",
+        "ID": 27,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000140",
+      "identidade": "ENCOMENDA|14|128|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 14 APARTAMENTO 128 DATA E HORA 27/03/2026 11:16:04 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "14",
+        "apartamento": "128",
+        "quantidade": 1,
+        "ultimo_registro_id": 29,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "GABRIELA",
+        "SOBRENOME": "MARTINS",
+        "BLOCO": "14",
+        "APARTAMENTO": "128",
+        "TIPO": "CAIXA",
+        "LOJA": "MAGALU",
+        "IDENTIFICACAO": "PKG00028",
+        "_entrada_id": 29,
+        "DATA_HORA": "27/03/2026 11:16:04",
+        "ID": 29,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000141",
+      "identidade": "ENCOMENDA|15|129|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 15 APARTAMENTO 129 DATA E HORA 27/02/2026 12:23:17!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "15",
+        "apartamento": "129",
+        "quantidade": 1,
+        "ultimo_registro_id": 30,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "HUGO",
+        "SOBRENOME": "ALVES",
+        "BLOCO": "15",
+        "APARTAMENTO": "129",
+        "TIPO": "ENVELOPE",
+        "LOJA": "RIACHUELO",
+        "IDENTIFICACAO": "PKG00029",
+        "_entrada_id": 30,
+        "DATA_HORA": "27/02/2026 12:23:17",
+        "ID": 30,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000142",
+      "identidade": "ENCOMENDA|2|131|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 2 APARTAMENTO 131 DATA E HORA 01/03/2026 14:37:43!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "2",
+        "apartamento": "131",
+        "quantidade": 1,
+        "ultimo_registro_id": 32,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "BRUNO",
+        "SOBRENOME": "COSTA",
+        "BLOCO": "2",
+        "APARTAMENTO": "131",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MERCADO LIVRE",
+        "IDENTIFICACAO": "PKG00031",
+        "_entrada_id": 32,
+        "DATA_HORA": "01/03/2026 14:37:43",
+        "ID": 32,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000143",
+      "identidade": "ENCOMENDA|3|132|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 3 APARTAMENTO 132 DATA E HORA 02/03/2026 15:44:56 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "3",
+        "apartamento": "132",
+        "quantidade": 1,
+        "ultimo_registro_id": 33,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "CARLA",
+        "SOBRENOME": "MENDES",
+        "BLOCO": "3",
+        "APARTAMENTO": "132",
+        "TIPO": "CAIXA",
+        "LOJA": "SHOPEE",
+        "IDENTIFICACAO": "PKG00032",
+        "_entrada_id": 33,
+        "DATA_HORA": "02/03/2026 15:44:56",
+        "ID": 33,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000144",
+      "identidade": "ENCOMENDA|5|134|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 5 APARTAMENTO 134 DATA E HORA 04/03/2026 17:58:22!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "5",
+        "apartamento": "134",
+        "quantidade": 1,
+        "ultimo_registro_id": 35,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ELISA",
+        "SOBRENOME": "ROCHA",
+        "BLOCO": "5",
+        "APARTAMENTO": "134",
+        "TIPO": "CAIXA",
+        "LOJA": "RIACHUELO",
+        "IDENTIFICACAO": "PKG00034",
+        "_entrada_id": 35,
+        "DATA_HORA": "04/03/2026 17:58:22",
+        "ID": 35,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000145",
+      "identidade": "ENCOMENDA|6|135|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 6 APARTAMENTO 135 DATA E HORA 05/03/2026 18:05:35!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "6",
+        "apartamento": "135",
+        "quantidade": 1,
+        "ultimo_registro_id": 36,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "FELIPE",
+        "SOBRENOME": "SOUZA",
+        "BLOCO": "6",
+        "APARTAMENTO": "135",
+        "TIPO": "ENVELOPE",
+        "LOJA": "AMAZON",
+        "IDENTIFICACAO": "PKG00035",
+        "_entrada_id": 36,
+        "DATA_HORA": "05/03/2026 18:05:35",
+        "ID": 36,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000146",
+      "identidade": "ENCOMENDA|8|137|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 8 APARTAMENTO 137 DATA E HORA 07/03/2026 08:19:01!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "8",
+        "apartamento": "137",
+        "quantidade": 1,
+        "ultimo_registro_id": 38,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "HUGO",
+        "SOBRENOME": "ALVES",
+        "BLOCO": "8",
+        "APARTAMENTO": "137",
+        "TIPO": "ENVELOPE",
+        "LOJA": "SHOPEE",
+        "IDENTIFICACAO": "PKG00037",
+        "_entrada_id": 38,
+        "DATA_HORA": "07/03/2026 08:19:01",
+        "ID": 38,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000147",
+      "identidade": "ENCOMENDA|9|138|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 9 APARTAMENTO 138 DATA E HORA 08/03/2026 09:26:14!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "9",
+        "apartamento": "138",
+        "quantidade": 1,
+        "ultimo_registro_id": 39,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ANA",
+        "SOBRENOME": "SILVA",
+        "BLOCO": "9",
+        "APARTAMENTO": "138",
+        "TIPO": "CAIXA",
+        "LOJA": "MAGALU",
+        "IDENTIFICACAO": "PKG00038",
+        "_entrada_id": 39,
+        "DATA_HORA": "08/03/2026 09:26:14",
+        "ID": 39,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000148",
+      "identidade": "ENCOMENDA|11|100|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 11 APARTAMENTO 100 DATA E HORA 11/03/2026 08:03:15 | 12/03/2026 08:34:11 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "11",
+        "apartamento": "100",
+        "quantidade": 2,
+        "ultimo_registro_id": 70,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "CARLA",
+        "SOBRENOME": "MENDES",
+        "BLOCO": "11",
+        "APARTAMENTO": "100",
+        "TIPO": "CAIXA",
+        "LOJA": "AMAZON",
+        "IDENTIFICACAO": "PKG000070",
+        "_entrada_id": 70,
+        "DATA_HORA": "12/03/2026 08:34:11",
+        "ID": 70,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000149",
+      "identidade": "ENCOMENDA|12|101|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 12 APARTAMENTO 101 DATA E HORA 11/03/2026 12:47:53!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "12",
+        "apartamento": "101",
+        "quantidade": 1,
+        "ultimo_registro_id": 42,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "LIMA",
+        "BLOCO": "12",
+        "APARTAMENTO": "101",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MERCADO LIVRE",
+        "IDENTIFICACAO": "PKG00041",
+        "_entrada_id": 42,
+        "DATA_HORA": "11/03/2026 12:47:53",
+        "ID": 42,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000150",
+      "identidade": "ENCOMENDA|14|103|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 14 APARTAMENTO 103 DATA E HORA 13/03/2026 14:01:19!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "14",
+        "apartamento": "103",
+        "quantidade": 1,
+        "ultimo_registro_id": 44,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "FELIPE",
+        "SOBRENOME": "SOUZA",
+        "BLOCO": "14",
+        "APARTAMENTO": "103",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MAGALU",
+        "IDENTIFICACAO": "PKG00043",
+        "_entrada_id": 44,
+        "DATA_HORA": "13/03/2026 14:01:19",
+        "ID": 44,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000151",
+      "identidade": "ENCOMENDA|15|104|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 15 APARTAMENTO 104 DATA E HORA 14/03/2026 15:08:32 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "15",
+        "apartamento": "104",
+        "quantidade": 1,
+        "ultimo_registro_id": 45,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "GABRIELA",
+        "SOBRENOME": "MARTINS",
+        "BLOCO": "15",
+        "APARTAMENTO": "104",
+        "TIPO": "CAIXA",
+        "LOJA": "RIACHUELO",
+        "IDENTIFICACAO": "PKG00044",
+        "_entrada_id": 45,
+        "DATA_HORA": "14/03/2026 15:08:32",
+        "ID": 45,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000152",
+      "identidade": "ENCOMENDA|2|106|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 2 APARTAMENTO 106 DATA E HORA 16/03/2026 17:22:58!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "2",
+        "apartamento": "106",
+        "quantidade": 1,
+        "ultimo_registro_id": 47,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ANA",
+        "SOBRENOME": "SILVA",
+        "BLOCO": "2",
+        "APARTAMENTO": "106",
+        "TIPO": "CAIXA",
+        "LOJA": "MERCADO LIVRE",
+        "IDENTIFICACAO": "PKG00046",
+        "_entrada_id": 47,
+        "DATA_HORA": "16/03/2026 17:22:58",
+        "ID": 47,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000153",
+      "identidade": "ENCOMENDA|3|107|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 3 APARTAMENTO 107 DATA E HORA 17/03/2026 18:29:11!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "3",
+        "apartamento": "107",
+        "quantidade": 1,
+        "ultimo_registro_id": 48,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "BRUNO",
+        "SOBRENOME": "COSTA",
+        "BLOCO": "3",
+        "APARTAMENTO": "107",
+        "TIPO": "ENVELOPE",
+        "LOJA": "SHOPEE",
+        "IDENTIFICACAO": "PKG00047",
+        "_entrada_id": 48,
+        "DATA_HORA": "17/03/2026 18:29:11",
+        "ID": 48,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:32:02",
+        "exibido_em": null,
+        "fechado_em": "27/02/2026 17:53:30"
+      },
+      "status": {
+        "ativo": false,
+        "fechado_pelo_usuario": true
+      }
+    },
+    {
+      "id_aviso": "AVISO-000154",
+      "identidade": "ENCOMENDA|2|102|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 2 APARTAMENTO 102 DATA E HORA 27/02/2026 07:32:10 | 27/03/2026 11:25:31!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "2",
+        "apartamento": "102",
+        "quantidade": 2,
+        "ultimo_registro_id": 141,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "LIMA",
+        "BLOCO": "2",
+        "APARTAMENTO": "102",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MERCADO LIVRE",
+        "IDENTIFICACAO": "PKG000141",
+        "_entrada_id": 141,
+        "DATA_HORA": "27/03/2026 11:25:31",
+        "ID": 141,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000155",
+      "identidade": "ENCOMENDA|4|106|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 4 APARTAMENTO 106 DATA E HORA 27/02/2026 09:33:59 | 27/03/2026 13:59:26!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "4",
+        "apartamento": "106",
+        "quantidade": 2,
+        "ultimo_registro_id": 142,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "FELIPE",
+        "SOBRENOME": "SOUZA",
+        "BLOCO": "4",
+        "APARTAMENTO": "106",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MAGALU",
+        "IDENTIFICACAO": "PKG000143",
+        "_entrada_id": 142,
+        "DATA_HORA": "27/03/2026 13:59:26",
+        "ID": 142,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000156",
+      "identidade": "ENCOMENDA|6|110|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 6 APARTAMENTO 110 DATA E HORA 27/02/2026 11:33:34 | 27/03/2026 15:55:12 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "6",
+        "apartamento": "110",
+        "quantidade": 2,
+        "ultimo_registro_id": 143,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "HUGO",
+        "SOBRENOME": "ALVES",
+        "BLOCO": "6",
+        "APARTAMENTO": "110",
+        "TIPO": "ENVELOPE",
+        "LOJA": "CASAS BAHIA",
+        "IDENTIFICACAO": "PKG000145",
+        "_entrada_id": 143,
+        "DATA_HORA": "27/03/2026 15:55:12",
+        "ID": 143,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000157",
+      "identidade": "ENCOMENDA|8|114|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 8 APARTAMENTO 114 DATA E HORA 27/02/2026 13:25:17 | 27/03/2026 17:41:19!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "8",
+        "apartamento": "114",
+        "quantidade": 2,
+        "ultimo_registro_id": 144,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "JULIA",
+        "SOBRENOME": "NUNES",
+        "BLOCO": "8",
+        "APARTAMENTO": "114",
+        "TIPO": "ENVELOPE",
+        "LOJA": "AMAZON",
+        "IDENTIFICACAO": "PKG000147",
+        "_entrada_id": 144,
+        "DATA_HORA": "27/03/2026 17:41:19",
+        "ID": 144,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000158",
+      "identidade": "ENCOMENDA|10|118|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 10 APARTAMENTO 118 DATA E HORA 27/02/2026 15:28:45 | 27/03/2026 19:45:26!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "10",
+        "apartamento": "118",
+        "quantidade": 2,
+        "ultimo_registro_id": 145,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "BRUNO",
+        "SOBRENOME": "COSTA",
+        "BLOCO": "10",
+        "APARTAMENTO": "118",
+        "TIPO": "ENVELOPE",
+        "LOJA": "SHOPEE",
+        "IDENTIFICACAO": "PKG000149",
+        "_entrada_id": 145,
+        "DATA_HORA": "27/03/2026 19:45:26",
+        "ID": 145,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000159",
+      "identidade": "ENCOMENDA|12|122|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 12 APARTAMENTO 122 DATA E HORA 27/02/2026 17:28:13 | 27/03/2026 21:03:28!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "12",
+        "apartamento": "122",
+        "quantidade": 2,
+        "ultimo_registro_id": 146,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "LIMA",
+        "BLOCO": "12",
+        "APARTAMENTO": "122",
+        "TIPO": "ENVELOPE",
+        "LOJA": "RIACHUELO",
+        "IDENTIFICACAO": "PKG000151",
+        "_entrada_id": 146,
+        "DATA_HORA": "27/03/2026 21:03:28",
+        "ID": 146,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000160",
+      "identidade": "ENCOMENDA|14|126|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 14 APARTAMENTO 126 DATA E HORA 27/02/2026 19:16:27 | 27/03/2026 06:13:36!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "14",
+        "apartamento": "126",
+        "quantidade": 2,
+        "ultimo_registro_id": 147,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "FELIPE",
+        "SOBRENOME": "SOUZA",
+        "BLOCO": "14",
+        "APARTAMENTO": "126",
+        "TIPO": "ENVELOPE",
+        "LOJA": "KABUM",
+        "IDENTIFICACAO": "PKG000153",
+        "_entrada_id": 147,
+        "DATA_HORA": "27/03/2026 06:13:36",
+        "ID": 147,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000161",
+      "identidade": "ENCOMENDA|16|130|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 16 APARTAMENTO 130 DATA E HORA 27/02/2026 21:06:37 | 27/03/2026 08:27:09 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "16",
+        "apartamento": "130",
+        "quantidade": 2,
+        "ultimo_registro_id": 148,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "HUGO",
+        "SOBRENOME": "ALVES",
+        "BLOCO": "16",
+        "APARTAMENTO": "130",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MERCADO LIVRE",
+        "IDENTIFICACAO": "PKG000155",
+        "_entrada_id": 148,
+        "DATA_HORA": "27/03/2026 08:27:09",
+        "ID": 148,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000162",
+      "identidade": "ENCOMENDA|18|134|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 18 APARTAMENTO 134 DATA E HORA 27/02/2026 06:29:52 | 27/03/2026 10:13:33!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "18",
+        "apartamento": "134",
+        "quantidade": 2,
+        "ultimo_registro_id": 149,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "JULIA",
+        "SOBRENOME": "NUNES",
+        "BLOCO": "18",
+        "APARTAMENTO": "134",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MAGALU",
+        "IDENTIFICACAO": "PKG000157",
+        "_entrada_id": 149,
+        "DATA_HORA": "27/03/2026 10:13:33",
+        "ID": 149,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000163",
+      "identidade": "ENCOMENDA|20|138|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA TRES ENCOMENDAS PARA O BLOCO 20 APARTAMENTO 138 DATA E HORA 27/02/2026 08:02:25 | 02/03/2026 08:24:42 | 27/03/2026 12:48:20!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "20",
+        "apartamento": "138",
+        "quantidade": 3,
+        "ultimo_registro_id": 150,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "BRUNO",
+        "SOBRENOME": "COSTA",
+        "BLOCO": "20",
+        "APARTAMENTO": "138",
+        "TIPO": "ENVELOPE",
+        "LOJA": "CASAS BAHIA",
+        "IDENTIFICACAO": "PKG000159",
+        "_entrada_id": 150,
+        "DATA_HORA": "27/03/2026 12:48:20",
+        "ID": 150,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000164",
+      "identidade": "ENCOMENDA|2|142|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 2 APARTAMENTO 142 DATA E HORA 27/02/2026 10:26:12 | 02/03/2026 10:36:54!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "2",
+        "apartamento": "142",
+        "quantidade": 2,
+        "ultimo_registro_id": 20,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "LIMA",
+        "BLOCO": "2",
+        "APARTAMENTO": "142",
+        "TIPO": "ENVELOPE",
+        "LOJA": "AMAZON",
+        "IDENTIFICACAO": "PKG000021",
+        "_entrada_id": 20,
+        "DATA_HORA": "02/03/2026 10:36:54",
+        "ID": 20,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000165",
+      "identidade": "ENCOMENDA|15|128|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 15 APARTAMENTO 128 DATA E HORA 28/02/2026 20:02:27!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "15",
+        "apartamento": "128",
+        "quantidade": 1,
+        "ultimo_registro_id": 13,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "GABRIELA",
+        "SOBRENOME": "MARTINS",
+        "BLOCO": "15",
+        "APARTAMENTO": "128",
+        "TIPO": "CAIXA",
+        "LOJA": "AMAZON",
+        "IDENTIFICACAO": "PKG000014",
+        "_entrada_id": 13,
+        "DATA_HORA": "28/02/2026 20:02:27",
+        "ID": 13,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000166",
+      "identidade": "ENCOMENDA|19|136|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 19 APARTAMENTO 136 DATA E HORA 28/02/2026 07:24:03!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "19",
+        "apartamento": "136",
+        "quantidade": 1,
+        "ultimo_registro_id": 15,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ANA",
+        "SOBRENOME": "SILVA",
+        "BLOCO": "19",
+        "APARTAMENTO": "136",
+        "TIPO": "CAIXA",
+        "LOJA": "RIACHUELO",
+        "IDENTIFICACAO": "PKG000018",
+        "_entrada_id": 15,
+        "DATA_HORA": "28/02/2026 07:24:03",
+        "ID": 15,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000167",
+      "identidade": "ENCOMENDA|3|144|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 3 APARTAMENTO 144 DATA E HORA 28/02/2026 11:35:45!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "3",
+        "apartamento": "144",
+        "quantidade": 1,
+        "ultimo_registro_id": 17,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ELISA",
+        "SOBRENOME": "ROCHA",
+        "BLOCO": "3",
+        "APARTAMENTO": "144",
+        "TIPO": "CAIXA",
+        "LOJA": "MERCADO LIVRE",
+        "IDENTIFICACAO": "PKG000022",
+        "_entrada_id": 17,
+        "DATA_HORA": "28/02/2026 11:35:45",
+        "ID": 17,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000168",
+      "identidade": "ENCOMENDA|4|146|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 4 APARTAMENTO 146 DATA E HORA 02/03/2026 12:08:19!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "4",
+        "apartamento": "146",
+        "quantidade": 1,
+        "ultimo_registro_id": 21,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "FELIPE",
+        "SOBRENOME": "SOUZA",
+        "BLOCO": "4",
+        "APARTAMENTO": "146",
+        "TIPO": "ENVELOPE",
+        "LOJA": "SHOPEE",
+        "IDENTIFICACAO": "PKG000023",
+        "_entrada_id": 21,
+        "DATA_HORA": "02/03/2026 12:08:19",
+        "ID": 21,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000169",
+      "identidade": "ENCOMENDA|6|150|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 6 APARTAMENTO 150 DATA E HORA 02/03/2026 14:47:14 | 04/03/2026 14:44:56 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "6",
+        "apartamento": "150",
+        "quantidade": 2,
+        "ultimo_registro_id": 25,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "HUGO",
+        "SOBRENOME": "ALVES",
+        "BLOCO": "6",
+        "APARTAMENTO": "150",
+        "TIPO": "ENVELOPE",
+        "LOJA": "RIACHUELO",
+        "IDENTIFICACAO": "PKG000025",
+        "_entrada_id": 25,
+        "DATA_HORA": "04/03/2026 14:44:56",
+        "ID": 25,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000170",
+      "identidade": "ENCOMENDA|8|154|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 8 APARTAMENTO 154 DATA E HORA 02/03/2026 16:10:17 | 04/03/2026 16:45:17!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "8",
+        "apartamento": "154",
+        "quantidade": 2,
+        "ultimo_registro_id": 26,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "JULIA",
+        "SOBRENOME": "NUNES",
+        "BLOCO": "8",
+        "APARTAMENTO": "154",
+        "TIPO": "ENVELOPE",
+        "LOJA": "KABUM",
+        "IDENTIFICACAO": "PKG000027",
+        "_entrada_id": 26,
+        "DATA_HORA": "04/03/2026 16:45:17",
+        "ID": 26,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000171",
+      "identidade": "ENCOMENDA|12|162|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 12 APARTAMENTO 162 DATA E HORA 04/03/2026 20:31:29!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "12",
+        "apartamento": "162",
+        "quantidade": 1,
+        "ultimo_registro_id": 28,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "LIMA",
+        "BLOCO": "12",
+        "APARTAMENTO": "162",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MAGALU",
+        "IDENTIFICACAO": "PKG000031",
+        "_entrada_id": 28,
+        "DATA_HORA": "04/03/2026 20:31:29",
+        "ID": 28,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000172",
+      "identidade": "ENCOMENDA|14|166|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 14 APARTAMENTO 166 DATA E HORA 04/03/2026 22:56:23!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "14",
+        "apartamento": "166",
+        "quantidade": 1,
+        "ultimo_registro_id": 29,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "FELIPE",
+        "SOBRENOME": "SOUZA",
+        "BLOCO": "14",
+        "APARTAMENTO": "166",
+        "TIPO": "ENVELOPE",
+        "LOJA": "CASAS BAHIA",
+        "IDENTIFICACAO": "PKG000033",
+        "_entrada_id": 29,
+        "DATA_HORA": "04/03/2026 22:56:23",
+        "ID": 29,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000173",
+      "identidade": "ENCOMENDA|16|100|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 16 APARTAMENTO 100 DATA E HORA 04/03/2026 07:54:50 | 06/03/2026 07:53:07 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "16",
+        "apartamento": "100",
+        "quantidade": 2,
+        "ultimo_registro_id": 35,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "HUGO",
+        "SOBRENOME": "ALVES",
+        "BLOCO": "16",
+        "APARTAMENTO": "100",
+        "TIPO": "ENVELOPE",
+        "LOJA": "AMAZON",
+        "IDENTIFICACAO": "PKG000035",
+        "_entrada_id": 35,
+        "DATA_HORA": "06/03/2026 07:53:07",
+        "ID": 35,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000174",
+      "identidade": "ENCOMENDA|18|104|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 18 APARTAMENTO 104 DATA E HORA 04/03/2026 09:55:29 | 06/03/2026 09:02:23!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "18",
+        "apartamento": "104",
+        "quantidade": 2,
+        "ultimo_registro_id": 36,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "JULIA",
+        "SOBRENOME": "NUNES",
+        "BLOCO": "18",
+        "APARTAMENTO": "104",
+        "TIPO": "ENVELOPE",
+        "LOJA": "SHOPEE",
+        "IDENTIFICACAO": "PKG000037",
+        "_entrada_id": 36,
+        "DATA_HORA": "06/03/2026 09:02:23",
+        "ID": 36,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000175",
+      "identidade": "ENCOMENDA|20|108|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 20 APARTAMENTO 108 DATA E HORA 04/03/2026 11:35:22 | 06/03/2026 11:57:16!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "20",
+        "apartamento": "108",
+        "quantidade": 2,
+        "ultimo_registro_id": 37,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "BRUNO",
+        "SOBRENOME": "COSTA",
+        "BLOCO": "20",
+        "APARTAMENTO": "108",
+        "TIPO": "ENVELOPE",
+        "LOJA": "RIACHUELO",
+        "IDENTIFICACAO": "PKG000039",
+        "_entrada_id": 37,
+        "DATA_HORA": "06/03/2026 11:57:16",
+        "ID": 37,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000176",
+      "identidade": "ENCOMENDA|2|112|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 2 APARTAMENTO 112 DATA E HORA 04/03/2026 13:32:57 | 06/03/2026 13:14:45!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "2",
+        "apartamento": "112",
+        "quantidade": 2,
+        "ultimo_registro_id": 38,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "LIMA",
+        "BLOCO": "2",
+        "APARTAMENTO": "112",
+        "TIPO": "ENVELOPE",
+        "LOJA": "KABUM",
+        "IDENTIFICACAO": "PKG000041",
+        "_entrada_id": 38,
+        "DATA_HORA": "06/03/2026 13:14:45",
+        "ID": 38,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000177",
+      "identidade": "ENCOMENDA|4|116|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 4 APARTAMENTO 116 DATA E HORA 04/03/2026 15:18:21 | 06/03/2026 15:22:23!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "4",
+        "apartamento": "116",
+        "quantidade": 2,
+        "ultimo_registro_id": 39,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "FELIPE",
+        "SOBRENOME": "SOUZA",
+        "BLOCO": "4",
+        "APARTAMENTO": "116",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MERCADO LIVRE",
+        "IDENTIFICACAO": "PKG000043",
+        "_entrada_id": 39,
+        "DATA_HORA": "06/03/2026 15:22:23",
+        "ID": 39,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000178",
+      "identidade": "ENCOMENDA|8|124|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 8 APARTAMENTO 124 DATA E HORA 06/03/2026 19:48:33 | 07/03/2026 19:00:11!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "8",
+        "apartamento": "124",
+        "quantidade": 2,
+        "ultimo_registro_id": 46,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "JULIA",
+        "SOBRENOME": "NUNES",
+        "BLOCO": "8",
+        "APARTAMENTO": "124",
+        "TIPO": "ENVELOPE",
+        "LOJA": "CASAS BAHIA",
+        "IDENTIFICACAO": "PKG000047",
+        "_entrada_id": 46,
+        "DATA_HORA": "07/03/2026 19:00:11",
+        "ID": 46,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000179",
+      "identidade": "ENCOMENDA|10|128|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 10 APARTAMENTO 128 DATA E HORA 06/03/2026 21:27:36 | 07/03/2026 21:48:42!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "10",
+        "apartamento": "128",
+        "quantidade": 2,
+        "ultimo_registro_id": 47,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "BRUNO",
+        "SOBRENOME": "COSTA",
+        "BLOCO": "10",
+        "APARTAMENTO": "128",
+        "TIPO": "ENVELOPE",
+        "LOJA": "AMAZON",
+        "IDENTIFICACAO": "PKG000049",
+        "_entrada_id": 47,
+        "DATA_HORA": "07/03/2026 21:48:42",
+        "ID": 47,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000180",
+      "identidade": "ENCOMENDA|12|132|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 12 APARTAMENTO 132 DATA E HORA 06/03/2026 06:10:10!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "12",
+        "apartamento": "132",
+        "quantidade": 1,
+        "ultimo_registro_id": 43,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "LIMA",
+        "BLOCO": "12",
+        "APARTAMENTO": "132",
+        "TIPO": "ENVELOPE",
+        "LOJA": "SHOPEE",
+        "IDENTIFICACAO": "PKG000051",
+        "_entrada_id": 43,
+        "DATA_HORA": "06/03/2026 06:10:10",
+        "ID": 43,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000181",
+      "identidade": "ENCOMENDA|14|136|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 14 APARTAMENTO 136 DATA E HORA 06/03/2026 08:31:26!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "14",
+        "apartamento": "136",
+        "quantidade": 1,
+        "ultimo_registro_id": 44,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "FELIPE",
+        "SOBRENOME": "SOUZA",
+        "BLOCO": "14",
+        "APARTAMENTO": "136",
+        "TIPO": "ENVELOPE",
+        "LOJA": "RIACHUELO",
+        "IDENTIFICACAO": "PKG000053",
+        "_entrada_id": 44,
+        "DATA_HORA": "06/03/2026 08:31:26",
+        "ID": 44,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000182",
+      "identidade": "ENCOMENDA|11|130|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 11 APARTAMENTO 130 DATA E HORA 09/03/2026 22:19:45 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "11",
+        "apartamento": "130",
+        "quantidade": 1,
+        "ultimo_registro_id": 49,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "CARLA",
+        "SOBRENOME": "MENDES",
+        "BLOCO": "11",
+        "APARTAMENTO": "130",
+        "TIPO": "CAIXA",
+        "LOJA": "MERCADO LIVRE",
+        "IDENTIFICACAO": "PKG000050",
+        "_entrada_id": 49,
+        "DATA_HORA": "09/03/2026 22:19:45",
+        "ID": 49,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000183",
+      "identidade": "ENCOMENDA|15|138|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 15 APARTAMENTO 138 DATA E HORA 09/03/2026 09:00:26 | 10/03/2026 09:23:50!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "15",
+        "apartamento": "138",
+        "quantidade": 2,
+        "ultimo_registro_id": 54,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "GABRIELA",
+        "SOBRENOME": "MARTINS",
+        "BLOCO": "15",
+        "APARTAMENTO": "138",
+        "TIPO": "CAIXA",
+        "LOJA": "CASAS BAHIA",
+        "IDENTIFICACAO": "PKG000054",
+        "_entrada_id": 54,
+        "DATA_HORA": "10/03/2026 09:23:50",
+        "ID": 54,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000184",
+      "identidade": "ENCOMENDA|19|146|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 19 APARTAMENTO 146 DATA E HORA 09/03/2026 13:38:44 | 10/03/2026 13:14:14!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "19",
+        "apartamento": "146",
+        "quantidade": 2,
+        "ultimo_registro_id": 56,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ANA",
+        "SOBRENOME": "SILVA",
+        "BLOCO": "19",
+        "APARTAMENTO": "146",
+        "TIPO": "CAIXA",
+        "LOJA": "SHOPEE",
+        "IDENTIFICACAO": "PKG000058",
+        "_entrada_id": 56,
+        "DATA_HORA": "10/03/2026 13:14:14",
+        "ID": 56,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000185",
+      "identidade": "ENCOMENDA|3|154|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 3 APARTAMENTO 154 DATA E HORA 10/03/2026 17:53:44 | 11/03/2026 17:18:27!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "3",
+        "apartamento": "154",
+        "quantidade": 2,
+        "ultimo_registro_id": 62,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ELISA",
+        "SOBRENOME": "ROCHA",
+        "BLOCO": "3",
+        "APARTAMENTO": "154",
+        "TIPO": "CAIXA",
+        "LOJA": "KABUM",
+        "IDENTIFICACAO": "PKG000062",
+        "_entrada_id": 62,
+        "DATA_HORA": "11/03/2026 17:18:27",
+        "ID": 62,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000186",
+      "identidade": "ENCOMENDA|7|162|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 7 APARTAMENTO 162 DATA E HORA 10/03/2026 21:54:20 | 11/03/2026 21:48:16!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "7",
+        "apartamento": "162",
+        "quantidade": 2,
+        "ultimo_registro_id": 64,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "IVAN",
+        "SOBRENOME": "RIBEIRO",
+        "BLOCO": "7",
+        "APARTAMENTO": "162",
+        "TIPO": "CAIXA",
+        "LOJA": "MAGALU",
+        "IDENTIFICACAO": "PKG000066",
+        "_entrada_id": 64,
+        "DATA_HORA": "11/03/2026 21:48:16",
+        "ID": 64,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000187",
+      "identidade": "ENCOMENDA|15|108|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA TRES ENCOMENDAS PARA O BLOCO 15 APARTAMENTO 108 DATA E HORA 11/03/2026 12:10:13 | 12/03/2026 12:46:16 | 14/03/2026 12:53:16!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "15",
+        "apartamento": "108",
+        "quantidade": 3,
+        "ultimo_registro_id": 74,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "GABRIELA",
+        "SOBRENOME": "MARTINS",
+        "BLOCO": "15",
+        "APARTAMENTO": "108",
+        "TIPO": "CAIXA",
+        "LOJA": "RIACHUELO",
+        "IDENTIFICACAO": "PKG000074",
+        "_entrada_id": 74,
+        "DATA_HORA": "14/03/2026 12:53:16",
+        "ID": 74,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000188",
+      "identidade": "ENCOMENDA|14|106|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 14 APARTAMENTO 106 DATA E HORA 13/03/2026 11:35:16!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "14",
+        "apartamento": "106",
+        "quantidade": 1,
+        "ultimo_registro_id": 73,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "FELIPE",
+        "SOBRENOME": "SOUZA",
+        "BLOCO": "14",
+        "APARTAMENTO": "106",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MAGALU",
+        "IDENTIFICACAO": "PKG000073",
+        "_entrada_id": 73,
+        "DATA_HORA": "13/03/2026 11:35:16",
+        "ID": 73,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000189",
+      "identidade": "ENCOMENDA|19|116|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 19 APARTAMENTO 116 DATA E HORA 14/03/2026 16:19:22!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "19",
+        "apartamento": "116",
+        "quantidade": 1,
+        "ultimo_registro_id": 76,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ANA",
+        "SOBRENOME": "SILVA",
+        "BLOCO": "19",
+        "APARTAMENTO": "116",
+        "TIPO": "CAIXA",
+        "LOJA": "MERCADO LIVRE",
+        "IDENTIFICACAO": "PKG000078",
+        "_entrada_id": 76,
+        "DATA_HORA": "14/03/2026 16:19:22",
+        "ID": 76,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000190",
+      "identidade": "ENCOMENDA|3|124|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 3 APARTAMENTO 124 DATA E HORA 14/03/2026 20:20:23!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "3",
+        "apartamento": "124",
+        "quantidade": 1,
+        "ultimo_registro_id": 78,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ELISA",
+        "SOBRENOME": "ROCHA",
+        "BLOCO": "3",
+        "APARTAMENTO": "124",
+        "TIPO": "CAIXA",
+        "LOJA": "CASAS BAHIA",
+        "IDENTIFICACAO": "PKG000082",
+        "_entrada_id": 78,
+        "DATA_HORA": "14/03/2026 20:20:23",
+        "ID": 78,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000191",
+      "identidade": "ENCOMENDA|7|132|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 7 APARTAMENTO 132 DATA E HORA 14/03/2026 07:51:50 | 15/03/2026 07:54:19!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "7",
+        "apartamento": "132",
+        "quantidade": 2,
+        "ultimo_registro_id": 86,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "IVAN",
+        "SOBRENOME": "RIBEIRO",
+        "BLOCO": "7",
+        "APARTAMENTO": "132",
+        "TIPO": "CAIXA",
+        "LOJA": "SHOPEE",
+        "IDENTIFICACAO": "PKG000086",
+        "_entrada_id": 86,
+        "DATA_HORA": "15/03/2026 07:54:19",
+        "ID": 86,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000192",
+      "identidade": "ENCOMENDA|11|140|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 11 APARTAMENTO 140 DATA E HORA 14/03/2026 11:57:32 | 16/03/2026 11:28:01 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "11",
+        "apartamento": "140",
+        "quantidade": 2,
+        "ultimo_registro_id": 89,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "CARLA",
+        "SOBRENOME": "MENDES",
+        "BLOCO": "11",
+        "APARTAMENTO": "140",
+        "TIPO": "CAIXA",
+        "LOJA": "KABUM",
+        "IDENTIFICACAO": "PKG000090",
+        "_entrada_id": 89,
+        "DATA_HORA": "16/03/2026 11:28:01",
+        "ID": 89,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000193",
+      "identidade": "ENCOMENDA|15|148|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 15 APARTAMENTO 148 DATA E HORA 14/03/2026 15:07:06!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "15",
+        "apartamento": "148",
+        "quantidade": 1,
+        "ultimo_registro_id": 84,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "GABRIELA",
+        "SOBRENOME": "MARTINS",
+        "BLOCO": "15",
+        "APARTAMENTO": "148",
+        "TIPO": "CAIXA",
+        "LOJA": "MAGALU",
+        "IDENTIFICACAO": "PKG000094",
+        "_entrada_id": 84,
+        "DATA_HORA": "14/03/2026 15:07:06",
+        "ID": 84,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000194",
+      "identidade": "ENCOMENDA|12|142|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 12 APARTAMENTO 142 DATA E HORA 17/03/2026 12:30:44!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "12",
+        "apartamento": "142",
+        "quantidade": 1,
+        "ultimo_registro_id": 91,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "LIMA",
+        "BLOCO": "12",
+        "APARTAMENTO": "142",
+        "TIPO": "ENVELOPE",
+        "LOJA": "AMAZON",
+        "IDENTIFICACAO": "PKG000091",
+        "_entrada_id": 91,
+        "DATA_HORA": "17/03/2026 12:30:44",
+        "ID": 91,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000195",
+      "identidade": "ENCOMENDA|14|146|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 14 APARTAMENTO 146 DATA E HORA 17/03/2026 14:41:27!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "14",
+        "apartamento": "146",
+        "quantidade": 1,
+        "ultimo_registro_id": 92,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "FELIPE",
+        "SOBRENOME": "SOUZA",
+        "BLOCO": "14",
+        "APARTAMENTO": "146",
+        "TIPO": "ENVELOPE",
+        "LOJA": "SHOPEE",
+        "IDENTIFICACAO": "PKG000093",
+        "_entrada_id": 92,
+        "DATA_HORA": "17/03/2026 14:41:27",
+        "ID": 92,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000196",
+      "identidade": "ENCOMENDA|16|150|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 16 APARTAMENTO 150 DATA E HORA 17/03/2026 16:05:07 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "16",
+        "apartamento": "150",
+        "quantidade": 1,
+        "ultimo_registro_id": 93,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "HUGO",
+        "SOBRENOME": "ALVES",
+        "BLOCO": "16",
+        "APARTAMENTO": "150",
+        "TIPO": "ENVELOPE",
+        "LOJA": "RIACHUELO",
+        "IDENTIFICACAO": "PKG000095",
+        "_entrada_id": 93,
+        "DATA_HORA": "17/03/2026 16:05:07",
+        "ID": 93,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000197",
+      "identidade": "ENCOMENDA|18|154|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 18 APARTAMENTO 154 DATA E HORA 17/03/2026 18:38:27!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "18",
+        "apartamento": "154",
+        "quantidade": 1,
+        "ultimo_registro_id": 94,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "JULIA",
+        "SOBRENOME": "NUNES",
+        "BLOCO": "18",
+        "APARTAMENTO": "154",
+        "TIPO": "ENVELOPE",
+        "LOJA": "KABUM",
+        "IDENTIFICACAO": "PKG000097",
+        "_entrada_id": 94,
+        "DATA_HORA": "17/03/2026 18:38:27",
+        "ID": 94,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000198",
+      "identidade": "ENCOMENDA|20|158|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 20 APARTAMENTO 158 DATA E HORA 17/03/2026 20:22:34!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "20",
+        "apartamento": "158",
+        "quantidade": 1,
+        "ultimo_registro_id": 95,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "BRUNO",
+        "SOBRENOME": "COSTA",
+        "BLOCO": "20",
+        "APARTAMENTO": "158",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MERCADO LIVRE",
+        "IDENTIFICACAO": "PKG000099",
+        "_entrada_id": 95,
+        "DATA_HORA": "17/03/2026 20:22:34",
+        "ID": 95,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000199",
+      "identidade": "ENCOMENDA|2|162|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 2 APARTAMENTO 162 DATA E HORA 17/03/2026 22:16:04!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "2",
+        "apartamento": "162",
+        "quantidade": 1,
+        "ultimo_registro_id": 96,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "LIMA",
+        "BLOCO": "2",
+        "APARTAMENTO": "162",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MAGALU",
+        "IDENTIFICACAO": "PKG000101",
+        "_entrada_id": 96,
+        "DATA_HORA": "17/03/2026 22:16:04",
+        "ID": 96,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000200",
+      "identidade": "ENCOMENDA|4|166|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 4 APARTAMENTO 166 DATA E HORA 17/03/2026 07:28:04!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "4",
+        "apartamento": "166",
+        "quantidade": 1,
+        "ultimo_registro_id": 97,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "FELIPE",
+        "SOBRENOME": "SOUZA",
+        "BLOCO": "4",
+        "APARTAMENTO": "166",
+        "TIPO": "ENVELOPE",
+        "LOJA": "CASAS BAHIA",
+        "IDENTIFICACAO": "PKG000103",
+        "_entrada_id": 97,
+        "DATA_HORA": "17/03/2026 07:28:04",
+        "ID": 97,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000201",
+      "identidade": "ENCOMENDA|6|100|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 6 APARTAMENTO 100 DATA E HORA 17/03/2026 09:25:11 | 19/03/2026 09:40:14 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "6",
+        "apartamento": "100",
+        "quantidade": 2,
+        "ultimo_registro_id": 105,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "HUGO",
+        "SOBRENOME": "ALVES",
+        "BLOCO": "6",
+        "APARTAMENTO": "100",
+        "TIPO": "ENVELOPE",
+        "LOJA": "AMAZON",
+        "IDENTIFICACAO": "PKG000105",
+        "_entrada_id": 105,
+        "DATA_HORA": "19/03/2026 09:40:14",
+        "ID": 105,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000202",
+      "identidade": "ENCOMENDA|8|104|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA TRES ENCOMENDAS PARA O BLOCO 8 APARTAMENTO 104 DATA E HORA 17/03/2026 11:09:01 | 19/03/2026 11:08:55 | 20/03/2026 11:42:43!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "8",
+        "apartamento": "104",
+        "quantidade": 3,
+        "ultimo_registro_id": 107,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "JULIA",
+        "SOBRENOME": "NUNES",
+        "BLOCO": "8",
+        "APARTAMENTO": "104",
+        "TIPO": "ENVELOPE",
+        "LOJA": "SHOPEE",
+        "IDENTIFICACAO": "PKG000107",
+        "_entrada_id": 107,
+        "DATA_HORA": "20/03/2026 11:42:43",
+        "ID": 107,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000203",
+      "identidade": "ENCOMENDA|3|164|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 3 APARTAMENTO 164 DATA E HORA 18/03/2026 06:50:56!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "3",
+        "apartamento": "164",
+        "quantidade": 1,
+        "ultimo_registro_id": 101,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ELISA",
+        "SOBRENOME": "ROCHA",
+        "BLOCO": "3",
+        "APARTAMENTO": "164",
+        "TIPO": "CAIXA",
+        "LOJA": "RIACHUELO",
+        "IDENTIFICACAO": "PKG000102",
+        "_entrada_id": 101,
+        "DATA_HORA": "18/03/2026 06:50:56",
+        "ID": 101,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000204",
+      "identidade": "ENCOMENDA|7|102|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 7 APARTAMENTO 102 DATA E HORA 18/03/2026 10:55:28!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "7",
+        "apartamento": "102",
+        "quantidade": 1,
+        "ultimo_registro_id": 103,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "IVAN",
+        "SOBRENOME": "RIBEIRO",
+        "BLOCO": "7",
+        "APARTAMENTO": "102",
+        "TIPO": "CAIXA",
+        "LOJA": "MERCADO LIVRE",
+        "IDENTIFICACAO": "PKG000106",
+        "_entrada_id": 103,
+        "DATA_HORA": "18/03/2026 10:55:28",
+        "ID": 103,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000205",
+      "identidade": "ENCOMENDA|10|108|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 10 APARTAMENTO 108 DATA E HORA 20/03/2026 13:27:59!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "10",
+        "apartamento": "108",
+        "quantidade": 1,
+        "ultimo_registro_id": 108,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "BRUNO",
+        "SOBRENOME": "COSTA",
+        "BLOCO": "10",
+        "APARTAMENTO": "108",
+        "TIPO": "ENVELOPE",
+        "LOJA": "RIACHUELO",
+        "IDENTIFICACAO": "PKG000109",
+        "_entrada_id": 108,
+        "DATA_HORA": "20/03/2026 13:27:59",
+        "ID": 108,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000206",
+      "identidade": "ENCOMENDA|12|112|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 12 APARTAMENTO 112 DATA E HORA 20/03/2026 15:05:01 | 21/03/2026 15:45:36!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "12",
+        "apartamento": "112",
+        "quantidade": 2,
+        "ultimo_registro_id": 111,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "LIMA",
+        "BLOCO": "12",
+        "APARTAMENTO": "112",
+        "TIPO": "ENVELOPE",
+        "LOJA": "KABUM",
+        "IDENTIFICACAO": "PKG000111",
+        "_entrada_id": 111,
+        "DATA_HORA": "21/03/2026 15:45:36",
+        "ID": 111,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000207",
+      "identidade": "ENCOMENDA|14|116|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 14 APARTAMENTO 116 DATA E HORA 20/03/2026 17:47:38 | 21/03/2026 17:16:10!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "14",
+        "apartamento": "116",
+        "quantidade": 2,
+        "ultimo_registro_id": 112,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "FELIPE",
+        "SOBRENOME": "SOUZA",
+        "BLOCO": "14",
+        "APARTAMENTO": "116",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MERCADO LIVRE",
+        "IDENTIFICACAO": "PKG000113",
+        "_entrada_id": 112,
+        "DATA_HORA": "21/03/2026 17:16:10",
+        "ID": 112,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000208",
+      "identidade": "ENCOMENDA|16|120|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 16 APARTAMENTO 120 DATA E HORA 21/03/2026 19:21:47 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "16",
+        "apartamento": "120",
+        "quantidade": 1,
+        "ultimo_registro_id": 113,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "HUGO",
+        "SOBRENOME": "ALVES",
+        "BLOCO": "16",
+        "APARTAMENTO": "120",
+        "TIPO": "ENVELOPE",
+        "LOJA": "MAGALU",
+        "IDENTIFICACAO": "PKG000115",
+        "_entrada_id": 113,
+        "DATA_HORA": "21/03/2026 19:21:47",
+        "ID": 113,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000209",
+      "identidade": "ENCOMENDA|15|118|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 15 APARTAMENTO 118 DATA E HORA 22/03/2026 18:42:12!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "15",
+        "apartamento": "118",
+        "quantidade": 1,
+        "ultimo_registro_id": 114,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "GABRIELA",
+        "SOBRENOME": "MARTINS",
+        "BLOCO": "15",
+        "APARTAMENTO": "118",
+        "TIPO": "CAIXA",
+        "LOJA": "SHOPEE",
+        "IDENTIFICACAO": "PKG000114",
+        "_entrada_id": 114,
+        "DATA_HORA": "22/03/2026 18:42:12",
+        "ID": 114,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000210",
+      "identidade": "ENCOMENDA|19|126|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 19 APARTAMENTO 126 DATA E HORA 23/03/2026 22:52:36!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "19",
+        "apartamento": "126",
+        "quantidade": 1,
+        "ultimo_registro_id": 117,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ANA",
+        "SOBRENOME": "SILVA",
+        "BLOCO": "19",
+        "APARTAMENTO": "126",
+        "TIPO": "CAIXA",
+        "LOJA": "KABUM",
+        "IDENTIFICACAO": "PKG000118",
+        "_entrada_id": 117,
+        "DATA_HORA": "23/03/2026 22:52:36",
+        "ID": 117,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000211",
+      "identidade": "ENCOMENDA|20|128|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 20 APARTAMENTO 128 DATA E HORA 24/03/2026 06:27:12!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "20",
+        "apartamento": "128",
+        "quantidade": 1,
+        "ultimo_registro_id": 119,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "BRUNO",
+        "SOBRENOME": "COSTA",
+        "BLOCO": "20",
+        "APARTAMENTO": "128",
+        "TIPO": "ENVELOPE",
+        "LOJA": "AMAZON",
+        "IDENTIFICACAO": "PKG000119",
+        "_entrada_id": 119,
+        "DATA_HORA": "24/03/2026 06:27:12",
+        "ID": 119,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000212",
+      "identidade": "ENCOMENDA|2|132|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 2 APARTAMENTO 132 DATA E HORA 24/03/2026 08:02:47!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "2",
+        "apartamento": "132",
+        "quantidade": 1,
+        "ultimo_registro_id": 120,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "LIMA",
+        "BLOCO": "2",
+        "APARTAMENTO": "132",
+        "TIPO": "ENVELOPE",
+        "LOJA": "SHOPEE",
+        "IDENTIFICACAO": "PKG000121",
+        "_entrada_id": 120,
+        "DATA_HORA": "24/03/2026 08:02:47",
+        "ID": 120,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000213",
+      "identidade": "ENCOMENDA|4|136|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 4 APARTAMENTO 136 DATA E HORA 24/03/2026 10:10:10!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "4",
+        "apartamento": "136",
+        "quantidade": 1,
+        "ultimo_registro_id": 121,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "FELIPE",
+        "SOBRENOME": "SOUZA",
+        "BLOCO": "4",
+        "APARTAMENTO": "136",
+        "TIPO": "ENVELOPE",
+        "LOJA": "RIACHUELO",
+        "IDENTIFICACAO": "PKG000123",
+        "_entrada_id": 121,
+        "DATA_HORA": "24/03/2026 10:10:10",
+        "ID": 121,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000214",
+      "identidade": "ENCOMENDA|3|134|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 3 APARTAMENTO 134 DATA E HORA 25/03/2026 09:47:46!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "3",
+        "apartamento": "134",
+        "quantidade": 1,
+        "ultimo_registro_id": 122,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ELISA",
+        "SOBRENOME": "ROCHA",
+        "BLOCO": "3",
+        "APARTAMENTO": "134",
+        "TIPO": "CAIXA",
+        "LOJA": "MAGALU",
+        "IDENTIFICACAO": "PKG000122",
+        "_entrada_id": 122,
+        "DATA_HORA": "25/03/2026 09:47:46",
+        "ID": 122,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000215",
+      "identidade": "ENCOMENDA|7|142|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 7 APARTAMENTO 142 DATA E HORA 25/03/2026 13:15:46!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "7",
+        "apartamento": "142",
+        "quantidade": 1,
+        "ultimo_registro_id": 124,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "IVAN",
+        "SOBRENOME": "RIBEIRO",
+        "BLOCO": "7",
+        "APARTAMENTO": "142",
+        "TIPO": "CAIXA",
+        "LOJA": "AMAZON",
+        "IDENTIFICACAO": "PKG000126",
+        "_entrada_id": 124,
+        "DATA_HORA": "25/03/2026 13:15:46",
+        "ID": 124,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000216",
+      "identidade": "ENCOMENDA|11|150|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 11 APARTAMENTO 150 DATA E HORA 25/03/2026 17:24:55 | 26/03/2026 17:25:59 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "11",
+        "apartamento": "150",
+        "quantidade": 2,
+        "ultimo_registro_id": 130,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "CARLA",
+        "SOBRENOME": "MENDES",
+        "BLOCO": "11",
+        "APARTAMENTO": "150",
+        "TIPO": "CAIXA",
+        "LOJA": "RIACHUELO",
+        "IDENTIFICACAO": "PKG000130",
+        "_entrada_id": 130,
+        "DATA_HORA": "26/03/2026 17:25:59",
+        "ID": 130,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000217",
+      "identidade": "ENCOMENDA|15|158|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA DUAS ENCOMENDAS PARA O BLOCO 15 APARTAMENTO 158 DATA E HORA 25/03/2026 21:29:47 | 26/03/2026 21:17:35!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "15",
+        "apartamento": "158",
+        "quantidade": 2,
+        "ultimo_registro_id": 132,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "GABRIELA",
+        "SOBRENOME": "MARTINS",
+        "BLOCO": "15",
+        "APARTAMENTO": "158",
+        "TIPO": "CAIXA",
+        "LOJA": "MERCADO LIVRE",
+        "IDENTIFICACAO": "PKG000134",
+        "_entrada_id": 132,
+        "DATA_HORA": "26/03/2026 21:17:35",
+        "ID": 132,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000218",
+      "identidade": "ENCOMENDA|19|166|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 19 APARTAMENTO 166 DATA E HORA 26/03/2026 08:41:42!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "19",
+        "apartamento": "166",
+        "quantidade": 1,
+        "ultimo_registro_id": 134,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ANA",
+        "SOBRENOME": "SILVA",
+        "BLOCO": "19",
+        "APARTAMENTO": "166",
+        "TIPO": "CAIXA",
+        "LOJA": "CASAS BAHIA",
+        "IDENTIFICACAO": "PKG000138",
+        "_entrada_id": 134,
+        "DATA_HORA": "26/03/2026 08:41:42",
+        "ID": 134,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000219",
+      "identidade": "ENCOMENDA|3|104|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 3 APARTAMENTO 104 DATA E HORA 26/03/2026 12:55:31!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "3",
+        "apartamento": "104",
+        "quantidade": 1,
+        "ultimo_registro_id": 136,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "ELISA",
+        "SOBRENOME": "ROCHA",
+        "BLOCO": "3",
+        "APARTAMENTO": "104",
+        "TIPO": "CAIXA",
+        "LOJA": "SHOPEE",
+        "IDENTIFICACAO": "PKG000142",
+        "_entrada_id": 136,
+        "DATA_HORA": "26/03/2026 12:55:31",
+        "ID": 136,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000220",
+      "identidade": "ENCOMENDA|7|112|SEM_STATUS",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 7 APARTAMENTO 112 DATA E HORA 26/03/2026 16:59:06!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "7",
+        "apartamento": "112",
+        "quantidade": 1,
+        "ultimo_registro_id": 138,
+        "origem_status": "SEM_STATUS"
+      },
+      "ultimo_registro": {
+        "NOME": "IVAN",
+        "SOBRENOME": "RIBEIRO",
+        "BLOCO": "7",
+        "APARTAMENTO": "112",
+        "TIPO": "CAIXA",
+        "LOJA": "KABUM",
+        "IDENTIFICACAO": "PKG000146",
+        "_entrada_id": 138,
+        "DATA_HORA": "26/03/2026 16:59:06",
+        "ID": 138,
+        "STATUS_ENCOMENDA": ""
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000221",
+      "identidade": "ENCOMENDA|11|120|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 11 APARTAMENTO 120 DATA E HORA 26/03/2026 20:01:30 SEM CONTATO DATA HORA -!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "11",
+        "apartamento": "120",
+        "quantidade": 1,
+        "ultimo_registro_id": 140,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "CARLA",
+        "SOBRENOME": "MENDES",
+        "BLOCO": "11",
+        "APARTAMENTO": "120",
+        "TIPO": "CAIXA",
+        "LOJA": "MAGALU",
+        "IDENTIFICACAO": "PKG000150",
+        "_entrada_id": 140,
+        "DATA_HORA": "26/03/2026 20:01:30",
+        "ID": 140,
+        "STATUS_ENCOMENDA": "SEM CONTATO"
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000222",
+      "identidade": "CARLA|MENDES|13|116",
+      "tipo": "MORADOR_SEM_TAG",
+      "nivel": "warn",
+      "mensagem": "MORADOR Carla Mendes, DO BLOCO 13 APARTAMENTO 116, ESTA SEM TAG NO VEICULO PLACA GLH1004 ONIX PRATA!",
+      "ui": {
+        "background_color": "#FF0000",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "ultimo_registro_id": 27
+      },
+      "ultimo_registro": {
+        "NOME": "CARLA",
+        "SOBRENOME": "MENDES",
+        "BLOCO": "13",
+        "APARTAMENTO": "116",
+        "PLACA": "GLH1004",
+        "MODELO": "ONIX",
+        "COR": "PRATA",
+        "STATUS": "MORADOR",
+        "DATA_HORA": "04/03/2026 21:26:08",
+        "_entrada_id": 27,
+        "MORADOR SEM TAG": "SIM",
+        "ID": 27
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000223",
+      "identidade": "CARLA|MENDES|13|116",
+      "tipo": "PADRAO_3",
+      "nivel": "critical",
+      "mensagem": "MORADOR Carla Mendes, DO BLOCO 13 APARTAMENTO 116, ACESSOU O CONDOMINIO PELA SEGUNDA VEZ, NA DATA 10/03/2026, HORARIO AS 07:41:35, COM VEICULO DIVERGENTE!",
+      "ui": {
+        "background_color": "#FF0000",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "primeiro_registro_id": 27,
+        "ultimo_registro_id": 52,
+        "quantidade_acessos": 2
+      },
+      "primeiro_registro": {
+        "NOME": "CARLA",
+        "SOBRENOME": "MENDES",
+        "BLOCO": "13",
+        "APARTAMENTO": "116",
+        "PLACA": "GLH1004",
+        "MODELO": "ONIX",
+        "COR": "PRATA",
+        "STATUS": "MORADOR",
+        "DATA_HORA": "04/03/2026 21:26:08",
+        "_entrada_id": 27,
+        "MORADOR SEM TAG": "SIM",
+        "ID": 27
+      },
+      "ultimo_registro": {
+        "NOME": "CARLA",
+        "SOBRENOME": "MENDES",
+        "BLOCO": "13",
+        "APARTAMENTO": "116",
+        "PLACA": "AAA1924",
+        "MODELO": "GOL",
+        "COR": "VERMELHO",
+        "STATUS": "MORADOR",
+        "DATA_HORA": "10/03/2026 07:41:35",
+        "_entrada_id": 52,
+        "MORADOR SEM TAG": "NAO",
+        "ID": 52
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000224",
+      "identidade": "ELISA|ROCHA|15|120",
+      "tipo": "PADRAO_3",
+      "nivel": "critical",
+      "mensagem": "MORADOR Elisa Rocha, DO BLOCO 15 APARTAMENTO 120, ACESSOU O CONDOMINIO PELA SEGUNDA VEZ, NA DATA 10/03/2026, HORARIO AS 09:44:06, COM VEICULO DIVERGENTE!",
+      "ui": {
+        "background_color": "#FF0000",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "primeiro_registro_id": 28,
+        "ultimo_registro_id": 53,
+        "quantidade_acessos": 2
+      },
+      "primeiro_registro": {
+        "NOME": "ELISA",
+        "SOBRENOME": "ROCHA",
+        "BLOCO": "15",
+        "APARTAMENTO": "120",
+        "PLACA": "IOK1042",
+        "MODELO": "CRUZE",
+        "COR": "VERMELHO",
+        "STATUS": "MORADOR",
+        "DATA_HORA": "04/03/2026 06:47:41",
+        "_entrada_id": 28,
+        "MORADOR SEM TAG": "NAO",
+        "ID": 28
+      },
+      "ultimo_registro": {
+        "NOME": "ELISA",
+        "SOBRENOME": "ROCHA",
+        "BLOCO": "15",
+        "APARTAMENTO": "120",
+        "PLACA": "CDD1962",
+        "MODELO": "JETTA",
+        "COR": "PRETO",
+        "STATUS": "VISITANTE",
+        "DATA_HORA": "10/03/2026 09:44:06",
+        "_entrada_id": 53,
+        "MORADOR SEM TAG": "NAO",
+        "ID": 53
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000225",
+      "identidade": "CARLA|MENDES|3|136",
+      "tipo": "PADRAO_3",
+      "nivel": "critical",
+      "mensagem": "MORADOR Carla Mendes, DO BLOCO 3 APARTAMENTO 136, ACESSOU O CONDOMINIO PELA SEGUNDA VEZ, NA DATA 16/03/2026, HORARIO AS 20:04:29, COM VEICULO DIVERGENTE!",
+      "ui": {
+        "background_color": "#FF0000",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "primeiro_registro_id": 57,
+        "ultimo_registro_id": 82,
+        "quantidade_acessos": 2
+      },
+      "primeiro_registro": {
+        "NOME": "CARLA",
+        "SOBRENOME": "MENDES",
+        "BLOCO": "3",
+        "APARTAMENTO": "136",
+        "PLACA": "KPP2114",
+        "MODELO": "CRUZE",
+        "COR": "PRATA",
+        "STATUS": "MORADOR",
+        "DATA_HORA": "10/03/2026 17:51:52",
+        "_entrada_id": 57,
+        "MORADOR SEM TAG": "NAO",
+        "ID": 57
+      },
+      "ultimo_registro": {
+        "NOME": "CARLA",
+        "SOBRENOME": "MENDES",
+        "BLOCO": "3",
+        "APARTAMENTO": "136",
+        "PLACA": "EEI3034",
+        "MODELO": "JETTA",
+        "COR": "VERMELHO",
+        "STATUS": "MORADOR",
+        "DATA_HORA": "16/03/2026 20:04:29",
+        "_entrada_id": 82,
+        "MORADOR SEM TAG": "NAO",
+        "ID": 82
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000226",
+      "identidade": "ELISA|ROCHA|5|140",
+      "tipo": "PADRAO_3",
+      "nivel": "critical",
+      "mensagem": "MORADOR Elisa Rocha, DO BLOCO 5 APARTAMENTO 140, ACESSOU O CONDOMINIO PELA SEGUNDA VEZ, NA DATA 16/03/2026, HORARIO AS 22:38:05, COM VEICULO DIVERGENTE!",
+      "ui": {
+        "background_color": "#FF0000",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "primeiro_registro_id": 58,
+        "ultimo_registro_id": 83,
+        "quantidade_acessos": 2
+      },
+      "primeiro_registro": {
+        "NOME": "ELISA",
+        "SOBRENOME": "ROCHA",
+        "BLOCO": "5",
+        "APARTAMENTO": "140",
+        "PLACA": "MSS2152",
+        "MODELO": "COROLLA",
+        "COR": "VERMELHO",
+        "STATUS": "MORADOR",
+        "DATA_HORA": "10/03/2026 19:26:29",
+        "_entrada_id": 58,
+        "MORADOR SEM TAG": "NAO",
+        "ID": 58
+      },
+      "ultimo_registro": {
+        "NOME": "ELISA",
+        "SOBRENOME": "ROCHA",
+        "BLOCO": "5",
+        "APARTAMENTO": "140",
+        "PLACA": "GHL3072",
+        "MODELO": "CIVIC",
+        "COR": "PRETO",
+        "STATUS": "VISITANTE",
+        "DATA_HORA": "16/03/2026 22:38:05",
+        "_entrada_id": 83,
+        "MORADOR SEM TAG": "NAO",
+        "ID": 83
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000227",
+      "identidade": "DIEGO|LIMA|4|119",
+      "tipo": "PADRAO_3",
+      "nivel": "critical",
+      "mensagem": "MORADOR Diego Lima, DO BLOCO 4 APARTAMENTO 119, ACESSOU O CONDOMINIO PELA SEGUNDA VEZ, NA DATA 25/03/2026, HORARIO AS 10:49:54, COM VEICULO DIVERGENTE!",
+      "ui": {
+        "background_color": "#FF0000",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "primeiro_registro_id": 98,
+        "ultimo_registro_id": 123,
+        "quantidade_acessos": 2
+      },
+      "primeiro_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "LIMA",
+        "BLOCO": "4",
+        "APARTAMENTO": "119",
+        "PLACA": "ZET3631",
+        "MODELO": "JETTA",
+        "COR": "BRANCO",
+        "STATUS": "MORADOR",
+        "DATA_HORA": "18/03/2026 07:30:27",
+        "_entrada_id": 98,
+        "MORADOR SEM TAG": "NAO",
+        "ID": 98
+      },
+      "ultimo_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "LIMA",
+        "BLOCO": "4",
+        "APARTAMENTO": "119",
+        "PLACA": "TTM4551",
+        "MODELO": "ONIX",
+        "COR": "AZUL",
+        "STATUS": "VISITANTE",
+        "DATA_HORA": "25/03/2026 10:49:54",
+        "_entrada_id": 123,
+        "MORADOR SEM TAG": "NAO",
+        "ID": 123
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000228",
+      "identidade": "JULIA|NUNES|10|137",
+      "tipo": "PADRAO_3",
+      "nivel": "critical",
+      "mensagem": "MORADOR Julia Nunes, DO BLOCO 10 APARTAMENTO 137, ACESSOU O CONDOMINIO PELA SEGUNDA VEZ, NA DATA 26/03/2026, HORARIO AS 16:52:17, COM VEICULO DIVERGENTE!",
+      "ui": {
+        "background_color": "#FF0000",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "primeiro_registro_id": 104,
+        "ultimo_registro_id": 129,
+        "quantidade_acessos": 2
+      },
+      "primeiro_registro": {
+        "NOME": "JULIA",
+        "SOBRENOME": "NUNES",
+        "BLOCO": "10",
+        "APARTAMENTO": "137",
+        "PLACA": "FKF3853",
+        "MODELO": "ONIX",
+        "COR": "BRANCO",
+        "STATUS": "MORADOR",
+        "DATA_HORA": "19/03/2026 13:14:18",
+        "_entrada_id": 104,
+        "MORADOR SEM TAG": "NAO",
+        "ID": 104
+      },
+      "ultimo_registro": {
+        "NOME": "JULIA",
+        "SOBRENOME": "NUNES",
+        "BLOCO": "10",
+        "APARTAMENTO": "137",
+        "PLACA": "ZZY4773",
+        "MODELO": "GOL",
+        "COR": "AZUL",
+        "STATUS": "VISITANTE",
+        "DATA_HORA": "26/03/2026 16:52:17",
+        "_entrada_id": 129,
+        "MORADOR SEM TAG": "NAO",
+        "ID": 129
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000229",
+      "identidade": "BRUNO|COSTA|12|141",
+      "tipo": "PADRAO_3",
+      "nivel": "critical",
+      "mensagem": "VISITANTE Bruno Costa, DO BLOCO 12 APARTAMENTO 141, ACESSOU O CONDOMINIO PELA SEGUNDA VEZ, NA DATA 26/03/2026, HORARIO AS 18:54:33, COM VEICULO DIVERGENTE!",
+      "ui": {
+        "background_color": "#FF0000",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "primeiro_registro_id": 105,
+        "ultimo_registro_id": 130,
+        "quantidade_acessos": 2
+      },
+      "primeiro_registro": {
+        "NOME": "BRUNO",
+        "SOBRENOME": "COSTA",
+        "BLOCO": "12",
+        "APARTAMENTO": "141",
+        "PLACA": "HNI3891",
+        "MODELO": "CRUZE",
+        "COR": "AZUL",
+        "STATUS": "VISITANTE",
+        "DATA_HORA": "19/03/2026 15:58:02",
+        "_entrada_id": 105,
+        "MORADOR SEM TAG": "NAO",
+        "ID": 105
+      },
+      "ultimo_registro": {
+        "NOME": "BRUNO",
+        "SOBRENOME": "COSTA",
+        "BLOCO": "12",
+        "APARTAMENTO": "141",
+        "PLACA": "BCB4811",
+        "MODELO": "JETTA",
+        "COR": "CINZA",
+        "STATUS": "MORADOR",
+        "DATA_HORA": "26/03/2026 18:54:33",
+        "_entrada_id": 130,
+        "MORADOR SEM TAG": "NAO",
+        "ID": 130
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000230",
+      "identidade": "DIEGO|LIMA|14|145",
+      "tipo": "PADRAO_3",
+      "nivel": "critical",
+      "mensagem": "MORADOR Diego Lima, DO BLOCO 14 APARTAMENTO 145, ACESSOU O CONDOMINIO PELA SEGUNDA VEZ, NA DATA 26/03/2026, HORARIO AS 20:26:09, COM VEICULO DIVERGENTE!",
+      "ui": {
+        "background_color": "#FF0000",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "primeiro_registro_id": 106,
+        "ultimo_registro_id": 131,
+        "quantidade_acessos": 2
+      },
+      "primeiro_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "LIMA",
+        "BLOCO": "14",
+        "APARTAMENTO": "145",
+        "PLACA": "JQL3929",
+        "MODELO": "COROLLA",
+        "COR": "CINZA",
+        "STATUS": "MORADOR",
+        "DATA_HORA": "19/03/2026 17:28:29",
+        "_entrada_id": 106,
+        "MORADOR SEM TAG": "NAO",
+        "ID": 106
+      },
+      "ultimo_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "LIMA",
+        "BLOCO": "14",
+        "APARTAMENTO": "145",
+        "PLACA": "DFE4849",
+        "MODELO": "CIVIC",
+        "COR": "BRANCO",
+        "STATUS": "MORADOR",
+        "DATA_HORA": "26/03/2026 20:26:09",
+        "_entrada_id": 131,
+        "MORADOR SEM TAG": "NAO",
+        "ID": 131
+      },
+      "timestamps": {
+        "gerado_em": "27/02/2026 17:53:30",
+        "exibido_em": null,
         "fechado_em": null
       },
       "status": {
@@ -5156,5 +9946,5 @@
       }
     }
   ],
-  "ultimo_aviso_ativo": "AVISO-000109"
+  "ultimo_aviso_ativo": "AVISO-000221"
 }

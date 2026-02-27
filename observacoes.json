@@ -3,19 +3,19 @@
     {
       "id": 1,
       "tipo": "OBSERVACAO",
-      "texto": "Observação registrada para Flavio Junior, morador do Bloco 10, Apartamento 10: avisar quando chegar a entrega da farmácia.",
+      "texto": "Observação 1: registrar recado para ELISA ROCHA, bloco 2, apto 105.",
       "campos_extraidos_confirmados": {
         "BLOCO": [
-          "10"
+          "2"
         ],
         "APARTAMENTO": [
-          "10"
+          "105"
         ],
         "NOME": [
-          "DO"
+          "ELISA"
         ],
         "SOBRENOME": [
-          "BLOCO"
+          "ROCHA"
         ],
         "HORARIO": [],
         "VEICULO": [],
@@ -34,45 +34,45 @@
       },
       "campos_extraidos": {
         "BLOCO": [
-          "10"
+          "2"
         ],
         "APARTAMENTO": [
-          "10"
+          "105"
         ],
         "NOME": [
-          "DO"
+          "ELISA"
         ],
         "SOBRENOME": [
-          "BLOCO"
+          "ROCHA"
         ],
         "HORARIO": [],
         "VEICULO": [],
         "COR": [],
         "PLACA": []
       },
-      "data_hora": "17/02/2026 09:08:04",
+      "data_hora": "27/02/2026 07:57:13",
       "processado": true,
-      "motivo_roteamento": "scores={'orientacoes': 0.0, 'observacoes': 8.5, 'encomendas': 1.1}; escolhido=observacoes",
+      "motivo_roteamento": "dataset_teste_800",
       "versao_regras": "v2.0",
-      "confianca_classificacao": 0.878,
+      "confianca_classificacao": 0.889,
       "ambiguo": false
     },
     {
       "id": 2,
       "tipo": "OBSERVACAO",
-      "texto": "Observação referente à moradora MARIA Souza, Bloco B, Apartamento 202: guardar documento e avisar quando chegar.",
+      "texto": "Observação 2: registrar recado para GABRIELA MARTINS, bloco 4, apto 111.",
       "campos_extraidos_confirmados": {
         "BLOCO": [
-          "B"
+          "4"
         ],
         "APARTAMENTO": [
-          "202"
+          "111"
         ],
         "NOME": [
-          "MARIA"
+          "GABRIELA"
         ],
         "SOBRENOME": [
-          "SOUZA"
+          "MARTINS"
         ],
         "HORARIO": [],
         "VEICULO": [],
@@ -91,42 +91,46 @@
       },
       "campos_extraidos": {
         "BLOCO": [
-          "B"
+          "4"
         ],
         "APARTAMENTO": [
-          "202"
+          "111"
         ],
         "NOME": [
-          "MARIA"
+          "GABRIELA"
         ],
         "SOBRENOME": [
-          "SOUZA"
+          "MARTINS"
         ],
         "HORARIO": [],
         "VEICULO": [],
         "COR": [],
         "PLACA": []
       },
-      "data_hora": "17/02/2026 09:08:06",
+      "data_hora": "27/02/2026 09:35:08",
       "processado": true,
-      "motivo_roteamento": "scores={'orientacoes': 0.0, 'observacoes': 10.5, 'encomendas': 0.0}; escolhido=observacoes",
+      "motivo_roteamento": "dataset_teste_800",
       "versao_regras": "v2.0",
-      "confianca_classificacao": 0.991,
+      "confianca_classificacao": 0.974,
       "ambiguo": false
     },
     {
       "id": 3,
       "tipo": "OBSERVACAO",
-      "texto": "Observação direcionada a CARLOS Lima, residente no Bloco C, Apartamento 303: receber encomenda e realizar a entrega no período da noite.",
+      "texto": "Observação 3: registrar recado para IVAN RIBEIRO, bloco 6, apto 117.",
       "campos_extraidos_confirmados": {
         "BLOCO": [
-          "C"
+          "6"
         ],
         "APARTAMENTO": [
-          "303"
+          "117"
         ],
-        "NOME": [],
-        "SOBRENOME": [],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
         "HORARIO": [],
         "VEICULO": [],
         "COR": [],
@@ -144,41 +148,45 @@
       },
       "campos_extraidos": {
         "BLOCO": [
-          "C"
+          "6"
         ],
         "APARTAMENTO": [
-          "303"
+          "117"
         ],
-        "NOME": [],
-        "SOBRENOME": [],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
         "HORARIO": [],
         "VEICULO": [],
         "COR": [],
         "PLACA": []
       },
-      "data_hora": "17/02/2026 09:08:08",
+      "data_hora": "27/02/2026 11:05:04",
       "processado": true,
-      "motivo_roteamento": "scores={'orientacoes': 0.0, 'observacoes': 3.4000000000000004, 'encomendas': 3.6}; escolhido=encomendas",
+      "motivo_roteamento": "dataset_teste_800",
       "versao_regras": "v2.0",
-      "confianca_classificacao": 0.514,
-      "ambiguo": true
+      "confianca_classificacao": 0.952,
+      "ambiguo": false
     },
     {
       "id": 4,
       "tipo": "OBSERVACAO",
-      "texto": "Observação para ANA Pereira, moradora do Bloco D, Apartamento 404: anotar recado e avisar o prestador.",
+      "texto": "Observação 4: registrar recado para ANA SILVA, bloco 8, apto 123.",
       "campos_extraidos_confirmados": {
         "BLOCO": [
-          "D"
+          "8"
         ],
         "APARTAMENTO": [
-          "404"
+          "123"
         ],
         "NOME": [
-          "DO"
+          "ANA"
         ],
         "SOBRENOME": [
-          "BLOCO"
+          "SILVA"
         ],
         "HORARIO": [],
         "VEICULO": [],
@@ -197,42 +205,46 @@
       },
       "campos_extraidos": {
         "BLOCO": [
-          "D"
+          "8"
         ],
         "APARTAMENTO": [
-          "404"
+          "123"
         ],
         "NOME": [
-          "DO"
+          "ANA"
         ],
         "SOBRENOME": [
-          "BLOCO"
+          "SILVA"
         ],
         "HORARIO": [],
         "VEICULO": [],
         "COR": [],
         "PLACA": []
       },
-      "data_hora": "17/02/2026 09:08:10",
+      "data_hora": "27/02/2026 13:24:01",
       "processado": true,
-      "motivo_roteamento": "scores={'orientacoes': 0.0, 'observacoes': 7.800000000000001, 'encomendas': 0.0}; escolhido=observacoes",
+      "motivo_roteamento": "dataset_teste_800",
       "versao_regras": "v2.0",
-      "confianca_classificacao": 0.988,
+      "confianca_classificacao": 0.926,
       "ambiguo": false
     },
     {
       "id": 5,
       "tipo": "OBSERVACAO",
-      "texto": "Observação registrada para JOÃO Silva, residente no Bloco A, Apartamento 101: aviso operacional de manutenção.",
+      "texto": "Observação 5: registrar recado para CARLA MENDES, bloco 10, apto 129.",
       "campos_extraidos_confirmados": {
         "BLOCO": [
-          "A"
+          "10"
         ],
         "APARTAMENTO": [
-          "101"
+          "129"
         ],
-        "NOME": [],
-        "SOBRENOME": [],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
         "HORARIO": [],
         "VEICULO": [],
         "COR": [],
@@ -250,11 +262,54 @@
       },
       "campos_extraidos": {
         "BLOCO": [
-          "A"
+          "10"
         ],
         "APARTAMENTO": [
-          "101"
+          "129"
         ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "27/02/2026 15:09:11",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.921,
+      "ambiguo": false
+    },
+    {
+      "id": 6,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 6: registrar recado para ELISA ROCHA, bloco 12, apto 135.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "135"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
         "NOME": [],
         "SOBRENOME": [],
         "HORARIO": [],
@@ -262,11 +317,7097 @@
         "COR": [],
         "PLACA": []
       },
-      "data_hora": "17/02/2026 09:08:12",
+      "campos_extraidos": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "135"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "27/02/2026 17:48:33",
       "processado": true,
-      "motivo_roteamento": "scores={'orientacoes': 0.0, 'observacoes': 6.4, 'encomendas': 0.0}; escolhido=observacoes",
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.947,
+      "ambiguo": false
+    },
+    {
+      "id": 7,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 7: registrar recado para GABRIELA MARTINS, bloco 14, apto 141.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "141"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "141"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "27/02/2026 19:07:14",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.895,
+      "ambiguo": false
+    },
+    {
+      "id": 8,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 8: registrar recado para BRUNO COSTA, bloco 9, apto 140.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "140"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "140"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "28/02/2026 14:02:30",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.921,
+      "ambiguo": false
+    },
+    {
+      "id": 9,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 9: registrar recado para DIEGO LIMA, bloco 11, apto 146.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "146"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "146"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "28/02/2026 16:45:46",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.945,
+      "ambiguo": false
+    },
+    {
+      "id": 10,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 10: registrar recado para DIEGO LIMA, bloco 11, apto 150.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "150"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "150"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "01/03/2026 16:24:15",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.912,
+      "ambiguo": false
+    },
+    {
+      "id": 11,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 11: registrar recado para FELIPE SOUZA, bloco 13, apto 156.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "156"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "156"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "01/03/2026 18:29:10",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.982,
+      "ambiguo": false
+    },
+    {
+      "id": 12,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 12: registrar recado para HUGO ALVES, bloco 15, apto 162.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "162"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "162"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "01/03/2026 20:49:07",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.958,
+      "ambiguo": false
+    },
+    {
+      "id": 13,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 13: registrar recado para JULIA NUNES, bloco 17, apto 168.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "168"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "168"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "01/03/2026 22:30:34",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.97,
+      "ambiguo": false
+    },
+    {
+      "id": 14,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 14: registrar recado para BRUNO COSTA, bloco 19, apto 104.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "104"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "104"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "01/03/2026 07:40:26",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.905,
+      "ambiguo": false
+    },
+    {
+      "id": 15,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 15: registrar recado para DIEGO LIMA, bloco 1, apto 110.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "110"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "110"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "01/03/2026 09:26:09",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.98,
+      "ambiguo": false
+    },
+    {
+      "id": 16,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 16: registrar recado para JULIA NUNES, bloco 17, apto 110.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "110"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "110"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "02/03/2026 22:59:27",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.973,
+      "ambiguo": false
+    },
+    {
+      "id": 17,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 17: registrar recado para ANA SILVA, bloco 18, apto 115.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "115"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "115"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "03/03/2026 06:20:27",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.926,
+      "ambiguo": false
+    },
+    {
+      "id": 18,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 18: registrar recado para CARLA MENDES, bloco 20, apto 121.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "121"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "121"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "03/03/2026 08:00:54",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.926,
+      "ambiguo": false
+    },
+    {
+      "id": 19,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 19: registrar recado para ELISA ROCHA, bloco 2, apto 127.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "127"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "127"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "03/03/2026 10:19:58",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.978,
+      "ambiguo": false
+    },
+    {
+      "id": 20,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 20: registrar recado para GABRIELA MARTINS, bloco 4, apto 133.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "133"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "133"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "03/03/2026 12:17:17",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.93,
+      "ambiguo": false
+    },
+    {
+      "id": 21,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 21: registrar recado para IVAN RIBEIRO, bloco 6, apto 139.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "139"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "139"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "03/03/2026 14:31:48",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.931,
+      "ambiguo": false
+    },
+    {
+      "id": 22,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 22: registrar recado para ANA SILVA, bloco 8, apto 145.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "145"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "145"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "03/03/2026 16:32:21",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.902,
+      "ambiguo": false
+    },
+    {
+      "id": 23,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 23: registrar recado para GABRIELA MARTINS, bloco 4, apto 145.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "145"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "145"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "04/03/2026 12:29:53",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.984,
+      "ambiguo": false
+    },
+    {
+      "id": 24,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 24: registrar recado para IVAN RIBEIRO, bloco 6, apto 151.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "151"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "151"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "04/03/2026 14:41:12",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.924,
+      "ambiguo": false
+    },
+    {
+      "id": 25,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 25: registrar recado para ANA SILVA, bloco 8, apto 157.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "157"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "157"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "04/03/2026 16:37:25",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.933,
+      "ambiguo": false
+    },
+    {
+      "id": 26,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 26: registrar recado para CARLA MENDES, bloco 10, apto 163.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "163"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "163"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "04/03/2026 18:56:23",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.908,
+      "ambiguo": false
+    },
+    {
+      "id": 27,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 27: registrar recado para ELISA ROCHA, bloco 12, apto 169.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "169"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "169"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "04/03/2026 20:35:54",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.966,
+      "ambiguo": false
+    },
+    {
+      "id": 28,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 28: registrar recado para GABRIELA MARTINS, bloco 14, apto 105.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "105"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "105"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "04/03/2026 22:44:47",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.978,
+      "ambiguo": false
+    },
+    {
+      "id": 29,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 29: registrar recado para IVAN RIBEIRO, bloco 16, apto 111.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "111"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "111"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "04/03/2026 07:22:07",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.962,
+      "ambiguo": false
+    },
+    {
+      "id": 30,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 30: registrar recado para DIEGO LIMA, bloco 11, apto 110.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "110"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "110"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "05/03/2026 19:07:13",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.923,
+      "ambiguo": false
+    },
+    {
+      "id": 31,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 31: registrar recado para ELISA ROCHA, bloco 12, apto 115.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "115"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "115"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "06/03/2026 20:59:08",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.983,
+      "ambiguo": false
+    },
+    {
+      "id": 32,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 32: registrar recado para GABRIELA MARTINS, bloco 14, apto 121.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "121"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "121"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "06/03/2026 22:56:23",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.883,
+      "ambiguo": false
+    },
+    {
+      "id": 33,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 33: registrar recado para IVAN RIBEIRO, bloco 16, apto 127.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "127"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "127"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "06/03/2026 07:25:01",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.894,
+      "ambiguo": false
+    },
+    {
+      "id": 34,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 34: registrar recado para ANA SILVA, bloco 18, apto 133.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "133"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "133"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "06/03/2026 09:03:34",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.911,
+      "ambiguo": false
+    },
+    {
+      "id": 35,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 35: registrar recado para IVAN RIBEIRO, bloco 16, apto 135.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "135"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "135"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "07/03/2026 07:05:05",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.928,
+      "ambiguo": false
+    },
+    {
+      "id": 36,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 36: registrar recado para ANA SILVA, bloco 18, apto 141.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "141"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "141"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "07/03/2026 09:46:14",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.979,
+      "ambiguo": false
+    },
+    {
+      "id": 37,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 37: registrar recado para CARLA MENDES, bloco 20, apto 147.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "147"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "147"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "07/03/2026 11:26:04",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.936,
+      "ambiguo": false
+    },
+    {
+      "id": 38,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 38: registrar recado para ELISA ROCHA, bloco 2, apto 153.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "153"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "153"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "07/03/2026 13:50:36",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.937,
+      "ambiguo": false
+    },
+    {
+      "id": 39,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 39: registrar recado para GABRIELA MARTINS, bloco 4, apto 159.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "159"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "159"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "07/03/2026 15:06:38",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.939,
+      "ambiguo": false
+    },
+    {
+      "id": 40,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 40: registrar recado para IVAN RIBEIRO, bloco 6, apto 165.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "165"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "165"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "07/03/2026 17:41:04",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.982,
+      "ambiguo": false
+    },
+    {
+      "id": 41,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 41: registrar recado para ANA SILVA, bloco 8, apto 101.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "101"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "101"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "07/03/2026 19:44:04",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.903,
+      "ambiguo": false
+    },
+    {
+      "id": 42,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 42: registrar recado para FELIPE SOUZA, bloco 3, apto 100.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "100"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "100"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "08/03/2026 14:33:35",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.903,
+      "ambiguo": false
+    },
+    {
+      "id": 43,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 43: registrar recado para GABRIELA MARTINS, bloco 4, apto 105.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "105"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "105"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "09/03/2026 15:35:16",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.885,
+      "ambiguo": false
+    },
+    {
+      "id": 44,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 44: registrar recado para IVAN RIBEIRO, bloco 6, apto 111.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "111"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "111"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "09/03/2026 17:03:43",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.976,
+      "ambiguo": false
+    },
+    {
+      "id": 45,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 45: registrar recado para ANA SILVA, bloco 8, apto 117.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "117"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "117"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "09/03/2026 19:05:58",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.893,
+      "ambiguo": false
+    },
+    {
+      "id": 46,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 46: registrar recado para JULIA NUNES, bloco 7, apto 120.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "120"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "120"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "10/03/2026 18:14:58",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.934,
+      "ambiguo": false
+    },
+    {
+      "id": 47,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 47: registrar recado para BRUNO COSTA, bloco 9, apto 126.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "126"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "126"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "10/03/2026 20:49:04",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.935,
+      "ambiguo": false
+    },
+    {
+      "id": 48,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 48: registrar recado para DIEGO LIMA, bloco 11, apto 132.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "132"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "132"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "10/03/2026 22:51:01",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.923,
+      "ambiguo": false
+    },
+    {
+      "id": 49,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 49: registrar recado para FELIPE SOUZA, bloco 13, apto 138.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "138"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "138"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "10/03/2026 07:22:17",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.881,
+      "ambiguo": false
+    },
+    {
+      "id": 50,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 50: registrar recado para HUGO ALVES, bloco 15, apto 144.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "144"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "144"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "10/03/2026 09:50:39",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.97,
+      "ambiguo": false
+    },
+    {
+      "id": 51,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 51: registrar recado para JULIA NUNES, bloco 17, apto 150.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "150"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "150"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "10/03/2026 11:47:31",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.921,
+      "ambiguo": false
+    },
+    {
+      "id": 52,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 52: registrar recado para BRUNO COSTA, bloco 19, apto 156.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "156"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "156"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "10/03/2026 13:56:22",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.918,
+      "ambiguo": false
+    },
+    {
+      "id": 53,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 53: registrar recado para GABRIELA MARTINS, bloco 14, apto 155.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "155"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "155"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "11/03/2026 08:16:39",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.926,
+      "ambiguo": false
+    },
+    {
+      "id": 54,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 54: registrar recado para IVAN RIBEIRO, bloco 16, apto 161.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "161"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "161"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "11/03/2026 10:10:58",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.925,
+      "ambiguo": false
+    },
+    {
+      "id": 55,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 55: registrar recado para ANA SILVA, bloco 18, apto 167.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "167"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "167"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "11/03/2026 12:28:48",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.932,
+      "ambiguo": false
+    },
+    {
+      "id": 56,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 56: registrar recado para CARLA MENDES, bloco 20, apto 103.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "103"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "103"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "11/03/2026 14:14:27",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.96,
+      "ambiguo": false
+    },
+    {
+      "id": 57,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 57: registrar recado para ELISA ROCHA, bloco 2, apto 109.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "109"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "109"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "11/03/2026 16:40:04",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.915,
+      "ambiguo": false
+    },
+    {
+      "id": 58,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 58: registrar recado para GABRIELA MARTINS, bloco 4, apto 115.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "115"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "115"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "11/03/2026 18:27:56",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.906,
+      "ambiguo": false
+    },
+    {
+      "id": 59,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 59: registrar recado para CARLA MENDES, bloco 20, apto 115.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "115"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "115"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "12/03/2026 14:35:55",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.885,
+      "ambiguo": false
+    },
+    {
+      "id": 60,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 60: registrar recado para ELISA ROCHA, bloco 2, apto 121.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "121"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "121"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "12/03/2026 16:17:21",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.965,
+      "ambiguo": false
+    },
+    {
+      "id": 61,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 61: registrar recado para GABRIELA MARTINS, bloco 4, apto 127.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "127"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "127"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "12/03/2026 18:50:27",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.906,
+      "ambiguo": false
+    },
+    {
+      "id": 62,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 62: registrar recado para IVAN RIBEIRO, bloco 6, apto 133.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "133"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "133"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "12/03/2026 20:34:39",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.924,
+      "ambiguo": false
+    },
+    {
+      "id": 63,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 63: registrar recado para ANA SILVA, bloco 8, apto 139.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "139"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "139"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "12/03/2026 22:29:33",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.949,
+      "ambiguo": false
+    },
+    {
+      "id": 64,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 64: registrar recado para CARLA MENDES, bloco 10, apto 145.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "145"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "145"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "12/03/2026 07:38:34",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.91,
+      "ambiguo": false
+    },
+    {
+      "id": 65,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 65: registrar recado para ELISA ROCHA, bloco 12, apto 151.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "151"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "151"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "12/03/2026 09:41:58",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.971,
+      "ambiguo": false
+    },
+    {
+      "id": 66,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 66: registrar recado para JULIA NUNES, bloco 7, apto 150.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "150"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "150"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "14/03/2026 21:19:14",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.931,
+      "ambiguo": false
+    },
+    {
+      "id": 67,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 67: registrar recado para BRUNO COSTA, bloco 9, apto 156.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "156"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "156"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "14/03/2026 06:11:01",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.903,
+      "ambiguo": false
+    },
+    {
+      "id": 68,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 68: registrar recado para BRUNO COSTA, bloco 9, apto 160.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "160"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "160"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "15/03/2026 06:36:17",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.948,
+      "ambiguo": false
+    },
+    {
+      "id": 69,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 69: registrar recado para DIEGO LIMA, bloco 11, apto 166.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "166"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "166"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "15/03/2026 08:25:50",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.909,
+      "ambiguo": false
+    },
+    {
+      "id": 70,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 70: registrar recado para FELIPE SOUZA, bloco 13, apto 102.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "102"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "102"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "15/03/2026 10:34:13",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.954,
+      "ambiguo": false
+    },
+    {
+      "id": 71,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 71: registrar recado para HUGO ALVES, bloco 15, apto 108.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "108"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "108"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "15/03/2026 12:04:41",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.89,
+      "ambiguo": false
+    },
+    {
+      "id": 72,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 72: registrar recado para JULIA NUNES, bloco 17, apto 114.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "114"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "114"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "15/03/2026 14:38:12",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.956,
+      "ambiguo": false
+    },
+    {
+      "id": 73,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 73: registrar recado para BRUNO COSTA, bloco 19, apto 120.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "120"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "120"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "15/03/2026 16:44:30",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.904,
+      "ambiguo": false
+    },
+    {
+      "id": 74,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 74: registrar recado para DIEGO LIMA, bloco 1, apto 126.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "126"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "126"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "15/03/2026 18:29:15",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.922,
+      "ambiguo": false
+    },
+    {
+      "id": 75,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 75: registrar recado para IVAN RIBEIRO, bloco 16, apto 125.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "125"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "125"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "16/03/2026 13:30:51",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.895,
+      "ambiguo": false
+    },
+    {
+      "id": 76,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 76: registrar recado para ANA SILVA, bloco 18, apto 131.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "131"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "131"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "16/03/2026 15:02:55",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.963,
+      "ambiguo": false
+    },
+    {
+      "id": 77,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 77: registrar recado para CARLA MENDES, bloco 20, apto 137.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "137"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "137"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "16/03/2026 17:17:06",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.981,
+      "ambiguo": false
+    },
+    {
+      "id": 78,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 78: registrar recado para ELISA ROCHA, bloco 2, apto 143.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "143"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "143"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "16/03/2026 19:03:57",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.926,
+      "ambiguo": false
+    },
+    {
+      "id": 79,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 79: registrar recado para GABRIELA MARTINS, bloco 4, apto 149.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "149"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "149"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "16/03/2026 21:35:22",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.934,
+      "ambiguo": false
+    },
+    {
+      "id": 80,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 80: registrar recado para DIEGO LIMA, bloco 1, apto 150.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "150"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "150"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/03/2026 18:40:17",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.941,
+      "ambiguo": false
+    },
+    {
+      "id": 81,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 81: registrar recado para FELIPE SOUZA, bloco 3, apto 156.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "156"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "156"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/03/2026 20:36:40",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.957,
+      "ambiguo": false
+    },
+    {
+      "id": 82,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 82: registrar recado para FELIPE SOUZA, bloco 3, apto 160.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "160"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "160"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "18/03/2026 20:48:30",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.977,
+      "ambiguo": false
+    },
+    {
+      "id": 83,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 83: registrar recado para HUGO ALVES, bloco 5, apto 166.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "5"
+        ],
+        "APARTAMENTO": [
+          "166"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "5"
+        ],
+        "APARTAMENTO": [
+          "166"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "18/03/2026 22:39:40",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.893,
+      "ambiguo": false
+    },
+    {
+      "id": 84,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 84: registrar recado para JULIA NUNES, bloco 7, apto 102.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "102"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "102"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "18/03/2026 07:43:23",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.935,
+      "ambiguo": false
+    },
+    {
+      "id": 85,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 85: registrar recado para BRUNO COSTA, bloco 9, apto 108.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "108"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "108"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "18/03/2026 09:50:34",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.89,
+      "ambiguo": false
+    },
+    {
+      "id": 86,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 86: registrar recado para DIEGO LIMA, bloco 11, apto 114.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "114"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "114"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "18/03/2026 11:32:13",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.912,
+      "ambiguo": false
+    },
+    {
+      "id": 87,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 87: registrar recado para ANA SILVA, bloco 8, apto 115.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "115"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "115"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "19/03/2026 08:09:52",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.96,
+      "ambiguo": false
+    },
+    {
+      "id": 88,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 88: registrar recado para CARLA MENDES, bloco 10, apto 121.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "121"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "121"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "19/03/2026 10:55:49",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.966,
+      "ambiguo": false
+    },
+    {
+      "id": 89,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 89: registrar recado para ELISA ROCHA, bloco 12, apto 127.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "127"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "127"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "19/03/2026 12:41:06",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.882,
+      "ambiguo": false
+    },
+    {
+      "id": 90,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 90: registrar recado para GABRIELA MARTINS, bloco 14, apto 133.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "133"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "133"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "19/03/2026 14:41:02",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.881,
+      "ambiguo": false
+    },
+    {
+      "id": 91,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 91: registrar recado para IVAN RIBEIRO, bloco 16, apto 139.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "139"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "139"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "19/03/2026 16:44:58",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.881,
+      "ambiguo": false
+    },
+    {
+      "id": 92,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 92: registrar recado para FELIPE SOUZA, bloco 13, apto 140.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "140"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "140"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "20/03/2026 13:29:26",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.945,
+      "ambiguo": false
+    },
+    {
+      "id": 93,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 93: registrar recado para HUGO ALVES, bloco 15, apto 146.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "146"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "146"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "20/03/2026 15:18:03",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.907,
+      "ambiguo": false
+    },
+    {
+      "id": 94,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 94: registrar recado para JULIA NUNES, bloco 17, apto 152.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "152"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "17"
+        ],
+        "APARTAMENTO": [
+          "152"
+        ],
+        "NOME": [
+          "JULIA"
+        ],
+        "SOBRENOME": [
+          "NUNES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "20/03/2026 17:08:09",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.946,
+      "ambiguo": false
+    },
+    {
+      "id": 95,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 95: registrar recado para BRUNO COSTA, bloco 19, apto 158.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "158"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "19"
+        ],
+        "APARTAMENTO": [
+          "158"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "20/03/2026 19:38:49",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.928,
+      "ambiguo": false
+    },
+    {
+      "id": 96,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 96: registrar recado para DIEGO LIMA, bloco 1, apto 164.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "164"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "164"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "20/03/2026 21:36:09",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.987,
+      "ambiguo": false
+    },
+    {
+      "id": 97,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 97: registrar recado para ANA SILVA, bloco 18, apto 165.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "165"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "165"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "21/03/2026 18:57:03",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.908,
+      "ambiguo": false
+    },
+    {
+      "id": 98,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 98: registrar recado para CARLA MENDES, bloco 20, apto 101.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "101"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "101"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "21/03/2026 20:01:52",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.887,
+      "ambiguo": false
+    },
+    {
+      "id": 99,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 99: registrar recado para ELISA ROCHA, bloco 2, apto 107.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "107"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "107"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "21/03/2026 22:25:23",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.964,
+      "ambiguo": false
+    },
+    {
+      "id": 100,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 100: registrar recado para GABRIELA MARTINS, bloco 4, apto 113.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "113"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "113"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "21/03/2026 07:38:29",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.927,
+      "ambiguo": false
+    },
+    {
+      "id": 101,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 101: registrar recado para IVAN RIBEIRO, bloco 6, apto 119.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "119"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "119"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "21/03/2026 09:23:28",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.932,
+      "ambiguo": false
+    },
+    {
+      "id": 102,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 102: registrar recado para ANA SILVA, bloco 8, apto 125.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "125"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "125"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "21/03/2026 11:22:01",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.91,
+      "ambiguo": false
+    },
+    {
+      "id": 103,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 103: registrar recado para GABRIELA MARTINS, bloco 4, apto 125.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "125"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "125"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "22/03/2026 07:00:39",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.91,
+      "ambiguo": false
+    },
+    {
+      "id": 104,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 104: registrar recado para IVAN RIBEIRO, bloco 6, apto 131.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "131"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "131"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "22/03/2026 09:31:46",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.986,
+      "ambiguo": false
+    },
+    {
+      "id": 105,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 105: registrar recado para ANA SILVA, bloco 8, apto 137.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "137"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "137"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "22/03/2026 11:48:24",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.96,
+      "ambiguo": false
+    },
+    {
+      "id": 106,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 106: registrar recado para CARLA MENDES, bloco 10, apto 143.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "143"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "143"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "22/03/2026 13:13:02",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
       "versao_regras": "v2.0",
       "confianca_classificacao": 0.985,
+      "ambiguo": false
+    },
+    {
+      "id": 107,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 107: registrar recado para ANA SILVA, bloco 8, apto 145.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "145"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "145"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "23/03/2026 11:22:30",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.899,
+      "ambiguo": false
+    },
+    {
+      "id": 108,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 108: registrar recado para CARLA MENDES, bloco 10, apto 151.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "151"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "151"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "23/03/2026 13:39:37",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.91,
+      "ambiguo": false
+    },
+    {
+      "id": 109,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 109: registrar recado para ELISA ROCHA, bloco 12, apto 157.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "157"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "157"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "23/03/2026 15:22:27",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.914,
+      "ambiguo": false
+    },
+    {
+      "id": 110,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 110: registrar recado para GABRIELA MARTINS, bloco 14, apto 163.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "163"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "163"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "23/03/2026 17:45:04",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.92,
+      "ambiguo": false
+    },
+    {
+      "id": 111,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 111: registrar recado para IVAN RIBEIRO, bloco 16, apto 169.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "169"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "169"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "23/03/2026 19:25:20",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.953,
+      "ambiguo": false
+    },
+    {
+      "id": 112,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 112: registrar recado para ANA SILVA, bloco 18, apto 105.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "105"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "105"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "23/03/2026 21:02:06",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.901,
+      "ambiguo": false
+    },
+    {
+      "id": 113,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 113: registrar recado para CARLA MENDES, bloco 20, apto 111.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "111"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "111"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "23/03/2026 06:16:44",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.895,
+      "ambiguo": false
+    },
+    {
+      "id": 114,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 114: registrar recado para HUGO ALVES, bloco 15, apto 110.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "110"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "110"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "24/03/2026 18:27:59",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.938,
+      "ambiguo": false
+    },
+    {
+      "id": 115,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 115: registrar recado para IVAN RIBEIRO, bloco 16, apto 115.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "115"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "115"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "25/03/2026 19:21:01",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.904,
+      "ambiguo": false
+    },
+    {
+      "id": 116,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 116: registrar recado para ANA SILVA, bloco 18, apto 121.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "121"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "18"
+        ],
+        "APARTAMENTO": [
+          "121"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "25/03/2026 21:50:25",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.886,
+      "ambiguo": false
+    },
+    {
+      "id": 117,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 117: registrar recado para CARLA MENDES, bloco 20, apto 127.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "127"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "20"
+        ],
+        "APARTAMENTO": [
+          "127"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "25/03/2026 06:18:22",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.904,
+      "ambiguo": false
+    },
+    {
+      "id": 118,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 118: registrar recado para ELISA ROCHA, bloco 2, apto 133.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "133"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "133"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "25/03/2026 08:30:30",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.967,
+      "ambiguo": false
+    },
+    {
+      "id": 119,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 119: registrar recado para GABRIELA MARTINS, bloco 4, apto 139.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "139"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "139"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "25/03/2026 10:18:35",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.934,
+      "ambiguo": false
+    },
+    {
+      "id": 120,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 120: registrar recado para IVAN RIBEIRO, bloco 6, apto 145.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "145"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "145"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "25/03/2026 12:23:26",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.921,
+      "ambiguo": false
+    },
+    {
+      "id": 121,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 121: registrar recado para ANA SILVA, bloco 8, apto 151.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "151"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "151"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "25/03/2026 14:12:19",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.937,
+      "ambiguo": false
+    },
+    {
+      "id": 122,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 122: registrar recado para CARLA MENDES, bloco 10, apto 157.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "157"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "157"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "25/03/2026 16:30:49",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.902,
+      "ambiguo": false
+    },
+    {
+      "id": 123,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 123: registrar recado para GABRIELA MARTINS, bloco 4, apto 155.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "155"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "155"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "26/03/2026 10:49:53",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.931,
+      "ambiguo": false
+    },
+    {
+      "id": 124,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 124: registrar recado para IVAN RIBEIRO, bloco 6, apto 161.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "161"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "161"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "26/03/2026 12:00:46",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.924,
+      "ambiguo": false
+    },
+    {
+      "id": 125,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 125: registrar recado para ANA SILVA, bloco 8, apto 167.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "167"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "167"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "26/03/2026 14:06:09",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.911,
+      "ambiguo": false
+    },
+    {
+      "id": 126,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 126: registrar recado para CARLA MENDES, bloco 10, apto 103.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "103"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "103"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "26/03/2026 16:01:32",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.927,
+      "ambiguo": false
+    },
+    {
+      "id": 127,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 127: registrar recado para ELISA ROCHA, bloco 12, apto 109.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "109"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "109"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "26/03/2026 18:54:56",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.975,
+      "ambiguo": false
+    },
+    {
+      "id": 128,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 128: registrar recado para GABRIELA MARTINS, bloco 14, apto 115.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "115"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "115"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "26/03/2026 20:32:29",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.955,
+      "ambiguo": false
+    },
+    {
+      "id": 129,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 129: registrar recado para IVAN RIBEIRO, bloco 16, apto 121.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "121"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "16"
+        ],
+        "APARTAMENTO": [
+          "121"
+        ],
+        "NOME": [
+          "IVAN"
+        ],
+        "SOBRENOME": [
+          "RIBEIRO"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "26/03/2026 22:03:03",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.977,
+      "ambiguo": false
+    },
+    {
+      "id": 130,
+      "tipo": "OBSERVACAO",
+      "texto": "Observação 130: registrar recado para DIEGO LIMA, bloco 11, apto 120.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "120"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "120"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "27/03/2026 17:19:25",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste_800",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.973,
       "ambiguo": false
     }
   ]
