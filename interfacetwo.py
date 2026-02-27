@@ -3463,7 +3463,7 @@ def _build_monitor_ui(container):
     consumo_hint.pack(side=tk.LEFT, anchor="w", padx=(theme_space("space_2", 8), 0))
 
     consumo_day_var = tk.StringVar(value="")
-    consumo_day_label = build_label(consumo_header, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    consumo_day_label = build_label(consumo_info_row, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
     consumo_day_label.configure(textvariable=consumo_day_var)
     consumo_day_label.pack(side=tk.RIGHT, anchor="e")
 
