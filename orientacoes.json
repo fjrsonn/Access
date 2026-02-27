@@ -3,24 +3,22 @@
     {
       "id": 1,
       "tipo": "ORIENTACAO",
-      "texto": "Às 22:30, o morador Flavio Junior, residente no Bloco 10, Apartamento 10, foi orientado após registro de barulho alto. A ocorrência foi tratada no local e o morador devidamente orientado quanto às normas internas.",
+      "texto": "Orientacao 1: BRUNO COSTA do bloco 1, apartamento 100, instruido sobre procedimento interno.",
       "campos_extraidos_confirmados": {
         "BLOCO": [
-          "10"
+          "1"
         ],
         "APARTAMENTO": [
-          "10"
+          "100"
         ],
         "NOME": [
-          "FLAVIO",
-          "DEVIDAMENTE"
+          "BRUNO"
         ],
         "SOBRENOME": [
-          "JUNIOR",
-          "ORIENTADO QUANTO ÀS NORMAS INTERNAS"
+          "COSTA"
         ],
         "HORARIO": [
-          "22:30"
+          "07:00"
         ],
         "VEICULO": [],
         "COR": [],
@@ -38,59 +36,53 @@
       },
       "campos_extraidos": {
         "BLOCO": [
-          "10"
+          "1"
         ],
         "APARTAMENTO": [
-          "10"
+          "100"
         ],
         "NOME": [
-          "FLAVIO",
-          "DEVIDAMENTE"
+          "BRUNO"
         ],
         "SOBRENOME": [
-          "JUNIOR",
-          "ORIENTADO QUANTO ÀS NORMAS INTERNAS"
+          "COSTA"
         ],
         "HORARIO": [
-          "22:30"
+          "07:00"
         ],
         "VEICULO": [],
         "COR": [],
         "PLACA": []
       },
-      "data_hora": "17/02/2026 09:07:54",
+      "data_hora": "27/02/2026 07:00:00",
       "processado": true,
-      "motivo_roteamento": "scores={'orientacoes': 7.4, 'observacoes': 2.0999999999999996, 'encomendas': 0.8}; escolhido=orientacoes",
+      "motivo_roteamento": "dataset_teste",
       "versao_regras": "v2.0",
-      "confianca_classificacao": 0.773,
+      "confianca_classificacao": 0.95,
       "ambiguo": false
     },
     {
       "id": 2,
       "tipo": "ORIENTACAO",
-      "texto": "Às 21:10, MARIA Souza, moradora do Bloco B, Apartamento 202, foi orientada na portaria após relato de discussão no corredor. A situação foi acompanhada e a moradora recebeu as devidas orientações.",
+      "texto": "Orientacao 2: CARLA MENDES do bloco 2, apartamento 101, instruido sobre procedimento interno.",
       "campos_extraidos_confirmados": {
         "BLOCO": [
-          "B"
+          "2"
         ],
         "APARTAMENTO": [
-          "202"
+          "101"
         ],
         "NOME": [
-          "DO",
-          "RECEBEU"
+          "CARLA"
         ],
         "SOBRENOME": [
-          "BLOCO",
-          "AS DEVIDAS ORIENTAÇÕES"
+          "MENDES"
         ],
         "HORARIO": [
-          "21:10"
+          "08:07"
         ],
         "VEICULO": [],
-        "COR": [
-          "REDOR"
-        ],
+        "COR": [],
         "PLACA": []
       },
       "campos_extraidos_inferidos": {
@@ -105,50 +97,50 @@
       },
       "campos_extraidos": {
         "BLOCO": [
-          "B"
+          "2"
         ],
         "APARTAMENTO": [
-          "202"
+          "101"
         ],
         "NOME": [
-          "DO",
-          "RECEBEU"
+          "CARLA"
         ],
         "SOBRENOME": [
-          "BLOCO",
-          "AS DEVIDAS ORIENTAÇÕES"
+          "MENDES"
         ],
         "HORARIO": [
-          "21:10"
+          "08:07"
         ],
         "VEICULO": [],
-        "COR": [
-          "REDOR"
-        ],
+        "COR": [],
         "PLACA": []
       },
-      "data_hora": "17/02/2026 09:07:56",
+      "data_hora": "28/02/2026 08:07:13",
       "processado": true,
-      "motivo_roteamento": "scores={'orientacoes': 5.4, 'observacoes': 2.0999999999999996, 'encomendas': 0.0}; escolhido=orientacoes",
+      "motivo_roteamento": "dataset_teste",
       "versao_regras": "v2.0",
-      "confianca_classificacao": 0.714,
+      "confianca_classificacao": 0.95,
       "ambiguo": false
     },
     {
       "id": 3,
       "tipo": "ORIENTACAO",
-      "texto": "Às 19:40, CARLOS Lima, residente no Bloco C, Apartamento 303, foi alvo de orientação formal em decorrência de som alto. A medida foi aplicada conforme as normas estabelecidas.",
+      "texto": "Orientacao 3: DIEGO LIMA do bloco 3, apartamento 102, instruido sobre procedimento interno.",
       "campos_extraidos_confirmados": {
         "BLOCO": [
-          "C"
+          "3"
         ],
         "APARTAMENTO": [
-          "303"
+          "102"
         ],
-        "NOME": [],
-        "SOBRENOME": [],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
         "HORARIO": [
-          "19:40"
+          "09:14"
         ],
         "VEICULO": [],
         "COR": [],
@@ -166,48 +158,50 @@
       },
       "campos_extraidos": {
         "BLOCO": [
-          "C"
+          "3"
         ],
         "APARTAMENTO": [
-          "303"
+          "102"
         ],
-        "NOME": [],
-        "SOBRENOME": [],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
         "HORARIO": [
-          "19:40"
+          "09:14"
         ],
         "VEICULO": [],
         "COR": [],
         "PLACA": []
       },
-      "data_hora": "17/02/2026 09:07:58",
+      "data_hora": "01/03/2026 09:14:26",
       "processado": true,
-      "motivo_roteamento": "scores={'orientacoes': 4.0, 'observacoes': 1.4, 'encomendas': 0.0}; escolhido=orientacoes",
+      "motivo_roteamento": "dataset_teste",
       "versao_regras": "v2.0",
-      "confianca_classificacao": 0.732,
+      "confianca_classificacao": 0.95,
       "ambiguo": false
     },
     {
       "id": 4,
       "tipo": "ORIENTACAO",
-      "texto": "Às 20:05, ANA Pereira, moradora do Bloco D, Apartamento 404, recebeu orientação após registro de conduta inadequada. A situação foi tratada e a moradora devidamente orientada.",
+      "texto": "Orientacao 4: ELISA ROCHA do bloco 4, apartamento 103, instruido sobre procedimento interno.",
       "campos_extraidos_confirmados": {
         "BLOCO": [
-          "D"
+          "4"
         ],
         "APARTAMENTO": [
-          "404"
+          "103"
         ],
         "NOME": [
-          "DO",
-          "DEVIDAMENTE"
+          "ELISA"
         ],
         "SOBRENOME": [
-          "BLOCO",
-          "ORIENTADA"
+          "ROCHA"
         ],
         "HORARIO": [
-          "20:05"
+          "10:21"
         ],
         "VEICULO": [],
         "COR": [],
@@ -225,52 +219,50 @@
       },
       "campos_extraidos": {
         "BLOCO": [
-          "D"
+          "4"
         ],
         "APARTAMENTO": [
-          "404"
+          "103"
         ],
         "NOME": [
-          "DO",
-          "DEVIDAMENTE"
+          "ELISA"
         ],
         "SOBRENOME": [
-          "BLOCO",
-          "ORIENTADA"
+          "ROCHA"
         ],
         "HORARIO": [
-          "20:05"
+          "10:21"
         ],
         "VEICULO": [],
         "COR": [],
         "PLACA": []
       },
-      "data_hora": "17/02/2026 09:08:00",
+      "data_hora": "02/03/2026 10:21:39",
       "processado": true,
-      "motivo_roteamento": "scores={'orientacoes': 8.0, 'observacoes': 2.0999999999999996, 'encomendas': 0.0}; escolhido=orientacoes",
+      "motivo_roteamento": "dataset_teste",
       "versao_regras": "v2.0",
-      "confianca_classificacao": 0.786,
+      "confianca_classificacao": 0.95,
       "ambiguo": false
     },
     {
       "id": 5,
       "tipo": "ORIENTACAO",
-      "texto": "Às 18:15, JOÃO Silva, residente no Bloco A, Apartamento 101, foi orientado em razão de uso indevido da garagem. A ocorrência foi registrada e o morador recebeu as orientações necessárias.",
+      "texto": "Orientacao 5: FELIPE SOUZA do bloco 5, apartamento 104, instruido sobre procedimento interno.",
       "campos_extraidos_confirmados": {
         "BLOCO": [
-          "A"
+          "5"
         ],
         "APARTAMENTO": [
-          "101"
+          "104"
         ],
         "NOME": [
-          "RECEBEU"
+          "FELIPE"
         ],
         "SOBRENOME": [
-          "AS ORIENTAÇÕES NECESSÁRIAS"
+          "SOUZA"
         ],
         "HORARIO": [
-          "18:15"
+          "11:28"
         ],
         "VEICULO": [],
         "COR": [],
@@ -288,29 +280,2774 @@
       },
       "campos_extraidos": {
         "BLOCO": [
-          "A"
+          "5"
         ],
         "APARTAMENTO": [
-          "101"
+          "104"
         ],
         "NOME": [
-          "RECEBEU"
+          "FELIPE"
         ],
         "SOBRENOME": [
-          "AS ORIENTAÇÕES NECESSÁRIAS"
+          "SOUZA"
         ],
         "HORARIO": [
-          "18:15"
+          "11:28"
         ],
         "VEICULO": [],
         "COR": [],
         "PLACA": []
       },
-      "data_hora": "17/02/2026 09:08:02",
+      "data_hora": "03/03/2026 11:28:52",
       "processado": true,
-      "motivo_roteamento": "scores={'orientacoes': 5.4, 'observacoes': 2.0999999999999996, 'encomendas': 0.0}; escolhido=orientacoes",
+      "motivo_roteamento": "dataset_teste",
       "versao_regras": "v2.0",
-      "confianca_classificacao": 0.714,
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 6,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 6: GABRIELA MARTINS do bloco 6, apartamento 105, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "105"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "12:35"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "105"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "12:35"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "04/03/2026 12:35:05",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 7,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 7: HUGO ALVES do bloco 7, apartamento 106, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "106"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "13:42"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "106"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "13:42"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "05/03/2026 13:42:18",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 8,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 8: ANA SILVA do bloco 8, apartamento 107, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "107"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "14:49"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "107"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "14:49"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "06/03/2026 14:49:31",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 9,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 9: BRUNO COSTA do bloco 9, apartamento 108, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "108"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "15:56"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "108"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "15:56"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "07/03/2026 15:56:44",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 10,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 10: CARLA MENDES do bloco 10, apartamento 109, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "109"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "16:03"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "109"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "16:03"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "08/03/2026 16:03:57",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 11,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 11: DIEGO LIMA do bloco 11, apartamento 110, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "110"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "17:10"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "110"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "17:10"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "09/03/2026 17:10:10",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 12,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 12: ELISA ROCHA do bloco 12, apartamento 111, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "111"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "18:17"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "111"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "18:17"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "10/03/2026 18:17:23",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 13,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 13: FELIPE SOUZA do bloco 13, apartamento 112, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "112"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "07:24"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "112"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "07:24"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "11/03/2026 07:24:36",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 14,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 14: GABRIELA MARTINS do bloco 14, apartamento 113, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "113"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "08:31"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "113"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "08:31"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "12/03/2026 08:31:49",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 15,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 15: HUGO ALVES do bloco 15, apartamento 114, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "114"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "09:38"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "114"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "09:38"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "13/03/2026 09:38:02",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 16,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 16: ANA SILVA do bloco 1, apartamento 115, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "115"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "10:45"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "115"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "10:45"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "14/03/2026 10:45:15",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 17,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 17: BRUNO COSTA do bloco 2, apartamento 116, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "116"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "11:52"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "116"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "11:52"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "15/03/2026 11:52:28",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 18,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 18: CARLA MENDES do bloco 3, apartamento 117, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "117"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "12:59"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "117"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "12:59"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "16/03/2026 12:59:41",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 19,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 19: DIEGO LIMA do bloco 4, apartamento 118, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "118"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "13:06"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "118"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "13:06"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/03/2026 13:06:54",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 20,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 20: ELISA ROCHA do bloco 5, apartamento 119, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "5"
+        ],
+        "APARTAMENTO": [
+          "119"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "14:13"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "5"
+        ],
+        "APARTAMENTO": [
+          "119"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "14:13"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "18/03/2026 14:13:07",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 21,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 21: FELIPE SOUZA do bloco 6, apartamento 120, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "120"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "15:20"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "120"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "15:20"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "19/03/2026 15:20:20",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 22,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 22: GABRIELA MARTINS do bloco 7, apartamento 121, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "121"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "16:27"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "121"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "16:27"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "20/03/2026 16:27:33",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 23,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 23: HUGO ALVES do bloco 8, apartamento 122, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "122"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "17:34"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "122"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "17:34"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "21/03/2026 17:34:46",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 24,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 24: ANA SILVA do bloco 9, apartamento 123, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "123"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "18:41"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "123"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "18:41"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "22/03/2026 18:41:59",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 25,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 25: BRUNO COSTA do bloco 10, apartamento 124, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "124"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "07:48"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "124"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "07:48"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "23/03/2026 07:48:12",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 26,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 26: CARLA MENDES do bloco 11, apartamento 125, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "125"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "08:55"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "125"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "08:55"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "24/03/2026 08:55:25",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 27,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 27: DIEGO LIMA do bloco 12, apartamento 126, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "126"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "09:02"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "126"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "09:02"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "25/03/2026 09:02:38",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 28,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 28: ELISA ROCHA do bloco 13, apartamento 127, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "127"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "10:09"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "127"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "10:09"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "26/03/2026 10:09:51",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 29,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 29: FELIPE SOUZA do bloco 14, apartamento 128, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "128"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "11:16"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "128"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "11:16"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "27/03/2026 11:16:04",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 30,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 30: GABRIELA MARTINS do bloco 15, apartamento 129, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "129"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "12:23"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "129"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "12:23"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "27/02/2026 12:23:17",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 31,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 31: HUGO ALVES do bloco 1, apartamento 130, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "130"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "13:30"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "130"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "13:30"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "28/02/2026 13:30:30",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 32,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 32: ANA SILVA do bloco 2, apartamento 131, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "131"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "14:37"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "131"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "14:37"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "01/03/2026 14:37:43",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 33,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 33: BRUNO COSTA do bloco 3, apartamento 132, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "132"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "15:44"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "132"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "15:44"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "02/03/2026 15:44:56",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 34,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 34: CARLA MENDES do bloco 4, apartamento 133, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "133"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "16:51"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "133"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "16:51"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "03/03/2026 16:51:09",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 35,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 35: DIEGO LIMA do bloco 5, apartamento 134, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "5"
+        ],
+        "APARTAMENTO": [
+          "134"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "17:58"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "5"
+        ],
+        "APARTAMENTO": [
+          "134"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "17:58"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "04/03/2026 17:58:22",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 36,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 36: ELISA ROCHA do bloco 6, apartamento 135, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "135"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "18:05"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "6"
+        ],
+        "APARTAMENTO": [
+          "135"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "18:05"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "05/03/2026 18:05:35",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 37,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 37: FELIPE SOUZA do bloco 7, apartamento 136, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "136"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "07:12"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "7"
+        ],
+        "APARTAMENTO": [
+          "136"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "07:12"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "06/03/2026 07:12:48",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 38,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 38: GABRIELA MARTINS do bloco 8, apartamento 137, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "137"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "08:19"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "8"
+        ],
+        "APARTAMENTO": [
+          "137"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "08:19"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "07/03/2026 08:19:01",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 39,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 39: HUGO ALVES do bloco 9, apartamento 138, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "138"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "09:26"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "9"
+        ],
+        "APARTAMENTO": [
+          "138"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "09:26"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "08/03/2026 09:26:14",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 40,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 40: ANA SILVA do bloco 10, apartamento 139, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "139"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "10:33"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "10"
+        ],
+        "APARTAMENTO": [
+          "139"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "10:33"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "09/03/2026 10:33:27",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 41,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 41: BRUNO COSTA do bloco 11, apartamento 100, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "100"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "11:40"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "11"
+        ],
+        "APARTAMENTO": [
+          "100"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "11:40"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "10/03/2026 11:40:40",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 42,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 42: CARLA MENDES do bloco 12, apartamento 101, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "101"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "12:47"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "12"
+        ],
+        "APARTAMENTO": [
+          "101"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "12:47"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "11/03/2026 12:47:53",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 43,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 43: DIEGO LIMA do bloco 13, apartamento 102, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "102"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "13:54"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "13"
+        ],
+        "APARTAMENTO": [
+          "102"
+        ],
+        "NOME": [
+          "DIEGO"
+        ],
+        "SOBRENOME": [
+          "LIMA"
+        ],
+        "HORARIO": [
+          "13:54"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "12/03/2026 13:54:06",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 44,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 44: ELISA ROCHA do bloco 14, apartamento 103, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "103"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "14:01"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "14"
+        ],
+        "APARTAMENTO": [
+          "103"
+        ],
+        "NOME": [
+          "ELISA"
+        ],
+        "SOBRENOME": [
+          "ROCHA"
+        ],
+        "HORARIO": [
+          "14:01"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "13/03/2026 14:01:19",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 45,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 45: FELIPE SOUZA do bloco 15, apartamento 104, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "104"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "15:08"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "15"
+        ],
+        "APARTAMENTO": [
+          "104"
+        ],
+        "NOME": [
+          "FELIPE"
+        ],
+        "SOBRENOME": [
+          "SOUZA"
+        ],
+        "HORARIO": [
+          "15:08"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "14/03/2026 15:08:32",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 46,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 46: GABRIELA MARTINS do bloco 1, apartamento 105, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "105"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "16:15"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "1"
+        ],
+        "APARTAMENTO": [
+          "105"
+        ],
+        "NOME": [
+          "GABRIELA"
+        ],
+        "SOBRENOME": [
+          "MARTINS"
+        ],
+        "HORARIO": [
+          "16:15"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "15/03/2026 16:15:45",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 47,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 47: HUGO ALVES do bloco 2, apartamento 106, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "106"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "17:22"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "2"
+        ],
+        "APARTAMENTO": [
+          "106"
+        ],
+        "NOME": [
+          "HUGO"
+        ],
+        "SOBRENOME": [
+          "ALVES"
+        ],
+        "HORARIO": [
+          "17:22"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "16/03/2026 17:22:58",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 48,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 48: ANA SILVA do bloco 3, apartamento 107, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "107"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "18:29"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "3"
+        ],
+        "APARTAMENTO": [
+          "107"
+        ],
+        "NOME": [
+          "ANA"
+        ],
+        "SOBRENOME": [
+          "SILVA"
+        ],
+        "HORARIO": [
+          "18:29"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "17/03/2026 18:29:11",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 49,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 49: BRUNO COSTA do bloco 4, apartamento 108, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "108"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "07:36"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "4"
+        ],
+        "APARTAMENTO": [
+          "108"
+        ],
+        "NOME": [
+          "BRUNO"
+        ],
+        "SOBRENOME": [
+          "COSTA"
+        ],
+        "HORARIO": [
+          "07:36"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "18/03/2026 07:36:24",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
+      "ambiguo": false
+    },
+    {
+      "id": 50,
+      "tipo": "ORIENTACAO",
+      "texto": "Orientacao 50: CARLA MENDES do bloco 5, apartamento 109, instruido sobre procedimento interno.",
+      "campos_extraidos_confirmados": {
+        "BLOCO": [
+          "5"
+        ],
+        "APARTAMENTO": [
+          "109"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "08:43"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos_inferidos": {
+        "BLOCO": [],
+        "APARTAMENTO": [],
+        "NOME": [],
+        "SOBRENOME": [],
+        "HORARIO": [],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "campos_extraidos": {
+        "BLOCO": [
+          "5"
+        ],
+        "APARTAMENTO": [
+          "109"
+        ],
+        "NOME": [
+          "CARLA"
+        ],
+        "SOBRENOME": [
+          "MENDES"
+        ],
+        "HORARIO": [
+          "08:43"
+        ],
+        "VEICULO": [],
+        "COR": [],
+        "PLACA": []
+      },
+      "data_hora": "19/03/2026 08:43:37",
+      "processado": true,
+      "motivo_roteamento": "dataset_teste",
+      "versao_regras": "v2.0",
+      "confianca_classificacao": 0.95,
       "ambiguo": false
     }
   ]
