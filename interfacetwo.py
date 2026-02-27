@@ -3659,7 +3659,7 @@ def _build_monitor_ui(container):
             consumo_selected_day = day_keys[-1]
 
         width = max(360, int(consumo_days_canvas.winfo_width() or 360))
-        height = max(140, int(consumo_days_canvas.winfo_height() or 140))
+        height = max(56, int(consumo_days_canvas.winfo_height() or 56))
         margin_x = 18
         margin_y = 18
         plot_w = max(10, width - margin_x * 2)
@@ -4048,8 +4048,8 @@ def _build_monitor_ui(container):
             _build_text_actions(frame, text_widget, info_label, arquivo)
         if filter_key == "controle":
             details_var = tk.StringVar(value="Selecione um registro para ver detalhes.")
-            details = tk.Label(frame, textvariable=details_var, bg=UI_THEME["surface_alt"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), anchor="w", justify="left", padx=theme_space("space_3", 10), pady=theme_space("space_2", 8), font=theme_font("font_md"))
-            details.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_3", 10)))
+            details = tk.Label(frame, textvariable=details_var, bg=UI_THEME["surface_alt"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), anchor="w", justify="left", wraplength=920, padx=theme_space("space_3", 10), pady=theme_space("space_2", 8), font=theme_font("font_md"))
+            details.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 6)), before=text_widget)
             _control_details_var[text_widget] = details_var
         monitor_widgets.append(text_widget)
         _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter, "filter_key": filter_key, "widget": text_widget}
