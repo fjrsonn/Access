@@ -3471,7 +3471,7 @@ def _build_monitor_ui(container):
     consumo_graph_frame.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
     consumo_breakdown_canvas = None
 
-    consumo_days_canvas = tk.Canvas(consumo_graph_frame, bg=UI_THEME["bg"], height=56, highlightthickness=0, bd=0)
+    consumo_days_canvas = tk.Canvas(consumo_graph_frame, bg=UI_THEME["bg"], height=44, highlightthickness=0, bd=0)
     consumo_days_canvas.pack(fill=tk.X, padx=0, pady=(0, theme_space("space_1", 4)))
 
     consumo_breakdown_canvas = None
@@ -3657,9 +3657,9 @@ def _build_monitor_ui(container):
             consumo_selected_day = day_keys[-1]
 
         width = max(360, int(consumo_days_canvas.winfo_width() or 360))
-        height = max(56, int(consumo_days_canvas.winfo_height() or 56))
+        height = max(44, int(consumo_days_canvas.winfo_height() or 44))
         margin_x = 18
-        margin_y = 10
+        margin_y = 8
         plot_w = max(10, width - margin_x * 2)
         plot_h = max(10, height - margin_y * 2)
         step = plot_w / max(1, len(day_keys) - 1)
@@ -3684,7 +3684,7 @@ def _build_monitor_ui(container):
             line_points = []
             for x, y, *_ in coords:
                 line_points.extend([x, y])
-            consumo_days_canvas.create_line(*line_points, fill="#FFFFFF", width=2.0, smooth=True)
+            consumo_days_canvas.create_line(*line_points, fill="#FFFFFF", width=1.2, smooth=True)
 
         def _on_day_click(day_key: str, show_total: bool = False):
             nonlocal consumo_selected_day, consumo_selected_mode
@@ -3708,7 +3708,7 @@ def _build_monitor_ui(container):
         point_default = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
         for x, y, day_key, total in coords:
             is_selected = day_key == consumo_selected_day
-            radius = 5 if is_selected else 4
+            radius = 4 if is_selected else 3
             color = "#FFFFFF" if is_selected else point_default
             item = consumo_days_canvas.create_oval(
                 x - radius,
@@ -3720,9 +3720,6 @@ def _build_monitor_ui(container):
                 width=2 if is_selected else 1,
             )
             consumo_days_canvas.tag_bind(item, "<Button-1>", lambda _evt, d=day_key: _on_day_click(d))
-            consumo_days_canvas.tag_bind(item, "<Enter>", lambda _evt, d=day_key, t=total: consumo_days_canvas.itemconfigure("hoverday", text=f"{d} • Registros: {t}"))
-            if is_selected:
-                consumo_days_canvas.create_text(x, y - 14, text=f"{total}", fill="#FFFFFF", font=theme_font("font_sm"))
 
         last_x, last_y, last_day_key, _last_total = coords[-1]
         marker_x = min(width - margin_x, last_x + max(12, step * 0.45))
@@ -3739,20 +3736,23 @@ def _build_monitor_ui(container):
         all_total = int(_aggregate_all_days().get("total", 0) or 0)
         marker_restante = max(0, 1000 - all_total)
         consumo_days_canvas.tag_bind(marker_item, "<Button-1>", lambda _evt, d=last_day_key: _on_day_click(d, show_total=True))
-        consumo_days_canvas.tag_bind(
-            marker_item,
-            "<Enter>",
-            lambda _evt, d=last_day_key, t=all_total, r=marker_restante: consumo_days_canvas.itemconfigure("hoverday", text=f"TOTAL {d} • Usados: {t} • Restantes: {r}"),
-        )
-        consumo_days_canvas.create_text(
-            marker_x,
-            last_y + 14,
-            text=f"Total geral: {all_total}",
+        consumo_days_canvas.tag_bind(marker_item, "<Enter>", lambda _evt: consumo_days_canvas.configure(cursor="hand2"))
+        consumo_days_canvas.tag_bind(marker_item, "<Leave>", lambda _evt: consumo_days_canvas.configure(cursor=""))
+        return_marker_x = marker_x - 14
+        return_marker_r = 4
+        return_marker_item = consumo_days_canvas.create_oval(
+            return_marker_x - return_marker_r,
+            last_y - return_marker_r,
+            return_marker_x + return_marker_r,
+            last_y + return_marker_r,
             fill="#FFFFFF",
-            font=theme_font("font_sm"),
+            outline="#FFFFFF",
+            width=1,
         )
+        consumo_days_canvas.tag_bind(return_marker_item, "<Button-1>", lambda _evt, d=last_day_key: _on_day_click(d, show_total=True))
+        consumo_days_canvas.tag_bind(return_marker_item, "<Enter>", lambda _evt: consumo_days_canvas.configure(cursor="hand2"))
+        consumo_days_canvas.tag_bind(return_marker_item, "<Leave>", lambda _evt: consumo_days_canvas.configure(cursor=""))
 
-        consumo_days_canvas.create_text(width - 8, 10, text="", anchor="ne", tags="hoverday", fill=point_default, font=theme_font("font_sm"))
         if consumo_selected_mode == "total":
             total_selected = int(_aggregate_all_days().get("total", 0) or 0)
             restante_selected = max(0, 1000 - total_selected)
