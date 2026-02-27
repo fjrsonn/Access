@@ -232,12 +232,7 @@ def _load_consumo_24h_data():
         data = {}
 
     if not data:
-        today = datetime.now().date()
-        for back in range(13, -1, -1):
-            d = (today - timedelta(days=back)).strftime("%Y-%m-%d")
-            data[d] = _gerar_consumo_24h_base(d)
-        _consumo_24h_por_dia = data
-        _save_consumo_24h_data()
+        _consumo_24h_por_dia = {}
         return
 
     _consumo_24h_por_dia = data
@@ -247,10 +242,8 @@ def _carregar_consumo_24h(day_key: str) -> list[int]:
     _load_consumo_24h_data()
     points = _consumo_24h_por_dia.get(day_key)
     if points is None:
-        points = _gerar_consumo_24h_base(day_key)
-        _consumo_24h_por_dia[day_key] = points
-        _save_consumo_24h_data()
-    return list(points)
+        return [0] * 24
+    return list(_normalizar_24h(points))
 
 
 
@@ -303,12 +296,7 @@ def _load_consumo_24h_data():
         data = {}
 
     if not data:
-        today = datetime.now().date()
-        for back in range(13, -1, -1):
-            day_key = (today - timedelta(days=back)).strftime("%Y-%m-%d")
-            data[day_key] = _gerar_consumo_24h_base(day_key)
-        _consumo_24h_por_dia = data
-        _save_consumo_24h_data()
+        _consumo_24h_por_dia = {}
         return
 
     _consumo_24h_por_dia = data
@@ -318,82 +306,8 @@ def _carregar_consumo_24h(day_key: str) -> list[int]:
     _load_consumo_24h_data()
     points = _consumo_24h_por_dia.get(day_key)
     if points is None:
-        points = _gerar_consumo_24h_base(day_key)
-        _consumo_24h_por_dia[day_key] = points
-        _save_consumo_24h_data()
-    return list(points)
-
-
-
-
-_consumo_24h_por_dia = {}
-
-
-def _gerar_consumo_24h_base(day_key: str) -> list[int]:
-    digest = hashlib.sha256(day_key.encode("utf-8")).hexdigest()
-    values = []
-    for hour in range(24):
-        seed = int(digest[(hour % 16) * 4:((hour % 16) * 4) + 4], 16)
-        wave = 22 + int(13 * (1 + math.sin((hour / 24) * 6.28318 - 1.0)))
-        noise = seed % 16
-        values.append(max(0, min(100, wave + noise)))
-    return values
-
-
-def _normalizar_24h(points) -> list[int]:
-    base = [0] * 24
-    src = list(points or [])[:24]
-    for idx, val in enumerate(src):
-        try:
-            base[idx] = max(0, min(100, int(val)))
-        except Exception:
-            base[idx] = 0
-    return base
-
-
-def _save_consumo_24h_data():
-    try:
-        os.makedirs(os.path.dirname(CONSUMO_24H_FILE), exist_ok=True)
-        with open(CONSUMO_24H_FILE, "w", encoding="utf-8") as f:
-            json.dump(_consumo_24h_por_dia, f, ensure_ascii=False, indent=2)
-    except Exception:
-        return
-
-
-def _load_consumo_24h_data():
-    global _consumo_24h_por_dia
-    if _consumo_24h_por_dia:
-        return
-    data = {}
-    try:
-        with open(CONSUMO_24H_FILE, "r", encoding="utf-8") as f:
-            raw = json.load(f)
-        if isinstance(raw, dict):
-            for day_key, points in raw.items():
-                data[str(day_key)] = _normalizar_24h(points)
-    except Exception:
-        data = {}
-
-    if not data:
-        today = datetime.now().date()
-        for back in range(13, -1, -1):
-            day_key = (today - timedelta(days=back)).strftime("%Y-%m-%d")
-            data[day_key] = _gerar_consumo_24h_base(day_key)
-        _consumo_24h_por_dia = data
-        _save_consumo_24h_data()
-        return
-
-    _consumo_24h_por_dia = data
-
-
-def _carregar_consumo_24h(day_key: str) -> list[int]:
-    _load_consumo_24h_data()
-    points = _consumo_24h_por_dia.get(day_key)
-    if points is None:
-        points = _gerar_consumo_24h_base(day_key)
-        _consumo_24h_por_dia[day_key] = points
-        _save_consumo_24h_data()
-    return list(points)
+        return [0] * 24
+    return list(_normalizar_24h(points))
 
 
 
@@ -447,12 +361,7 @@ def _load_consumo_24h_data():
         data = {}
 
     if not data:
-        today = datetime.now().date()
-        for back in range(13, -1, -1):
-            day_key = (today - timedelta(days=back)).strftime("%Y-%m-%d")
-            data[day_key] = _gerar_consumo_24h_base(day_key)
-        _consumo_24h_por_dia = data
-        _save_consumo_24h_data()
+        _consumo_24h_por_dia = {}
         return
 
     _consumo_24h_por_dia = data
@@ -462,10 +371,8 @@ def _carregar_consumo_24h(day_key: str) -> list[int]:
     _load_consumo_24h_data()
     points = _consumo_24h_por_dia.get(day_key)
     if points is None:
-        points = _gerar_consumo_24h_base(day_key)
-        _consumo_24h_por_dia[day_key] = points
-        _save_consumo_24h_data()
-    return list(points)
+        return [0] * 24
+    return list(_normalizar_24h(points))
 
 
 
@@ -519,12 +426,7 @@ def _load_consumo_24h_data():
         data = {}
 
     if not data:
-        today = datetime.now().date()
-        for back in range(13, -1, -1):
-            day_key = (today - timedelta(days=back)).strftime("%Y-%m-%d")
-            data[day_key] = _gerar_consumo_24h_base(day_key)
-        _consumo_24h_por_dia = data
-        _save_consumo_24h_data()
+        _consumo_24h_por_dia = {}
         return
 
     _consumo_24h_por_dia = data
@@ -534,10 +436,8 @@ def _carregar_consumo_24h(day_key: str) -> list[int]:
     _load_consumo_24h_data()
     points = _consumo_24h_por_dia.get(day_key)
     if points is None:
-        points = _gerar_consumo_24h_base(day_key)
-        _consumo_24h_por_dia[day_key] = points
-        _save_consumo_24h_data()
-    return list(points)
+        return [0] * 24
+    return list(_normalizar_24h(points))
 
 
 
@@ -591,12 +491,7 @@ def _load_consumo_24h_data():
         data = {}
 
     if not data:
-        today = datetime.now().date()
-        for back in range(13, -1, -1):
-            day_key = (today - timedelta(days=back)).strftime("%Y-%m-%d")
-            data[day_key] = _gerar_consumo_24h_base(day_key)
-        _consumo_24h_por_dia = data
-        _save_consumo_24h_data()
+        _consumo_24h_por_dia = {}
         return
 
     _consumo_24h_por_dia = data
@@ -606,10 +501,8 @@ def _carregar_consumo_24h(day_key: str) -> list[int]:
     _load_consumo_24h_data()
     points = _consumo_24h_por_dia.get(day_key)
     if points is None:
-        points = _gerar_consumo_24h_base(day_key)
-        _consumo_24h_por_dia[day_key] = points
-        _save_consumo_24h_data()
-    return list(points)
+        return [0] * 24
+    return list(_normalizar_24h(points))
 
 
 
@@ -663,12 +556,7 @@ def _load_consumo_24h_data():
         data = {}
 
     if not data:
-        today = datetime.now().date()
-        for back in range(13, -1, -1):
-            day_key = (today - timedelta(days=back)).strftime("%Y-%m-%d")
-            data[day_key] = _gerar_consumo_24h_base(day_key)
-        _consumo_24h_por_dia = data
-        _save_consumo_24h_data()
+        _consumo_24h_por_dia = {}
         return
 
     _consumo_24h_por_dia = data
@@ -678,10 +566,8 @@ def _carregar_consumo_24h(day_key: str) -> list[int]:
     _load_consumo_24h_data()
     points = _consumo_24h_por_dia.get(day_key)
     if points is None:
-        points = _gerar_consumo_24h_base(day_key)
-        _consumo_24h_por_dia[day_key] = points
-        _save_consumo_24h_data()
-    return list(points)
+        return [0] * 24
+    return list(_normalizar_24h(points))
 
 
 
@@ -735,12 +621,7 @@ def _load_consumo_24h_data():
         data = {}
 
     if not data:
-        today = datetime.now().date()
-        for back in range(13, -1, -1):
-            day_key = (today - timedelta(days=back)).strftime("%Y-%m-%d")
-            data[day_key] = _gerar_consumo_24h_base(day_key)
-        _consumo_24h_por_dia = data
-        _save_consumo_24h_data()
+        _consumo_24h_por_dia = {}
         return
 
     _consumo_24h_por_dia = data
@@ -750,10 +631,73 @@ def _carregar_consumo_24h(day_key: str) -> list[int]:
     _load_consumo_24h_data()
     points = _consumo_24h_por_dia.get(day_key)
     if points is None:
-        points = _gerar_consumo_24h_base(day_key)
-        _consumo_24h_por_dia[day_key] = points
-        _save_consumo_24h_data()
-    return list(points)
+        return [0] * 24
+    return list(_normalizar_24h(points))
+
+
+
+
+_consumo_24h_por_dia = {}
+
+
+def _gerar_consumo_24h_base(day_key: str) -> list[int]:
+    digest = hashlib.sha256(day_key.encode("utf-8")).hexdigest()
+    values = []
+    for hour in range(24):
+        seed = int(digest[(hour % 16) * 4:((hour % 16) * 4) + 4], 16)
+        wave = 22 + int(13 * (1 + math.sin((hour / 24) * 6.28318 - 1.0)))
+        noise = seed % 16
+        values.append(max(0, min(100, wave + noise)))
+    return values
+
+
+def _normalizar_24h(points) -> list[int]:
+    base = [0] * 24
+    src = list(points or [])[:24]
+    for idx, val in enumerate(src):
+        try:
+            base[idx] = max(0, min(100, int(val)))
+        except Exception:
+            base[idx] = 0
+    return base
+
+
+def _save_consumo_24h_data():
+    try:
+        os.makedirs(os.path.dirname(CONSUMO_24H_FILE), exist_ok=True)
+        with open(CONSUMO_24H_FILE, "w", encoding="utf-8") as f:
+            json.dump(_consumo_24h_por_dia, f, ensure_ascii=False, indent=2)
+    except Exception:
+        return
+
+
+def _load_consumo_24h_data():
+    global _consumo_24h_por_dia
+    if _consumo_24h_por_dia:
+        return
+    data = {}
+    try:
+        with open(CONSUMO_24H_FILE, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if isinstance(raw, dict):
+            for day_key, points in raw.items():
+                data[str(day_key)] = _normalizar_24h(points)
+    except Exception:
+        data = {}
+
+    if not data:
+        _consumo_24h_por_dia = {}
+        return
+
+    _consumo_24h_por_dia = data
+
+
+def _carregar_consumo_24h(day_key: str) -> list[int]:
+    _load_consumo_24h_data()
+    points = _consumo_24h_por_dia.get(day_key)
+    if points is None:
+        return [0] * 24
+    return list(_normalizar_24h(points))
 
 
 
@@ -4011,7 +3955,6 @@ def _build_monitor_ui(container):
 
     if not prefs.get("onboarding_seen"):
         _announce_feedback("Use Ctrl+F para busca e Alt+1..4 para trocar abas", "info")
-        _persist_ui_state({"onboarding_seen": True})
 
     _apply_density()
     if op_mode_var.get():
