@@ -1762,11 +1762,8 @@ def _populate_control_table(tree_widget, info_label):
     if last:
         status_hint = f" | último status: {last.get('action','-')}:{last.get('status','-')}"
     info_label.config(text=f"Arquivo: {arquivo} — registros: {len(filtrados)} (de {len(registros)}){status_hint}")
-    if _control_filtered_count_var is not None:
-        try:
-            _control_filtered_count_var.set(f"Registros filtrados: {len(filtrados)} / {len(registros)}")
-        except Exception:
-            pass
+    # O contador do topo foi reaproveitado para exibir o dia selecionado no gráfico
+    # de consumo por dia; por isso não atualizamos mais este texto com filtro.
 
     selected_record = _control_selection_state.get(tree_widget)
     global _pending_focus_identity
@@ -3243,6 +3240,9 @@ def _build_monitor_ui(container):
     btn_top_save_view = build_secondary_button(theme_bar, "💾 Salvar visão", lambda: None)
     btn_top_save_view.pack(side=tk.LEFT, padx=(6, 0))
     _legacy_reset_columns_label = "Resetar colunas"
+    _legacy_filtered_counter_label = "Registros filtrados:"
+    _legacy_toggle_filters_label = "🧰 Ocultar filtros"
+    _legacy_toggle_filters_label_show = "🧰 Mostrar filtros"
     btn_top_reload = build_secondary_button(theme_bar, "🔄 Recarregar", lambda: None)
     btn_top_reload.pack(side=tk.LEFT, padx=(6, 0))
     btn_top_clear = build_secondary_danger_button(theme_bar, "🧹 Limpar", lambda: None)
@@ -3387,7 +3387,7 @@ def _build_monitor_ui(container):
     title.configure(font=theme_font("font_xl", "bold"))
     title.pack(side=tk.LEFT, fill=tk.X, expand=True)
     global _control_filtered_count_var
-    _control_filtered_count_var = tk.StringVar(value="Registros filtrados: 0 / 0")
+    _control_filtered_count_var = tk.StringVar(value="Registros filtrados: sem dia selecionado")
     filtered_label = build_label(title_row, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
     filtered_label.configure(textvariable=_control_filtered_count_var)
     filtered_label.pack(side=tk.RIGHT)
@@ -3659,7 +3659,7 @@ def _build_monitor_ui(container):
         width = max(360, int(consumo_days_canvas.winfo_width() or 360))
         height = max(56, int(consumo_days_canvas.winfo_height() or 56))
         margin_x = 18
-        margin_y = 18
+        margin_y = 10
         plot_w = max(10, width - margin_x * 2)
         plot_h = max(10, height - margin_y * 2)
         step = plot_w / max(1, len(day_keys) - 1)
@@ -3674,6 +3674,9 @@ def _build_monitor_ui(container):
                 y = margin_y + (plot_h * 0.5)
             else:
                 ratio = (total - min_total) / (max_total - min_total)
+                # Curva de acentuação para destacar melhor aclive/declive entre dias.
+                # ratio^0.6 amplia diferenças visuais sem alterar o comprimento horizontal.
+                ratio = max(0.0, min(1.0, ratio)) ** 0.6
                 y = margin_y + plot_h * (1 - ratio)
             coords.append((x, y, day_key, total))
 
@@ -3691,17 +3694,21 @@ def _build_monitor_ui(container):
                 total_sel = int(_aggregate_all_days().get("total", 0) or 0)
                 restante_sel = max(0, 1000 - total_sel)
                 consumo_day_var.set(f"Total acumulado: {day_key} • Usados: {total_sel} • Restantes(base1000): {restante_sel}")
+                if _control_filtered_count_var is not None:
+                    _control_filtered_count_var.set(f"TOTAL {day_key} Registros: {total_sel}")
             else:
                 total_sel = int((consumo_por_dia.get(day_key) or {}).get("total", 0) or 0)
                 restante_sel = max(0, 1000 - total_sel)
                 consumo_day_var.set(f"Dia selecionado: {day_key} • Usados: {total_sel} • Restantes(base1000): {restante_sel}")
+                if _control_filtered_count_var is not None:
+                    _control_filtered_count_var.set(f"{day_key} Registros: {total_sel}")
             _animate_cards_for_day(day_key, show_total=show_total)
             _draw_days_timeline()
 
         point_default = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
         for x, y, day_key, total in coords:
             is_selected = day_key == consumo_selected_day
-            radius = 6 if is_selected else 5
+            radius = 5 if is_selected else 4
             color = "#FFFFFF" if is_selected else point_default
             item = consumo_days_canvas.create_oval(
                 x - radius,
@@ -3750,10 +3757,14 @@ def _build_monitor_ui(container):
             total_selected = int(_aggregate_all_days().get("total", 0) or 0)
             restante_selected = max(0, 1000 - total_selected)
             consumo_day_var.set(f"Total acumulado: {consumo_selected_day} • Usados: {total_selected} • Restantes(base1000): {restante_selected}")
+            if _control_filtered_count_var is not None:
+                _control_filtered_count_var.set(f"TOTAL {consumo_selected_day} Registros: {total_selected}")
         else:
             total_selected = int((consumo_por_dia.get(consumo_selected_day) or {}).get("total", 0) or 0)
             restante_selected = max(0, 1000 - total_selected)
             consumo_day_var.set(f"Dia selecionado: {consumo_selected_day} • Usados: {total_selected} • Restantes(base1000): {restante_selected}")
+            if _control_filtered_count_var is not None:
+                _control_filtered_count_var.set(f"{consumo_selected_day} Registros: {total_selected}")
 
     consumo_days_canvas.bind("<Configure>", _draw_days_timeline, add="+")
     container.after(80, _draw_days_timeline)
