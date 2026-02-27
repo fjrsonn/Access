@@ -3479,80 +3479,179 @@ def _build_monitor_ui(container):
 
 
 
-    _load_consumo_24h_data()
-    consumo_selected_day = max(_consumo_24h_por_dia.keys()) if _consumo_24h_por_dia else datetime.now().strftime("%Y-%m-%d")
+    def _status_text_for_consumo(rec: dict) -> str:
+        if not isinstance(rec, dict):
+            return ""
+        return str(
+            rec.get("STATUS_ENCOMENDA")
+            or rec.get("status_encomenda")
+            or rec.get("STATUS")
+            or rec.get("status")
+            or ""
+        ).upper().strip()
+
+    def _empty_day_metrics() -> dict:
+        return {
+            "total": 0,
+            "pendentes": 0,
+            "sem_contato": 0,
+            "avisado": 0,
+            "diurno": 0,
+            "noturno": 0,
+        }
+
+    def _build_consumo_por_dia() -> dict:
+        try:
+            controle = _load_safe(ARQUIVO)
+            encomendas = _load_safe(ENCOMENDAS_ARQUIVO)
+        except Exception:
+            controle, encomendas = [], []
+
+        day_map = {}
+        registros = (controle if isinstance(controle, list) else []) + (encomendas if isinstance(encomendas, list) else [])
+        for rec in registros:
+            if not isinstance(rec, dict):
+                continue
+            dt = _parse_data_hora(str(rec.get("DATA_HORA") or rec.get("data_hora") or ""))
+            if dt is None:
+                continue
+
+            if 6 <= dt.hour < 18:
+                shift = "diurno"
+                shift_date = dt.date()
+            else:
+                shift = "noturno"
+                shift_date = dt.date() if dt.hour >= 18 else (dt - timedelta(days=1)).date()
+
+            day_key = shift_date.strftime("%Y-%m-%d")
+            item = day_map.setdefault(day_key, _empty_day_metrics())
+            item["total"] += 1
+            item[shift] += 1
+
+            status_text = _status_text_for_consumo(rec)
+            if "SEM CONTATO" in status_text:
+                item["sem_contato"] += 1
+            elif "AVISADO" in status_text:
+                item["avisado"] += 1
+            else:
+                item["pendentes"] += 1
+
+        return day_map
+
+    consumo_por_dia = _build_consumo_por_dia()
+    consumo_selected_day = max(consumo_por_dia.keys()) if consumo_por_dia else datetime.now().strftime("%Y-%m-%d")
     consumo_selected_mode = "day"
 
-    def _save_day_points(day_key: str, points: list[int]):
-        _consumo_24h_por_dia[day_key] = _normalizar_24h(points)
-        _save_consumo_24h_data()
+    def _aggregate_all_days() -> dict:
+        total = _empty_day_metrics()
+        for day_key in sorted(consumo_por_dia.keys()):
+            item = consumo_por_dia.get(day_key) or _empty_day_metrics()
+            for metric_key in total.keys():
+                total[metric_key] += int(item.get(metric_key, 0) or 0)
+        return total
 
-    def _split_points_by_cards(points: list[int]) -> list[int]:
-        return [
-            sum(points[0:6]),
-            sum(points[6:12]),
-            sum(points[12:18]),
-            sum(points[18:24]),
-        ]
+    def _card_payload_from_metrics(metrics: dict) -> dict:
+        total = int(metrics.get("total", 0) or 0)
+        pendentes = int(metrics.get("pendentes", 0) or 0)
+        sem_contato = int(metrics.get("sem_contato", 0) or 0)
+        avisado = int(metrics.get("avisado", 0) or 0)
 
-    def _aggregate_all_days() -> tuple[list[int], int, int]:
-        day_keys = sorted(_consumo_24h_por_dia.keys())
-        quarter_totals = [0, 0, 0, 0]
-        for day_key in day_keys:
-            points = _carregar_consumo_24h(day_key)
-            parts = _split_points_by_cards(points)
-            for idx, value in enumerate(parts):
-                quarter_totals[idx] += value
-        total_consumed = sum(quarter_totals)
-        total_capacity = max(2400, 2400 * max(1, len(day_keys)))
-        return quarter_totals, total_consumed, total_capacity
+        return {
+            "ativos": {
+                "used": total,
+                "remaining": max(0, 1000 - total),
+                "limit": 1000,
+            },
+            "pendentes": {
+                "used": sem_contato + avisado,
+                "remaining": pendentes,
+                "limit": max(1, sem_contato + avisado + pendentes),
+            },
+            "sem_contato": {
+                "used": sem_contato,
+                "remaining": pendentes,
+                "limit": max(1, sem_contato + pendentes),
+            },
+            "avisado": {
+                "used": avisado,
+                "remaining": pendentes + sem_contato,
+                "limit": max(1, avisado + pendentes + sem_contato),
+            },
+        }
+
+    def _draw_selected_day_breakdown(day_key: str):
+        try:
+            consumo_breakdown_canvas.delete("all")
+        except Exception:
+            return
+
+        metrics = consumo_por_dia.get(day_key) or _empty_day_metrics()
+        total = int(metrics.get("total", 0) or 0)
+        diurno = int(metrics.get("diurno", 0) or 0)
+        noturno = int(metrics.get("noturno", 0) or 0)
+
+        width = max(260, int(consumo_breakdown_canvas.winfo_width() or 260))
+        x0, y0, x1, y1 = 12, 14, width - 12, 34
+        bar_w = max(10, x1 - x0)
+        safe_total = max(1, total)
+        diurno_w = int(round(bar_w * (diurno / float(safe_total))))
+        noturno_w = max(0, bar_w - diurno_w)
+
+        consumo_breakdown_canvas.create_rectangle(x0, y0, x1, y1, fill=UI_THEME.get("surface_alt", "#1E2430"), outline="")
+        if diurno_w > 0:
+            consumo_breakdown_canvas.create_rectangle(x0, y0, x0 + diurno_w, y1, fill="#4CC9F0", outline="")
+        if noturno_w > 0:
+            consumo_breakdown_canvas.create_rectangle(x1 - noturno_w, y0, x1, y1, fill="#4361EE", outline="")
+        consumo_breakdown_canvas.create_text(
+            x0,
+            47,
+            anchor="w",
+            text=f"{day_key} • Diurno(06-18): {diurno} • Noturno(18-06): {noturno}",
+            fill=UI_THEME.get("muted_text", "#9BA7B4"),
+            font=theme_font("font_sm"),
+        )
 
     def _animate_cards_for_day(day_key: str, show_total: bool = False):
-        points = _carregar_consumo_24h(day_key)
-        quarter_sums = _split_points_by_cards(points)
-        total = sum(quarter_sums)
-        restante_total = max(0, 2400 - total)
-        total_cards = quarter_sums
-        card_capacity = 600
-        capacity_total = 2400
-        header_prefix = "Dia selecionado"
-        status_text = f"Consumo do dia {day_key} aplicado (24h: {total})"
+        metrics = _aggregate_all_days() if show_total else (consumo_por_dia.get(day_key) or _empty_day_metrics())
+        payload = _card_payload_from_metrics(metrics)
+        header_prefix = "Total acumulado" if show_total else "Dia selecionado"
 
-        if show_total:
-            total_cards, total, capacity_total = _aggregate_all_days()
-            card_capacity = max(600, 600 * max(1, len(_consumo_24h_por_dia)))
-            restante_total = max(0, capacity_total - total)
-            header_prefix = "Total acumulado"
-            status_text = f"Total acumulado aplicado ({total} consumidos • {restante_total} restantes)"
-
-        card_order = ["ativos", "pendentes", "sem_contato", "avisado"]
-        for idx, card_key in enumerate(card_order):
+        for card_key in ("ativos", "pendentes", "sem_contato", "avisado"):
             card = _ux_cards.get(card_key)
             if card is None:
                 continue
-            consumo = total_cards[idx]
-            restante = max(0, card_capacity - consumo)
+            item = payload.get(card_key) or {"used": 0, "remaining": 0, "limit": 1}
+            used = int(item.get("used", 0) or 0)
+            remaining = int(item.get("remaining", 0) or 0)
+            limit = int(item.get("limit", 1) or 1)
             try:
-                card.set_value(str(consumo))
+                card.set_value(str(used))
                 card.set_trend(0)
-                card.set_capacity(consumo, card_capacity)
-                card.set_meta(f"{header_prefix} {day_key} • Consumido: {consumo} • Restante: {restante}")
+                card.set_capacity(used, limit)
+                card.set_meta(f"{header_prefix} {day_key} • Usados: {used} • Restantes: {remaining}")
                 card.flash(220)
                 card.animate_capacity_fill()
             except Exception:
                 continue
+
         try:
-            _status_bar.set(status_text, tone="info")
+            _status_bar.set(
+                f"{header_prefix} {day_key} aplicado (Registros: {metrics.get('total', 0)} • Pendentes: {metrics.get('pendentes', 0)} • Sem contato: {metrics.get('sem_contato', 0)} • Avisado: {metrics.get('avisado', 0)})",
+                tone="info",
+            )
         except Exception:
             pass
 
     def _draw_days_timeline(_event=None):
-        nonlocal consumo_selected_day, consumo_selected_mode
+        nonlocal consumo_selected_day, consumo_selected_mode, consumo_por_dia
+        consumo_por_dia = _build_consumo_por_dia()
         consumo_days_canvas.delete("all")
-        day_keys = sorted(_consumo_24h_por_dia.keys())
+        day_keys = sorted(consumo_por_dia.keys())
         if not day_keys:
+            consumo_day_var.set("Sem dados de consumo por plantão")
+            consumo_days_canvas.create_text(12, 12, anchor="nw", text="Sem registros com DATA_HORA", fill=UI_THEME.get("muted_text", "#9BA7B4"), font=theme_font("font_sm"))
             return
-        if consumo_selected_day not in _consumo_24h_por_dia:
+        if consumo_selected_day not in consumo_por_dia:
             consumo_selected_day = day_keys[-1]
 
         width = max(360, int(consumo_days_canvas.winfo_width() or 360))
@@ -3562,7 +3661,7 @@ def _build_monitor_ui(container):
         plot_w = max(10, width - margin_x * 2)
         plot_h = max(10, height - margin_y * 2)
         step = plot_w / max(1, len(day_keys) - 1)
-        totals = [sum(_carregar_consumo_24h(day)) for day in day_keys]
+        totals = [int((consumo_por_dia.get(day) or {}).get("total", 0) or 0) for day in day_keys]
         min_total, max_total = min(totals), max(totals)
 
         coords = []
@@ -3587,13 +3686,13 @@ def _build_monitor_ui(container):
             consumo_selected_day = day_key
             consumo_selected_mode = "total" if show_total else "day"
             if show_total:
-                _quarters, total_sel, cap_total = _aggregate_all_days()
-                restante_sel = max(0, cap_total - total_sel)
-                consumo_day_var.set(f"Total acumulado: {day_key} • Consumo total: {total_sel} • Restante total: {restante_sel}")
+                total_sel = int(_aggregate_all_days().get("total", 0) or 0)
+                restante_sel = max(0, 1000 - total_sel)
+                consumo_day_var.set(f"Total acumulado: {day_key} • Usados: {total_sel} • Restantes(base1000): {restante_sel}")
             else:
-                total_sel = sum(_carregar_consumo_24h(day_key))
-                restante_sel = max(0, 2400 - total_sel)
-                consumo_day_var.set(f"Dia selecionado: {day_key} • Consumo total: {total_sel} • Restante total: {restante_sel}")
+                total_sel = int((consumo_por_dia.get(day_key) or {}).get("total", 0) or 0)
+                restante_sel = max(0, 1000 - total_sel)
+                consumo_day_var.set(f"Dia selecionado: {day_key} • Usados: {total_sel} • Restantes(base1000): {restante_sel}")
             _animate_cards_for_day(day_key, show_total=show_total)
             _draw_days_timeline()
 
@@ -3612,12 +3711,11 @@ def _build_monitor_ui(container):
                 width=2 if is_selected else 1,
             )
             consumo_days_canvas.tag_bind(item, "<Button-1>", lambda _evt, d=day_key: _on_day_click(d))
-            consumo_days_canvas.tag_bind(item, "<Enter>", lambda _evt, d=day_key, t=total: consumo_days_canvas.itemconfigure("hoverday", text=f"{d} • Total do dia: {t}"))
+            consumo_days_canvas.tag_bind(item, "<Enter>", lambda _evt, d=day_key, t=total: consumo_days_canvas.itemconfigure("hoverday", text=f"{d} • Registros: {t}"))
             if is_selected:
                 consumo_days_canvas.create_text(x, y - 14, text=f"{total}", fill="#FFFFFF", font=theme_font("font_sm"))
 
-        # Última bolinha: total acumulado de todos os dias
-        last_x, last_y, last_day_key, last_total = coords[-1]
+        last_x, last_y, last_day_key, _last_total = coords[-1]
         marker_x = min(width - margin_x, last_x + max(12, step * 0.45))
         marker_r = 6
         marker_item = consumo_days_canvas.create_oval(
@@ -3629,31 +3727,31 @@ def _build_monitor_ui(container):
             outline="#FFFFFF",
             width=2,
         )
-        _all_quarters, all_total, all_cap_total = _aggregate_all_days()
-        marker_restante = max(0, all_cap_total - all_total)
+        all_total = int(_aggregate_all_days().get("total", 0) or 0)
+        marker_restante = max(0, 1000 - all_total)
         consumo_days_canvas.tag_bind(marker_item, "<Button-1>", lambda _evt, d=last_day_key: _on_day_click(d, show_total=True))
         consumo_days_canvas.tag_bind(
             marker_item,
             "<Enter>",
-            lambda _evt, d=last_day_key, t=all_total, r=marker_restante: consumo_days_canvas.itemconfigure("hoverday", text=f"TOTAL {d} • Consumo: {t} • Restante: {r}"),
+            lambda _evt, d=last_day_key, t=all_total, r=marker_restante: consumo_days_canvas.itemconfigure("hoverday", text=f"TOTAL {d} • Usados: {t} • Restantes: {r}"),
         )
         consumo_days_canvas.create_text(
             marker_x,
             last_y + 14,
-            text=f"Total acumulado: {all_total}",
+            text=f"Total geral: {all_total}",
             fill="#FFFFFF",
             font=theme_font("font_sm"),
         )
 
         consumo_days_canvas.create_text(width - 8, 10, text="", anchor="ne", tags="hoverday", fill=point_default, font=theme_font("font_sm"))
         if consumo_selected_mode == "total":
-            _q_sel, total_selected, cap_selected = _aggregate_all_days()
-            restante_selected = max(0, cap_selected - total_selected)
-            consumo_day_var.set(f"Total acumulado: {consumo_selected_day} • Consumo total: {total_selected} • Restante total: {restante_selected}")
+            total_selected = int(_aggregate_all_days().get("total", 0) or 0)
+            restante_selected = max(0, 1000 - total_selected)
+            consumo_day_var.set(f"Total acumulado: {consumo_selected_day} • Usados: {total_selected} • Restantes(base1000): {restante_selected}")
         else:
-            total_selected = sum(_carregar_consumo_24h(consumo_selected_day))
-            restante_selected = max(0, 2400 - total_selected)
-            consumo_day_var.set(f"Dia selecionado: {consumo_selected_day} • Consumo total: {total_selected} • Restante total: {restante_selected}")
+            total_selected = int((consumo_por_dia.get(consumo_selected_day) or {}).get("total", 0) or 0)
+            restante_selected = max(0, 1000 - total_selected)
+            consumo_day_var.set(f"Dia selecionado: {consumo_selected_day} • Usados: {total_selected} • Restantes(base1000): {restante_selected}")
         _draw_selected_day_breakdown(consumo_selected_day)
 
     consumo_days_canvas.bind("<Configure>", _draw_days_timeline, add="+")
