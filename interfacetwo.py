@@ -8,6 +8,7 @@ Monitor de dados:
 import os
 import json
 import tempfile
+import time
 from datetime import datetime, timedelta
 import tkinter as tk
 from tkinter import messagebox, ttk, simpledialog
@@ -132,6 +133,7 @@ ANALISES_ARQUIVO = os.path.join(BASE_DIR, "analises.json")
 AVISOS_ARQUIVO = os.path.join(BASE_DIR, "avisos.json")
 LOCK_FILE = os.path.join(BASE_DIR, "monitor.lock")
 REFRESH_MS = 2000  # 2s
+AUTO_RETURN_TOP_MS = 5 * 60 * 1000
 PREFS_FILE = os.path.join(BASE_DIR, "config", "ui_monitor_prefs.json")
 CONSUMO_24H_FILE = os.path.join(BASE_DIR, "config", "consumo_24h.json")
 CARD_CAPACITY_LIMITS = {
@@ -184,6 +186,7 @@ _record_num_tag_map = {}
 _text_record_ranges = {}
 _sticky_header_state = {}
 _consumo_24h_por_dia = {}
+_text_last_interaction_ts = {}
 
 
 def _gerar_consumo_24h_base(day_key: str) -> list[int]:
@@ -722,6 +725,12 @@ def _update_sticky_header_for_text(text_widget):
     formatter = state.get("formatter")
     if var is None:
         return
+    selected = state.get("selected_record")
+    selected_position = state.get("selected_position")
+    if selected:
+        var.set(f"Última interação: {_summarize_sticky_header(formatter, selected, selected_position)}")
+        return
+
     ranges = _text_record_ranges.get(text_widget) or []
     if not ranges:
         var.set("Sem registros visíveis")
@@ -747,12 +756,43 @@ def _update_sticky_header_for_text(text_widget):
     if current is None:
         current = ranges[0][2]
         current_pos = 0
-    var.set(_summarize_sticky_header(formatter, current, current_pos))
+    var.set(f"Sem interação recente • {_summarize_sticky_header(formatter, current, current_pos)}")
+
+
+def _update_sticky_header_with_interaction(text_widget, record, position=None):
+    state = _sticky_header_state.get(text_widget)
+    if not state:
+        return
+    state["selected_record"] = dict(record or {}) if isinstance(record, dict) else record
+    state["selected_position"] = position
+    _update_sticky_header_for_text(text_widget)
+
+
+def _mark_text_interaction(text_widget):
+    _text_last_interaction_ts[text_widget] = time.monotonic()
+
+
+def _should_return_to_top(text_widget):
+    ts = _text_last_interaction_ts.get(text_widget)
+    if ts is None:
+        return True
+    return (time.monotonic() - ts) * 1000 >= AUTO_RETURN_TOP_MS
 
 
 def _bind_sticky_header_updates(text_widget):
+    state = _sticky_header_state.get(text_widget) or {}
+    scroll_setter = state.get("scroll_setter")
+
+    def _on_yscroll(*args):
+        try:
+            if callable(scroll_setter):
+                scroll_setter(*args)
+        except Exception:
+            pass
+        _update_sticky_header_for_text(text_widget)
+
     try:
-        text_widget.configure(yscrollcommand=lambda *_: _update_sticky_header_for_text(text_widget))
+        text_widget.configure(yscrollcommand=_on_yscroll)
     except Exception:
         pass
 
@@ -1574,6 +1614,7 @@ def _encomenda_on_tag_click(text_widget, record, event=None, rec_tag=None):
         ui["current"] = current
     current["record"] = record
     current["rec_tag"] = rec_tag
+    _mark_text_interaction(text_widget)
 
     # highlight selected record visually
     try:
@@ -1594,6 +1635,7 @@ def _encomenda_on_tag_click(text_widget, record, event=None, rec_tag=None):
     show_fn = ui.get("show")
     if callable(show_fn):
         show_fn()
+    _update_sticky_header_with_interaction(text_widget, record)
 
 def _record_on_tag_click(text_widget, record, event=None, rec_tag=None):
     ui = _text_action_ui.get(text_widget) or _encomenda_action_ui.get(text_widget)
@@ -1605,6 +1647,7 @@ def _record_on_tag_click(text_widget, record, event=None, rec_tag=None):
         ui["current"] = current
         current["record"] = record
         current["rec_tag"] = rec_tag
+        _mark_text_interaction(text_widget)
         show_fn = ui.get("show")
         if callable(show_fn):
             show_fn()
@@ -1624,6 +1667,7 @@ def _record_on_tag_click(text_widget, record, event=None, rec_tag=None):
     if details_var is not None:
         _control_selection_state[text_widget] = str((record or {}).get("ID") or (record or {}).get("_entrada_id") or "")
         _set_control_details(details_var, record)
+    _update_sticky_header_with_interaction(text_widget, record)
 
 
 def _on_record_line_number_click(text_widget, record, rec_tag, idx):
@@ -1838,6 +1882,13 @@ def _populate_text(text_widget, info_label):
     info_label.config(
         text=f"Arquivo: {arquivo} — registros: {len(filtrados)} (de {len(registros)}){status_hint}"
     )
+    preserve_position = not _should_return_to_top(text_widget)
+    previous_view = None
+    if preserve_position:
+        try:
+            previous_view = text_widget.yview()
+        except Exception:
+            previous_view = None
     # sempre operar em state normal para evitar problemas na medição de ranges
     text_widget.config(state="normal")
     text_widget.delete("1.0", tk.END)
@@ -1963,6 +2014,16 @@ def _populate_text(text_widget, info_label):
     if formatter == format_creative_entry:
         _restore_control_text_selection(text_widget, record_tag_map)
     _restore_hover_if_needed(text_widget, "hover_line")
+    if preserve_position and previous_view:
+        try:
+            text_widget.yview_moveto(previous_view[0])
+        except Exception:
+            pass
+    elif filtrados:
+        try:
+            text_widget.yview_moveto(0.0)
+        except Exception:
+            pass
     _update_sticky_header_for_text(text_widget)
 
 def _schedule_update(text_widgets, info_label):
@@ -4015,16 +4076,17 @@ def _build_monitor_ui(container):
             "",
             muted=False,
             bg=UI_THEME["surface"],
-            font=theme_font("font_md")
+            font=theme_font("font_lg", "bold")
         )
         sticky_label.configure(textvariable=sticky_var, anchor="w", justify="left", padx=0)
-        sticky_label.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
+        sticky_label.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), theme_space("space_1", 4)))
 
         records_top_line = tk.Frame(frame, bg="#000000", height=2)
         records_top_line.pack(fill=tk.X, padx=0, pady=(0, 0))
 
+        text_area_wrap = tk.Frame(frame, bg=UI_THEME["surface"], highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"), bd=0)
         text_widget = tk.Text(
-            frame,
+            text_area_wrap,
             wrap="word",
             bg=UI_THEME["surface"],
             fg=UI_THEME.get("on_surface", UI_THEME["text"]),
@@ -4036,6 +4098,24 @@ def _build_monitor_ui(container):
             autoseparators=True,
             maxundo=-1,
         )
+        try:
+            ttk.Style().configure(
+                "ModernMonitor.Vertical.TScrollbar",
+                gripcount=0,
+                arrowsize=10,
+                borderwidth=0,
+                relief="flat",
+                troughcolor=UI_THEME.get("surface_alt", "#1A1F29"),
+                background=UI_THEME.get("border", "#3A4454"),
+                darkcolor=UI_THEME.get("border", "#3A4454"),
+                lightcolor=UI_THEME.get("border", "#3A4454"),
+                arrowcolor=UI_THEME.get("on_surface", "#E6EDF3"),
+            )
+            ttk.Style().map("ModernMonitor.Vertical.TScrollbar", background=[("active", UI_THEME.get("focus_bg", "#51617D"))])
+        except Exception:
+            pass
+        text_scroll = ttk.Scrollbar(text_area_wrap, orient=tk.VERTICAL, command=text_widget.yview, style="ModernMonitor.Vertical.TScrollbar")
+        text_widget.configure(yscrollcommand=text_scroll.set)
         filter_bar = _build_filter_bar(frame, filter_key, info_label, target_widget=text_widget)
         filter_bar._filter_target_widget = text_widget
         _filter_bars[str(filter_key)] = filter_bar
@@ -4046,9 +4126,11 @@ def _build_monitor_ui(container):
             text_widget.tag_configure("encomenda_selected", background=UI_THEME.get("selection_bg", UI_THEME["focus_bg"]), foreground=UI_THEME.get("selection_fg", UI_THEME["focus_text"]))
         if filter_key == "controle":
             text_widget.tag_configure("controle_selected", background=UI_THEME.get("selection_bg", UI_THEME["focus_bg"]), foreground=UI_THEME.get("selection_fg", UI_THEME["focus_text"]))
-        text_widget.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)), fill=tk.BOTH, expand=True)
+        text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(theme_space("space_2", 8), 0), pady=theme_space("space_2", 8))
+        text_scroll.pack(side=tk.RIGHT, fill=tk.Y, padx=(theme_space("space_1", 4), theme_space("space_2", 8)), pady=theme_space("space_2", 8))
+        text_area_wrap.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)), fill=tk.BOTH, expand=True)
         text_widget.config(state="disabled")
-        _sticky_header_state[text_widget] = {"var": sticky_var, "formatter": formatter}
+        _sticky_header_state[text_widget] = {"var": sticky_var, "formatter": formatter, "scroll_setter": text_scroll.set}
         _bind_sticky_header_updates(text_widget)
         _bind_hover_highlight(text_widget)
         if formatter == format_encomenda_entry:
@@ -4057,8 +4139,11 @@ def _build_monitor_ui(container):
             _build_text_actions(frame, text_widget, info_label, arquivo)
         if filter_key == "controle":
             details_var = tk.StringVar(value="Selecione um registro para ver detalhes.")
-            details = tk.Label(frame, textvariable=details_var, bg=UI_THEME["surface_alt"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), anchor="w", justify="left", wraplength=920, padx=theme_space("space_3", 10), pady=theme_space("space_2", 8), font=theme_font("font_md"))
-            details.pack(side=tk.BOTTOM, fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 6)))
+            details_panel = tk.Frame(frame, bg=UI_THEME["surface_alt"], height=170, highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"), bd=0)
+            details_panel.pack(side=tk.BOTTOM, fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)))
+            details_panel.pack_propagate(False)
+            details = tk.Label(details_panel, textvariable=details_var, bg=UI_THEME["surface_alt"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), anchor="nw", justify="left", wraplength=1360, padx=theme_space("space_3", 10), pady=theme_space("space_2", 8), font=theme_font("font_md"))
+            details.pack(fill=tk.BOTH, expand=True)
             _control_details_var[text_widget] = details_var
         monitor_widgets.append(text_widget)
         _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter, "filter_key": filter_key, "widget": text_widget}
