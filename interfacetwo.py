@@ -4298,14 +4298,17 @@ def _build_monitor_ui(container):
             paned_kwargs = {
                 "orient": tk.VERTICAL,
                 "sashrelief": "flat",
-                "sashwidth": 6,
+                "sashwidth": 2,
                 "bg": UI_THEME.get("surface", "#151A22"),
                 "bd": 0,
+                "relief": "flat",
+                "highlightthickness": 0,
+                "sashpad": 0,
             }
             control_split = tk.PanedWindow(frame, **paned_kwargs)
             control_split.pack(fill=tk.BOTH, expand=True, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)))
             records_host = tk.Frame(control_split, bg=UI_THEME["surface"])
-            details_host = tk.Frame(control_split, bg=UI_THEME["surface_alt"])
+            details_host = tk.Frame(control_split, bg=UI_THEME["surface"])
             control_split.add(records_host, minsize=320, stretch="always")
             control_split.add(details_host, minsize=72, stretch="never")
 
