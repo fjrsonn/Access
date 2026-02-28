@@ -8,6 +8,7 @@ Monitor de dados:
 import os
 import json
 import tempfile
+import time
 from datetime import datetime, timedelta
 import tkinter as tk
 from tkinter import messagebox, ttk, simpledialog
@@ -132,6 +133,7 @@ ANALISES_ARQUIVO = os.path.join(BASE_DIR, "analises.json")
 AVISOS_ARQUIVO = os.path.join(BASE_DIR, "avisos.json")
 LOCK_FILE = os.path.join(BASE_DIR, "monitor.lock")
 REFRESH_MS = 2000  # 2s
+AUTO_RETURN_TOP_MS = 5 * 60 * 1000
 PREFS_FILE = os.path.join(BASE_DIR, "config", "ui_monitor_prefs.json")
 CONSUMO_24H_FILE = os.path.join(BASE_DIR, "config", "consumo_24h.json")
 CARD_CAPACITY_LIMITS = {
@@ -184,6 +186,39 @@ _record_num_tag_map = {}
 _text_record_ranges = {}
 _sticky_header_state = {}
 _consumo_24h_por_dia = {}
+_text_last_interaction_ts = {}
+
+
+def _scroll_text_widget(text_widget, *args):
+    _mark_text_interaction(text_widget)
+    try:
+        text_widget.yview(*args)
+    except Exception:
+        return
+
+
+def _set_record_marker(text_widget, rec_tag: str, active: bool):
+    if text_widget in _text_edit_lock or not rec_tag:
+        return
+    try:
+        idx = int(str(rec_tag).rsplit("_", 1)[1])
+    except Exception:
+        idx = None
+    if idx is None:
+        return
+    if not active and idx in _text_breakpoints.get(text_widget, set()):
+        return
+    try:
+        ranges = text_widget.tag_ranges(rec_tag)
+        if not ranges or len(ranges) < 2:
+            return
+        start = ranges[0]
+        text_widget.config(state="normal")
+        text_widget.delete(start, f"{start}+1c")
+        text_widget.insert(start, "●" if active else " ")
+        text_widget.config(state="disabled")
+    except Exception:
+        return
 
 
 def _gerar_consumo_24h_base(day_key: str) -> list[int]:
@@ -722,6 +757,12 @@ def _update_sticky_header_for_text(text_widget):
     formatter = state.get("formatter")
     if var is None:
         return
+    selected = state.get("selected_record")
+    selected_position = state.get("selected_position")
+    if selected:
+        var.set(_summarize_sticky_header(formatter, selected, selected_position))
+        return
+
     ranges = _text_record_ranges.get(text_widget) or []
     if not ranges:
         var.set("Sem registros visíveis")
@@ -750,11 +791,48 @@ def _update_sticky_header_for_text(text_widget):
     var.set(_summarize_sticky_header(formatter, current, current_pos))
 
 
+def _update_sticky_header_with_interaction(text_widget, record, position=None):
+    state = _sticky_header_state.get(text_widget)
+    if not state:
+        return
+    state["selected_record"] = dict(record or {}) if isinstance(record, dict) else record
+    state["selected_position"] = int(position) if isinstance(position, int) or (isinstance(position, str) and str(position).isdigit()) else None
+    _update_sticky_header_for_text(text_widget)
+
+
+def _mark_text_interaction(text_widget):
+    _text_last_interaction_ts[text_widget] = time.monotonic()
+
+
+def _should_return_to_top(text_widget):
+    ts = _text_last_interaction_ts.get(text_widget)
+    if ts is None:
+        return True
+    return (time.monotonic() - ts) * 1000 >= AUTO_RETURN_TOP_MS
+
+
 def _bind_sticky_header_updates(text_widget):
+    state = _sticky_header_state.get(text_widget) or {}
+    scroll_setter = state.get("scroll_setter")
+
+    def _on_yscroll(*args):
+        try:
+            if callable(scroll_setter):
+                scroll_setter(*args)
+        except Exception:
+            pass
+        _update_sticky_header_for_text(text_widget)
+
     try:
-        text_widget.configure(yscrollcommand=lambda *_: _update_sticky_header_for_text(text_widget))
+        text_widget.configure(yscrollcommand=_on_yscroll)
     except Exception:
         pass
+
+    for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>", "<Prior>", "<Next>", "<Up>", "<Down>"):
+        try:
+            text_widget.bind(seq, lambda _e, tw=text_widget: _mark_text_interaction(tw), add="+")
+        except Exception:
+            pass
 
     for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>", "<KeyRelease>", "<Configure>"):
         try:
@@ -1574,6 +1652,7 @@ def _encomenda_on_tag_click(text_widget, record, event=None, rec_tag=None):
         ui["current"] = current
     current["record"] = record
     current["rec_tag"] = rec_tag
+    _mark_text_interaction(text_widget)
 
     # highlight selected record visually
     try:
@@ -1594,8 +1673,15 @@ def _encomenda_on_tag_click(text_widget, record, event=None, rec_tag=None):
     show_fn = ui.get("show")
     if callable(show_fn):
         show_fn()
+    pos = None
+    if isinstance(rec_tag, str) and rec_tag.rsplit("_", 1)[-1].isdigit():
+        try:
+            pos = int(rec_tag.rsplit("_", 1)[-1])
+        except Exception:
+            pos = None
+    _update_sticky_header_with_interaction(text_widget, record, pos)
 
-def _record_on_tag_click(text_widget, record, event=None, rec_tag=None):
+def _record_on_tag_click(text_widget, record, event=None, rec_tag=None, position=None):
     ui = _text_action_ui.get(text_widget) or _encomenda_action_ui.get(text_widget)
     if ui:
         is_editing = ui.get("is_editing")
@@ -1605,6 +1691,7 @@ def _record_on_tag_click(text_widget, record, event=None, rec_tag=None):
         ui["current"] = current
         current["record"] = record
         current["rec_tag"] = rec_tag
+        _mark_text_interaction(text_widget)
         show_fn = ui.get("show")
         if callable(show_fn):
             show_fn()
@@ -1624,6 +1711,7 @@ def _record_on_tag_click(text_widget, record, event=None, rec_tag=None):
     if details_var is not None:
         _control_selection_state[text_widget] = str((record or {}).get("ID") or (record or {}).get("_entrada_id") or "")
         _set_control_details(details_var, record)
+    _update_sticky_header_with_interaction(text_widget, record, position)
 
 
 def _on_record_line_number_click(text_widget, record, rec_tag, idx):
@@ -1632,7 +1720,7 @@ def _on_record_line_number_click(text_widget, record, rec_tag, idx):
         bp.remove(idx)
     else:
         bp.add(idx)
-    _record_on_tag_click(text_widget, record, rec_tag=rec_tag)
+    _record_on_tag_click(text_widget, record, rec_tag=rec_tag, position=idx)
     source = _monitor_sources.get(text_widget, {})
     info_label = source.get("info_label")
     if info_label is not None:
@@ -1672,17 +1760,31 @@ def _control_sort_value(record: dict, sort_key: str):
 def _set_control_details(details_var, rec):
     if details_var is None:
         return
+    text = "Selecione um registro para ver detalhes."
+    if rec:
+        text = (
+            f"Nome: {_title_name(rec.get('NOME',''), rec.get('SOBRENOME',''))}\n"
+            f"Bloco/AP: {safe(rec.get('BLOCO'))}/{safe(rec.get('APARTAMENTO'))}\n"
+            f"Placa: {safe(rec.get('PLACA')).upper()}\n"
+            f"Modelo/Cor: {safe(rec.get('MODELO'))} / {safe(rec.get('COR'))}\n"
+            f"Status: {safe(rec.get('STATUS'))}\n"
+            f"Data/Hora: {safe(rec.get('DATA_HORA'))}"
+        )
+
+    if isinstance(details_var, tk.Text):
+        try:
+            details_var.config(state="normal")
+            details_var.delete("1.0", tk.END)
+            details_var.insert(tk.END, text)
+            details_var.config(state="disabled")
+        except Exception:
+            pass
+        return
+
     if not rec:
         details_var.set("Selecione um registro para ver detalhes.")
         return
-    details_var.set(
-        f"Nome: {_title_name(rec.get('NOME',''), rec.get('SOBRENOME',''))}\n"
-        f"Bloco/AP: {safe(rec.get('BLOCO'))}/{safe(rec.get('APARTAMENTO'))}\n"
-        f"Placa: {safe(rec.get('PLACA')).upper()}\n"
-        f"Modelo/Cor: {safe(rec.get('MODELO'))} / {safe(rec.get('COR'))}\n"
-        f"Status: {safe(rec.get('STATUS'))}\n"
-        f"Data/Hora: {safe(rec.get('DATA_HORA'))}"
-    )
+    details_var.set(text)
 
 
 def _restore_control_text_selection(text_widget, record_tag_map):
@@ -1838,6 +1940,13 @@ def _populate_text(text_widget, info_label):
     info_label.config(
         text=f"Arquivo: {arquivo} — registros: {len(filtrados)} (de {len(registros)}){status_hint}"
     )
+    preserve_position = not _should_return_to_top(text_widget)
+    previous_view = None
+    if preserve_position:
+        try:
+            previous_view = text_widget.yview()
+        except Exception:
+            previous_view = None
     # sempre operar em state normal para evitar problemas na medição de ranges
     text_widget.config(state="normal")
     text_widget.delete("1.0", tk.END)
@@ -1924,7 +2033,7 @@ def _populate_text(text_widget, info_label):
                 text_widget.tag_add("line_number", start, f"{start} + {len(prefix)}c")
                 text_widget.tag_configure(num_tag, foreground=UI_THEME.get("muted_text", "#A6A6A6"))
                 text_widget.tag_bind(num_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_line_number_click(tw, rec, tag, pos))
-                text_widget.tag_bind(num_tag, "<Enter>", lambda ev, tw=text_widget, rec=r, tag=rec_tag: _record_on_tag_click(tw, rec, ev, tag))
+                text_widget.tag_bind(num_tag, "<Enter>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _record_on_tag_click(tw, rec, ev, tag, pos))
                 _record_num_tag_map.setdefault(text_widget, {})[rec_tag] = num_tag
             except Exception:
                 pass
@@ -1963,6 +2072,16 @@ def _populate_text(text_widget, info_label):
     if formatter == format_creative_entry:
         _restore_control_text_selection(text_widget, record_tag_map)
     _restore_hover_if_needed(text_widget, "hover_line")
+    if preserve_position and previous_view:
+        try:
+            text_widget.yview_moveto(previous_view[0])
+        except Exception:
+            pass
+    elif filtrados:
+        try:
+            text_widget.yview_moveto(0.0)
+        except Exception:
+            pass
     _update_sticky_header_for_text(text_widget)
 
 def _schedule_update(text_widgets, info_label):
@@ -2620,6 +2739,7 @@ def _bind_hover_highlight(text_widget):
             prev_token = _hover_state.get(text_widget)
             prev_tag = prev_token[4:] if isinstance(prev_token, str) and prev_token.startswith("tag:") else None
             if prev_tag and prev_tag != rec_tag:
+                _set_record_marker(text_widget, prev_tag, False)
                 prev_num = num_map.get(prev_tag)
                 try:
                     prev_idx = int(str(prev_tag).rsplit("_", 1)[1])
@@ -2635,6 +2755,7 @@ def _bind_hover_highlight(text_widget):
             except Exception:
                 hover_idx = None
             _text_hover_marker[text_widget] = hover_idx
+            _set_record_marker(text_widget, rec_tag, True)
             token = f"tag:{rec_tag}"
             if _hover_state.get(text_widget) == token:
                 return
@@ -2645,6 +2766,8 @@ def _bind_hover_highlight(text_widget):
         if _text_hover_marker.get(text_widget) is not None:
             prev_token = _hover_state.get(text_widget)
             prev_tag = prev_token[4:] if isinstance(prev_token, str) and prev_token.startswith("tag:") else None
+            if prev_tag:
+                _set_record_marker(text_widget, prev_tag, False)
             prev_num = (_record_num_tag_map.get(text_widget, {}) or {}).get(prev_tag) if prev_tag else None
             if prev_num:
                 try:
@@ -2671,6 +2794,8 @@ def _bind_hover_highlight(text_widget):
     def _on_leave(_event):
         prev_token = _hover_state.get(text_widget)
         prev_tag = prev_token[4:] if isinstance(prev_token, str) and prev_token.startswith("tag:") else None
+        if prev_tag:
+            _set_record_marker(text_widget, prev_tag, False)
         prev_num = (_record_num_tag_map.get(text_widget, {}) or {}).get(prev_tag) if prev_tag else None
         if prev_num:
             try:
@@ -4015,16 +4140,17 @@ def _build_monitor_ui(container):
             "",
             muted=False,
             bg=UI_THEME["surface"],
-            font=theme_font("font_md")
+            font=theme_font("font_lg", "bold")
         )
         sticky_label.configure(textvariable=sticky_var, anchor="w", justify="left", padx=0)
-        sticky_label.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
+        sticky_label.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), theme_space("space_1", 4)))
 
         records_top_line = tk.Frame(frame, bg="#000000", height=2)
         records_top_line.pack(fill=tk.X, padx=0, pady=(0, 0))
 
+        text_area_wrap = tk.Frame(frame, bg=UI_THEME["surface"], highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"), bd=0)
         text_widget = tk.Text(
-            frame,
+            text_area_wrap,
             wrap="word",
             bg=UI_THEME["surface"],
             fg=UI_THEME.get("on_surface", UI_THEME["text"]),
@@ -4036,6 +4162,19 @@ def _build_monitor_ui(container):
             autoseparators=True,
             maxundo=-1,
         )
+        text_scroll = tk.Scrollbar(
+            text_area_wrap,
+            orient=tk.VERTICAL,
+            command=lambda *args, tw=text_widget: _scroll_text_widget(tw, *args),
+            relief="flat",
+            bd=0,
+            highlightthickness=0,
+            troughcolor=UI_THEME.get("surface_alt", "#1A1F29"),
+            activebackground=UI_THEME.get("focus_bg", "#51617D"),
+            bg=UI_THEME.get("border", "#3A4454"),
+            width=10,
+        )
+        text_widget.configure(yscrollcommand=text_scroll.set)
         filter_bar = _build_filter_bar(frame, filter_key, info_label, target_widget=text_widget)
         filter_bar._filter_target_widget = text_widget
         _filter_bars[str(filter_key)] = filter_bar
@@ -4046,9 +4185,11 @@ def _build_monitor_ui(container):
             text_widget.tag_configure("encomenda_selected", background=UI_THEME.get("selection_bg", UI_THEME["focus_bg"]), foreground=UI_THEME.get("selection_fg", UI_THEME["focus_text"]))
         if filter_key == "controle":
             text_widget.tag_configure("controle_selected", background=UI_THEME.get("selection_bg", UI_THEME["focus_bg"]), foreground=UI_THEME.get("selection_fg", UI_THEME["focus_text"]))
-        text_widget.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)), fill=tk.BOTH, expand=True)
+        text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(theme_space("space_2", 8), 0), pady=theme_space("space_2", 8))
+        text_scroll.pack(side=tk.RIGHT, fill=tk.Y, padx=(theme_space("space_1", 4), theme_space("space_2", 8)), pady=theme_space("space_2", 8))
+        text_area_wrap.pack(padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)), fill=tk.BOTH, expand=True)
         text_widget.config(state="disabled")
-        _sticky_header_state[text_widget] = {"var": sticky_var, "formatter": formatter}
+        _sticky_header_state[text_widget] = {"var": sticky_var, "formatter": formatter, "scroll_setter": text_scroll.set}
         _bind_sticky_header_updates(text_widget)
         _bind_hover_highlight(text_widget)
         if formatter == format_encomenda_entry:
@@ -4056,12 +4197,41 @@ def _build_monitor_ui(container):
         elif formatter in (format_orientacao_entry, format_observacao_entry):
             _build_text_actions(frame, text_widget, info_label, arquivo)
         if filter_key == "controle":
-            details_var = tk.StringVar(value="Selecione um registro para ver detalhes.")
-            details = tk.Label(frame, textvariable=details_var, bg=UI_THEME["surface_alt"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), anchor="w", justify="left", wraplength=920, padx=theme_space("space_3", 10), pady=theme_space("space_2", 8), font=theme_font("font_md"))
-            details.pack(side=tk.BOTTOM, fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 6)))
-            _control_details_var[text_widget] = details_var
+            details_panel = tk.Frame(frame, bg=UI_THEME["surface_alt"], highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"), bd=0)
+            details_panel.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=False, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)))
+            details_text = tk.Text(
+                details_panel,
+                wrap="word",
+                bg=UI_THEME["surface_alt"],
+                fg=UI_THEME.get("on_surface", UI_THEME["text"]),
+                relief="flat",
+                bd=0,
+                highlightthickness=0,
+                padx=theme_space("space_3", 10),
+                pady=theme_space("space_2", 8),
+                font=theme_font("font_md"),
+                height=6,
+            )
+            details_scroll = tk.Scrollbar(
+                details_panel,
+                orient=tk.VERTICAL,
+                command=details_text.yview,
+                relief="flat",
+                bd=0,
+                highlightthickness=0,
+                troughcolor=UI_THEME.get("surface_alt", "#1A1F29"),
+                activebackground=UI_THEME.get("focus_bg", "#51617D"),
+                bg=UI_THEME.get("border", "#3A4454"),
+                width=10,
+            )
+            details_text.configure(yscrollcommand=details_scroll.set)
+            details_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            details_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+            details_text.insert("1.0", "Selecione um registro para ver detalhes.")
+            details_text.config(state="disabled")
+            _control_details_var[text_widget] = details_text
         monitor_widgets.append(text_widget)
-        _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter, "filter_key": filter_key, "widget": text_widget}
+        _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter, "filter_key": filter_key, "widget": text_widget, "info_label": info_label}
 
     if not prefs.get("onboarding_seen"):
         _announce_feedback("Use Ctrl+F para busca e Alt+1..4 para trocar abas", "info")
