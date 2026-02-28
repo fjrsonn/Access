@@ -4304,13 +4304,13 @@ def _build_monitor_ui(container):
             control_split.pack(fill=tk.BOTH, expand=True, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)))
             records_host = tk.Frame(control_split, bg=UI_THEME["surface"])
             details_host = tk.Frame(control_split, bg=UI_THEME["surface_alt"])
-            control_split.add(records_host, minsize=220, stretch="always")
-            control_split.add(details_host, minsize=240, stretch="always")
+            control_split.add(records_host, minsize=240, stretch="always")
+            control_split.add(details_host, minsize=200, stretch="always")
 
             def _prioritize_details(splitter=control_split):
                 try:
                     total_h = max(splitter.winfo_height(), 1)
-                    splitter.sash_place(0, 0, int(total_h * 0.58))
+                    splitter.sash_place(0, 0, int(total_h * 0.64))
                 except Exception:
                     pass
 
@@ -4396,7 +4396,7 @@ def _build_monitor_ui(container):
                 padx=theme_space("space_3", 10),
                 pady=theme_space("space_2", 8),
                 font=theme_font("font_md"),
-                height=20,
+                height=14,
             )
             details_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
             details_text.insert("1.0", "Selecione um registro para ver detalhes.")
