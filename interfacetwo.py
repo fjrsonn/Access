@@ -4299,23 +4299,18 @@ def _build_monitor_ui(container):
                 "sashwidth": 6,
                 "bg": UI_THEME.get("surface", "#151A22"),
                 "bd": 0,
-                "highlightthickness": 0,
             }
-            try:
-                control_split = tk.PanedWindow(frame, **paned_kwargs)
-            except tk.TclError:
-                paned_kwargs.pop("highlightthickness", None)
-                control_split = tk.PanedWindow(frame, **paned_kwargs)
+            control_split = tk.PanedWindow(frame, **paned_kwargs)
             control_split.pack(fill=tk.BOTH, expand=True, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)))
             records_host = tk.Frame(control_split, bg=UI_THEME["surface"])
             details_host = tk.Frame(control_split, bg=UI_THEME["surface_alt"])
-            control_split.add(records_host, minsize=180, stretch="always")
-            control_split.add(details_host, minsize=340, stretch="always")
+            control_split.add(records_host, minsize=260, stretch="always")
+            control_split.add(details_host, minsize=160, stretch="always")
 
             def _prioritize_details(splitter=control_split):
                 try:
                     total_h = max(splitter.winfo_height(), 1)
-                    splitter.sash_place(0, 0, int(total_h * 0.33))
+                    splitter.sash_place(0, 0, int(total_h * 0.72))
                 except Exception:
                     pass
 
@@ -4326,14 +4321,14 @@ def _build_monitor_ui(container):
 
         sticky_var = tk.StringVar(value="Sem registros visíveis")
         sticky_label = build_label(
-            frame,
+            records_host,
             "",
             muted=False,
             bg=UI_THEME["surface"],
             font=theme_font("font_lg", "bold")
         )
         sticky_label.configure(textvariable=sticky_var, anchor="w", justify="left", padx=0)
-        sticky_label.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), theme_space("space_1", 4)))
+        sticky_label.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), theme_space("space_1", 4)))
 
         records_top_line = tk.Frame(records_host, bg="#000000", height=2)
         records_top_line.pack(fill=tk.X, padx=0, pady=(0, 0))
@@ -4401,7 +4396,7 @@ def _build_monitor_ui(container):
                 padx=theme_space("space_3", 10),
                 pady=theme_space("space_2", 8),
                 font=theme_font("font_md"),
-                height=20,
+                height=10,
             )
             details_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
             details_text.insert("1.0", "Selecione um registro para ver detalhes.")
