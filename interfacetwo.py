@@ -4302,7 +4302,6 @@ def _build_monitor_ui(container):
                 "bg": UI_THEME.get("surface", "#151A22"),
                 "bd": 0,
                 "relief": "flat",
-                "highlightthickness": 0,
                 "sashpad": 0,
             }
             control_split = tk.PanedWindow(frame, **paned_kwargs)
