@@ -1839,18 +1839,20 @@ def _set_control_details(details_var, rec):
         return
     text = "Selecione um registro para ver detalhes."
     if rec:
+        col_gap = "\t"
         text = (
-            f"Nome: {_title_name(rec.get('NOME',''), rec.get('SOBRENOME',''))}\n"
-            f"Bloco/AP: {safe(rec.get('BLOCO'))}/{safe(rec.get('APARTAMENTO'))}\n"
-            f"Placa: {safe(rec.get('PLACA')).upper()}\n"
+            f"Nome: {_title_name(rec.get('NOME',''), rec.get('SOBRENOME',''))}{col_gap}"
             f"Modelo/Cor: {safe(rec.get('MODELO'))} / {safe(rec.get('COR'))}\n"
+            f"Bloco/AP: {safe(rec.get('BLOCO'))}/{safe(rec.get('APARTAMENTO'))}{col_gap}"
             f"Status: {safe(rec.get('STATUS'))}\n"
+            f"Placa: {safe(rec.get('PLACA')).upper()}{col_gap}"
             f"Data/Hora: {safe(rec.get('DATA_HORA'))}"
         )
 
     if isinstance(details_var, tk.Text):
         try:
             details_var.config(state="normal")
+            details_var.configure(tabs=(theme_space("space_9", 360),))
             details_var.delete("1.0", tk.END)
             details_var.insert(tk.END, text)
             details_var.config(state="disabled")
@@ -4305,12 +4307,12 @@ def _build_monitor_ui(container):
             records_host = tk.Frame(control_split, bg=UI_THEME["surface"])
             details_host = tk.Frame(control_split, bg=UI_THEME["surface_alt"])
             control_split.add(records_host, minsize=320, stretch="always")
-            control_split.add(details_host, minsize=110, stretch="always")
+            control_split.add(details_host, minsize=90, stretch="always")
 
             def _prioritize_details(splitter=control_split):
                 try:
                     total_h = max(splitter.winfo_height(), 1)
-                    splitter.sash_place(0, 0, int(total_h * 0.82))
+                    splitter.sash_place(0, 0, int(total_h * 0.88))
                 except Exception:
                     pass
 
@@ -4385,20 +4387,21 @@ def _build_monitor_ui(container):
         elif formatter in (format_orientacao_entry, format_observacao_entry):
             _build_text_actions(frame, text_widget, info_label, arquivo)
         if filter_key == "controle":
-            details_panel = tk.Frame(details_host, bg=UI_THEME["surface_alt"], highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"), bd=0)
+            details_panel = tk.Frame(details_host, bg=UI_THEME["surface"], highlightthickness=0, bd=0)
             details_panel.pack(fill=tk.BOTH, expand=True)
             details_text = tk.Text(
                 details_panel,
                 wrap="word",
-                bg=UI_THEME["surface_alt"],
+                bg=UI_THEME["surface"],
                 fg=UI_THEME.get("on_surface", UI_THEME["text"]),
                 relief="flat",
                 bd=0,
                 highlightthickness=0,
+                tabs=(theme_space("space_9", 360),),
                 padx=theme_space("space_3", 10),
                 pady=theme_space("space_2", 8),
                 font=theme_font("font_md"),
-                height=7,
+                height=6,
             )
             details_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
             details_text.insert("1.0", "Selecione um registro para ver detalhes.")
