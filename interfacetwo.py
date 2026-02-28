@@ -3409,6 +3409,23 @@ def _create_safe_scrollbar(parent, *, use_ttk=True, style_name="Monitor.Vertical
             options.pop(unsupported, None)
 
 
+def _create_safe_panedwindow(parent, **kwargs):
+    """Create a PanedWindow while gracefully dropping unsupported Tk options."""
+    options = dict(kwargs)
+    while True:
+        try:
+            return tk.PanedWindow(parent, **options)
+        except tk.TclError as exc:
+            msg = str(exc)
+            marker = 'unknown option "-'
+            if marker not in msg:
+                raise
+            unsupported = msg.split(marker, 1)[1].split('"', 1)[0]
+            if not unsupported or unsupported not in options:
+                raise
+            options.pop(unsupported, None)
+
+
 def _configure_monitor_scrollbar_style(style_obj):
     """Apply a minimalist vertical scrollbar style aligned to monitor theme colors."""
     try:
@@ -4304,7 +4321,7 @@ def _build_monitor_ui(container):
                 "relief": "flat",
                 "sashpad": 0,
             }
-            control_split = tk.PanedWindow(frame, **paned_kwargs)
+            control_split = _create_safe_panedwindow(frame, **paned_kwargs)
             control_split.pack(fill=tk.BOTH, expand=True, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)))
             records_host = tk.Frame(control_split, bg=UI_THEME["surface"])
             details_host = tk.Frame(control_split, bg=UI_THEME["surface"])
