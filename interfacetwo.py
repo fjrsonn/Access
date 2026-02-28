@@ -4293,15 +4293,19 @@ def _build_monitor_ui(container):
         records_host = frame
         details_host = None
         if filter_key == "controle":
-            control_split = tk.PanedWindow(
-                frame,
-                orient=tk.VERTICAL,
-                sashrelief="flat",
-                sashwidth=6,
-                bg=UI_THEME.get("surface", "#151A22"),
-                bd=0,
-                highlightthickness=0,
-            )
+            paned_kwargs = {
+                "orient": tk.VERTICAL,
+                "sashrelief": "flat",
+                "sashwidth": 6,
+                "bg": UI_THEME.get("surface", "#151A22"),
+                "bd": 0,
+                "highlightthickness": 0,
+            }
+            try:
+                control_split = tk.PanedWindow(frame, **paned_kwargs)
+            except tk.TclError:
+                paned_kwargs.pop("highlightthickness", None)
+                control_split = tk.PanedWindow(frame, **paned_kwargs)
             control_split.pack(fill=tk.BOTH, expand=True, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)))
             records_host = tk.Frame(control_split, bg=UI_THEME["surface"])
             details_host = tk.Frame(control_split, bg=UI_THEME["surface_alt"])
