@@ -867,6 +867,26 @@ def _should_return_to_top(text_widget):
     return (time.monotonic() - ts) * 1000 >= AUTO_RETURN_TOP_MS
 
 
+def _update_sticky_header_with_interaction(text_widget, record, position=None):
+    state = _sticky_header_state.get(text_widget)
+    if not state:
+        return
+    state["selected_record"] = dict(record or {}) if isinstance(record, dict) else record
+    state["selected_position"] = int(position) if isinstance(position, int) or (isinstance(position, str) and str(position).isdigit()) else None
+    _update_sticky_header_for_text(text_widget)
+
+
+def _mark_text_interaction(text_widget):
+    _text_last_interaction_ts[text_widget] = time.monotonic()
+
+
+def _should_return_to_top(text_widget):
+    ts = _text_last_interaction_ts.get(text_widget)
+    if ts is None:
+        return True
+    return (time.monotonic() - ts) * 1000 >= AUTO_RETURN_TOP_MS
+
+
 def _bind_sticky_header_updates(text_widget):
     state = _sticky_header_state.get(text_widget) or {}
     scroll_setter = state.get("scroll_setter")
@@ -4231,7 +4251,6 @@ def _build_monitor_ui(container):
             troughcolor=UI_THEME.get("surface", "#151A22"),
             activebackground=UI_THEME.get("focus_bg", "#51617D"),
             bg=UI_THEME.get("surface", "#151A22"),
-            arrowcolor=UI_THEME.get("on_surface", "#E6EDF3"),
             width=10,
         )
         text_widget.configure(yscrollcommand=text_scroll.set)
@@ -4282,7 +4301,6 @@ def _build_monitor_ui(container):
                 troughcolor=UI_THEME.get("surface_alt", "#1A1F29"),
                 activebackground=UI_THEME.get("focus_bg", "#51617D"),
                 bg=UI_THEME.get("surface_alt", "#1A1F29"),
-                arrowcolor=UI_THEME.get("on_surface", "#E6EDF3"),
                 width=10,
             )
             details_text.configure(yscrollcommand=details_scroll.set)
