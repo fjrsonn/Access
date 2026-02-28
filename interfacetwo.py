@@ -3373,6 +3373,24 @@ def _build_text_actions(frame, text_widget, info_label, path):
     except Exception:
         pass
 
+
+def _create_safe_scrollbar(parent, **kwargs):
+    """Create a scrollbar and gracefully ignore unsupported Tk options."""
+    options = dict(kwargs)
+    while True:
+        try:
+            return tk.Scrollbar(parent, **options)
+        except tk.TclError as exc:
+            msg = str(exc)
+            marker = 'unknown option "-'
+            if marker not in msg:
+                raise
+            unsupported = msg.split(marker, 1)[1].split('"', 1)[0]
+            if not unsupported or unsupported not in options:
+                raise
+            options.pop(unsupported, None)
+
+
 def _build_monitor_ui(container):
     prefs = _restore_ui_state()
     _apply_light_theme(container)
@@ -4241,7 +4259,7 @@ def _build_monitor_ui(container):
             autoseparators=True,
             maxundo=-1,
         )
-        text_scroll = tk.Scrollbar(
+        text_scroll = _create_safe_scrollbar(
             text_area_wrap,
             orient=tk.VERTICAL,
             command=lambda *args, tw=text_widget: _scroll_text_widget(tw, *args),
@@ -4291,7 +4309,7 @@ def _build_monitor_ui(container):
                 font=theme_font("font_md"),
                 height=6,
             )
-            details_scroll = tk.Scrollbar(
+            details_scroll = _create_safe_scrollbar(
                 details_panel,
                 orient=tk.VERTICAL,
                 command=details_text.yview,
