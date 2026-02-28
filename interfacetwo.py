@@ -804,7 +804,7 @@ def _update_sticky_header_for_text(text_widget):
     if current is None:
         current = ranges[0][2]
         current_pos = 0
-    var.set(f"Sem interação recente • {_summarize_sticky_header(formatter, current, current_pos)}")
+    var.set(_summarize_sticky_header(formatter, current, current_pos))
 
 
 def _update_sticky_header_with_interaction(text_widget, record, position=None):
@@ -3373,6 +3373,40 @@ def _build_text_actions(frame, text_widget, info_label, path):
     except Exception:
         pass
 
+
+def _create_safe_scrollbar(parent, *, use_ttk=True, style_name="Monitor.Vertical.TScrollbar", **kwargs):
+    """Create a subtle themed scrollbar with graceful fallback for Tk option differences."""
+    options = dict(kwargs)
+    if use_ttk:
+        ttk_options = dict(options)
+        ttk_options.pop("relief", None)
+        ttk_options.pop("bd", None)
+        ttk_options.pop("highlightthickness", None)
+        ttk_options.pop("troughcolor", None)
+        ttk_options.pop("activebackground", None)
+        ttk_options.pop("bg", None)
+        ttk_options.pop("width", None)
+        if style_name and "style" not in ttk_options:
+            ttk_options["style"] = style_name
+        try:
+            return ttk.Scrollbar(parent, **ttk_options)
+        except tk.TclError:
+            pass
+
+    while True:
+        try:
+            return tk.Scrollbar(parent, **options)
+        except tk.TclError as exc:
+            msg = str(exc)
+            marker = 'unknown option "-'
+            if marker not in msg:
+                raise
+            unsupported = msg.split(marker, 1)[1].split('"', 1)[0]
+            if not unsupported or unsupported not in options:
+                raise
+            options.pop(unsupported, None)
+
+
 def _build_monitor_ui(container):
     prefs = _restore_ui_state()
     _apply_light_theme(container)
@@ -3407,6 +3441,27 @@ def _build_monitor_ui(container):
     report_status("ux_metrics", "OK", stage="theme_contrast_check", details=validate_theme_contrast())
     style.configure("Control.Treeview", background=UI_THEME["surface"], fieldbackground=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), bordercolor=UI_THEME["border"], rowheight=28)
     style.configure("Control.Treeview.Heading", background=UI_THEME["surface_alt"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), relief="flat", font=theme_font("font_md"))
+    try:
+        style.configure(
+            "Monitor.Vertical.TScrollbar",
+            troughcolor=UI_THEME.get("surface", "#151A22"),
+            background=UI_THEME.get("surface", "#151A22"),
+            bordercolor=UI_THEME.get("surface", "#151A22"),
+            lightcolor=UI_THEME.get("surface", "#151A22"),
+            darkcolor=UI_THEME.get("surface", "#151A22"),
+            arrowcolor=UI_THEME.get("surface", "#151A22"),
+            gripcount=0,
+            arrowsize=8,
+            relief="flat",
+            borderwidth=0,
+        )
+        style.map(
+            "Monitor.Vertical.TScrollbar",
+            background=[("active", UI_THEME.get("surface_alt", "#1B2430")), ("!active", UI_THEME.get("surface", "#151A22"))],
+            troughcolor=[("!disabled", UI_THEME.get("surface", "#151A22"))],
+        )
+    except Exception:
+        pass
     style.map("Control.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME["primary"]))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("on_primary", UI_THEME["text"])))])
 
     info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg=UI_THEME["bg"], fg=UI_THEME["muted_text"], font=theme_font("font_sm"))
@@ -3486,6 +3541,24 @@ def _build_monitor_ui(container):
             style_local.configure("Control.Treeview", background=UI_THEME["surface"], fieldbackground=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), bordercolor=UI_THEME["border"], rowheight=28)
             style_local.configure("Control.Treeview.Heading", background=UI_THEME["surface_alt"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), relief="flat", font=theme_font("font_md"))
             style_local.map("Control.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME["primary"]))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("on_primary", UI_THEME["text"])))])
+            style_local.configure(
+                "Monitor.Vertical.TScrollbar",
+                troughcolor=UI_THEME.get("surface", "#151A22"),
+                background=UI_THEME.get("surface", "#151A22"),
+                bordercolor=UI_THEME.get("surface", "#151A22"),
+                lightcolor=UI_THEME.get("surface", "#151A22"),
+                darkcolor=UI_THEME.get("surface", "#151A22"),
+                arrowcolor=UI_THEME.get("surface", "#151A22"),
+                gripcount=0,
+                arrowsize=8,
+                relief="flat",
+                borderwidth=0,
+            )
+            style_local.map(
+                "Monitor.Vertical.TScrollbar",
+                background=[("active", UI_THEME.get("surface_alt", "#1B2430")), ("!active", UI_THEME.get("surface", "#151A22"))],
+                troughcolor=[("!disabled", UI_THEME.get("surface", "#151A22"))],
+            )
         except Exception:
             pass
         for target in list(_monitor_sources.keys()):
@@ -4241,7 +4314,7 @@ def _build_monitor_ui(container):
             autoseparators=True,
             maxundo=-1,
         )
-        text_scroll = tk.Scrollbar(
+        text_scroll = _create_safe_scrollbar(
             text_area_wrap,
             orient=tk.VERTICAL,
             command=lambda *args, tw=text_widget: _scroll_text_widget(tw, *args),
@@ -4277,7 +4350,7 @@ def _build_monitor_ui(container):
             _build_text_actions(frame, text_widget, info_label, arquivo)
         if filter_key == "controle":
             details_panel = tk.Frame(frame, bg=UI_THEME["surface_alt"], highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"), bd=0)
-            details_panel.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=False, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)))
+            details_panel.pack(side=tk.BOTTOM, fill=tk.BOTH, expand=True, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)))
             details_text = tk.Text(
                 details_panel,
                 wrap="word",
@@ -4289,23 +4362,9 @@ def _build_monitor_ui(container):
                 padx=theme_space("space_3", 10),
                 pady=theme_space("space_2", 8),
                 font=theme_font("font_md"),
-                height=6,
+                height=12,
             )
-            details_scroll = tk.Scrollbar(
-                details_panel,
-                orient=tk.VERTICAL,
-                command=details_text.yview,
-                relief="flat",
-                bd=0,
-                highlightthickness=0,
-                troughcolor=UI_THEME.get("surface_alt", "#1A1F29"),
-                activebackground=UI_THEME.get("focus_bg", "#51617D"),
-                bg=UI_THEME.get("surface_alt", "#1A1F29"),
-                width=10,
-            )
-            details_text.configure(yscrollcommand=details_scroll.set)
             details_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-            details_scroll.pack(side=tk.RIGHT, fill=tk.Y)
             details_text.insert("1.0", "Selecione um registro para ver detalhes.")
             details_text.config(state="disabled")
             _control_details_var[text_widget] = details_text
