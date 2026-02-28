@@ -788,7 +788,27 @@ def _update_sticky_header_for_text(text_widget):
     if current is None:
         current = ranges[0][2]
         current_pos = 0
-    var.set(_summarize_sticky_header(formatter, current, current_pos))
+    var.set(f"Sem interação recente • {_summarize_sticky_header(formatter, current, current_pos)}")
+
+
+def _update_sticky_header_with_interaction(text_widget, record, position=None):
+    state = _sticky_header_state.get(text_widget)
+    if not state:
+        return
+    state["selected_record"] = dict(record or {}) if isinstance(record, dict) else record
+    state["selected_position"] = position
+    _update_sticky_header_for_text(text_widget)
+
+
+def _mark_text_interaction(text_widget):
+    _text_last_interaction_ts[text_widget] = time.monotonic()
+
+
+def _should_return_to_top(text_widget):
+    ts = _text_last_interaction_ts.get(text_widget)
+    if ts is None:
+        return True
+    return (time.monotonic() - ts) * 1000 >= AUTO_RETURN_TOP_MS
 
 
 def _update_sticky_header_with_interaction(text_widget, record, position=None):
