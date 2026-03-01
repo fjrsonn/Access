@@ -4341,7 +4341,7 @@ def _build_monitor_ui(container):
                 "sashpad": 0,
             }
             control_split = _create_safe_panedwindow(frame, **paned_kwargs)
-            control_split.pack(fill=tk.BOTH, expand=True, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)))
+            control_split.pack(fill=tk.BOTH, expand=True, padx=0, pady=(0, theme_space("space_2", 8)))
             records_host = tk.Frame(control_split, bg=UI_THEME["surface"])
             details_host = tk.Frame(control_split, bg=UI_THEME["surface"])
             control_split.add(records_host, minsize=320, stretch="always")
