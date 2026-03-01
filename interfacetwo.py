@@ -3617,8 +3617,10 @@ def _build_monitor_ui(container):
             pass
         try:
             cards_row.pack_configure(pady=(gap, 0))
-            hints.pack_configure(pady=(theme_space("space_1", 4), 0))
-            info_label.pack_configure(pady=(theme_space("space_1", 4), 0))
+            if str(hints.winfo_manager()) == "pack":
+                hints.pack_configure(pady=(theme_space("space_1", 4), 0))
+            if str(info_label.winfo_manager()) == "pack":
+                info_label.pack_configure(pady=(theme_space("space_1", 4), 0))
             notebook.pack_configure(pady=(gap, theme_space("space_3", 10)))
         except Exception:
             pass
