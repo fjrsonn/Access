@@ -4343,7 +4343,7 @@ def _build_monitor_ui(container):
             control_split = _create_safe_panedwindow(frame, **paned_kwargs)
             control_split.pack(fill=tk.BOTH, expand=True, padx=0, pady=(0, theme_space("space_2", 8)))
             records_host = tk.Frame(control_split, bg=UI_THEME["surface"])
-            details_host = tk.Frame(control_split, bg=UI_THEME["surface"])
+            details_host = tk.Frame(control_split, bg=UI_THEME["bg"])
             control_split.add(records_host, minsize=320, stretch="always")
             control_split.add(details_host, minsize=64, stretch="never")
 
@@ -4426,12 +4426,12 @@ def _build_monitor_ui(container):
         elif formatter in (format_orientacao_entry, format_observacao_entry):
             _build_text_actions(frame, text_widget, info_label, arquivo)
         if filter_key == "controle":
-            details_panel = tk.Frame(details_host, bg=UI_THEME["surface"], highlightthickness=1, highlightbackground=UI_THEME.get("bg", "#1E1E1E"), bd=0)
+            details_panel = tk.Frame(details_host, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
             details_panel.pack(fill=tk.BOTH, expand=True)
             details_text = tk.Text(
                 details_panel,
                 wrap="word",
-                bg=UI_THEME["surface"],
+                bg=UI_THEME["bg"],
                 fg=UI_THEME.get("on_surface", UI_THEME["text"]),
                 relief="flat",
                 bd=0,
