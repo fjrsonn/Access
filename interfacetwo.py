@@ -4442,7 +4442,7 @@ def _build_monitor_ui(container):
                 font=theme_font("font_md"),
                 height=3,
             )
-            details_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            details_text.pack(side=tk.LEFT, fill=tk.X, expand=False)
             details_text.insert("1.0", "Selecione um registro para ver detalhes.")
             details_text.config(state="disabled")
             _control_details_var[text_widget] = details_text
