@@ -3652,13 +3652,9 @@ def _build_monitor_ui(container):
         if _operation_mode_enabled:
             apply_theme("principal")
             _runtime_refresh_ms = 1000
-            
+
             focus_mode_var.set(True)
             report_status("ux_metrics", "OK", stage="operation_mode_enabled", details={"theme": get_active_theme_name(), "refresh_ms": _runtime_refresh_ms})
-            try:
-                hints.pack_forget()
-            except Exception:
-                pass
             try:
                 _status_bar.set("Modo Operação: refresh acelerado e foco em alertas críticos", tone="warning")
             except Exception:
@@ -3666,27 +3662,15 @@ def _build_monitor_ui(container):
         else:
             _runtime_refresh_ms = REFRESH_MS
             focus_mode_var.set(False)
-            try:
-                hints.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
-            except Exception:
-                pass
             report_status("ux_metrics", "OK", stage="operation_mode_disabled", details={"refresh_ms": _runtime_refresh_ms})
+        _sync_details_panel_visibility()
         _persist_ui_state({"operation_mode": _operation_mode_enabled})
         _refresh_theme_in_place()
         _apply_density()
 
     def _toggle_focus_mode(*_args):
         enabled = bool(focus_mode_var.get())
-        try:
-            if enabled:
-                hints.pack_forget()
-                info_label.pack_forget()
-            else:
-                info_label.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
-                if not _operation_mode_enabled:
-                    hints.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
-        except Exception:
-            pass
+        _sync_details_panel_visibility()
         report_status("ux_metrics", "OK", stage="focus_mode_toggle", details={"enabled": enabled})
 
     btn_top_theme.configure(command=_on_theme_change)
@@ -4088,18 +4072,39 @@ def _build_monitor_ui(container):
 
     hints = build_label(container, "Atalhos: Ctrl+F buscar • Ctrl+Enter aplicar • Ctrl+Shift+L limpar • Alt+1..4 abas • Alt+E exportar • Alt+V salvar visão", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
 
+    def _sync_details_panel_visibility():
+        show_details = bool(details_visible.get())
+        hide_for_focus = bool(focus_mode_var.get()) if 'focus_mode_var' in locals() else False
+        show_info = show_details and not hide_for_focus
+        show_hints = show_info and not bool(_operation_mode_enabled)
+
+        try:
+            if show_details:
+                metrics_accessibility_label.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+            else:
+                metrics_accessibility_label.pack_forget()
+        except Exception:
+            pass
+
+        try:
+            if show_info:
+                info_label.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+            else:
+                info_label.pack_forget()
+        except Exception:
+            pass
+
+        try:
+            if show_hints:
+                hints.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+            else:
+                hints.pack_forget()
+        except Exception:
+            pass
+
     def _toggle_details_panel():
         details_visible.set(not details_visible.get())
-        visible = details_visible.get()
-        widgets = (metrics_accessibility_label, hints, info_label)
-        for widget in widgets:
-            try:
-                if visible:
-                    widget.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
-                else:
-                    widget.pack_forget()
-            except Exception:
-                pass
+        _sync_details_panel_visibility()
 
     btn_top_details.configure(command=_toggle_details_panel)
 
@@ -4338,12 +4343,12 @@ def _build_monitor_ui(container):
             records_host = tk.Frame(control_split, bg=UI_THEME["surface"])
             details_host = tk.Frame(control_split, bg=UI_THEME["surface"])
             control_split.add(records_host, minsize=320, stretch="always")
-            control_split.add(details_host, minsize=52, stretch="never")
+            control_split.add(details_host, minsize=64, stretch="never")
 
             def _prioritize_details(splitter=control_split):
                 try:
                     total_h = max(splitter.winfo_height(), 1)
-                    target_details_h = max(52, min(72, int(total_h * 0.09)))
+                    target_details_h = max(64, min(84, int(total_h * 0.10)))
                     splitter.sash_place(0, 0, max(1, total_h - target_details_h))
                 except Exception:
                     pass
@@ -4419,8 +4424,8 @@ def _build_monitor_ui(container):
         elif formatter in (format_orientacao_entry, format_observacao_entry):
             _build_text_actions(frame, text_widget, info_label, arquivo)
         if filter_key == "controle":
-            details_panel = tk.Frame(details_host, bg=UI_THEME["surface"], highlightthickness=0, bd=0)
-            details_panel.pack(fill=tk.X, expand=False)
+            details_panel = tk.Frame(details_host, bg=UI_THEME["surface"], highlightthickness=1, highlightbackground=UI_THEME.get("bg", "#1E1E1E"), bd=0)
+            details_panel.pack(fill=tk.BOTH, expand=True)
             details_text = tk.Text(
                 details_panel,
                 wrap="word",
@@ -4433,7 +4438,7 @@ def _build_monitor_ui(container):
                 padx=theme_space("space_3", 10),
                 pady=theme_space("space_1", 4),
                 font=theme_font("font_md"),
-                height=2,
+                height=3,
             )
             details_text.pack(side=tk.LEFT, fill=tk.X, expand=False)
             details_text.insert("1.0", "Selecione um registro para ver detalhes.")
