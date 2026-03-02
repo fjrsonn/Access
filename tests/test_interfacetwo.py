@@ -405,6 +405,9 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('def _place_tail_for_tag(rec_tag):', source)
         self.assertIn('line_text.find("[ID ")', source)
         self.assertIn('line_end = text_widget.index(f"{start} lineend")', source)
+        self.assertIn('target_idx = f"{start} + {max(2, id_pos - 4)}c"', source)
+        self.assertIn('tx = max(8, int(x - max(sw + 4, 18)))', source)
+        self.assertIn('ty = max(0, int(y + max(0, (h - sh) // 2) - 2))', source)
 
     def test_text_actions_hide_inline_after_triangle_status_change(self):
         import inspect
@@ -445,6 +448,11 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('if filter_key == "controle":', source)
         self.assertIn('current_filter["status"] = "Todos"', source)
         self.assertIn('_filter_state[filter_key] = current_filter', source)
+
+    def test_populate_text_adds_gap_between_row_number_and_id_text(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._populate_text)
+        self.assertIn('numbered = f"{marker} {idx + 1:>3}      {linha}"', source)
 
     def test_populate_text_keeps_triangle_updated_record_visible(self):
         import inspect

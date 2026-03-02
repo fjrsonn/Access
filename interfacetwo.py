@@ -2078,7 +2078,7 @@ def _populate_text(text_widget, info_label):
         linha = formatter(r)
         hover_idx = _text_hover_marker.get(text_widget)
         marker = "●" if idx in _text_breakpoints.get(text_widget, set()) or hover_idx == idx else " "
-        numbered = f"{marker} {idx + 1:>3}  {linha}"
+        numbered = f"{marker} {idx + 1:>3}      {linha}"
         text_tags = [row_tag]
         if rec_tag:
             text_tags.append(rec_tag)
@@ -3288,7 +3288,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
             line_end = text_widget.index(f"{start} lineend")
             line_text = text_widget.get(start, line_end)
             id_pos = line_text.find("[ID ")
-            target_idx = f"{start} + {max(1, id_pos - 1)}c" if id_pos > 0 else f"{start} + 6c"
+            target_idx = f"{start} + {max(2, id_pos - 4)}c" if id_pos > 0 else f"{start} + 8c"
             box = _best_bbox_for_index(target_idx)
             if not box:
                 return
@@ -3296,8 +3296,8 @@ def _build_text_actions(frame, text_widget, info_label, path):
             status_wrap.update_idletasks()
             sw = max(status_wrap.winfo_reqwidth(), 30)
             sh = max(status_wrap.winfo_reqheight(), 14)
-            tx = max(8, int(x + max(2, w // 4)))
-            ty = max(0, int(y + max(0, (h - sh) // 2)))
+            tx = max(8, int(x - max(sw + 4, 18)))
+            ty = max(0, int(y + max(0, (h - sh) // 2) - 2))
             status_wrap.place(x=tx, y=ty)
             status_wrap.lift()
         except Exception:
@@ -3319,7 +3319,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
             fw = max(inline_wrap.winfo_reqwidth(), 80)
             fh = max(inline_wrap.winfo_reqheight(), 16)
             tx = max(8, min(int(x + w + 6), max(8, text_widget.winfo_width() - fw - 10)))
-            ty = max(0, int(y + max(0, (h - fh) // 2)))
+            ty = max(0, int(y + max(0, (h - fh) // 2) - 2))
             inline_wrap.place(x=tx, y=ty)
             inline_wrap.lift()
             _inline_state["visible"] = True
