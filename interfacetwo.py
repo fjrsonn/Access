@@ -3455,14 +3455,17 @@ def _configure_monitor_scrollbar_style(style_obj):
     except Exception:
         pass
     try:
+        thumb_color = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
+        thumb_active = UI_THEME.get("focus_text", "#FFFFFF")
+        trough = UI_THEME.get("surface", "#151A22")
         style_obj.configure(
             "Monitor.ChatLike.Vertical.TScrollbar",
-            troughcolor=UI_THEME.get("surface", "#151A22"),
-            background=UI_THEME.get("surface_alt", "#1B2430"),
-            bordercolor=UI_THEME.get("surface", "#151A22"),
-            lightcolor=UI_THEME.get("surface", "#151A22"),
-            darkcolor=UI_THEME.get("surface", "#151A22"),
-            arrowcolor=UI_THEME.get("surface", "#151A22"),
+            troughcolor=trough,
+            background=thumb_color,
+            bordercolor=trough,
+            lightcolor=trough,
+            darkcolor=trough,
+            arrowcolor=trough,
             gripcount=0,
             arrowsize=0,
             relief="flat",
@@ -3470,8 +3473,8 @@ def _configure_monitor_scrollbar_style(style_obj):
         )
         style_obj.map(
             "Monitor.ChatLike.Vertical.TScrollbar",
-            background=[("active", UI_THEME.get("border", "#2B3442")), ("!active", UI_THEME.get("surface_alt", "#1B2430"))],
-            troughcolor=[("!disabled", UI_THEME.get("surface", "#151A22"))],
+            background=[("active", thumb_active), ("!active", thumb_color)],
+            troughcolor=[("!disabled", trough)],
         )
     except Exception:
         pass
