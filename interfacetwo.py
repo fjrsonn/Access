@@ -4374,7 +4374,7 @@ def _build_monitor_ui(container):
         records_top_line = tk.Frame(records_host, bg="#000000", height=2)
         records_top_line.pack(fill=tk.X, padx=0, pady=(0, 0))
 
-        text_area_wrap = tk.Frame(records_host, bg=UI_THEME["surface"], highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"), bd=0)
+        text_area_wrap = tk.Frame(records_host, bg=UI_THEME["surface"], highlightthickness=1, highlightbackground="#FF0000", bd=0)
         text_widget = tk.Text(
             text_area_wrap,
             wrap="word",
