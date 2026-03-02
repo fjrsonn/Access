@@ -892,7 +892,6 @@ def _bind_sticky_header_updates(text_widget):
     scroll_setter = state.get("scroll_setter")
 
     def _on_yscroll(*args):
-        _clear_sticky_selected_record(text_widget)
         try:
             if callable(scroll_setter):
                 scroll_setter(*args)
