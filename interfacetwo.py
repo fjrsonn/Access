@@ -173,6 +173,7 @@ _layout_density_mode = "confortavel"
 _operation_mode_enabled = False
 _runtime_refresh_ms = REFRESH_MS
 _cards_last_update_at = None
+_cards_context_refresh_hook = None
 _control_filtered_count_var = None
 _control_toolbar = None
 _last_quick_filter_kind = None
@@ -1069,7 +1070,6 @@ def _collect_status_cards_data() -> dict:
     except Exception:
         analises, avisos, encomendas, controle = [], [], [], []
 
-    pendentes = 0
     sem_contato = 0
     avisado = 0
     alta_severidade = 0
@@ -1088,33 +1088,21 @@ def _collect_status_cards_data() -> dict:
     for r in analises if isinstance(analises, list) else []:
         sev = str((r or {}).get("severidade") or (r or {}).get("SEVERIDADE") or "").lower()
         if sev in {"alta", "crítica", "critica"}:
-            pendentes += 1
             alta_severidade += 1
 
-    for aviso in avisos if isinstance(avisos, list) else []:
-        status_obj = (aviso or {}).get("status")
-        if isinstance(status_obj, dict):
-            ativo = bool(status_obj.get("ativo", False))
-            fechado = bool(status_obj.get("fechado_pelo_usuario", False))
-            if ativo and not fechado:
-                pendentes += 1
-        else:
-            txt = str(status_obj or (aviso or {}).get("STATUS") or "").upper()
-            if any(k in txt for k in ("PEND", "ABERTO", "ATIVO")):
-                pendentes += 1
-
     monitor_rows = (controle if isinstance(controle, list) else []) + (encomendas if isinstance(encomendas, list) else [])
+    ativos = len(monitor_rows)
     for r in monitor_rows:
         st = _status_text(r)
         if "SEM CONTATO" in st:
             sem_contato += 1
         elif "AVISADO" in st:
             avisado += 1
-        elif "PEND" in st:
-            pendentes += 1
+
+    pendentes = max(0, ativos - sem_contato - avisado)
 
     return {
-        "ativos": len(avisos) if isinstance(avisos, list) else 0,
+        "ativos": ativos,
         "pendentes": pendentes,
         "sem_contato": sem_contato,
         "avisado": avisado,
@@ -1123,7 +1111,7 @@ def _collect_status_cards_data() -> dict:
 
 
 def _update_status_cards():
-    global _metrics_previous_cards, _cards_last_update_at
+    global _metrics_previous_cards, _cards_last_update_at, _cards_context_refresh_hook
     data = _collect_status_cards_data()
     ux = analisar_metricas_ux() if callable(analisar_metricas_ux) else {}
     now = datetime.now()
@@ -1142,6 +1130,12 @@ def _update_status_cards():
                 card.flash(260)
             except Exception:
                 pass
+    try:
+        if callable(_cards_context_refresh_hook):
+            _cards_context_refresh_hook()
+    except Exception:
+        pass
+
     _metrics_previous_cards = dict(data)
     if _metrics_accessibility_var is not None:
         try:
@@ -3346,6 +3340,13 @@ def _build_text_actions(frame, text_widget, info_label, path):
         rec = current.get("record")
         if not rec:
             return
+        source = _monitor_sources.get(text_widget, {}) or {}
+        filter_key = str(source.get("filter_key") or "")
+        if filter_key == "controle":
+            current_filter = dict(_filter_state.get(filter_key) or _default_filters())
+            if str(current_filter.get("status") or "Todos").strip().upper() != "TODOS":
+                current_filter["status"] = "Todos"
+                _filter_state[filter_key] = current_filter
         try:
             _forced_visible_records.setdefault(text_widget, set()).add(_record_force_visibility_key(rec))
         except Exception:
@@ -4408,6 +4409,16 @@ def _build_monitor_ui(container):
             consumo_day_var.set(f"Dia selecionado: {consumo_selected_day} • Usados: {total_selected} • Restantes(base1000): {restante_selected}")
             if _control_filtered_count_var is not None:
                 _control_filtered_count_var.set(f"{consumo_selected_day} Registros: {total_selected}")
+
+    def _refresh_cards_for_current_consumo_selection():
+        try:
+            _draw_days_timeline()
+            _animate_cards_for_day(consumo_selected_day, show_total=(consumo_selected_mode == "total"))
+        except Exception:
+            return
+
+    global _cards_context_refresh_hook
+    _cards_context_refresh_hook = _refresh_cards_for_current_consumo_selection
 
     consumo_days_canvas.bind("<Configure>", _draw_days_timeline, add="+")
     container.after(80, _draw_days_timeline)
