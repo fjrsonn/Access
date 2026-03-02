@@ -2094,7 +2094,7 @@ def _populate_text(text_widget, info_label):
                 record_line_map[line_no] = r
             except Exception:
                 pass
-            status = (r.get("STATUS_ENCOMENDA") or "").strip().upper()
+            status = (r.get("STATUS_ENCOMENDA") or r.get("STATUS") or "").strip().upper()
             if status == "AVISADO":
                 try:
                     text_widget.tag_add("status_avisado", start, end)
@@ -3224,15 +3224,15 @@ def _build_text_actions(frame, text_widget, info_label, path):
             if not ranges or len(ranges) < 2:
                 return
             start, end = ranges[0], ranges[1]
-            box = text_widget.bbox(end)
+            box = text_widget.bbox(start)
             if not box:
-                box = text_widget.bbox(start)
+                box = text_widget.bbox(end)
             if not box:
                 return
             x, y, w, h = box
             inline_wrap.update_idletasks()
             fw = max(inline_wrap.winfo_reqwidth(), 80)
-            fh = max(inline_wrap.winfo_reqheight(), max(18, h))
+            fh = max(inline_wrap.winfo_reqheight(), 16)
             tx = max(8, text_widget.winfo_width() - fw - 12)
             ty = max(0, y + max(0, (h - fh) // 2))
             inline_wrap.place(x=tx, y=ty)
@@ -3294,6 +3294,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
         if not rec:
             return
         registros = _load_safe(path)
+        updated = False
         for r in registros:
             if _record_identity_match(r, rec):
                 if is_encomendas:
@@ -3301,11 +3302,20 @@ def _build_text_actions(frame, text_widget, info_label, path):
                     r["STATUS_DATA_HORA"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
                 else:
                     r["STATUS"] = status
+                updated = True
                 break
+        if not updated:
+            return
         _atomic_write(path, {"registros": registros})
         _reload()
         if current.get("rec_tag"):
             _show_for(current.get("rec_tag"), pin=True)
+
+    def mark_avisado():
+        apply_status("AVISADO")
+
+    def mark_sem_contato():
+        apply_status("SEM CONTATO")
 
     def copy_record():
         rec = current.get("record") or {}
@@ -3462,8 +3472,8 @@ def _build_text_actions(frame, text_widget, info_label, path):
 
     # ordem invertida solicitada (direita <- esquerda do pedido original): copiar, sem contato, avisado, editar, fechar
     btn_copy = _mini_btn(buttons_row, "⧉", copy_record)
-    btn_down = _mini_btn(buttons_row, "▼", lambda: apply_status("SEM CONTATO"), glow=UI_THEME.get("danger", "#DC2626"))
-    btn_up = _mini_btn(buttons_row, "▲", lambda: apply_status("AVISADO"), glow=UI_THEME.get("success", "#16A34A"))
+    btn_down = _mini_btn(buttons_row, "▼", mark_sem_contato, glow=UI_THEME.get("danger", "#DC2626"))
+    btn_up = _mini_btn(buttons_row, "▲", mark_avisado, glow=UI_THEME.get("success", "#16A34A"))
     btn_edit = _mini_btn(buttons_row, "✎", enable_edit)
     btn_close = _mini_btn(buttons_row, "✕", delete_record, glow=UI_THEME.get("danger", "#DC2626"))
     btn_save = _mini_btn(buttons_row, "💾", save_edit, glow=UI_THEME.get("success", "#16A34A"))
@@ -4682,9 +4692,10 @@ def _build_monitor_ui(container):
         filter_bar._filter_target_widget = text_widget
         _filter_bars[str(filter_key)] = filter_bar
         _apply_filter_visibility(str(filter_key))
-        if formatter == format_encomenda_entry:
+        if formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry):
             text_widget.tag_configure("status_avisado", foreground=UI_THEME["status_avisado_text"])
             text_widget.tag_configure("status_sem_contato", foreground=UI_THEME["status_sem_contato_text"])
+        if formatter == format_encomenda_entry:
             text_widget.tag_configure("encomenda_selected", background=UI_THEME.get("selection_bg", UI_THEME["focus_bg"]), foreground=UI_THEME.get("selection_fg", UI_THEME["focus_text"]))
         if filter_key == "controle":
             text_widget.tag_configure("controle_selected", background=UI_THEME.get("selection_bg", UI_THEME["focus_bg"]), foreground=UI_THEME.get("selection_fg", UI_THEME["focus_text"]))
