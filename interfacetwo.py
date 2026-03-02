@@ -3159,6 +3159,9 @@ def _build_text_actions(frame, text_widget, info_label, path):
     is_orient_obs = os.path.basename(path) in ("orientacoes.json", "observacoes.json")
     is_encomendas = os.path.basename(path) == "encomendasend.json"
 
+    status_wrap = tk.Frame(text_widget, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    status_row = tk.Frame(status_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    status_row.pack(side=tk.TOP, fill=tk.X)
     inline_wrap = tk.Frame(text_widget, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
     buttons_row = tk.Frame(inline_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
     buttons_row.pack(side=tk.TOP, fill=tk.X)
@@ -3249,6 +3252,10 @@ def _build_text_actions(frame, text_widget, info_label, path):
         except Exception:
             pass
         try:
+            status_wrap.place_forget()
+        except Exception:
+            pass
+        try:
             toolbar_wrap.place_forget()
         except Exception:
             pass
@@ -3259,29 +3266,70 @@ def _build_text_actions(frame, text_widget, info_label, path):
             current["record"] = None
             current["rec_tag"] = None
 
-    def _place_for_tag(rec_tag):
+    def _best_bbox_for_index(idx):
+        box = text_widget.bbox(idx)
+        if box:
+            return box
+        try:
+            for back in range(1, 8):
+                b = text_widget.bbox(f"{idx} - {back}c")
+                if b:
+                    return b
+        except Exception:
+            return None
+        return None
+
+    def _place_status_for_tag(rec_tag):
         try:
             ranges = text_widget.tag_ranges(rec_tag)
             if not ranges or len(ranges) < 2:
                 return
-            start, end = ranges[0], ranges[1]
-            box = text_widget.bbox(start)
+            start = ranges[0]
+            line_end = text_widget.index(f"{start} lineend")
+            line_text = text_widget.get(start, line_end)
+            id_pos = line_text.find("[ID ")
+            target_idx = f"{start} + {max(1, id_pos - 1)}c" if id_pos > 0 else f"{start} + 6c"
+            box = _best_bbox_for_index(target_idx)
             if not box:
-                box = text_widget.bbox(end)
+                return
+            x, y, w, h = box
+            status_wrap.update_idletasks()
+            sw = max(status_wrap.winfo_reqwidth(), 30)
+            sh = max(status_wrap.winfo_reqheight(), 14)
+            tx = max(8, int(x + max(2, w // 4)))
+            ty = max(0, int(y + max(0, (h - sh) // 2)))
+            status_wrap.place(x=tx, y=ty)
+            status_wrap.lift()
+        except Exception:
+            return
+
+    def _place_tail_for_tag(rec_tag):
+        try:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if not ranges or len(ranges) < 2:
+                return
+            start = ranges[0]
+            line_end = text_widget.index(f"{start} lineend")
+            target_idx = f"{line_end} - 1c"
+            box = _best_bbox_for_index(target_idx)
             if not box:
                 return
             x, y, w, h = box
             inline_wrap.update_idletasks()
             fw = max(inline_wrap.winfo_reqwidth(), 80)
             fh = max(inline_wrap.winfo_reqheight(), 16)
-            tx = max(8, text_widget.winfo_width() - fw - 12)
-            ty = max(0, y + max(0, (h - fh) // 2))
+            tx = max(8, min(int(x + w + 6), max(8, text_widget.winfo_width() - fw - 10)))
+            ty = max(0, int(y + max(0, (h - fh) // 2)))
             inline_wrap.place(x=tx, y=ty)
             inline_wrap.lift()
             _inline_state["visible"] = True
             _inline_state["tag"] = rec_tag
         except Exception:
             return
+
+    def _place_for_tag(rec_tag):
+        _place_status_for_tag(rec_tag)
+        _place_tail_for_tag(rec_tag)
 
     def _place_toolbar_for_tag(rec_tag):
         if not is_orient_obs:
@@ -3487,8 +3535,10 @@ def _build_text_actions(frame, text_widget, info_label, path):
             btn_save.pack(side=tk.LEFT, padx=2, pady=3)
             btn_cancel.pack(side=tk.LEFT, padx=2, pady=3)
         else:
-            for b in (btn_copy, btn_down, btn_up, btn_edit, btn_close):
+            for b in (btn_copy, btn_edit, btn_close):
                 b.pack(side=tk.LEFT, padx=2, pady=3)
+            for b in (btn_down, btn_up):
+                b.pack(side=tk.LEFT, padx=1, pady=2)
 
     def enable_edit():
         rec_tag = current.get("rec_tag")
@@ -3537,8 +3587,8 @@ def _build_text_actions(frame, text_widget, info_label, path):
 
     # ordem invertida solicitada (direita <- esquerda do pedido original): copiar, sem contato, avisado, editar, fechar
     btn_copy = _mini_btn(buttons_row, "⧉", copy_record)
-    btn_down = _mini_btn(buttons_row, "▼", mark_sem_contato, glow=UI_THEME.get("danger", "#DC2626"))
-    btn_up = _mini_btn(buttons_row, "▲", mark_avisado, glow=UI_THEME.get("success", "#16A34A"))
+    btn_down = _mini_btn(status_row, "▼", mark_sem_contato, glow=UI_THEME.get("danger", "#DC2626"))
+    btn_up = _mini_btn(status_row, "▲", mark_avisado, glow=UI_THEME.get("success", "#16A34A"))
     btn_edit = _mini_btn(buttons_row, "✎", enable_edit)
     btn_close = _mini_btn(buttons_row, "✕", delete_record, glow=UI_THEME.get("danger", "#DC2626"))
     btn_save = _mini_btn(buttons_row, "💾", save_edit, glow=UI_THEME.get("success", "#16A34A"))
@@ -3595,6 +3645,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
 
     _text_action_ui[text_widget] = {
         "frame": inline_wrap,
+        "status_frame": status_wrap,
         "hide": lambda: _hide_inline(unpin=True),
         "show": lambda: _show_for(current.get("rec_tag"), pin=True) if current.get("rec_tag") else None,
         "current": current,

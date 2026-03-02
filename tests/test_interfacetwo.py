@@ -396,6 +396,16 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('if edit_state.get("active"):', source)
         self.assertNotIn('if current.get("pinned") or edit_state.get("active"):', source)
 
+    def test_text_actions_split_triangle_and_tail_button_positions(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_text_actions)
+        self.assertIn('btn_down = _mini_btn(status_row, "▼"', source)
+        self.assertIn('btn_up = _mini_btn(status_row, "▲"', source)
+        self.assertIn('def _place_status_for_tag(rec_tag):', source)
+        self.assertIn('def _place_tail_for_tag(rec_tag):', source)
+        self.assertIn('line_text.find("[ID ")', source)
+        self.assertIn('line_end = text_widget.index(f"{start} lineend")', source)
+
     def test_text_actions_hide_inline_after_triangle_status_change(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_text_actions)
