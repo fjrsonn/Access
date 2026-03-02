@@ -380,6 +380,13 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('_update_status_cards()', source)
         self.assertIn('_forced_visible_records.setdefault(text_widget, set()).add(_record_force_visibility_key(rec))', source)
 
+    def test_text_actions_normalize_controle_status_filter_before_save(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_text_actions)
+        self.assertIn('if filter_key == "controle":', source)
+        self.assertIn('current_filter["status"] = "Todos"', source)
+        self.assertIn('_filter_state[filter_key] = current_filter', source)
+
     def test_populate_text_keeps_triangle_updated_record_visible(self):
         import inspect
         source = inspect.getsource(interfacetwo._populate_text)

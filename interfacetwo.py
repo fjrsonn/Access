@@ -3346,6 +3346,13 @@ def _build_text_actions(frame, text_widget, info_label, path):
         rec = current.get("record")
         if not rec:
             return
+        source = _monitor_sources.get(text_widget, {}) or {}
+        filter_key = str(source.get("filter_key") or "")
+        if filter_key == "controle":
+            current_filter = dict(_filter_state.get(filter_key) or _default_filters())
+            if str(current_filter.get("status") or "Todos").strip().upper() != "TODOS":
+                current_filter["status"] = "Todos"
+                _filter_state[filter_key] = current_filter
         try:
             _forced_visible_records.setdefault(text_widget, set()).add(_record_force_visibility_key(rec))
         except Exception:
