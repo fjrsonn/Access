@@ -378,6 +378,13 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('_hide_inline(unpin=True)', source)
         self.assertIn('_apply_record_status_style(rec_tag, new_status)', source)
         self.assertIn('_update_status_cards()', source)
+        self.assertIn('_forced_visible_records.setdefault(text_widget, set()).add(_record_force_visibility_key(rec))', source)
+
+    def test_populate_text_keeps_triangle_updated_record_visible(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._populate_text)
+        self.assertIn('forced_tokens = _forced_visible_records.get(text_widget) or set()', source)
+        self.assertIn('if token in forced_tokens and rec not in filtrados:', source)
 
     def test_treeview_column_menu_controls_present(self):
         import inspect

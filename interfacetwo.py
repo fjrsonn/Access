@@ -187,6 +187,7 @@ _text_record_ranges = {}
 _sticky_header_state = {}
 _consumo_24h_por_dia = {}
 _text_last_interaction_ts = {}
+_forced_visible_records = {}
 
 
 def _scroll_text_widget(text_widget, *args):
@@ -257,6 +258,20 @@ def _normalizar_24h(points) -> list[int]:
         except Exception:
             base[idx] = 0
     return base
+
+
+def _record_force_visibility_key(record: dict) -> str:
+    rec = record or {}
+    rec_id = str(rec.get("id") or rec.get("ID") or "").strip()
+    if rec_id:
+        return f"id:{rec_id}"
+    try:
+        if str(rec.get("TIPO") or "").strip().upper() == "ENCOMENDA" or any(k in rec for k in ("STATUS_ENCOMENDA", "IDENTIFICACAO", "LOJA")):
+            return f"enc:{_record_hash_key_encomenda(rec)}"
+    except Exception:
+        pass
+    txt = str(rec.get("texto") or rec.get("texto_original") or "").strip()
+    return f"txt:{txt}"
 
 
 def _save_consumo_24h_data():
@@ -2018,6 +2033,15 @@ def _populate_text(text_widget, info_label):
     filter_key = source.get("filter_key", text_widget)
     filters = _filter_state.get(filter_key, {})
     filtrados = _apply_filters(registros, filters)
+    forced_tokens = _forced_visible_records.get(text_widget) or set()
+    if forced_tokens:
+        for rec in registros:
+            try:
+                token = _record_force_visibility_key(rec)
+            except Exception:
+                continue
+            if token in forced_tokens and rec not in filtrados:
+                filtrados.append(rec)
     if registros and not filtrados and _filters_are_active(filters):
         _filter_state[filter_key] = _default_filters()
         filters = _filter_state[filter_key]
@@ -3303,6 +3327,13 @@ def _build_text_actions(frame, text_widget, info_label, path):
         rec = current.get("record")
         if not rec:
             return
+        try:
+            token = _record_force_visibility_key(rec)
+            visible_set = _forced_visible_records.get(text_widget)
+            if visible_set and token in visible_set:
+                visible_set.discard(token)
+        except Exception:
+            pass
         registros = _load_safe(path)
         novo = [r for r in registros if not _record_identity_match(r, rec)]
         if len(novo) == len(registros):
@@ -3315,6 +3346,10 @@ def _build_text_actions(frame, text_widget, info_label, path):
         rec = current.get("record")
         if not rec:
             return
+        try:
+            _forced_visible_records.setdefault(text_widget, set()).add(_record_force_visibility_key(rec))
+        except Exception:
+            pass
         registros = _load_safe(path)
         updated = False
         new_status = str(status or "").strip().upper()
