@@ -410,6 +410,12 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('if callable(_cards_context_refresh_hook):', source)
         self.assertIn('_cards_context_refresh_hook()', source)
 
+    def test_monitor_ui_populates_records_on_startup_for_status_sync(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_monitor_ui)
+        self.assertIn('for target in monitor_widgets:', source)
+        self.assertIn('_populate_text(target, info_label)', source)
+
     def test_monitor_ui_registers_cards_context_refresh_hook(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_monitor_ui)
