@@ -3436,6 +3436,44 @@ def _create_safe_panedwindow(parent, **kwargs):
             options.pop(unsupported, None)
 
 
+def _bind_scrollbar_drag_behavior(scrollbar, text_widget):
+    """Allow click-and-drag only when interaction starts on the scrollbar thumb."""
+    drag_state = {"active": False}
+
+    def _is_thumb_hit(event):
+        try:
+            part = str(scrollbar.identify(event.x, event.y) or "").lower()
+        except Exception:
+            return False
+        return "thumb" in part
+
+    def _start_drag(event):
+        drag_state["active"] = _is_thumb_hit(event)
+        if drag_state["active"]:
+            _drag_to(event)
+
+    def _drag_to(event):
+        if not drag_state.get("active"):
+            return
+        try:
+            height = max(scrollbar.winfo_height(), 1)
+            fraction = min(max(float(event.y) / float(height), 0.0), 1.0)
+            _mark_text_interaction(text_widget)
+            text_widget.yview_moveto(fraction)
+        except Exception:
+            return
+
+    def _end_drag(_event):
+        drag_state["active"] = False
+
+    try:
+        scrollbar.bind("<ButtonPress-1>", _start_drag, add="+")
+        scrollbar.bind("<B1-Motion>", _drag_to, add="+")
+        scrollbar.bind("<ButtonRelease-1>", _end_drag, add="+")
+    except Exception:
+        pass
+
+
 def _configure_monitor_scrollbar_style(style_obj):
     """Apply a minimalist vertical scrollbar style aligned to monitor theme colors."""
     try:
@@ -3455,7 +3493,7 @@ def _configure_monitor_scrollbar_style(style_obj):
     except Exception:
         pass
     try:
-        thumb_color = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
+        thumb_color = UI_THEME.get("text", "#E6EDF3")
         thumb_active = UI_THEME.get("focus_text", "#FFFFFF")
         trough = UI_THEME.get("surface", "#151A22")
         style_obj.configure(
@@ -3463,13 +3501,14 @@ def _configure_monitor_scrollbar_style(style_obj):
             troughcolor=trough,
             background=thumb_color,
             bordercolor=trough,
-            lightcolor=trough,
-            darkcolor=trough,
+            lightcolor=thumb_color,
+            darkcolor=thumb_color,
             arrowcolor=trough,
             gripcount=0,
             arrowsize=0,
             relief="flat",
             borderwidth=0,
+            width=12,
         )
         style_obj.map(
             "Monitor.ChatLike.Vertical.TScrollbar",
@@ -4377,7 +4416,13 @@ def _build_monitor_ui(container):
         records_top_line = tk.Frame(records_host, bg="#000000", height=2)
         records_top_line.pack(fill=tk.X, padx=0, pady=(0, 0))
 
-        text_area_wrap = tk.Frame(records_host, bg=UI_THEME["surface"], highlightthickness=1, highlightbackground="#FF0000", bd=0)
+        text_area_wrap = tk.Frame(
+            records_host,
+            bg=UI_THEME["surface"],
+            highlightthickness=1,
+            highlightbackground=UI_THEME.get("border", "#2B3442"),
+            bd=0,
+        )
         text_widget = tk.Text(
             text_area_wrap,
             wrap="word",
@@ -4393,18 +4438,13 @@ def _build_monitor_ui(container):
         )
         text_scroll = _create_safe_scrollbar(
             text_area_wrap,
-            use_ttk=False,
+            use_ttk=True,
+            style_name="Monitor.ChatLike.Vertical.TScrollbar",
             orient=tk.VERTICAL,
             command=lambda *args, tw=text_widget: _scroll_text_widget(tw, *args),
-            relief="flat",
-            bd=0,
-            highlightthickness=0,
-            troughcolor=UI_THEME.get("surface", "#151A22"),
-            activebackground=UI_THEME.get("focus_text", "#FFFFFF"),
-            bg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
-            width=12,
         )
         text_widget.configure(yscrollcommand=text_scroll.set)
+        _bind_scrollbar_drag_behavior(text_scroll, text_widget)
         filter_bar = _build_filter_bar(frame, filter_key, info_label, target_widget=text_widget)
         filter_bar._filter_target_widget = text_widget
         _filter_bars[str(filter_key)] = filter_bar
