@@ -2094,7 +2094,7 @@ def _populate_text(text_widget, info_label):
                 record_line_map[line_no] = r
             except Exception:
                 pass
-            status = (r.get("STATUS_ENCOMENDA") or "").strip().upper()
+            status = (r.get("STATUS_ENCOMENDA") or r.get("STATUS") or "").strip().upper()
             if status == "AVISADO":
                 try:
                     text_widget.tag_add("status_avisado", start, end)
@@ -3134,16 +3134,57 @@ def _apply_light_theme(widget):
         pass
 
 def _build_text_actions(frame, text_widget, info_label, path):
-    action_frame = tk.Frame(frame, bg=UI_THEME["surface"])
-    action_frame.pack_forget()
-    current = {"record": None, "rec_tag": None}
-    edit_state = {"active": False, "tag": None, "dirty": False}
+    current = {"record": None, "rec_tag": None, "pinned": False}
+    edit_state = {"active": False, "tag": None, "dirty": False, "range": None}
 
-    edit_badge = build_badge(action_frame, text="MODO EDIÇÃO ATIVO", tone="warning")
-    edit_badge.pack_forget()
-    edit_status_var = tk.StringVar(value="")
-    edit_status = tk.Label(action_frame, textvariable=edit_status_var, bg=UI_THEME["surface"], fg=UI_THEME.get("muted_text", UI_THEME["text"]), anchor="w", font=theme_font("font_sm"))
-    edit_status.pack_forget()
+    is_orient_obs = os.path.basename(path) in ("orientacoes.json", "observacoes.json")
+    is_encomendas = os.path.basename(path) == "encomendasend.json"
+
+    inline_wrap = tk.Frame(text_widget, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    buttons_row = tk.Frame(inline_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    buttons_row.pack(side=tk.TOP, fill=tk.X)
+    toolbar_wrap = tk.Frame(text_widget, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    toolbar = tk.Frame(toolbar_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    toolbar.pack(side=tk.TOP, fill=tk.X)
+
+    _inline_state = {"visible": False, "tag": None}
+
+    def _mini_btn(parent, label, cmd, glow=None):
+        b = tk.Button(
+            parent,
+            text=label,
+            command=cmd,
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+            bg=UI_THEME["surface"],
+            fg=UI_THEME.get("text", "#E6EDF3"),
+            activebackground=UI_THEME.get("surface_alt", UI_THEME["surface"]),
+            activeforeground=UI_THEME.get("text", "#FFFFFF"),
+            padx=6,
+            pady=2,
+            font=theme_font("font_sm", "bold"),
+        )
+
+        def _enter(_e):
+            b.configure(bg=(glow or UI_THEME.get("focus_bg", UI_THEME.get("surface_alt", "#1F2937"))))
+
+        def _leave(_e):
+            b.configure(bg=UI_THEME["surface"])
+
+        b.bind("<Enter>", _enter, add="+")
+        b.bind("<Leave>", _leave, add="+")
+        return b
+
+    def _record_identity_match(r, rec):
+        if str(r.get("id") or r.get("ID") or "") and str(rec.get("id") or rec.get("ID") or ""):
+            return str(r.get("id") or r.get("ID")) == str(rec.get("id") or rec.get("ID"))
+        if is_encomendas:
+            try:
+                return _record_hash_key_encomenda(r) == _record_hash_key_encomenda(rec)
+            except Exception:
+                return False
+        return str(r.get("texto") or r.get("texto_original") or "") == str(rec.get("texto") or rec.get("texto_original") or "")
 
     def _set_filters_enabled(enabled: bool):
         for w in _filter_controls.get(text_widget, []):
@@ -3155,126 +3196,203 @@ def _build_text_actions(frame, text_widget, info_label, path):
             except Exception:
                 pass
 
-    def is_editing():
-        return bool(edit_state.get("active"))
+    def _reload():
+        _populate_text(text_widget, info_label)
+        _update_status_cards()
 
-    def _bind_edit_shortcuts():
-        def _only_editing(handler):
-            def _wrapped(event):
-                if not is_editing():
-                    return None
-                return handler(event)
-            return _wrapped
-
-        def _sel_all(_event):
-            try:
-                text_widget.tag_add("sel", "1.0", "end-1c")
-                text_widget.mark_set("insert", "1.0")
-                text_widget.see("insert")
-            except Exception:
-                pass
-            return "break"
-
-        def _virtual(name):
-            def _h(_event):
-                try:
-                    text_widget.event_generate(name)
-                    edit_state["dirty"] = True
-                except Exception:
-                    pass
-                return "break"
-            return _h
-
-        shortcuts = {
-            "<Control-a>": _sel_all,
-            "<Control-A>": _sel_all,
-            "<Control-z>": _virtual("<<Undo>>"),
-            "<Control-Z>": _virtual("<<Undo>>"),
-            "<Control-y>": _virtual("<<Redo>>"),
-            "<Control-Y>": _virtual("<<Redo>>"),
-            "<Control-x>": _virtual("<<Cut>>"),
-            "<Control-X>": _virtual("<<Cut>>"),
-            "<Control-c>": _virtual("<<Copy>>"),
-            "<Control-C>": _virtual("<<Copy>>"),
-            "<Control-v>": _virtual("<<Paste>>"),
-            "<Control-V>": _virtual("<<Paste>>"),
-        }
-        shortcuts["<Escape>"] = lambda _event: (cancel_edit() or "break")
-        for seq, handler in shortcuts.items():
-            try:
-                text_widget.bind(seq, _only_editing(handler), add="+")
-            except Exception:
-                pass
-
-    def hide_actions():
-        if is_editing():
+    def _hide_inline(unpin=False):
+        if edit_state.get("active"):
             return
-        action_frame.pack_forget()
-        current["record"] = None
-        current["rec_tag"] = None
+        try:
+            inline_wrap.place_forget()
+        except Exception:
+            pass
+        try:
+            toolbar_wrap.place_forget()
+        except Exception:
+            pass
+        _inline_state["visible"] = False
+        _inline_state["tag"] = None
+        if unpin:
+            current["pinned"] = False
+            current["record"] = None
+            current["rec_tag"] = None
 
-    def show_actions():
+    def _place_for_tag(rec_tag):
+        try:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if not ranges or len(ranges) < 2:
+                return
+            start, end = ranges[0], ranges[1]
+            box = text_widget.bbox(start)
+            if not box:
+                box = text_widget.bbox(end)
+            if not box:
+                return
+            x, y, w, h = box
+            inline_wrap.update_idletasks()
+            fw = max(inline_wrap.winfo_reqwidth(), 80)
+            fh = max(inline_wrap.winfo_reqheight(), 16)
+            tx = max(8, text_widget.winfo_width() - fw - 12)
+            ty = max(0, y + max(0, (h - fh) // 2))
+            inline_wrap.place(x=tx, y=ty)
+            inline_wrap.lift()
+            _inline_state["visible"] = True
+            _inline_state["tag"] = rec_tag
+        except Exception:
+            return
+
+    def _place_toolbar_for_tag(rec_tag):
+        if not is_orient_obs:
+            return
+        try:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if not ranges or len(ranges) < 2:
+                return
+            start = ranges[0]
+            box = text_widget.bbox(start)
+            if not box:
+                return
+            x, y, w, h = box
+            toolbar_wrap.update_idletasks()
+            tw = max(toolbar_wrap.winfo_reqwidth(), 120)
+            th = max(toolbar_wrap.winfo_reqheight(), 20)
+            tx = max(8, min(int(x), max(8, text_widget.winfo_width() - tw - 10)))
+            ty = max(0, y - th - 2)
+            toolbar_wrap.place(x=tx, y=ty)
+            toolbar_wrap.lift()
+        except Exception:
+            return
+
+    def _find_record_by_tag(tag):
+        return _record_tag_map_generic.get(text_widget, {}).get(tag) or _encomenda_tag_map.get(text_widget, {}).get(tag)
+
+    def _show_for(tag, pin=False):
+        rec = _find_record_by_tag(tag)
+        if not rec:
+            return
+        current["record"] = rec
+        current["rec_tag"] = tag
+        if pin:
+            current["pinned"] = True
+        _place_for_tag(tag)
+
+    def delete_record():
         rec = current.get("record")
         if not rec:
             return
-        if not action_frame.winfo_ismapped():
-            action_frame.pack(fill=tk.X, padx=10, pady=(0, 8))
-
-    def enable_edit():
-        rec_tag = current.get("rec_tag")
-        if not rec_tag:
+        registros = _load_safe(path)
+        novo = [r for r in registros if not _record_identity_match(r, rec)]
+        if len(novo) == len(registros):
             return
-        edit_state["active"] = True
-        edit_state["tag"] = rec_tag
-        edit_state["dirty"] = False
-        _text_edit_lock.add(text_widget)
-        _set_filters_enabled(False)
+        _atomic_write(path, {"registros": novo})
+        _hide_inline(unpin=True)
+        _reload()
+
+    def apply_status(status):
+        rec = current.get("record")
+        if not rec:
+            return
+        registros = _load_safe(path)
+        updated = False
+        for r in registros:
+            if _record_identity_match(r, rec):
+                if is_encomendas:
+                    r["STATUS_ENCOMENDA"] = status
+                    r["STATUS_DATA_HORA"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                else:
+                    r["STATUS"] = status
+                updated = True
+                break
+        if not updated:
+            return
+        _atomic_write(path, {"registros": registros})
+        _reload()
+        if current.get("rec_tag"):
+            _show_for(current.get("rec_tag"), pin=True)
+
+    def mark_avisado():
+        apply_status("AVISADO")
+
+    def mark_sem_contato():
+        apply_status("SEM CONTATO")
+
+    def copy_record():
+        rec = current.get("record") or {}
+        text = str(rec.get("texto") or rec.get("texto_original") or "")
+        if not text:
+            text = str(rec)
         try:
-            text_widget.tag_remove("sel", "1.0", tk.END)
+            text_widget.clipboard_clear()
+            text_widget.clipboard_append(text)
+            text_widget.update_idletasks()
         except Exception:
             pass
+
+    def _apply_wrapper(prefix, suffix=""):
+        if not edit_state.get("active"):
+            return
         try:
-            text_widget.config(state="normal")
-            text_widget.focus_set()
-            edit_badge.configure(bg=UI_THEME.get("warning", "#D29922"), fg=UI_THEME.get("on_warning", "#111827"))
-            edit_badge.pack(fill=tk.X, padx=8, pady=(6, 2), before=action_frame.winfo_children()[0] if action_frame.winfo_children() else None)
-            edit_status_var.set("Editando…")
-            edit_status.configure(bg=UI_THEME["surface"], fg=UI_THEME.get("muted_text", UI_THEME["text"]))
-            edit_status.pack(fill=tk.X, padx=8, pady=(0, 4), before=action_frame.winfo_children()[1] if len(action_frame.winfo_children()) > 1 else None)
+            s = text_widget.index("sel.first")
+            e = text_widget.index("sel.last")
+            txt = text_widget.get(s, e)
+            text_widget.delete(s, e)
+            text_widget.insert(s, f"{prefix}{txt}{suffix}")
+            edit_state["dirty"] = True
         except Exception:
             pass
+
+    def _apply_heading(): _apply_wrapper("# ")
+    def _apply_bold(): _apply_wrapper("**", "**")
+    def _apply_italic(): _apply_wrapper("*", "*")
+    def _apply_link(): _apply_wrapper("[", "](https://)")
+
+    def _apply_align(mode):
+        if not edit_state.get("active"):
+            return
+        if mode == "left":
+            text_widget.tag_configure("align_edit", justify="left")
+        elif mode == "center":
+            text_widget.tag_configure("align_edit", justify="center")
+        else:
+            text_widget.tag_configure("align_edit", justify="right")
+        rng = edit_state.get("range")
+        if rng:
+            text_widget.tag_add("align_edit", rng[0], rng[1])
+        edit_state["dirty"] = True
+
+    def _in_edit_range(idx):
+        rng = edit_state.get("range")
+        if not rng:
+            return False
+        try:
+            return text_widget.compare(idx, ">=", rng[0]) and text_widget.compare(idx, "<=", rng[1])
+        except Exception:
+            return False
 
     def _finish_editing(reload_text=True):
-        edit_state["active"] = False
-        edit_state["tag"] = None
-        edit_state["dirty"] = False
+        edit_state.update({"active": False, "tag": None, "dirty": False, "range": None})
         _text_edit_lock.discard(text_widget)
         _set_filters_enabled(True)
+        toolbar_wrap.place_forget()
+        _toggle_edit_buttons(False)
         try:
-            edit_badge.pack_forget()
-            edit_status.pack_forget()
+            text_widget.unbind("<KeyPress>", edit_state.get("_bind_key"))
+        except Exception:
+            pass
+        try:
+            text_widget.tag_remove("edit_outline", "1.0", tk.END)
             text_widget.config(state="disabled")
         except Exception:
             pass
         if reload_text:
-            _populate_text(text_widget, info_label)
+            _reload()
+        if current.get("rec_tag"):
+            _show_for(current.get("rec_tag"), pin=True)
 
     def cancel_edit():
-        if not is_editing():
+        if not edit_state.get("active"):
             return
-        if edit_state.get("dirty"):
-            try:
-                if not messagebox.askyesno("Cancelar edição", "Descartar alterações não salvas?"):
-                    return
-            except Exception:
-                pass
-        if log_audit_event:
-            log_audit_event("texto_cancelado", os.path.basename(path), (current.get("record") or {}).get("texto", ""))
-        edit_status_var.set("Edição cancelada")
-        try:
-            edit_badge.configure(bg=UI_THEME.get("warning", "#D29922"), fg=UI_THEME.get("on_warning", UI_THEME.get("text", "#111827")))
-        except Exception:
-            pass
         _finish_editing(reload_text=True)
 
     def save_edit():
@@ -3282,108 +3400,141 @@ def _build_text_actions(frame, text_widget, info_label, path):
         rec_tag = current.get("rec_tag")
         if not rec or not rec_tag:
             return
+        rng = edit_state.get("range")
+        if not rng:
+            return
+        try:
+            new_text = text_widget.get(rng[0], rng[1]).strip()
+        except Exception:
+            return
+        registros = _load_safe(path)
+        for r in registros:
+            if _record_identity_match(r, rec):
+                r["texto"] = new_text
+                break
+        _atomic_write(path, {"registros": registros})
+        _finish_editing(reload_text=True)
+
+    def _toggle_edit_buttons(active: bool):
+        for w in buttons_row.winfo_children():
+            w.pack_forget()
+        if active:
+            btn_save.pack(side=tk.LEFT, padx=2, pady=3)
+            btn_cancel.pack(side=tk.LEFT, padx=2, pady=3)
+        else:
+            for b in (btn_copy, btn_down, btn_up, btn_edit, btn_close):
+                b.pack(side=tk.LEFT, padx=2, pady=3)
+
+    def enable_edit():
+        rec_tag = current.get("rec_tag")
+        if not rec_tag:
+            return
         try:
             ranges = text_widget.tag_ranges(rec_tag)
             if not ranges or len(ranges) < 2:
                 return
-            new_text = text_widget.get(ranges[0], ranges[1]).strip()
+            start, end = ranges[0], ranges[1]
         except Exception:
             return
-
-        registros = _load_safe(path)
-        target = None
-        for r in registros:
-            if str(r.get("id")) == str(rec.get("id")):
-                target = r
-                break
-        if not target:
-            return
-
-        edit_status_var.set("Salvando…")
+        edit_state.update({"active": True, "tag": rec_tag, "dirty": False, "range": (start, end)})
+        _text_edit_lock.add(text_widget)
+        _set_filters_enabled(False)
         try:
-            edit_status.configure(bg=UI_THEME["surface"], fg=UI_THEME.get("info", "#2563EB"))
-            edit_status.pack(fill=tk.X, padx=8, pady=(0, 4), before=action_frame.winfo_children()[1] if len(action_frame.winfo_children()) > 1 else None)
+            text_widget.config(state="normal")
+            text_widget.focus_set()
+            text_widget.tag_add("edit_outline", start, end)
+            text_widget.tag_configure("edit_outline", background=UI_THEME.get("surface_alt", "#1F2937"), foreground=UI_THEME.get("text", "#E6EDF3"))
+            text_widget.mark_set("insert", start)
         except Exception:
             pass
 
-        target["texto"] = new_text
-        strict, inferred = build_structured_fields(new_text) if build_structured_fields else ({}, {})
-        target["campos_extraidos_confirmados"] = strict
-        target["campos_extraidos_inferidos"] = inferred
-        target["campos_extraidos"] = _extract_multi_fields(new_text)
-        try:
-            _atomic_write(path, {"registros": registros})
-        except Exception as exc:
-            report_status("ux_metrics", "ERROR", stage="edit_save_error", details={"error": str(exc)})
-            raise
-        report_status("ux_metrics", "OK", stage="edit_save", details={"path": os.path.basename(path), "screen": "monitor"})
-        if log_audit_event:
-            log_audit_event("texto_editado", os.path.basename(path), new_text)
-            log_audit_event("campos_reextraidos", os.path.basename(path), new_text)
-
-        edit_status_var.set("Salvo com sucesso")
-        try:
-            edit_badge.configure(bg=UI_THEME.get("success", "#2DA44E"), fg=UI_THEME.get("on_success", UI_THEME.get("text", "#E6EDF3")))
-        except Exception:
-            pass
-        _finish_editing(reload_text=True)
-
-    build_secondary_button(action_frame, "Editar", enable_edit, padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
-    build_primary_button(action_frame, "Salvar", save_edit, padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
-    build_secondary_button(action_frame, "Cancelar", cancel_edit, padx=18).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
-
-    _text_action_ui[text_widget] = {
-        "frame": action_frame,
-        "hide": hide_actions,
-        "show": show_actions,
-        "current": current,
-        "is_editing": is_editing,
-    }
-
-    def on_click(event):
-        if is_editing():
-            if edit_state.get("dirty"):
+        def _guard_key(event):
+            if not edit_state.get("active"):
+                return None
+            idx = text_widget.index("insert")
+            if not _in_edit_range(idx):
                 try:
-                    if not messagebox.askyesno("Alterações não salvas", "Deseja sair da edição sem salvar?"):
-                        return
+                    text_widget.mark_set("insert", edit_state["range"][0])
                 except Exception:
-                    return
-                cancel_edit()
-            else:
-                return
+                    pass
+                return "break"
+            edit_state["dirty"] = True
+            return None
+
+        try:
+            text_widget.bind("<KeyPress>", _guard_key, add="+")
+        except Exception:
+            pass
+
+        _toggle_edit_buttons(True)
+        _place_for_tag(rec_tag)
+        _place_toolbar_for_tag(rec_tag)
+
+    # ordem invertida solicitada (direita <- esquerda do pedido original): copiar, sem contato, avisado, editar, fechar
+    btn_copy = _mini_btn(buttons_row, "⧉", copy_record)
+    btn_down = _mini_btn(buttons_row, "▼", mark_sem_contato, glow=UI_THEME.get("danger", "#DC2626"))
+    btn_up = _mini_btn(buttons_row, "▲", mark_avisado, glow=UI_THEME.get("success", "#16A34A"))
+    btn_edit = _mini_btn(buttons_row, "✎", enable_edit)
+    btn_close = _mini_btn(buttons_row, "✕", delete_record, glow=UI_THEME.get("danger", "#DC2626"))
+    btn_save = _mini_btn(buttons_row, "💾", save_edit, glow=UI_THEME.get("success", "#16A34A"))
+    btn_cancel = _mini_btn(buttons_row, "↩", cancel_edit, glow=UI_THEME.get("danger", "#DC2626"))
+    _toggle_edit_buttons(False)
+
+    if is_orient_obs:
+        for lbl, cmd in [
+            ("H", _apply_heading),
+            ("B", _apply_bold),
+            ("I", _apply_italic),
+            ("🔗", _apply_link),
+            ("⟸", lambda: _apply_align("left")),
+            ("≡", lambda: _apply_align("center")),
+            ("⟹", lambda: _apply_align("right")),
+        ]:
+            _mini_btn(toolbar, lbl, cmd).pack(side=tk.LEFT, padx=1, pady=1)
+
+    def _tag_at_event(event):
         try:
             idx = text_widget.index(f"@{event.x},{event.y}")
             for tag in text_widget.tag_names(idx):
                 if "_record_" in tag:
-                    rec = _record_tag_map_generic.get(text_widget, {}).get(tag)
-                    if rec:
-                        current["record"] = rec
-                        current["rec_tag"] = tag
-                        show_actions()
-                        return
-            hide_actions()
+                    return tag
         except Exception:
+            return None
+        return None
+
+    def on_motion(event):
+        if current.get("pinned") or edit_state.get("active"):
             return
+        tag = _tag_at_event(event)
+        if tag:
+            _show_for(tag, pin=False)
+        else:
+            _hide_inline(unpin=False)
 
-    def on_click_outside(_event):
-        if is_editing():
+    def on_click(event):
+        tag = _tag_at_event(event)
+        if not tag:
+            if not edit_state.get("active"):
+                _hide_inline(unpin=True)
             return
-        hide_actions()
+        current["pinned"] = True
+        _show_for(tag, pin=True)
 
-    def on_key_change(_event):
-        if is_editing():
-            edit_state["dirty"] = True
+    def on_leave(_event):
+        if not current.get("pinned") and not edit_state.get("active"):
+            _hide_inline(unpin=False)
 
-    _bind_edit_shortcuts()
-    try:
-        text_widget.bind("<Button-1>", on_click, add="+")
-        text_widget.bind("<Key>", on_key_change, add="+")
-    except Exception:
-        pass
-    try:
-        frame.bind("<Button-1>", on_click_outside, add="+")
-    except Exception:
-        pass
+    text_widget.bind("<Motion>", on_motion, add="+")
+    text_widget.bind("<Button-1>", on_click, add="+")
+    text_widget.bind("<Leave>", on_leave, add="+")
+
+    _text_action_ui[text_widget] = {
+        "frame": inline_wrap,
+        "hide": lambda: _hide_inline(unpin=True),
+        "show": lambda: _show_for(current.get("rec_tag"), pin=True) if current.get("rec_tag") else None,
+        "current": current,
+        "is_editing": lambda: bool(edit_state.get("active")),
+    }
 
 
 class _ChatGPTLikeScrollbar(tk.Canvas):
@@ -4541,9 +4692,10 @@ def _build_monitor_ui(container):
         filter_bar._filter_target_widget = text_widget
         _filter_bars[str(filter_key)] = filter_bar
         _apply_filter_visibility(str(filter_key))
-        if formatter == format_encomenda_entry:
+        if formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry):
             text_widget.tag_configure("status_avisado", foreground=UI_THEME["status_avisado_text"])
             text_widget.tag_configure("status_sem_contato", foreground=UI_THEME["status_sem_contato_text"])
+        if formatter == format_encomenda_entry:
             text_widget.tag_configure("encomenda_selected", background=UI_THEME.get("selection_bg", UI_THEME["focus_bg"]), foreground=UI_THEME.get("selection_fg", UI_THEME["focus_text"]))
         if filter_key == "controle":
             text_widget.tag_configure("controle_selected", background=UI_THEME.get("selection_bg", UI_THEME["focus_bg"]), foreground=UI_THEME.get("selection_fg", UI_THEME["focus_text"]))
@@ -4554,9 +4706,7 @@ def _build_monitor_ui(container):
         _sticky_header_state[text_widget] = {"var": sticky_var, "formatter": formatter, "scroll_setter": text_scroll.set}
         _bind_sticky_header_updates(text_widget)
         _bind_hover_highlight(text_widget)
-        if formatter == format_encomenda_entry:
-            _build_encomenda_actions(frame, text_widget, info_label)
-        elif formatter in (format_orientacao_entry, format_observacao_entry):
+        if formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry):
             _build_text_actions(frame, text_widget, info_label, arquivo)
         if filter_key == "controle":
             details_panel = tk.Frame(details_host, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
