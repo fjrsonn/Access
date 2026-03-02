@@ -3488,6 +3488,7 @@ def _configure_monitor_scrollbar_style(style_obj):
             arrowsize=0,
             relief="flat",
             borderwidth=0,
+            width=12,
         )
         style_obj.map(
             "Monitor.ChatLike.Vertical.TScrollbar",
