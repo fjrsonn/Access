@@ -173,6 +173,7 @@ _layout_density_mode = "confortavel"
 _operation_mode_enabled = False
 _runtime_refresh_ms = REFRESH_MS
 _cards_last_update_at = None
+_cards_context_refresh_hook = None
 _control_filtered_count_var = None
 _control_toolbar = None
 _last_quick_filter_kind = None
@@ -1110,7 +1111,7 @@ def _collect_status_cards_data() -> dict:
 
 
 def _update_status_cards():
-    global _metrics_previous_cards, _cards_last_update_at
+    global _metrics_previous_cards, _cards_last_update_at, _cards_context_refresh_hook
     data = _collect_status_cards_data()
     ux = analisar_metricas_ux() if callable(analisar_metricas_ux) else {}
     now = datetime.now()
@@ -1129,6 +1130,12 @@ def _update_status_cards():
                 card.flash(260)
             except Exception:
                 pass
+    try:
+        if callable(_cards_context_refresh_hook):
+            _cards_context_refresh_hook()
+    except Exception:
+        pass
+
     _metrics_previous_cards = dict(data)
     if _metrics_accessibility_var is not None:
         try:
@@ -4402,6 +4409,16 @@ def _build_monitor_ui(container):
             consumo_day_var.set(f"Dia selecionado: {consumo_selected_day} • Usados: {total_selected} • Restantes(base1000): {restante_selected}")
             if _control_filtered_count_var is not None:
                 _control_filtered_count_var.set(f"{consumo_selected_day} Registros: {total_selected}")
+
+    def _refresh_cards_for_current_consumo_selection():
+        try:
+            _draw_days_timeline()
+            _animate_cards_for_day(consumo_selected_day, show_total=(consumo_selected_mode == "total"))
+        except Exception:
+            return
+
+    global _cards_context_refresh_hook
+    _cards_context_refresh_hook = _refresh_cards_for_current_consumo_selection
 
     consumo_days_canvas.bind("<Configure>", _draw_days_timeline, add="+")
     container.after(80, _draw_days_timeline)

@@ -404,6 +404,18 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('_update_status_cards()', source)
         self.assertIn('_forced_visible_records.setdefault(text_widget, set()).add(_record_force_visibility_key(rec))', source)
 
+    def test_update_status_cards_reapplies_selected_consumo_context(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._update_status_cards)
+        self.assertIn('if callable(_cards_context_refresh_hook):', source)
+        self.assertIn('_cards_context_refresh_hook()', source)
+
+    def test_monitor_ui_registers_cards_context_refresh_hook(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_monitor_ui)
+        self.assertIn('_cards_context_refresh_hook = _refresh_cards_for_current_consumo_selection', source)
+        self.assertIn('_animate_cards_for_day(consumo_selected_day, show_total=(consumo_selected_mode == "total"))', source)
+
     def test_text_actions_normalize_controle_status_filter_before_save(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_text_actions)
