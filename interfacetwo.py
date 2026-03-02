@@ -3392,6 +3392,7 @@ class _ChatGPTLikeScrollbar(tk.Canvas):
     def __init__(self, parent, *, command=None, width=10, **kwargs):
         self._track_bg = kwargs.pop("track_bg", UI_THEME.get("surface", "#151A22"))
         self._thumb_bg = kwargs.pop("thumb_bg", UI_THEME.get("text", "#E6EDF3"))
+        self._thumb_hover_bg = kwargs.pop("thumb_hover_bg", UI_THEME.get("focus_text", "#FFFFFF"))
         super().__init__(
             parent,
             width=width,
@@ -3406,11 +3407,14 @@ class _ChatGPTLikeScrollbar(tk.Canvas):
         self._last = 1.0
         self._drag_active = False
         self._drag_offset = 0
+        self._hover_active = False
         self._thumb_id = self.create_rectangle(0, 0, width, 20, fill=self._thumb_bg, outline=self._thumb_bg)
         self.bind("<Configure>", lambda _e: self._redraw())
         self.bind("<ButtonPress-1>", self._on_press)
         self.bind("<B1-Motion>", self._on_drag)
         self.bind("<ButtonRelease-1>", self._on_release)
+        self.bind("<Motion>", self._on_motion)
+        self.bind("<Leave>", self._on_leave)
 
     def set(self, first, last):
         try:
@@ -3434,7 +3438,8 @@ class _ChatGPTLikeScrollbar(tk.Canvas):
         w = max(self.winfo_width(), 1)
         top, bottom = self._thumb_bounds()
         self.coords(self._thumb_id, 0, top, w, bottom)
-        self.itemconfigure(self._thumb_id, fill=self._thumb_bg, outline=self._thumb_bg)
+        thumb_color = self._thumb_hover_bg if self._hover_active else self._thumb_bg
+        self.itemconfigure(self._thumb_id, fill=thumb_color, outline=thumb_color)
 
     def _on_press(self, event):
         top, bottom = self._thumb_bounds()
@@ -3458,6 +3463,18 @@ class _ChatGPTLikeScrollbar(tk.Canvas):
 
     def _on_release(self, _event):
         self._drag_active = False
+
+    def _on_motion(self, event):
+        top, bottom = self._thumb_bounds()
+        is_hover = top <= event.y <= bottom
+        if is_hover != self._hover_active:
+            self._hover_active = is_hover
+            self._redraw()
+
+    def _on_leave(self, _event):
+        if self._hover_active:
+            self._hover_active = False
+            self._redraw()
 
 
 def _create_safe_scrollbar(parent, *, use_ttk=True, style_name="Monitor.Vertical.TScrollbar", **kwargs):
@@ -4516,6 +4533,7 @@ def _build_monitor_ui(container):
             command=lambda *args, tw=text_widget: _scroll_text_widget(tw, *args),
             track_bg=UI_THEME.get("surface", "#151A22"),
             thumb_bg=UI_THEME.get("text", "#E6EDF3"),
+            thumb_hover_bg=UI_THEME.get("focus_text", "#FFFFFF"),
         )
         text_widget.configure(yscrollcommand=text_scroll.set)
         _bind_scrollbar_drag_behavior(text_scroll, text_widget)
