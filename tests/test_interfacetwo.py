@@ -366,6 +366,26 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('"_record_" in t', source)
         self.assertIn('tag:', source)
 
+    def test_text_actions_keep_hover_after_click_pin(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_text_actions)
+        self.assertIn('if edit_state.get("active"):', source)
+        self.assertNotIn('if current.get("pinned") or edit_state.get("active"):', source)
+
+    def test_text_actions_hide_inline_after_triangle_status_change(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_text_actions)
+        self.assertIn('_hide_inline(unpin=True)', source)
+        self.assertIn('_apply_record_status_style(rec_tag, new_status)', source)
+        self.assertIn('_update_status_cards()', source)
+        self.assertIn('_forced_visible_records.setdefault(text_widget, set()).add(_record_force_visibility_key(rec))', source)
+
+    def test_populate_text_keeps_triangle_updated_record_visible(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._populate_text)
+        self.assertIn('forced_tokens = _forced_visible_records.get(text_widget) or set()', source)
+        self.assertIn('if token in forced_tokens and rec not in filtrados:', source)
+
     def test_treeview_column_menu_controls_present(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_filter_bar)
