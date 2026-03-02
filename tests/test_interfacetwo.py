@@ -376,6 +376,8 @@ class InterfaceTwoTests(unittest.TestCase):
         import inspect
         source = inspect.getsource(interfacetwo._build_text_actions)
         self.assertIn('_hide_inline(unpin=True)', source)
+        self.assertIn('_apply_record_status_style(rec_tag, new_status)', source)
+        self.assertIn('_update_status_cards()', source)
 
     def test_treeview_column_menu_controls_present(self):
         import inspect

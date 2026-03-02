@@ -3200,6 +3200,28 @@ def _build_text_actions(frame, text_widget, info_label, path):
         _populate_text(text_widget, info_label)
         _update_status_cards()
 
+    def _apply_record_status_style(rec_tag, status):
+        try:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if not ranges or len(ranges) < 2:
+                return
+            start, end = ranges[0], ranges[1]
+            text_widget.config(state="normal")
+            text_widget.tag_remove("status_avisado", start, end)
+            text_widget.tag_remove("status_sem_contato", start, end)
+            status_up = str(status or "").strip().upper()
+            if status_up == "AVISADO":
+                text_widget.tag_add("status_avisado", start, end)
+            elif status_up == "SEM CONTATO":
+                text_widget.tag_add("status_sem_contato", start, end)
+        except Exception:
+            return
+        finally:
+            try:
+                text_widget.config(state="disabled")
+            except Exception:
+                pass
+
     def _hide_inline(unpin=False):
         if edit_state.get("active"):
             return
@@ -3295,19 +3317,26 @@ def _build_text_actions(frame, text_widget, info_label, path):
             return
         registros = _load_safe(path)
         updated = False
+        new_status = str(status or "").strip().upper()
         for r in registros:
             if _record_identity_match(r, rec):
                 if is_encomendas:
-                    r["STATUS_ENCOMENDA"] = status
+                    r["STATUS_ENCOMENDA"] = new_status
                     r["STATUS_DATA_HORA"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                    rec["STATUS_ENCOMENDA"] = new_status
+                    rec["STATUS_DATA_HORA"] = r["STATUS_DATA_HORA"]
                 else:
-                    r["STATUS"] = status
+                    r["STATUS"] = new_status
+                    rec["STATUS"] = new_status
                 updated = True
                 break
         if not updated:
             return
         _atomic_write(path, {"registros": registros})
-        _reload()
+        rec_tag = current.get("rec_tag")
+        if rec_tag:
+            _apply_record_status_style(rec_tag, new_status)
+        _update_status_cards()
         _hide_inline(unpin=True)
 
     def mark_avisado():
