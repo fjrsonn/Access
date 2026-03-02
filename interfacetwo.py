@@ -3386,6 +3386,80 @@ def _build_text_actions(frame, text_widget, info_label, path):
         pass
 
 
+class _ChatGPTLikeScrollbar(tk.Canvas):
+    """Lightweight custom vertical scrollbar with ChatGPT-like minimal visuals."""
+
+    def __init__(self, parent, *, command=None, width=10, **kwargs):
+        self._track_bg = kwargs.pop("track_bg", UI_THEME.get("surface", "#151A22"))
+        self._thumb_bg = kwargs.pop("thumb_bg", UI_THEME.get("text", "#E6EDF3"))
+        super().__init__(
+            parent,
+            width=width,
+            bg=self._track_bg,
+            highlightthickness=0,
+            bd=0,
+            relief="flat",
+            cursor="arrow",
+        )
+        self._command = command
+        self._first = 0.0
+        self._last = 1.0
+        self._drag_active = False
+        self._drag_offset = 0
+        self._thumb_id = self.create_rectangle(0, 0, width, 20, fill=self._thumb_bg, outline=self._thumb_bg)
+        self.bind("<Configure>", lambda _e: self._redraw())
+        self.bind("<ButtonPress-1>", self._on_press)
+        self.bind("<B1-Motion>", self._on_drag)
+        self.bind("<ButtonRelease-1>", self._on_release)
+
+    def set(self, first, last):
+        try:
+            self._first = max(0.0, min(float(first), 1.0))
+            self._last = max(self._first, min(float(last), 1.0))
+        except Exception:
+            self._first, self._last = 0.0, 1.0
+        self._redraw()
+
+    def _thumb_bounds(self):
+        h = max(self.winfo_height(), 1)
+        top = int(self._first * h)
+        bottom = int(self._last * h)
+        min_size = 28
+        if bottom - top < min_size:
+            bottom = min(h, top + min_size)
+            top = max(0, bottom - min_size)
+        return top, bottom
+
+    def _redraw(self):
+        w = max(self.winfo_width(), 1)
+        top, bottom = self._thumb_bounds()
+        self.coords(self._thumb_id, 0, top, w, bottom)
+        self.itemconfigure(self._thumb_id, fill=self._thumb_bg, outline=self._thumb_bg)
+
+    def _on_press(self, event):
+        top, bottom = self._thumb_bounds()
+        if top <= event.y <= bottom:
+            self._drag_active = True
+            self._drag_offset = event.y - top
+
+    def _on_drag(self, event):
+        if not self._drag_active:
+            return
+        h = max(self.winfo_height(), 1)
+        top, bottom = self._thumb_bounds()
+        thumb_h = max(bottom - top, 1)
+        new_top = min(max(event.y - self._drag_offset, 0), h - thumb_h)
+        fraction = new_top / float(h)
+        if callable(self._command):
+            try:
+                self._command("moveto", fraction)
+            except Exception:
+                return
+
+    def _on_release(self, _event):
+        self._drag_active = False
+
+
 def _create_safe_scrollbar(parent, *, use_ttk=True, style_name="Monitor.Vertical.TScrollbar", **kwargs):
     """Create a subtle themed scrollbar with graceful fallback for Tk option differences."""
     options = dict(kwargs)
@@ -3436,6 +3510,44 @@ def _create_safe_panedwindow(parent, **kwargs):
             options.pop(unsupported, None)
 
 
+def _bind_scrollbar_drag_behavior(scrollbar, text_widget):
+    """Allow click-and-drag only when interaction starts on the scrollbar thumb."""
+    drag_state = {"active": False}
+
+    def _is_thumb_hit(event):
+        try:
+            part = str(scrollbar.identify(event.x, event.y) or "").lower()
+        except Exception:
+            return False
+        return "thumb" in part
+
+    def _start_drag(event):
+        drag_state["active"] = _is_thumb_hit(event)
+        if drag_state["active"]:
+            _drag_to(event)
+
+    def _drag_to(event):
+        if not drag_state.get("active"):
+            return
+        try:
+            height = max(scrollbar.winfo_height(), 1)
+            fraction = min(max(float(event.y) / float(height), 0.0), 1.0)
+            _mark_text_interaction(text_widget)
+            text_widget.yview_moveto(fraction)
+        except Exception:
+            return
+
+    def _end_drag(_event):
+        drag_state["active"] = False
+
+    try:
+        scrollbar.bind("<ButtonPress-1>", _start_drag, add="+")
+        scrollbar.bind("<B1-Motion>", _drag_to, add="+")
+        scrollbar.bind("<ButtonRelease-1>", _end_drag, add="+")
+    except Exception:
+        pass
+
+
 def _configure_monitor_scrollbar_style(style_obj):
     """Apply a minimalist vertical scrollbar style aligned to monitor theme colors."""
     try:
@@ -3455,7 +3567,7 @@ def _configure_monitor_scrollbar_style(style_obj):
     except Exception:
         pass
     try:
-        thumb_color = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
+        thumb_color = UI_THEME.get("text", "#E6EDF3")
         thumb_active = UI_THEME.get("focus_text", "#FFFFFF")
         trough = UI_THEME.get("surface", "#151A22")
         style_obj.configure(
@@ -3463,13 +3575,14 @@ def _configure_monitor_scrollbar_style(style_obj):
             troughcolor=trough,
             background=thumb_color,
             bordercolor=trough,
-            lightcolor=trough,
-            darkcolor=trough,
+            lightcolor=thumb_color,
+            darkcolor=thumb_color,
             arrowcolor=trough,
             gripcount=0,
             arrowsize=0,
             relief="flat",
             borderwidth=0,
+            width=12,
         )
         style_obj.map(
             "Monitor.ChatLike.Vertical.TScrollbar",
@@ -4377,7 +4490,13 @@ def _build_monitor_ui(container):
         records_top_line = tk.Frame(records_host, bg="#000000", height=2)
         records_top_line.pack(fill=tk.X, padx=0, pady=(0, 0))
 
-        text_area_wrap = tk.Frame(records_host, bg=UI_THEME["surface"], highlightthickness=1, highlightbackground="#FF0000", bd=0)
+        text_area_wrap = tk.Frame(
+            records_host,
+            bg=UI_THEME["surface"],
+            highlightthickness=1,
+            highlightbackground=UI_THEME.get("border", "#2B3442"),
+            bd=0,
+        )
         text_widget = tk.Text(
             text_area_wrap,
             wrap="word",
@@ -4391,18 +4510,12 @@ def _build_monitor_ui(container):
             autoseparators=True,
             maxundo=-1,
         )
-        text_scroll = _create_safe_scrollbar(
+        text_scroll = _ChatGPTLikeScrollbar(
             text_area_wrap,
-            use_ttk=False,
-            orient=tk.VERTICAL,
+            width=10,
             command=lambda *args, tw=text_widget: _scroll_text_widget(tw, *args),
-            relief="flat",
-            bd=0,
-            highlightthickness=0,
-            troughcolor=UI_THEME.get("surface", "#151A22"),
-            activebackground=UI_THEME.get("focus_text", "#FFFFFF"),
-            bg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
-            width=12,
+            track_bg=UI_THEME.get("surface", "#151A22"),
+            thumb_bg=UI_THEME.get("text", "#E6EDF3"),
         )
         text_widget.configure(yscrollcommand=text_scroll.set)
         filter_bar = _build_filter_bar(frame, filter_key, info_label, target_widget=text_widget)
