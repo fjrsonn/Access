@@ -366,6 +366,17 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('"_record_" in t', source)
         self.assertIn('tag:', source)
 
+    def test_text_actions_keep_hover_after_click_pin(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_text_actions)
+        self.assertIn('if edit_state.get("active"):', source)
+        self.assertNotIn('if current.get("pinned") or edit_state.get("active"):', source)
+
+    def test_text_actions_hide_inline_after_triangle_status_change(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_text_actions)
+        self.assertIn('_hide_inline(unpin=True)', source)
+
     def test_treeview_column_menu_controls_present(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_filter_bar)

@@ -3308,8 +3308,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
             return
         _atomic_write(path, {"registros": registros})
         _reload()
-        if current.get("rec_tag"):
-            _show_for(current.get("rec_tag"), pin=True)
+        _hide_inline(unpin=True)
 
     def mark_avisado():
         apply_status("AVISADO")
@@ -3503,7 +3502,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
         return None
 
     def on_motion(event):
-        if current.get("pinned") or edit_state.get("active"):
+        if edit_state.get("active"):
             return
         tag = _tag_at_event(event)
         if tag:
