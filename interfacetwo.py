@@ -3143,7 +3143,9 @@ def _build_text_actions(frame, text_widget, info_label, path):
     inline_wrap = tk.Frame(text_widget, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
     buttons_row = tk.Frame(inline_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
     buttons_row.pack(side=tk.TOP, fill=tk.X)
-    toolbar = tk.Frame(inline_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    toolbar_wrap = tk.Frame(text_widget, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    toolbar = tk.Frame(toolbar_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    toolbar.pack(side=tk.TOP, fill=tk.X)
 
     _inline_state = {"visible": False, "tag": None}
 
@@ -3205,6 +3207,10 @@ def _build_text_actions(frame, text_widget, info_label, path):
             inline_wrap.place_forget()
         except Exception:
             pass
+        try:
+            toolbar_wrap.place_forget()
+        except Exception:
+            pass
         _inline_state["visible"] = False
         _inline_state["tag"] = None
         if unpin:
@@ -3226,12 +3232,35 @@ def _build_text_actions(frame, text_widget, info_label, path):
             x, y, w, h = box
             inline_wrap.update_idletasks()
             fw = max(inline_wrap.winfo_reqwidth(), 80)
+            fh = max(inline_wrap.winfo_reqheight(), max(18, h))
             tx = max(8, text_widget.winfo_width() - fw - 12)
-            ty = max(0, y)
+            ty = max(0, y + max(0, (h - fh) // 2))
             inline_wrap.place(x=tx, y=ty)
             inline_wrap.lift()
             _inline_state["visible"] = True
             _inline_state["tag"] = rec_tag
+        except Exception:
+            return
+
+    def _place_toolbar_for_tag(rec_tag):
+        if not is_orient_obs:
+            return
+        try:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if not ranges or len(ranges) < 2:
+                return
+            start = ranges[0]
+            box = text_widget.bbox(start)
+            if not box:
+                return
+            x, y, w, h = box
+            toolbar_wrap.update_idletasks()
+            tw = max(toolbar_wrap.winfo_reqwidth(), 120)
+            th = max(toolbar_wrap.winfo_reqheight(), 20)
+            tx = max(8, min(int(x), max(8, text_widget.winfo_width() - tw - 10)))
+            ty = max(0, y - th - 2)
+            toolbar_wrap.place(x=tx, y=ty)
+            toolbar_wrap.lift()
         except Exception:
             return
 
@@ -3335,7 +3364,8 @@ def _build_text_actions(frame, text_widget, info_label, path):
         edit_state.update({"active": False, "tag": None, "dirty": False, "range": None})
         _text_edit_lock.discard(text_widget)
         _set_filters_enabled(True)
-        toolbar.pack_forget()
+        toolbar_wrap.place_forget()
+        _toggle_edit_buttons(False)
         try:
             text_widget.unbind("<KeyPress>", edit_state.get("_bind_key"))
         except Exception:
@@ -3426,10 +3456,9 @@ def _build_text_actions(frame, text_widget, info_label, path):
         except Exception:
             pass
 
-        if is_orient_obs:
-            toolbar.pack(side=tk.TOP, fill=tk.X, pady=(0, 2))
         _toggle_edit_buttons(True)
         _place_for_tag(rec_tag)
+        _place_toolbar_for_tag(rec_tag)
 
     # ordem invertida solicitada (direita <- esquerda do pedido original): copiar, sem contato, avisado, editar, fechar
     btn_copy = _mini_btn(buttons_row, "⧉", copy_record)
