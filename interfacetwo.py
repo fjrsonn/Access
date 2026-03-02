@@ -4377,7 +4377,13 @@ def _build_monitor_ui(container):
         records_top_line = tk.Frame(records_host, bg="#000000", height=2)
         records_top_line.pack(fill=tk.X, padx=0, pady=(0, 0))
 
-        text_area_wrap = tk.Frame(records_host, bg=UI_THEME["surface"], highlightthickness=1, highlightbackground="#FF0000", bd=0)
+        text_area_wrap = tk.Frame(
+            records_host,
+            bg=UI_THEME["surface"],
+            highlightthickness=1,
+            highlightbackground=UI_THEME.get("border", "#2B3442"),
+            bd=0,
+        )
         text_widget = tk.Text(
             text_area_wrap,
             wrap="word",
@@ -4393,16 +4399,10 @@ def _build_monitor_ui(container):
         )
         text_scroll = _create_safe_scrollbar(
             text_area_wrap,
-            use_ttk=False,
+            use_ttk=True,
+            style_name="Monitor.ChatLike.Vertical.TScrollbar",
             orient=tk.VERTICAL,
             command=lambda *args, tw=text_widget: _scroll_text_widget(tw, *args),
-            relief="flat",
-            bd=0,
-            highlightthickness=0,
-            troughcolor=UI_THEME.get("surface", "#151A22"),
-            activebackground=UI_THEME.get("focus_text", "#FFFFFF"),
-            bg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
-            width=12,
         )
         text_widget.configure(yscrollcommand=text_scroll.set)
         filter_bar = _build_filter_bar(frame, filter_key, info_label, target_widget=text_widget)
