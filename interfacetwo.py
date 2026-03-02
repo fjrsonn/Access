@@ -3437,8 +3437,24 @@ def _create_safe_panedwindow(parent, **kwargs):
 
 
 def _bind_scrollbar_drag_behavior(scrollbar, text_widget):
-    """Allow click-and-drag on the custom scrollbar area to control text scrolling."""
+    """Allow click-and-drag only when interaction starts on the scrollbar thumb."""
+    drag_state = {"active": False}
+
+    def _is_thumb_hit(event):
+        try:
+            part = str(scrollbar.identify(event.x, event.y) or "").lower()
+        except Exception:
+            return False
+        return "thumb" in part
+
+    def _start_drag(event):
+        drag_state["active"] = _is_thumb_hit(event)
+        if drag_state["active"]:
+            _drag_to(event)
+
     def _drag_to(event):
+        if not drag_state.get("active"):
+            return
         try:
             height = max(scrollbar.winfo_height(), 1)
             fraction = min(max(float(event.y) / float(height), 0.0), 1.0)
@@ -3447,9 +3463,13 @@ def _bind_scrollbar_drag_behavior(scrollbar, text_widget):
         except Exception:
             return
 
+    def _end_drag(_event):
+        drag_state["active"] = False
+
     try:
-        scrollbar.bind("<ButtonPress-1>", _drag_to, add="+")
+        scrollbar.bind("<ButtonPress-1>", _start_drag, add="+")
         scrollbar.bind("<B1-Motion>", _drag_to, add="+")
+        scrollbar.bind("<ButtonRelease-1>", _end_drag, add="+")
     except Exception:
         pass
 
