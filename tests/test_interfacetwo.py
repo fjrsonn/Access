@@ -405,9 +405,10 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('def _place_tail_for_tag(rec_tag):', source)
         self.assertIn('line_text.find("[ID ")', source)
         self.assertIn('line_end = text_widget.index(f"{start} lineend")', source)
-        self.assertIn('target_idx = f"{start} + {max(2, id_pos - 4)}c"', source)
-        self.assertIn('tx = max(8, int(x - max(sw + 4, 18)))', source)
-        self.assertIn('ty = max(0, int(y + max(0, (h - sh) // 2) - 2))', source)
+        self.assertIn('gap_start = 6', source)
+        self.assertIn('id_pos = line_text.find("[ID ")', source)
+        self.assertIn('tx = max(8, min(left_x + max(0, (right_x - left_x - sw) // 2), text_widget.winfo_width() - sw - 8))', source)
+        self.assertIn('ty = max(0, int(y + max(0, (h - sh) // 2) - 1))', source)
 
     def test_text_actions_hide_inline_after_triangle_status_change(self):
         import inspect
@@ -452,7 +453,7 @@ class InterfaceTwoTests(unittest.TestCase):
     def test_populate_text_adds_gap_between_row_number_and_id_text(self):
         import inspect
         source = inspect.getsource(interfacetwo._populate_text)
-        self.assertIn('numbered = f"{marker} {idx + 1:>3}      {linha}"', source)
+        self.assertIn('numbered = f"{marker} {idx + 1:>3}            {linha}"', source)
 
     def test_populate_text_keeps_triangle_updated_record_visible(self):
         import inspect
