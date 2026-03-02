@@ -4886,6 +4886,11 @@ def _build_monitor_ui(container):
     if op_mode_var.get():
         _toggle_operation_mode()
     try:
+        for target in monitor_widgets:
+            _populate_text(target, info_label)
+    except Exception:
+        pass
+    try:
         container.after(3000, _play_metric_cards_intro_animation)
     except Exception:
         pass
