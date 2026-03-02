@@ -170,7 +170,7 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertEqual(registros[0].get('NOME'), 'LUCAS')
 
 
-    def test_collect_status_cards_data_counts_pending_without_sem_contato(self):
+    def test_collect_status_cards_data_uses_monitor_totals_for_pending(self):
         original_load_safe = interfacetwo._load_safe
 
         def fake_load_safe(path):
@@ -193,11 +193,35 @@ class InterfaceTwoTests(unittest.TestCase):
         finally:
             interfacetwo._load_safe = original_load_safe
 
-        self.assertEqual(out.get('ativos'), 2)
-        self.assertEqual(out.get('pendentes'), 3)
+        self.assertEqual(out.get('ativos'), 5)
+        self.assertEqual(out.get('pendentes'), 1)
         self.assertEqual(out.get('sem_contato'), 2)
         self.assertEqual(out.get('avisado'), 2)
         self.assertEqual(out.get('alta_severidade'), 1)
+
+
+    def test_collect_status_cards_data_counts_non_classified_as_pending(self):
+        original_load_safe = interfacetwo._load_safe
+
+        def fake_load_safe(path):
+            if path in (interfacetwo.ANALISES_ARQUIVO, interfacetwo.AVISOS_ARQUIVO):
+                return []
+            if path == interfacetwo.ARQUIVO:
+                return [{"STATUS": "MORADOR"}, {"STATUS": "VISITANTE"}]
+            if path == interfacetwo.ENCOMENDAS_ARQUIVO:
+                return [{"STATUS_ENCOMENDA": "SEM CONTATO"}]
+            return []
+
+        interfacetwo._load_safe = fake_load_safe
+        try:
+            out = interfacetwo._collect_status_cards_data()
+        finally:
+            interfacetwo._load_safe = original_load_safe
+
+        self.assertEqual(out.get('ativos'), 3)
+        self.assertEqual(out.get('sem_contato'), 1)
+        self.assertEqual(out.get('avisado'), 0)
+        self.assertEqual(out.get('pendentes'), 2)
 
     def test_filter_bar_defines_save_preset_before_button_binding(self):
         import inspect
@@ -379,6 +403,31 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('_apply_record_status_style(rec_tag, new_status)', source)
         self.assertIn('_update_status_cards()', source)
         self.assertIn('_forced_visible_records.setdefault(text_widget, set()).add(_record_force_visibility_key(rec))', source)
+
+    def test_update_status_cards_reapplies_selected_consumo_context(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._update_status_cards)
+        self.assertIn('if callable(_cards_context_refresh_hook):', source)
+        self.assertIn('_cards_context_refresh_hook()', source)
+
+    def test_monitor_ui_populates_records_on_startup_for_status_sync(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_monitor_ui)
+        self.assertIn('for target in monitor_widgets:', source)
+        self.assertIn('_populate_text(target, info_label)', source)
+
+    def test_monitor_ui_registers_cards_context_refresh_hook(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_monitor_ui)
+        self.assertIn('_cards_context_refresh_hook = _refresh_cards_for_current_consumo_selection', source)
+        self.assertIn('_animate_cards_for_day(consumo_selected_day, show_total=(consumo_selected_mode == "total"))', source)
+
+    def test_text_actions_normalize_controle_status_filter_before_save(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_text_actions)
+        self.assertIn('if filter_key == "controle":', source)
+        self.assertIn('current_filter["status"] = "Todos"', source)
+        self.assertIn('_filter_state[filter_key] = current_filter', source)
 
     def test_populate_text_keeps_triangle_updated_record_visible(self):
         import inspect
