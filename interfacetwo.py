@@ -3590,7 +3590,7 @@ def _configure_monitor_scrollbar_style(style_obj):
         style_obj.configure(
             "Monitor.ChatLike.Vertical.TScrollbar",
             troughcolor=trough,
-            background=thumb_color,
+            background=trough,
             bordercolor=trough,
             lightcolor=thumb_color,
             darkcolor=thumb_color,
@@ -4536,6 +4536,7 @@ def _build_monitor_ui(container):
             thumb_hover_bg=UI_THEME.get("focus_text", "#FFFFFF"),
         )
         text_widget.configure(yscrollcommand=text_scroll.set)
+        _bind_scrollbar_drag_behavior(text_scroll, text_widget)
         filter_bar = _build_filter_bar(frame, filter_key, info_label, target_widget=text_widget)
         filter_bar._filter_target_widget = text_widget
         _filter_bars[str(filter_key)] = filter_bar
