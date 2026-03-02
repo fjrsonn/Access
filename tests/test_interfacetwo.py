@@ -404,17 +404,24 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('_update_status_cards()', source)
         self.assertIn('_forced_visible_records.setdefault(text_widget, set()).add(_record_force_visibility_key(rec))', source)
 
+    def test_cards_context_refresh_only_after_user_timeline_selection(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_monitor_ui)
+        self.assertIn('global _cards_context_user_selected', source)
+        self.assertIn('_cards_context_user_selected = True', source)
+        self.assertIn('if not _cards_context_user_selected:', source)
+
     def test_update_status_cards_reapplies_selected_consumo_context(self):
         import inspect
         source = inspect.getsource(interfacetwo._update_status_cards)
         self.assertIn('if callable(_cards_context_refresh_hook):', source)
         self.assertIn('_cards_context_refresh_hook()', source)
 
-    def test_monitor_ui_populates_records_on_startup_for_status_sync(self):
+    def test_monitor_ui_normalizes_controle_filter_status_on_startup(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_monitor_ui)
-        self.assertIn('for target in monitor_widgets:', source)
-        self.assertIn('_populate_text(target, info_label)', source)
+        self.assertIn('controle_filters = dict(_filter_state.get("controle") or _default_filters())', source)
+        self.assertIn('controle_filters["status"] = "Todos"', source)
 
     def test_monitor_ui_registers_cards_context_refresh_hook(self):
         import inspect

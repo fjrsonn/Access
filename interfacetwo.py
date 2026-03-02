@@ -174,6 +174,7 @@ _operation_mode_enabled = False
 _runtime_refresh_ms = REFRESH_MS
 _cards_last_update_at = None
 _cards_context_refresh_hook = None
+_cards_context_user_selected = False
 _control_filtered_count_var = None
 _control_toolbar = None
 _last_quick_filter_kind = None
@@ -3827,6 +3828,12 @@ def _configure_monitor_scrollbar_style(style_obj):
 
 def _build_monitor_ui(container):
     prefs = _restore_ui_state()
+    try:
+        controle_filters = dict(_filter_state.get("controle") or _default_filters())
+        controle_filters["status"] = "Todos"
+        _filter_state["controle"] = controle_filters
+    except Exception:
+        pass
     _apply_light_theme(container)
     apply_ttk_theme_styles(container)
     style = ttk.Style(container)
@@ -4332,6 +4339,8 @@ def _build_monitor_ui(container):
 
         def _on_day_click(day_key: str, show_total: bool = False):
             nonlocal consumo_selected_day, consumo_selected_mode
+            global _cards_context_user_selected
+            _cards_context_user_selected = True
             consumo_selected_day = day_key
             consumo_selected_mode = "total" if show_total else "day"
             if show_total:
@@ -4411,6 +4420,9 @@ def _build_monitor_ui(container):
                 _control_filtered_count_var.set(f"{consumo_selected_day} Registros: {total_selected}")
 
     def _refresh_cards_for_current_consumo_selection():
+        global _cards_context_user_selected
+        if not _cards_context_user_selected:
+            return
         try:
             _draw_days_timeline()
             _animate_cards_for_day(consumo_selected_day, show_total=(consumo_selected_mode == "total"))
