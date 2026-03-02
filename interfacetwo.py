@@ -4393,16 +4393,16 @@ def _build_monitor_ui(container):
         )
         text_scroll = _create_safe_scrollbar(
             text_area_wrap,
+            use_ttk=False,
             orient=tk.VERTICAL,
-            style_name="Monitor.ChatLike.Vertical.TScrollbar",
             command=lambda *args, tw=text_widget: _scroll_text_widget(tw, *args),
             relief="flat",
             bd=0,
             highlightthickness=0,
             troughcolor=UI_THEME.get("surface", "#151A22"),
-            activebackground=UI_THEME.get("focus_bg", "#51617D"),
-            bg=UI_THEME.get("surface", "#151A22"),
-            width=8,
+            activebackground=UI_THEME.get("focus_text", "#FFFFFF"),
+            bg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
+            width=12,
         )
         text_widget.configure(yscrollcommand=text_scroll.set)
         filter_bar = _build_filter_bar(frame, filter_key, info_label, target_widget=text_widget)
