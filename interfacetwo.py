@@ -2124,7 +2124,6 @@ def _populate_text(text_widget, info_label):
                 text_widget.tag_add("line_number", start, f"{start} + {len(prefix)}c")
                 text_widget.tag_configure(num_tag, foreground=UI_THEME.get("muted_text", "#A6A6A6"))
                 text_widget.tag_bind(num_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_line_number_click(tw, rec, tag, pos))
-                text_widget.tag_bind(num_tag, "<Enter>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _record_on_tag_click(tw, rec, ev, tag, pos))
                 _record_num_tag_map.setdefault(text_widget, {})[rec_tag] = num_tag
             except Exception:
                 pass
