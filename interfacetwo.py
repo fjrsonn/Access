@@ -3479,10 +3479,10 @@ def _configure_monitor_scrollbar_style(style_obj):
         style_obj.configure(
             "Monitor.ChatLike.Vertical.TScrollbar",
             troughcolor=trough,
-            background=thumb_color,
+            background=trough,
             bordercolor=trough,
-            lightcolor=trough,
-            darkcolor=trough,
+            lightcolor=thumb_color,
+            darkcolor=thumb_color,
             arrowcolor=trough,
             gripcount=0,
             arrowsize=0,
