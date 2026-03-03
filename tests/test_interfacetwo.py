@@ -371,7 +371,8 @@ class InterfaceTwoTests(unittest.TestCase):
         import inspect
         source = inspect.getsource(interfacetwo._build_text_actions)
         self.assertIn('end_idx = text_widget.index(f"{end} -1c")', source)
-        self.assertIn('tx_preferred = int(x + w - fw - 4)', source)
+        self.assertIn('scan_idx = end_idx', source)
+        self.assertIn('tx_preferred = int(x + w + 2)', source)
 
     def test_text_actions_keep_hover_after_click_pin(self):
         import inspect

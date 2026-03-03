@@ -3461,7 +3461,21 @@ def _build_text_actions(frame, text_widget, info_label, path):
             if not ranges or len(ranges) < 2:
                 return
             start, end = ranges[0], ranges[1]
+            # usa o último caractere visível real do registro (ignorando quebras de linha finais)
             end_idx = text_widget.index(f"{end} -1c")
+            scan_idx = end_idx
+            for _ in range(6):
+                try:
+                    ch = text_widget.get(scan_idx)
+                except Exception:
+                    break
+                if ch and ch not in ("\n", "\r"):
+                    break
+                prev_idx = text_widget.index(f"{scan_idx} -1c")
+                if prev_idx == scan_idx or text_widget.compare(prev_idx, "<", start):
+                    break
+                scan_idx = prev_idx
+            end_idx = scan_idx
             box = text_widget.bbox(end_idx)
             if not box:
                 box = text_widget.bbox(start)
@@ -3471,9 +3485,8 @@ def _build_text_actions(frame, text_widget, info_label, path):
             inline_wrap.update_idletasks()
             fw = max(inline_wrap.winfo_reqwidth(), 80)
             fh = max(inline_wrap.winfo_reqheight(), 16)
-            # posiciona o painel o mais próximo possível do fim visual do texto do registro
-            # mantendo o painel dentro da área visível do widget
-            tx_preferred = int(x + w - fw - 4)
+            # nasce imediatamente após o final do texto do registro
+            tx_preferred = int(x + w + 2)
             tx_limit = max(8, text_widget.winfo_width() - fw - 12)
             tx = max(8, min(tx_preferred, tx_limit))
             ty = max(0, y + max(0, (h - fh) // 2))
