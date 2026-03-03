@@ -227,9 +227,6 @@ def _set_record_marker(text_widget, rec_tag: str, active: bool):
         except Exception:
             return
         return
-    bullet_tag = (_record_bullet_tag_map.get(text_widget, {}) or {}).get(rec_tag)
-    if not bullet_tag:
-        return
     try:
         idx = int(str(rec_tag).rsplit("_", 1)[1])
     except Exception:
@@ -3658,14 +3655,29 @@ def _build_text_actions(frame, text_widget, info_label, path):
             text_widget.tag_add("align_edit", rng[0], rng[1])
         edit_state["dirty"] = True
 
-    def _in_edit_range(idx):
-        # Em modo edição livre, o usuário pode expandir o conteúdo do registro
-        # com novas linhas sem limite rígido de fim.
-        rng = edit_state.get("range")
-        if not rng:
-            return False
+    def _active_edit_bounds():
+        base = edit_state.get("range")
+        if not base:
+            return None
+        start = base[0]
+        active_tag = edit_state.get("tag")
+        if not active_tag:
+            return (start, base[1])
         try:
-            return text_widget.compare(idx, ">=", rng[0])
+            ranges = text_widget.tag_ranges(active_tag)
+            if ranges and len(ranges) >= 2:
+                return (start, ranges[1])
+        except Exception:
+            pass
+        return (start, base[1])
+
+    def _in_edit_range(idx):
+        bounds = _active_edit_bounds()
+        if not bounds:
+            return False
+        start, end = bounds
+        try:
+            return text_widget.compare(idx, ">=", start) and text_widget.compare(idx, "<=", end)
         except Exception:
             return False
 
@@ -3707,13 +3719,16 @@ def _build_text_actions(frame, text_widget, info_label, path):
         return "insert"
 
     def _keep_insert_inside_edit_range():
-        rng = edit_state.get("range")
-        if not rng:
+        bounds = _active_edit_bounds()
+        if not bounds:
             return
+        start, end = bounds
         try:
             idx = text_widget.index("insert")
-            if text_widget.compare(idx, "<", rng[0]):
-                text_widget.mark_set("insert", rng[0])
+            if text_widget.compare(idx, "<", start):
+                text_widget.mark_set("insert", start)
+            elif text_widget.compare(idx, ">", end):
+                text_widget.mark_set("insert", end)
         except Exception:
             return
 
@@ -3808,18 +3823,21 @@ def _build_text_actions(frame, text_widget, info_label, path):
             if not edit_state.get("active"):
                 return None
             _keep_insert_inside_edit_range()
-            rng = edit_state.get("range")
-            if not rng:
+            bounds = _active_edit_bounds()
+            if not bounds:
                 return "break"
+            rng_start, rng_end = bounds
             idx = text_widget.index("insert")
             sel_start = text_widget.index("sel.first") if text_widget.tag_ranges("sel") else None
             sel_end = text_widget.index("sel.last") if text_widget.tag_ranges("sel") else None
-            if sel_start and text_widget.compare(sel_start, "<", rng[0]):
+            if sel_start and text_widget.compare(sel_start, "<", rng_start):
+                return "break"
+            if sel_end and text_widget.compare(sel_end, ">", rng_end):
                 return "break"
             key = str(getattr(event, "keysym", "") or "")
             nav_keys = {"Left", "Right", "Up", "Down", "Home", "End", "Prior", "Next"}
             if key in {"BackSpace", "Delete"}:
-                if key == "BackSpace" and text_widget.compare(idx, "<=", rng[0]) and not sel_start:
+                if key == "BackSpace" and text_widget.compare(idx, "<=", rng_start) and not sel_start:
                     return "break"
             if not _in_edit_range(idx):
                 return "break"
@@ -3894,6 +3912,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
         if edit_state.get("active"):
             active_tag = edit_state.get("tag")
             if not tag or tag != active_tag:
+                _keep_insert_inside_edit_range()
                 return "break"
             try:
                 click_idx = text_widget.index(f"@{event.x},{event.y}")

@@ -442,5 +442,18 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('_edit_active_record_tag[text_widget] = rec_tag', source)
         self.assertIn('_set_record_marker(text_widget, _tag, _tag == rec_tag)', source)
 
+    def test_edit_range_uses_dynamic_tag_bounds(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_text_actions)
+        self.assertIn('def _active_edit_bounds():', source)
+        self.assertIn('ranges = text_widget.tag_ranges(active_tag)', source)
+        self.assertIn('text_widget.compare(idx, "<=", end)', source)
+
+    def test_edit_click_outside_active_tag_keeps_insert_confined(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_text_actions)
+        self.assertIn('if not tag or tag != active_tag:', source)
+        self.assertIn('_keep_insert_inside_edit_range()', source)
+
 if __name__ == "__main__":
     unittest.main()
