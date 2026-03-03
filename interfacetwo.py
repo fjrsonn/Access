@@ -3455,27 +3455,30 @@ def _build_text_actions(frame, text_widget, info_label, path):
             current["record"] = None
             current["rec_tag"] = None
 
-    def _place_for_tag(rec_tag):
+    def _place_for_tag(rec_tag, anchor_idx=None):
         try:
             ranges = text_widget.tag_ranges(rec_tag)
             if not ranges or len(ranges) < 2:
                 return
             start, end = ranges[0], ranges[1]
-            # usa o último caractere visível real do registro (ignorando quebras de linha finais)
-            end_idx = text_widget.index(f"{end} -1c")
-            scan_idx = end_idx
-            for _ in range(6):
-                try:
-                    ch = text_widget.get(scan_idx)
-                except Exception:
-                    break
-                if ch and ch not in ("\n", "\r"):
-                    break
-                prev_idx = text_widget.index(f"{scan_idx} -1c")
-                if prev_idx == scan_idx or text_widget.compare(prev_idx, "<", start):
-                    break
-                scan_idx = prev_idx
-            end_idx = scan_idx
+            if anchor_idx is not None:
+                end_idx = text_widget.index(anchor_idx)
+            else:
+                # usa o último caractere visível real do registro (ignorando quebras de linha finais)
+                end_idx = text_widget.index(f"{end} -1c")
+                scan_idx = end_idx
+                for _ in range(6):
+                    try:
+                        ch = text_widget.get(scan_idx)
+                    except Exception:
+                        break
+                    if ch and ch not in ("\n", "\r"):
+                        break
+                    prev_idx = text_widget.index(f"{scan_idx} -1c")
+                    if prev_idx == scan_idx or text_widget.compare(prev_idx, "<", start):
+                        break
+                    scan_idx = prev_idx
+                end_idx = scan_idx
             box = text_widget.bbox(end_idx)
             if not box:
                 box = text_widget.bbox(start)
@@ -3778,19 +3781,22 @@ def _build_text_actions(frame, text_widget, info_label, path):
             if sel_start and text_widget.compare(sel_start, "<", rng[0]):
                 return "break"
             key = str(getattr(event, "keysym", "") or "")
+            nav_keys = {"Left", "Right", "Up", "Down", "Home", "End", "Prior", "Next"}
             if key in {"BackSpace", "Delete"}:
                 if key == "BackSpace" and text_widget.compare(idx, "<=", rng[0]) and not sel_start:
                     return "break"
             if not _in_edit_range(idx):
                 return "break"
-            edit_state["dirty"] = True
-            text_widget.after_idle(lambda tag=rec_tag: _place_for_tag(tag))
+            if key not in nav_keys and not key.startswith("Shift") and not key.startswith("Control"):
+                edit_state["dirty"] = True
+            text_widget.after_idle(lambda tag=rec_tag: _place_for_tag(tag, anchor_idx="insert"))
             return None
 
         def _guard_pointer(_event=None):
             if not edit_state.get("active"):
                 return None
             _keep_insert_inside_edit_range()
+            text_widget.after_idle(lambda tag=rec_tag: _place_for_tag(tag, anchor_idx="insert"))
             return None
 
         try:
@@ -3801,7 +3807,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
             pass
 
         _toggle_edit_buttons(True)
-        _place_for_tag(rec_tag)
+        _place_for_tag(rec_tag, anchor_idx="insert")
         _place_toolbar_for_tag(rec_tag)
 
     # ordem invertida solicitada (direita <- esquerda do pedido original): copiar, sem contato, avisado, editar, fechar
@@ -3853,8 +3859,15 @@ def _build_text_actions(frame, text_widget, info_label, path):
             active_tag = edit_state.get("tag")
             if not tag or tag != active_tag:
                 return "break"
+            try:
+                click_idx = text_widget.index(f"@{event.x},{event.y}")
+                text_widget.mark_set("insert", click_idx)
+                _keep_insert_inside_edit_range()
+            except Exception:
+                pass
             current["pinned"] = True
             _show_for(active_tag, pin=True)
+            _place_for_tag(active_tag, anchor_idx="insert")
             return "break"
         if not tag:
             _hide_inline(unpin=True)
