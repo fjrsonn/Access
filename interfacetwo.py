@@ -3471,7 +3471,9 @@ def _build_text_actions(frame, text_widget, info_label, path):
             inline_wrap.update_idletasks()
             fw = max(inline_wrap.winfo_reqwidth(), 80)
             fh = max(inline_wrap.winfo_reqheight(), 16)
-            tx_preferred = int(x + w + 8)
+            # posiciona o painel o mais próximo possível do fim visual do texto do registro
+            # mantendo o painel dentro da área visível do widget
+            tx_preferred = int(x + w - fw - 4)
             tx_limit = max(8, text_widget.winfo_width() - fw - 12)
             tx = max(8, min(tx_preferred, tx_limit))
             ty = max(0, y + max(0, (h - fh) // 2))
