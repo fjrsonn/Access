@@ -401,6 +401,9 @@ class InterfaceTwoTests(unittest.TestCase):
         source = inspect.getsource(interfacetwo._build_text_actions)
         self.assertIn('btn_down = _mini_btn(status_row, "▼"', source)
         self.assertIn('btn_up = _mini_btn(status_row, "▲"', source)
+        self.assertIn('btn_down.configure(padx=1, pady=1)', source)
+        self.assertIn('btn_up.configure(padx=1, pady=1)', source)
+        self.assertIn('if (not pin) and _inline_state.get("visible") and _inline_state.get("tag") == tag', source)
         self.assertIn('def _place_status_for_tag(rec_tag):', source)
         self.assertIn('def _place_tail_for_tag(rec_tag):', source)
         self.assertIn('line_text.find("[ID ")', source)
@@ -408,7 +411,7 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('gap_start = 6', source)
         self.assertIn('id_pos = line_text.find("[ID ")', source)
         self.assertIn('tx = max(8, min(left_x + max(0, (right_x - left_x - sw) // 2), text_widget.winfo_width() - sw - 8))', source)
-        self.assertIn('ty = max(0, int(y + max(0, (h - sh) // 2) - 1))', source)
+        self.assertIn('ty = max(0, int(y + max(0, (h - sh) // 2) - 3))', source)
 
     def test_text_actions_hide_inline_after_triangle_status_change(self):
         import inspect
@@ -453,7 +456,9 @@ class InterfaceTwoTests(unittest.TestCase):
     def test_populate_text_adds_gap_between_row_number_and_id_text(self):
         import inspect
         source = inspect.getsource(interfacetwo._populate_text)
-        self.assertIn('numbered = f"{marker} {idx + 1:>3}            {linha}"', source)
+        self.assertIn('numbered = f"{marker} {idx + 1:>3}  {linha}"', source)
+        self.assertIn('if isinstance(linha, str) and linha.startswith("[ID "):', source)
+        self.assertIn('linha = f"    {linha}"', source)
 
     def test_populate_text_keeps_triangle_updated_record_visible(self):
         import inspect

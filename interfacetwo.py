@@ -2076,6 +2076,8 @@ def _populate_text(text_widget, info_label):
             prefix = "controle" if formatter == format_creative_entry else ("encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else "observacao"))
             rec_tag = f"{prefix}_record_{idx}"
         linha = formatter(r)
+        if isinstance(linha, str) and linha.startswith("[ID "):
+            linha = f"    {linha}"
         hover_idx = _text_hover_marker.get(text_widget)
         marker = "●" if idx in _text_breakpoints.get(text_widget, set()) or hover_idx == idx else " "
         numbered = f"{marker} {idx + 1:>3}            {linha}"
@@ -3307,7 +3309,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
                 tx = max(8, left_x)
             else:
                 tx = max(8, min(left_x + max(0, (right_x - left_x - sw) // 2), text_widget.winfo_width() - sw - 8))
-            ty = max(0, int(y + max(0, (h - sh) // 2) - 1))
+            ty = max(0, int(y + max(0, (h - sh) // 2) - 3))
             status_wrap.place(x=tx, y=ty)
             status_wrap.lift()
         except Exception:
@@ -3329,7 +3331,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
             fw = max(inline_wrap.winfo_reqwidth(), 80)
             fh = max(inline_wrap.winfo_reqheight(), 16)
             tx = max(8, min(int(x + w + 6), max(8, text_widget.winfo_width() - fw - 10)))
-            ty = max(0, int(y + max(0, (h - fh) // 2) - 1))
+            ty = max(0, int(y + max(0, (h - fh) // 2) - 3))
             inline_wrap.place(x=tx, y=ty)
             inline_wrap.lift()
             _inline_state["visible"] = True
@@ -3369,6 +3371,8 @@ def _build_text_actions(frame, text_widget, info_label, path):
     def _show_for(tag, pin=False):
         rec = _find_record_by_tag(tag)
         if not rec:
+            return
+        if (not pin) and _inline_state.get("visible") and _inline_state.get("tag") == tag and current.get("record") is rec:
             return
         current["record"] = rec
         current["rec_tag"] = tag
@@ -3548,7 +3552,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
             for b in (btn_copy, btn_edit, btn_close):
                 b.pack(side=tk.LEFT, padx=2, pady=3)
             for b in (btn_down, btn_up):
-                b.pack(side=tk.LEFT, padx=1, pady=2)
+                b.pack(side=tk.LEFT, padx=0, pady=1)
 
     def enable_edit():
         rec_tag = current.get("rec_tag")
@@ -3599,6 +3603,8 @@ def _build_text_actions(frame, text_widget, info_label, path):
     btn_copy = _mini_btn(buttons_row, "⧉", copy_record)
     btn_down = _mini_btn(status_row, "▼", mark_sem_contato, glow=UI_THEME.get("danger", "#DC2626"))
     btn_up = _mini_btn(status_row, "▲", mark_avisado, glow=UI_THEME.get("success", "#16A34A"))
+    btn_down.configure(padx=1, pady=1)
+    btn_up.configure(padx=1, pady=1)
     btn_edit = _mini_btn(buttons_row, "✎", enable_edit)
     btn_close = _mini_btn(buttons_row, "✕", delete_record, glow=UI_THEME.get("danger", "#DC2626"))
     btn_save = _mini_btn(buttons_row, "💾", save_edit, glow=UI_THEME.get("success", "#16A34A"))
