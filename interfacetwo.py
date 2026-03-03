@@ -3172,7 +3172,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
     toolbar.pack(side=tk.TOP, fill=tk.X)
 
     _inline_state = {"visible": False, "tag": None}
-    _hover_state = {"tag": None, "after_id": None, "last_ts": 0.0}
+    _hover_state = {"tag": None, "last_ts": 0.0}
 
     def _mini_btn(parent, label, cmd, glow=None):
         b = tk.Button(
@@ -3265,13 +3265,6 @@ def _build_text_actions(frame, text_widget, info_label, path):
         _inline_state["visible"] = False
         _inline_state["tag"] = None
         _hover_state["tag"] = None
-        aid = _hover_state.get("after_id")
-        if aid:
-            try:
-                text_widget.after_cancel(aid)
-            except Exception:
-                pass
-            _hover_state["after_id"] = None
         if unpin:
             current["pinned"] = False
             current["record"] = None
@@ -3661,7 +3654,10 @@ def _build_text_actions(frame, text_widget, info_label, path):
             return
         tag = _tag_at_event(event)
         if tag:
-            _schedule_show(tag, pin=False)
+            if _hover_state.get("tag") != tag:
+                _hover_state["tag"] = tag
+                _hover_state["last_ts"] = int(time.time() * 1000)
+                _show_for(tag, pin=False)
         else:
             _hide_inline(unpin=False)
 
