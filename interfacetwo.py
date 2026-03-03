@@ -2080,7 +2080,7 @@ def _populate_text(text_widget, info_label):
             linha = f"    {linha}"
         hover_idx = _text_hover_marker.get(text_widget)
         marker = "●" if idx in _text_breakpoints.get(text_widget, set()) or hover_idx == idx else " "
-        numbered = f"{marker} {idx + 1:>3}  {linha}"
+        numbered = f"{marker} {idx + 1:>3}            {linha}"
         text_tags = [row_tag]
         if rec_tag:
             text_tags.append(rec_tag)
@@ -4891,6 +4891,11 @@ def _build_monitor_ui(container):
     _apply_density()
     if op_mode_var.get():
         _toggle_operation_mode()
+    try:
+        for target in monitor_widgets:
+            _populate_text(target, info_label)
+    except Exception:
+        pass
     try:
         container.after(3000, _play_metric_cards_intro_animation)
     except Exception:
