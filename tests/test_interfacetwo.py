@@ -366,6 +366,23 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('"_record_" in t', source)
         self.assertIn('tag:', source)
 
+
+    def test_orient_obs_toolbar_is_packed_below_header_not_overlay(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_text_actions)
+        self.assertIn('toolbar_parent = frame if is_orient_obs else text_widget', source)
+        self.assertIn('toolbar_wrap.pack(', source)
+        self.assertIn('before=text_widget.master', source)
+
+    def test_inline_actions_are_positioned_from_record_end(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_text_actions)
+        self.assertIn('end_idx = text_widget.index(f"{end} -1c")', source)
+        self.assertIn('scan_idx = end_idx', source)
+        self.assertIn('tx_preferred = int(x + w + 2)', source)
+        self.assertIn('text_center_y = y + (h / 2)', source)
+        self.assertIn('icon_h = max(buttons_row.winfo_reqheight(), 12)', source)
+
     def test_text_actions_keep_hover_after_click_pin(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_text_actions)
@@ -413,6 +430,17 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertEqual(len(registros), 2)
         self.assertEqual(registros[1].get('NOME'), 'OTAVIO')
 
+    def test_edit_mode_forces_marker_visibility_only_for_active_record(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._set_record_marker)
+        self.assertIn('active_edit_tag = _edit_active_record_tag.get(text_widget)', source)
+        self.assertIn('if active_edit_tag and rec_tag != active_edit_tag:', source)
+
+    def test_enable_edit_registers_active_record_marker_scope(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_text_actions)
+        self.assertIn('_edit_active_record_tag[text_widget] = rec_tag', source)
+        self.assertIn('_set_record_marker(text_widget, _tag, _tag == rec_tag)', source)
 
 if __name__ == "__main__":
     unittest.main()
