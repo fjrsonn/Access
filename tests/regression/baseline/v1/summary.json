@@ -1,0 +1,30 @@
+{
+  "version": "v1",
+  "results": [
+    {
+      "id": "portaria_basico",
+      "kind": "save_text",
+      "outcome": {
+        "dadosinit_count": 1,
+        "dadosend_count": 1,
+        "entry_deleted": true
+      }
+    },
+    {
+      "id": "encomenda_basica",
+      "kind": "save_text",
+      "outcome": {
+        "dadosinit_count": 0,
+        "dadosend_count": 0,
+        "entry_deleted": true
+      }
+    },
+    {
+      "id": "ia_lock_ocupado",
+      "kind": "ia_lock",
+      "outcome": {
+        "stage_detected": "lock_not_acquired"
+      }
+    }
+  ]
+}
