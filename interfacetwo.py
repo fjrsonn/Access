@@ -3172,6 +3172,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
     toolbar.pack(side=tk.TOP, fill=tk.X)
 
     _inline_state = {"visible": False, "tag": None}
+    _hover_state = {"tag": None, "after_id": None, "last_ts": 0.0}
 
     def _mini_btn(parent, label, cmd, glow=None):
         b = tk.Button(
@@ -3263,6 +3264,14 @@ def _build_text_actions(frame, text_widget, info_label, path):
             pass
         _inline_state["visible"] = False
         _inline_state["tag"] = None
+        _hover_state["tag"] = None
+        aid = _hover_state.get("after_id")
+        if aid:
+            try:
+                text_widget.after_cancel(aid)
+            except Exception:
+                pass
+            _hover_state["after_id"] = None
         if unpin:
             current["pinned"] = False
             current["record"] = None
@@ -3309,7 +3318,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
                 tx = max(8, left_x)
             else:
                 tx = max(8, min(left_x + max(0, (right_x - left_x - sw) // 2), text_widget.winfo_width() - sw - 8))
-            ty = max(0, int(y + max(0, (h - sh) // 2) - 3))
+            ty = max(0, int(y + max(0, (h - sh) // 2) - 6))
             status_wrap.place(x=tx, y=ty)
             status_wrap.lift()
         except Exception:
@@ -3331,7 +3340,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
             fw = max(inline_wrap.winfo_reqwidth(), 80)
             fh = max(inline_wrap.winfo_reqheight(), 16)
             tx = max(8, min(int(x + w + 6), max(8, text_widget.winfo_width() - fw - 10)))
-            ty = max(0, int(y + max(0, (h - fh) // 2) - 3))
+            ty = max(0, int(y + max(0, (h - fh) // 2) - 6))
             inline_wrap.place(x=tx, y=ty)
             inline_wrap.lift()
             _inline_state["visible"] = True
@@ -3633,16 +3642,37 @@ def _build_text_actions(frame, text_widget, info_label, path):
             return None
         return None
 
+    def _schedule_show(tag, pin=False):
+        now_ms = int(time.time() * 1000)
+        if (not pin) and _hover_state.get("tag") == tag and (now_ms - int(_hover_state.get("last_ts") or 0)) < 24:
+            return
+        _hover_state["tag"] = tag
+        _hover_state["last_ts"] = now_ms
+        aid = _hover_state.get("after_id")
+        if aid:
+            try:
+                text_widget.after_cancel(aid)
+            except Exception:
+                pass
+        _hover_state["after_id"] = text_widget.after(12, lambda t=tag, p=pin: (_show_for(t, pin=p), _hover_state.update({"after_id": None})))
+
     def on_motion(event):
         if edit_state.get("active"):
             return
         tag = _tag_at_event(event)
         if tag:
-            _show_for(tag, pin=False)
+            _schedule_show(tag, pin=False)
         else:
             _hide_inline(unpin=False)
 
     def on_click(event):
+        aid = _hover_state.get("after_id")
+        if aid:
+            try:
+                text_widget.after_cancel(aid)
+            except Exception:
+                pass
+            _hover_state["after_id"] = None
         tag = _tag_at_event(event)
         if not tag:
             if not edit_state.get("active"):

@@ -404,6 +404,9 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('btn_down.configure(padx=1, pady=1)', source)
         self.assertIn('btn_up.configure(padx=1, pady=1)', source)
         self.assertIn('if (not pin) and _inline_state.get("visible") and _inline_state.get("tag") == tag', source)
+        self.assertIn('def _schedule_show(tag, pin=False):', source)
+        self.assertIn('_hover_state = {"tag": None, "after_id": None, "last_ts": 0.0}', source)
+        self.assertIn('_hover_state["after_id"] = text_widget.after(12', source)
         self.assertIn('def _place_status_for_tag(rec_tag):', source)
         self.assertIn('def _place_tail_for_tag(rec_tag):', source)
         self.assertIn('line_text.find("[ID ")', source)
@@ -411,7 +414,7 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('gap_start = 6', source)
         self.assertIn('id_pos = line_text.find("[ID ")', source)
         self.assertIn('tx = max(8, min(left_x + max(0, (right_x - left_x - sw) // 2), text_widget.winfo_width() - sw - 8))', source)
-        self.assertIn('ty = max(0, int(y + max(0, (h - sh) // 2) - 3))', source)
+        self.assertIn('ty = max(0, int(y + max(0, (h - sh) // 2) - 6))', source)
 
     def test_text_actions_hide_inline_after_triangle_status_change(self):
         import inspect
