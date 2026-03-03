@@ -366,6 +366,13 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('"_record_" in t', source)
         self.assertIn('tag:', source)
 
+
+    def test_inline_actions_are_positioned_from_record_end(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_text_actions)
+        self.assertIn('end_idx = text_widget.index(f"{end} -1c")', source)
+        self.assertIn('tx_preferred = int(x + w + 8)', source)
+
     def test_text_actions_keep_hover_after_click_pin(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_text_actions)
