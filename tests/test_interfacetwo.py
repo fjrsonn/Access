@@ -423,6 +423,5 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertEqual(len(registros), 2)
         self.assertEqual(registros[1].get('NOME'), 'OTAVIO')
 
-
 if __name__ == "__main__":
     unittest.main()

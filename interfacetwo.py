@@ -3683,12 +3683,18 @@ def _build_text_actions(frame, text_widget, info_label, path):
 
     def _edit_visual_anchor(rec_tag):
         rng = _editable_range_from_tag(rec_tag)
-        if not rng:
-            return "insert"
+        if rng:
+            try:
+                return text_widget.index(f"{rng[1]} -1c")
+            except Exception:
+                pass
         try:
-            return text_widget.index(f"{rng[1]} -1c")
+            ranges = text_widget.tag_ranges(rec_tag)
+            if ranges and len(ranges) >= 2:
+                return text_widget.index(f"{ranges[1]} -1c")
         except Exception:
-            return "insert"
+            pass
+        return "insert"
 
     def _keep_insert_inside_edit_range():
         rng = edit_state.get("range")
