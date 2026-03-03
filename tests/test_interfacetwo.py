@@ -430,5 +430,17 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertEqual(len(registros), 2)
         self.assertEqual(registros[1].get('NOME'), 'OTAVIO')
 
+    def test_edit_mode_forces_marker_visibility_only_for_active_record(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._set_record_marker)
+        self.assertIn('active_edit_tag = _edit_active_record_tag.get(text_widget)', source)
+        self.assertIn('if active_edit_tag and rec_tag != active_edit_tag:', source)
+
+    def test_enable_edit_registers_active_record_marker_scope(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_text_actions)
+        self.assertIn('_edit_active_record_tag[text_widget] = rec_tag', source)
+        self.assertIn('_set_record_marker(text_widget, _tag, _tag == rec_tag)', source)
+
 if __name__ == "__main__":
     unittest.main()

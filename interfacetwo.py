@@ -192,6 +192,7 @@ _sticky_header_state = {}
 _consumo_24h_por_dia = {}
 _text_last_interaction_ts = {}
 _forced_visible_records = {}
+_edit_active_record_tag = {}
 _hover_runtime_state = {}
 _hover_motion_callbacks = {}
 _data_load_cache = {}
@@ -214,7 +215,17 @@ def _scroll_text_widget(text_widget, *args):
 
 
 def _set_record_marker(text_widget, rec_tag: str, active: bool):
-    if text_widget in _text_edit_lock or not rec_tag:
+    if not rec_tag:
+        return
+    bullet_tag = (_record_bullet_tag_map.get(text_widget, {}) or {}).get(rec_tag)
+    if not bullet_tag:
+        return
+    active_edit_tag = _edit_active_record_tag.get(text_widget)
+    if active_edit_tag and rec_tag != active_edit_tag:
+        try:
+            text_widget.tag_configure(bullet_tag, foreground=UI_THEME.get("surface", "#151A22"))
+        except Exception:
+            return
         return
     bullet_tag = (_record_bullet_tag_map.get(text_widget, {}) or {}).get(rec_tag)
     if not bullet_tag:
@@ -224,7 +235,8 @@ def _set_record_marker(text_widget, rec_tag: str, active: bool):
     except Exception:
         idx = None
     is_fixed = idx in (_text_breakpoints.get(text_widget, set()) or set()) if idx is not None else False
-    bullet_color = UI_THEME.get("focus_text", "#FFFFFF") if (active or is_fixed) else UI_THEME.get("surface", "#151A22")
+    force_active = bool(active_edit_tag and rec_tag == active_edit_tag)
+    bullet_color = UI_THEME.get("focus_text", "#FFFFFF") if (active or is_fixed or force_active) else UI_THEME.get("surface", "#151A22")
     try:
         text_widget.tag_configure(bullet_tag, foreground=bullet_color)
     except Exception:
@@ -3708,6 +3720,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
     def _finish_editing(reload_text=True):
         edit_state.update({"active": False, "tag": None, "dirty": False, "range": None})
         _text_edit_lock.discard(text_widget)
+        _edit_active_record_tag.pop(text_widget, None)
         _set_filters_enabled(True)
         try:
             toolbar_wrap.place_forget()
@@ -3777,6 +3790,9 @@ def _build_text_actions(frame, text_widget, info_label, path):
             return
         start, end = editable_range
         edit_state.update({"active": True, "tag": rec_tag, "dirty": False, "range": (start, end)})
+        _edit_active_record_tag[text_widget] = rec_tag
+        for _tag in (_record_bullet_tag_map.get(text_widget, {}) or {}).keys():
+            _set_record_marker(text_widget, _tag, _tag == rec_tag)
         _text_edit_lock.add(text_widget)
         _set_filters_enabled(False)
         try:
