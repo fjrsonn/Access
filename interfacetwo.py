@@ -3650,9 +3650,44 @@ def _build_text_actions(frame, text_widget, info_label, path):
         if not rng:
             return False
         try:
-            return text_widget.compare(idx, ">=", rng[0]) and text_widget.compare(idx, "<=", rng[1])
+            return text_widget.compare(idx, ">=", rng[0]) and text_widget.compare(idx, "<", rng[1])
         except Exception:
             return False
+
+    def _editable_range_from_tag(rec_tag):
+        try:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if not ranges or len(ranges) < 2:
+                return None
+            start, end = ranges[0], ranges[1]
+            cursor = text_widget.index(f"{end} -1c")
+            for _ in range(16):
+                if text_widget.compare(cursor, "<", start):
+                    break
+                ch = text_widget.get(cursor)
+                if ch not in ("\n", "\r"):
+                    break
+                prev_cursor = text_widget.index(f"{cursor} -1c")
+                if prev_cursor == cursor:
+                    break
+                cursor = prev_cursor
+            final_end = text_widget.index(f"{cursor} +1c")
+            return (start, final_end)
+        except Exception:
+            return None
+
+    def _keep_insert_inside_edit_range():
+        rng = edit_state.get("range")
+        if not rng:
+            return
+        try:
+            idx = text_widget.index("insert")
+            if text_widget.compare(idx, "<", rng[0]):
+                text_widget.mark_set("insert", rng[0])
+            elif text_widget.compare(idx, ">", rng[1]):
+                text_widget.mark_set("insert", rng[1])
+        except Exception:
+            return
 
     def _finish_editing(reload_text=True):
         edit_state.update({"active": False, "tag": None, "dirty": False, "range": None})
@@ -3688,7 +3723,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
         if not rng:
             return
         try:
-            new_text = text_widget.get(rng[0], rng[1]).strip()
+            new_text = text_widget.get(rng[0], rng[1]).strip("\n\r")
         except Exception:
             return
         registros = _load_safe(path)
@@ -3713,13 +3748,10 @@ def _build_text_actions(frame, text_widget, info_label, path):
         rec_tag = current.get("rec_tag")
         if not rec_tag:
             return
-        try:
-            ranges = text_widget.tag_ranges(rec_tag)
-            if not ranges or len(ranges) < 2:
-                return
-            start, end = ranges[0], ranges[1]
-        except Exception:
+        editable_range = _editable_range_from_tag(rec_tag)
+        if not editable_range:
             return
+        start, end = editable_range
         edit_state.update({"active": True, "tag": rec_tag, "dirty": False, "range": (start, end)})
         _text_edit_lock.add(text_widget)
         _set_filters_enabled(False)
@@ -3735,18 +3767,38 @@ def _build_text_actions(frame, text_widget, info_label, path):
         def _guard_key(event):
             if not edit_state.get("active"):
                 return None
+            _keep_insert_inside_edit_range()
+            rng = edit_state.get("range")
+            if not rng:
+                return "break"
             idx = text_widget.index("insert")
+            sel_start = text_widget.index("sel.first") if text_widget.tag_ranges("sel") else None
+            sel_end = text_widget.index("sel.last") if text_widget.tag_ranges("sel") else None
+            if sel_start and sel_end:
+                if text_widget.compare(sel_start, "<", rng[0]) or text_widget.compare(sel_end, ">", rng[1]):
+                    return "break"
+            key = str(getattr(event, "keysym", "") or "")
+            if key in {"BackSpace", "Delete"}:
+                if key == "BackSpace" and text_widget.compare(idx, "<=", rng[0]) and not sel_start:
+                    return "break"
+                if key == "Delete" and text_widget.compare(idx, ">=", rng[1]) and not sel_start:
+                    return "break"
             if not _in_edit_range(idx):
-                try:
-                    text_widget.mark_set("insert", edit_state["range"][0])
-                except Exception:
-                    pass
                 return "break"
             edit_state["dirty"] = True
+            text_widget.after_idle(lambda tag=rec_tag: _place_for_tag(tag))
+            return None
+
+        def _guard_pointer(_event=None):
+            if not edit_state.get("active"):
+                return None
+            _keep_insert_inside_edit_range()
             return None
 
         try:
             text_widget.bind("<KeyPress>", _guard_key, add="+")
+            text_widget.bind("<ButtonRelease-1>", _guard_pointer, add="+")
+            text_widget.bind("<KeyRelease>", _guard_pointer, add="+")
         except Exception:
             pass
 
