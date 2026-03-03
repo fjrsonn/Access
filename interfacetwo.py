@@ -227,6 +227,9 @@ def _set_record_marker(text_widget, rec_tag: str, active: bool):
         except Exception:
             return
         return
+    bullet_tag = (_record_bullet_tag_map.get(text_widget, {}) or {}).get(rec_tag)
+    if not bullet_tag:
+        return
     try:
         idx = int(str(rec_tag).rsplit("_", 1)[1])
     except Exception:
