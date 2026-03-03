@@ -367,6 +367,13 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('tag:', source)
 
 
+    def test_orient_obs_toolbar_is_packed_below_header_not_overlay(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_text_actions)
+        self.assertIn('toolbar_parent = frame if is_orient_obs else text_widget', source)
+        self.assertIn('toolbar_wrap.pack(', source)
+        self.assertIn('before=text_widget.master', source)
+
     def test_inline_actions_are_positioned_from_record_end(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_text_actions)

@@ -3358,7 +3358,8 @@ def _build_text_actions(frame, text_widget, info_label, path):
     inline_wrap = tk.Frame(text_widget, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
     buttons_row = tk.Frame(inline_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
     buttons_row.pack(side=tk.TOP, fill=tk.X)
-    toolbar_wrap = tk.Frame(text_widget, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    toolbar_parent = frame if is_orient_obs else text_widget
+    toolbar_wrap = tk.Frame(toolbar_parent, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
     toolbar = tk.Frame(toolbar_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
     toolbar.pack(side=tk.TOP, fill=tk.X)
 
@@ -3448,13 +3449,16 @@ def _build_text_actions(frame, text_widget, info_label, path):
             toolbar_wrap.place_forget()
         except Exception:
             pass
+        try:
+            toolbar_wrap.pack_forget()
+        except Exception:
+            pass
         _inline_state["visible"] = False
         _inline_state["tag"] = None
         if unpin:
             current["pinned"] = False
             current["record"] = None
             current["rec_tag"] = None
-
     def _place_for_tag(rec_tag, anchor_idx=None):
         try:
             ranges = text_widget.tag_ranges(rec_tag)
@@ -3505,24 +3509,18 @@ def _build_text_actions(frame, text_widget, info_label, path):
         except Exception:
             return
 
-    def _place_toolbar_for_tag(rec_tag):
+    def _place_toolbar_for_tag(_rec_tag=None):
         if not is_orient_obs:
             return
         try:
-            ranges = text_widget.tag_ranges(rec_tag)
-            if not ranges or len(ranges) < 2:
+            if toolbar_wrap.winfo_manager() == "pack":
                 return
-            start = ranges[0]
-            box = text_widget.bbox(start)
-            if not box:
-                return
-            x, y, w, h = box
-            toolbar_wrap.update_idletasks()
-            tw = max(toolbar_wrap.winfo_reqwidth(), 120)
-            th = max(toolbar_wrap.winfo_reqheight(), 20)
-            tx = max(8, min(int(x), max(8, text_widget.winfo_width() - tw - 10)))
-            ty = max(0, y - th - 2)
-            toolbar_wrap.place(x=tx, y=ty)
+            toolbar_wrap.pack(
+                fill=tk.X,
+                padx=theme_space("space_3", 10),
+                pady=(0, theme_space("space_1", 4)),
+                before=text_widget.master,
+            )
             toolbar_wrap.lift()
         except Exception:
             return
@@ -3711,7 +3709,14 @@ def _build_text_actions(frame, text_widget, info_label, path):
         edit_state.update({"active": False, "tag": None, "dirty": False, "range": None})
         _text_edit_lock.discard(text_widget)
         _set_filters_enabled(True)
-        toolbar_wrap.place_forget()
+        try:
+            toolbar_wrap.place_forget()
+        except Exception:
+            pass
+        try:
+            toolbar_wrap.pack_forget()
+        except Exception:
+            pass
         _toggle_edit_buttons(False)
         try:
             text_widget.unbind("<KeyPress>", edit_state.get("_bind_key"))
