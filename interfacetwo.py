@@ -173,6 +173,8 @@ _layout_density_mode = "confortavel"
 _operation_mode_enabled = False
 _runtime_refresh_ms = REFRESH_MS
 _cards_last_update_at = None
+_cards_context_refresh_hook = None
+_cards_context_user_selected = False
 _control_filtered_count_var = None
 _control_toolbar = None
 _last_quick_filter_kind = None
@@ -1069,7 +1071,6 @@ def _collect_status_cards_data() -> dict:
     except Exception:
         analises, avisos, encomendas, controle = [], [], [], []
 
-    pendentes = 0
     sem_contato = 0
     avisado = 0
     alta_severidade = 0
@@ -1088,33 +1089,21 @@ def _collect_status_cards_data() -> dict:
     for r in analises if isinstance(analises, list) else []:
         sev = str((r or {}).get("severidade") or (r or {}).get("SEVERIDADE") or "").lower()
         if sev in {"alta", "crítica", "critica"}:
-            pendentes += 1
             alta_severidade += 1
 
-    for aviso in avisos if isinstance(avisos, list) else []:
-        status_obj = (aviso or {}).get("status")
-        if isinstance(status_obj, dict):
-            ativo = bool(status_obj.get("ativo", False))
-            fechado = bool(status_obj.get("fechado_pelo_usuario", False))
-            if ativo and not fechado:
-                pendentes += 1
-        else:
-            txt = str(status_obj or (aviso or {}).get("STATUS") or "").upper()
-            if any(k in txt for k in ("PEND", "ABERTO", "ATIVO")):
-                pendentes += 1
-
     monitor_rows = (controle if isinstance(controle, list) else []) + (encomendas if isinstance(encomendas, list) else [])
+    ativos = len(monitor_rows)
     for r in monitor_rows:
         st = _status_text(r)
         if "SEM CONTATO" in st:
             sem_contato += 1
         elif "AVISADO" in st:
             avisado += 1
-        elif "PEND" in st:
-            pendentes += 1
+
+    pendentes = max(0, ativos - sem_contato - avisado)
 
     return {
-        "ativos": len(avisos) if isinstance(avisos, list) else 0,
+        "ativos": ativos,
         "pendentes": pendentes,
         "sem_contato": sem_contato,
         "avisado": avisado,
@@ -1123,7 +1112,7 @@ def _collect_status_cards_data() -> dict:
 
 
 def _update_status_cards():
-    global _metrics_previous_cards, _cards_last_update_at
+    global _metrics_previous_cards, _cards_last_update_at, _cards_context_refresh_hook
     data = _collect_status_cards_data()
     ux = analisar_metricas_ux() if callable(analisar_metricas_ux) else {}
     now = datetime.now()
@@ -1142,6 +1131,12 @@ def _update_status_cards():
                 card.flash(260)
             except Exception:
                 pass
+    try:
+        if callable(_cards_context_refresh_hook):
+            _cards_context_refresh_hook()
+    except Exception:
+        pass
+
     _metrics_previous_cards = dict(data)
     if _metrics_accessibility_var is not None:
         try:
@@ -2081,6 +2076,8 @@ def _populate_text(text_widget, info_label):
             prefix = "controle" if formatter == format_creative_entry else ("encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else "observacao"))
             rec_tag = f"{prefix}_record_{idx}"
         linha = formatter(r)
+        if isinstance(linha, str) and linha.startswith("[ID "):
+            linha = f"    {linha}"
         hover_idx = _text_hover_marker.get(text_widget)
         marker = "●" if idx in _text_breakpoints.get(text_widget, set()) or hover_idx == idx else " "
         numbered = f"{marker} {idx + 1:>3}  {linha}"
@@ -3164,6 +3161,9 @@ def _build_text_actions(frame, text_widget, info_label, path):
     is_orient_obs = os.path.basename(path) in ("orientacoes.json", "observacoes.json")
     is_encomendas = os.path.basename(path) == "encomendasend.json"
 
+    status_wrap = tk.Frame(text_widget, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    status_row = tk.Frame(status_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    status_row.pack(side=tk.TOP, fill=tk.X)
     inline_wrap = tk.Frame(text_widget, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
     buttons_row = tk.Frame(inline_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
     buttons_row.pack(side=tk.TOP, fill=tk.X)
@@ -3172,6 +3172,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
     toolbar.pack(side=tk.TOP, fill=tk.X)
 
     _inline_state = {"visible": False, "tag": None}
+    _hover_state = {"tag": None, "last_ts": 0.0}
 
     def _mini_btn(parent, label, cmd, glow=None):
         b = tk.Button(
@@ -3254,39 +3255,95 @@ def _build_text_actions(frame, text_widget, info_label, path):
         except Exception:
             pass
         try:
+            status_wrap.place_forget()
+        except Exception:
+            pass
+        try:
             toolbar_wrap.place_forget()
         except Exception:
             pass
         _inline_state["visible"] = False
         _inline_state["tag"] = None
+        _hover_state["tag"] = None
         if unpin:
             current["pinned"] = False
             current["record"] = None
             current["rec_tag"] = None
 
-    def _place_for_tag(rec_tag):
+    def _best_bbox_for_index(idx):
+        box = text_widget.bbox(idx)
+        if box:
+            return box
+        try:
+            for back in range(1, 8):
+                b = text_widget.bbox(f"{idx} - {back}c")
+                if b:
+                    return b
+        except Exception:
+            return None
+        return None
+
+    def _place_status_for_tag(rec_tag):
         try:
             ranges = text_widget.tag_ranges(rec_tag)
             if not ranges or len(ranges) < 2:
                 return
-            start, end = ranges[0], ranges[1]
-            box = text_widget.bbox(start)
-            if not box:
-                box = text_widget.bbox(end)
+            start = ranges[0]
+            line_end = text_widget.index(f"{start} lineend")
+            line_text = text_widget.get(start, line_end)
+            id_pos = line_text.find("[ID ")
+            gap_start = 6
+            gap_end = (id_pos - 1) if id_pos > 0 else 14
+            left_idx = f"{start} + {max(1, gap_start)}c"
+            right_idx = f"{start} + {max(gap_start + 1, gap_end)}c"
+            left_box = _best_bbox_for_index(left_idx)
+            right_box = _best_bbox_for_index(right_idx)
+            anchor_box = left_box or right_box
+            if not anchor_box:
+                return
+            x, y, w, h = anchor_box
+            status_wrap.update_idletasks()
+            sw = max(status_wrap.winfo_reqwidth(), 30)
+            sh = max(status_wrap.winfo_reqheight(), 14)
+            left_x = int((left_box or anchor_box)[0])
+            right_x = int((right_box or anchor_box)[0] + (right_box or anchor_box)[2])
+            if right_x <= left_x:
+                tx = max(8, left_x)
+            else:
+                tx = max(8, min(left_x + max(0, (right_x - left_x - sw) // 2), text_widget.winfo_width() - sw - 8))
+            ty = max(0, int(y + max(0, (h - sh) // 2) - 6))
+            status_wrap.place(x=tx, y=ty)
+            status_wrap.lift()
+        except Exception:
+            return
+
+    def _place_tail_for_tag(rec_tag):
+        try:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if not ranges or len(ranges) < 2:
+                return
+            start = ranges[0]
+            line_end = text_widget.index(f"{start} lineend")
+            target_idx = f"{line_end} - 1c"
+            box = _best_bbox_for_index(target_idx)
             if not box:
                 return
             x, y, w, h = box
             inline_wrap.update_idletasks()
             fw = max(inline_wrap.winfo_reqwidth(), 80)
             fh = max(inline_wrap.winfo_reqheight(), 16)
-            tx = max(8, text_widget.winfo_width() - fw - 12)
-            ty = max(0, y + max(0, (h - fh) // 2))
+            tx = max(8, min(int(x + w + 6), max(8, text_widget.winfo_width() - fw - 10)))
+            ty = max(0, int(y + max(0, (h - fh) // 2) - 6))
             inline_wrap.place(x=tx, y=ty)
             inline_wrap.lift()
             _inline_state["visible"] = True
             _inline_state["tag"] = rec_tag
         except Exception:
             return
+
+    def _place_for_tag(rec_tag):
+        _place_status_for_tag(rec_tag)
+        _place_tail_for_tag(rec_tag)
 
     def _place_toolbar_for_tag(rec_tag):
         if not is_orient_obs:
@@ -3317,6 +3374,8 @@ def _build_text_actions(frame, text_widget, info_label, path):
         rec = _find_record_by_tag(tag)
         if not rec:
             return
+        if (not pin) and _inline_state.get("visible") and _inline_state.get("tag") == tag and current.get("record") is rec:
+            return
         current["record"] = rec
         current["rec_tag"] = tag
         if pin:
@@ -3346,6 +3405,13 @@ def _build_text_actions(frame, text_widget, info_label, path):
         rec = current.get("record")
         if not rec:
             return
+        source = _monitor_sources.get(text_widget, {}) or {}
+        filter_key = str(source.get("filter_key") or "")
+        if filter_key == "controle":
+            current_filter = dict(_filter_state.get(filter_key) or _default_filters())
+            if str(current_filter.get("status") or "Todos").strip().upper() != "TODOS":
+                current_filter["status"] = "Todos"
+                _filter_state[filter_key] = current_filter
         try:
             _forced_visible_records.setdefault(text_widget, set()).add(_record_force_visibility_key(rec))
         except Exception:
@@ -3485,8 +3551,10 @@ def _build_text_actions(frame, text_widget, info_label, path):
             btn_save.pack(side=tk.LEFT, padx=2, pady=3)
             btn_cancel.pack(side=tk.LEFT, padx=2, pady=3)
         else:
-            for b in (btn_copy, btn_down, btn_up, btn_edit, btn_close):
+            for b in (btn_copy, btn_edit, btn_close):
                 b.pack(side=tk.LEFT, padx=2, pady=3)
+            for b in (btn_down, btn_up):
+                b.pack(side=tk.LEFT, padx=0, pady=1)
 
     def enable_edit():
         rec_tag = current.get("rec_tag")
@@ -3535,8 +3603,10 @@ def _build_text_actions(frame, text_widget, info_label, path):
 
     # ordem invertida solicitada (direita <- esquerda do pedido original): copiar, sem contato, avisado, editar, fechar
     btn_copy = _mini_btn(buttons_row, "⧉", copy_record)
-    btn_down = _mini_btn(buttons_row, "▼", mark_sem_contato, glow=UI_THEME.get("danger", "#DC2626"))
-    btn_up = _mini_btn(buttons_row, "▲", mark_avisado, glow=UI_THEME.get("success", "#16A34A"))
+    btn_down = _mini_btn(status_row, "▼", mark_sem_contato, glow=UI_THEME.get("danger", "#DC2626"))
+    btn_up = _mini_btn(status_row, "▲", mark_avisado, glow=UI_THEME.get("success", "#16A34A"))
+    btn_down.configure(padx=1, pady=1)
+    btn_up.configure(padx=1, pady=1)
     btn_edit = _mini_btn(buttons_row, "✎", enable_edit)
     btn_close = _mini_btn(buttons_row, "✕", delete_record, glow=UI_THEME.get("danger", "#DC2626"))
     btn_save = _mini_btn(buttons_row, "💾", save_edit, glow=UI_THEME.get("success", "#16A34A"))
@@ -3570,7 +3640,10 @@ def _build_text_actions(frame, text_widget, info_label, path):
             return
         tag = _tag_at_event(event)
         if tag:
-            _show_for(tag, pin=False)
+            if _hover_state.get("tag") != tag:
+                _hover_state["tag"] = tag
+                _hover_state["last_ts"] = int(time.time() * 1000)
+                _show_for(tag, pin=False)
         else:
             _hide_inline(unpin=False)
 
@@ -3593,6 +3666,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
 
     _text_action_ui[text_widget] = {
         "frame": inline_wrap,
+        "status_frame": status_wrap,
         "hide": lambda: _hide_inline(unpin=True),
         "show": lambda: _show_for(current.get("rec_tag"), pin=True) if current.get("rec_tag") else None,
         "current": current,
@@ -3826,6 +3900,12 @@ def _configure_monitor_scrollbar_style(style_obj):
 
 def _build_monitor_ui(container):
     prefs = _restore_ui_state()
+    try:
+        controle_filters = dict(_filter_state.get("controle") or _default_filters())
+        controle_filters["status"] = "Todos"
+        _filter_state["controle"] = controle_filters
+    except Exception:
+        pass
     _apply_light_theme(container)
     apply_ttk_theme_styles(container)
     style = ttk.Style(container)
@@ -4331,6 +4411,8 @@ def _build_monitor_ui(container):
 
         def _on_day_click(day_key: str, show_total: bool = False):
             nonlocal consumo_selected_day, consumo_selected_mode
+            global _cards_context_user_selected
+            _cards_context_user_selected = True
             consumo_selected_day = day_key
             consumo_selected_mode = "total" if show_total else "day"
             if show_total:
@@ -4408,6 +4490,19 @@ def _build_monitor_ui(container):
             consumo_day_var.set(f"Dia selecionado: {consumo_selected_day} • Usados: {total_selected} • Restantes(base1000): {restante_selected}")
             if _control_filtered_count_var is not None:
                 _control_filtered_count_var.set(f"{consumo_selected_day} Registros: {total_selected}")
+
+    def _refresh_cards_for_current_consumo_selection():
+        global _cards_context_user_selected
+        if not _cards_context_user_selected:
+            return
+        try:
+            _draw_days_timeline()
+            _animate_cards_for_day(consumo_selected_day, show_total=(consumo_selected_mode == "total"))
+        except Exception:
+            return
+
+    global _cards_context_refresh_hook
+    _cards_context_refresh_hook = _refresh_cards_for_current_consumo_selection
 
     consumo_days_canvas.bind("<Configure>", _draw_days_timeline, add="+")
     container.after(80, _draw_days_timeline)
