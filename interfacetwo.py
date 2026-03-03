@@ -3489,7 +3489,12 @@ def _build_text_actions(frame, text_widget, info_label, path):
             tx_preferred = int(x + w + 2)
             tx_limit = max(8, text_widget.winfo_width() - fw - 12)
             tx = max(8, min(tx_preferred, tx_limit))
-            ty = max(0, y + max(0, (h - fh) // 2))
+            # centraliza visualmente os ícones com o meio da linha de texto
+            buttons_row.update_idletasks()
+            icon_h = max(buttons_row.winfo_reqheight(), 12)
+            text_center_y = y + (h / 2)
+            align_bias = -1
+            ty = max(0, int(round(text_center_y - (icon_h / 2) + align_bias)))
             inline_wrap.place(x=tx, y=ty)
             inline_wrap.lift()
             _inline_state["visible"] = True
