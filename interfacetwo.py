@@ -186,6 +186,7 @@ _text_breakpoints = {}
 _text_hover_marker = {}
 _record_num_tag_map = {}
 _text_record_ranges = {}
+_text_line_tag_map = {}
 _sticky_header_state = {}
 _consumo_24h_por_dia = {}
 _text_last_interaction_ts = {}
@@ -2062,6 +2063,7 @@ def _populate_text(text_widget, info_label):
     record_ranges = []
     record_tag_map = {}
     record_line_map = {}
+    line_tag_map = {}
     has_clickable_records = False
 
     text_widget.tag_configure("row_even", background=UI_THEME.get("surface", "#151A22"))
@@ -2113,6 +2115,7 @@ def _populate_text(text_widget, info_label):
             try:
                 line_no = str(start).split(".", 1)[0]
                 record_line_map[line_no] = r
+                line_tag_map[line_no] = rec_tag
             except Exception:
                 pass
             status = (r.get("STATUS_ENCOMENDA") or r.get("STATUS") or "").strip().upper()
@@ -2169,10 +2172,12 @@ def _populate_text(text_widget, info_label):
         _encomenda_display_map[text_widget] = record_ranges
         _encomenda_tag_map[text_widget] = record_tag_map
         _encomenda_line_map[text_widget] = record_line_map
+        _text_line_tag_map[text_widget] = line_tag_map
     else:
         _encomenda_display_map.pop(text_widget, None)
         _encomenda_tag_map.pop(text_widget, None)
         _encomenda_line_map.pop(text_widget, None)
+        _text_line_tag_map.pop(text_widget, None)
 
     if has_clickable_records or formatter in (format_creative_entry, format_orientacao_entry, format_observacao_entry):
         _record_tag_map_generic[text_widget] = record_tag_map
@@ -3172,7 +3177,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
     toolbar.pack(side=tk.TOP, fill=tk.X)
 
     _inline_state = {"visible": False, "tag": None}
-    _hover_state = {"tag": None, "last_ts": 0.0}
+    _hover_state = {"tag": None, "line": None, "last_ts": 0.0}
 
     def _mini_btn(parent, label, cmd, glow=None):
         b = tk.Button(
@@ -3265,6 +3270,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
         _inline_state["visible"] = False
         _inline_state["tag"] = None
         _hover_state["tag"] = None
+        _hover_state["line"] = None
         if unpin:
             current["pinned"] = False
             current["record"] = None
@@ -3628,6 +3634,10 @@ def _build_text_actions(frame, text_widget, info_label, path):
     def _tag_at_event(event):
         try:
             idx = text_widget.index(f"@{event.x},{event.y}")
+            line_no = str(idx).split(".", 1)[0]
+            cached_tag = (_text_line_tag_map.get(text_widget) or {}).get(line_no)
+            if cached_tag:
+                return cached_tag
             for tag in text_widget.tag_names(idx):
                 if "_record_" in tag:
                     return tag
@@ -3652,6 +3662,14 @@ def _build_text_actions(frame, text_widget, info_label, path):
     def on_motion(event):
         if edit_state.get("active"):
             return
+        try:
+            idx = text_widget.index(f"@{event.x},{event.y}")
+            line_no = str(idx).split(".", 1)[0]
+            if _hover_state.get("line") == line_no:
+                return
+            _hover_state["line"] = line_no
+        except Exception:
+            pass
         tag = _tag_at_event(event)
         if tag:
             if _hover_state.get("tag") != tag:
