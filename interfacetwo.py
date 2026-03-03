@@ -186,6 +186,7 @@ _filter_toggle_state = {"visible": False}
 _text_breakpoints = {}
 _text_hover_marker = {}
 _record_num_tag_map = {}
+_record_bullet_tag_map = {}
 _text_record_ranges = {}
 _sticky_header_state = {}
 _consumo_24h_por_dia = {}
@@ -215,20 +216,17 @@ def _scroll_text_widget(text_widget, *args):
 def _set_record_marker(text_widget, rec_tag: str, active: bool):
     if text_widget in _text_edit_lock or not rec_tag:
         return
-    num_tag = (_record_num_tag_map.get(text_widget, {}) or {}).get(rec_tag)
-    if not num_tag:
+    bullet_tag = (_record_bullet_tag_map.get(text_widget, {}) or {}).get(rec_tag)
+    if not bullet_tag:
         return
     try:
         idx = int(str(rec_tag).rsplit("_", 1)[1])
     except Exception:
         idx = None
     is_fixed = idx in (_text_breakpoints.get(text_widget, set()) or set()) if idx is not None else False
-    if active or is_fixed:
-        color = UI_THEME.get("focus_text", "#FFFFFF")
-    else:
-        color = UI_THEME.get("surface", "#151A22")
+    bullet_color = UI_THEME.get("focus_text", "#FFFFFF") if (active or is_fixed) else UI_THEME.get("surface", "#151A22")
     try:
-        text_widget.tag_configure(num_tag, foreground=color)
+        text_widget.tag_configure(bullet_tag, foreground=bullet_color)
     except Exception:
         return
 
@@ -2237,13 +2235,17 @@ def _populate_text(text_widget, info_label):
                 pass
             try:
                 prefix = f"{marker} {idx + 1:>3}"
+                bullet_tag = f"line_bullet_{idx}"
                 num_tag = f"line_number_{idx}"
-                text_widget.tag_add(num_tag, start, f"{start} + {len(prefix)}c")
-                text_widget.tag_add("line_number", start, f"{start} + {len(prefix)}c")
-                base_num_color = UI_THEME.get("focus_text", "#FFFFFF") if idx in _text_breakpoints.get(text_widget, set()) else UI_THEME.get("surface", "#151A22")
-                text_widget.tag_configure(num_tag, foreground=base_num_color)
+                text_widget.tag_add(bullet_tag, start, f"{start} + 1c")
+                text_widget.tag_add(num_tag, f"{start} + 2c", f"{start} + {len(prefix)}c")
+                text_widget.tag_add("line_number", f"{start} + 2c", f"{start} + {len(prefix)}c")
+                text_widget.tag_configure(bullet_tag, foreground=UI_THEME.get("surface", "#151A22"))
+                text_widget.tag_configure(num_tag, foreground=UI_THEME.get("muted_text", "#A6A6A6"))
                 text_widget.tag_bind(num_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_line_number_click(tw, rec, tag, pos))
+                text_widget.tag_bind(bullet_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_line_number_click(tw, rec, tag, pos))
                 _record_num_tag_map.setdefault(text_widget, {})[rec_tag] = num_tag
+                _record_bullet_tag_map.setdefault(text_widget, {})[rec_tag] = bullet_tag
             except Exception:
                 pass
         else:
@@ -2278,6 +2280,7 @@ def _populate_text(text_widget, info_label):
     else:
         _record_tag_map_generic.pop(text_widget, None)
         _record_num_tag_map.pop(text_widget, None)
+        _record_bullet_tag_map.pop(text_widget, None)
     if formatter == format_creative_entry:
         _restore_control_text_selection(text_widget, record_tag_map)
     _restore_hover_if_needed(text_widget, "hover_line")
@@ -3069,7 +3072,7 @@ def _bind_hover_highlight(text_widget):
                 text_widget.after_cancel(pending)
             except Exception:
                 pass
-        state["pending_after"] = text_widget.after(24, lambda tw=text_widget: _flush_hover_motion(tw))
+        state["pending_after"] = text_widget.after(8, lambda tw=text_widget: _flush_hover_motion(tw))
 
     def _on_leave(_event):
         state = _hover_runtime_state.get(text_widget) or {}
