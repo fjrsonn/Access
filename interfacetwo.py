@@ -3646,11 +3646,13 @@ def _build_text_actions(frame, text_widget, info_label, path):
         edit_state["dirty"] = True
 
     def _in_edit_range(idx):
+        # Em modo edição livre, o usuário pode expandir o conteúdo do registro
+        # com novas linhas sem limite rígido de fim.
         rng = edit_state.get("range")
         if not rng:
             return False
         try:
-            return text_widget.compare(idx, ">=", rng[0]) and text_widget.compare(idx, "<", rng[1])
+            return text_widget.compare(idx, ">=", rng[0])
         except Exception:
             return False
 
@@ -3684,8 +3686,6 @@ def _build_text_actions(frame, text_widget, info_label, path):
             idx = text_widget.index("insert")
             if text_widget.compare(idx, "<", rng[0]):
                 text_widget.mark_set("insert", rng[0])
-            elif text_widget.compare(idx, ">", rng[1]):
-                text_widget.mark_set("insert", rng[1])
         except Exception:
             return
 
@@ -3705,6 +3705,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
         except Exception:
             pass
         if reload_text:
+            _widget_render_cache.pop(text_widget, None)
             _reload()
         if current.get("rec_tag"):
             _show_for(current.get("rec_tag"), pin=True)
@@ -3719,7 +3720,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
         rec_tag = current.get("rec_tag")
         if not rec or not rec_tag:
             return
-        rng = edit_state.get("range")
+        rng = _editable_range_from_tag(rec_tag) or edit_state.get("range")
         if not rng:
             return
         try:
@@ -3774,14 +3775,11 @@ def _build_text_actions(frame, text_widget, info_label, path):
             idx = text_widget.index("insert")
             sel_start = text_widget.index("sel.first") if text_widget.tag_ranges("sel") else None
             sel_end = text_widget.index("sel.last") if text_widget.tag_ranges("sel") else None
-            if sel_start and sel_end:
-                if text_widget.compare(sel_start, "<", rng[0]) or text_widget.compare(sel_end, ">", rng[1]):
-                    return "break"
+            if sel_start and text_widget.compare(sel_start, "<", rng[0]):
+                return "break"
             key = str(getattr(event, "keysym", "") or "")
             if key in {"BackSpace", "Delete"}:
                 if key == "BackSpace" and text_widget.compare(idx, "<=", rng[0]) and not sel_start:
-                    return "break"
-                if key == "Delete" and text_widget.compare(idx, ">=", rng[1]) and not sel_start:
                     return "break"
             if not _in_edit_range(idx):
                 return "break"
@@ -3851,9 +3849,15 @@ def _build_text_actions(frame, text_widget, info_label, path):
 
     def on_click(event):
         tag = _tag_at_event(event)
+        if edit_state.get("active"):
+            active_tag = edit_state.get("tag")
+            if not tag or tag != active_tag:
+                return "break"
+            current["pinned"] = True
+            _show_for(active_tag, pin=True)
+            return "break"
         if not tag:
-            if not edit_state.get("active"):
-                _hide_inline(unpin=True)
+            _hide_inline(unpin=True)
             return
         current["pinned"] = True
         _show_for(tag, pin=True)
