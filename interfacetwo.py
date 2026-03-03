@@ -9,6 +9,7 @@ import os
 import json
 import tempfile
 import time
+import threading
 from datetime import datetime, timedelta
 import tkinter as tk
 from tkinter import messagebox, ttk, simpledialog
@@ -190,6 +191,17 @@ _sticky_header_state = {}
 _consumo_24h_por_dia = {}
 _text_last_interaction_ts = {}
 _forced_visible_records = {}
+_hover_runtime_state = {}
+_hover_motion_callbacks = {}
+_data_load_cache = {}
+_widget_render_cache = {}
+_background_refresh_pending = set()
+_perf_metrics = {
+    "hover_samples_ms": [],
+    "refresh_apply_samples_ms": [],
+    "records_rendered": 0,
+    "frames_skipped": 0,
+}
 
 
 def _scroll_text_widget(text_widget, *args):
@@ -203,24 +215,12 @@ def _scroll_text_widget(text_widget, *args):
 def _set_record_marker(text_widget, rec_tag: str, active: bool):
     if text_widget in _text_edit_lock or not rec_tag:
         return
-    try:
-        idx = int(str(rec_tag).rsplit("_", 1)[1])
-    except Exception:
-        idx = None
-    if idx is None:
+    num_tag = (_record_num_tag_map.get(text_widget, {}) or {}).get(rec_tag)
+    if not num_tag:
         return
-    if not active and idx in _text_breakpoints.get(text_widget, set()):
-        return
+    color = UI_THEME.get("focus_text", "#FFFFFF") if active else UI_THEME.get("muted_text", "#A6A6A6")
     try:
-        ranges = text_widget.tag_ranges(rec_tag)
-        if not ranges or len(ranges) < 2:
-            return
-        line = str(ranges[0]).split(".", 1)[0]
-        start = f"{line}.0"
-        text_widget.config(state="normal")
-        text_widget.delete(start, f"{start}+1c")
-        text_widget.insert(start, "●" if active else " ")
-        text_widget.config(state="disabled")
+        text_widget.tag_configure(num_tag, foreground=color)
     except Exception:
         return
 
@@ -236,8 +236,10 @@ def _clear_sticky_selected_record(text_widget):
 
 
 def _clear_all_hover_markers(text_widget):
-    for rec_tag in (_record_num_tag_map.get(text_widget, {}) or {}).keys():
-        _set_record_marker(text_widget, rec_tag, False)
+    state = _hover_runtime_state.get(text_widget) or {}
+    prev_tag = state.get("last_record_tag")
+    if prev_tag:
+        _set_record_marker(text_widget, prev_tag, False)
 
 
 def _gerar_consumo_24h_base(day_key: str) -> list[int]:
@@ -1092,15 +1094,22 @@ def _collect_status_cards_data() -> dict:
             alta_severidade += 1
 
     monitor_rows = (controle if isinstance(controle, list) else []) + (encomendas if isinstance(encomendas, list) else [])
-    ativos = len(monitor_rows)
+    ativos = len([a for a in (avisos if isinstance(avisos, list) else []) if bool(((a or {}).get("status") or {}).get("ativo"))])
+    sem_contato_encomenda = 0
+    avisado_encomenda = 0
     for r in monitor_rows:
         st = _status_text(r)
+        is_encomenda = isinstance(r, dict) and ("STATUS_ENCOMENDA" in r or "status_encomenda" in r)
         if "SEM CONTATO" in st:
             sem_contato += 1
+            if is_encomenda:
+                sem_contato_encomenda += 1
         elif "AVISADO" in st:
             avisado += 1
+            if is_encomenda:
+                avisado_encomenda += 1
 
-    pendentes = max(0, ativos - sem_contato - avisado)
+    pendentes = max(0, len(monitor_rows) - sem_contato_encomenda - avisado_encomenda)
 
     return {
         "ativos": ativos,
@@ -1299,6 +1308,80 @@ def _load_safe(path: str):
         return []
     except Exception:
         return []
+
+
+def _source_signature(path: str):
+    try:
+        st = os.stat(path)
+        return (int(st.st_mtime_ns), int(st.st_size))
+    except Exception:
+        return None
+
+
+def _load_safe_cached(path: str):
+    signature = _source_signature(path)
+    cached = _data_load_cache.get(path)
+    if cached and cached.get("signature") == signature:
+        return cached.get("records", [])
+    records = _load_safe(path)
+    _data_load_cache[path] = {"signature": signature, "records": records}
+    return records
+
+
+def _queue_background_reload(path: str):
+    if not path or path in _background_refresh_pending:
+        return
+    _background_refresh_pending.add(path)
+
+    def _worker():
+        try:
+            _load_safe_cached(path)
+        finally:
+            _background_refresh_pending.discard(path)
+
+    try:
+        threading.Thread(target=_worker, daemon=True).start()
+    except Exception:
+        _background_refresh_pending.discard(path)
+
+
+def _record_diff_signature(records):
+    out = []
+    for rec in list(records or []):
+        if not isinstance(rec, dict):
+            out.append(str(rec))
+            continue
+        key = str(rec.get("ID") or rec.get("id") or rec.get("_entrada_id") or "")
+        if not key:
+            key = "|".join(
+                [
+                    str(rec.get("DATA_HORA") or rec.get("data_hora") or ""),
+                    str(rec.get("NOME") or rec.get("nome") or ""),
+                    str(rec.get("SOBRENOME") or rec.get("sobrenome") or ""),
+                    str(rec.get("STATUS") or rec.get("STATUS_ENCOMENDA") or rec.get("status") or ""),
+                ]
+            )
+        out.append(key)
+    return tuple(out)
+
+
+def _perf_sample(name: str, value_ms: float):
+    key = f"{name}_samples_ms"
+    bucket = _perf_metrics.setdefault(key, [])
+    bucket.append(float(value_ms))
+    if len(bucket) > 180:
+        del bucket[:-180]
+
+
+def _perf_summary(values: list[float]):
+    if not values:
+        return {"count": 0, "p50": 0.0, "p95": 0.0, "p99": 0.0}
+    seq = sorted(values)
+    n = len(seq)
+    def _pick(q):
+        idx = min(n - 1, max(0, int(round((n - 1) * q))))
+        return round(seq[idx], 3)
+    return {"count": n, "p50": _pick(0.50), "p95": _pick(0.95), "p99": _pick(0.99)}
 
 def _atomic_write(path: str, obj):
     dirn = os.path.dirname(path) or "."
@@ -1931,7 +2014,8 @@ def _update_control_details(tree_widget, selection):
 def _populate_control_table(tree_widget, info_label):
     source = _monitor_sources.get(tree_widget, {})
     arquivo = source.get("path", ARQUIVO)
-    registros = _load_safe(arquivo)
+    registros = _load_safe_cached(arquivo)
+    _queue_background_reload(arquivo)
     filter_key = source.get("filter_key", tree_widget)
     filters = _filter_state.get(filter_key, {})
     filtrados = _apply_filters(registros, filters)
@@ -2024,7 +2108,8 @@ def _populate_text(text_widget, info_label):
         return
     arquivo = source.get("path", ARQUIVO)
     formatter = source.get("formatter", format_creative_entry)
-    registros = _load_safe(arquivo)
+    registros = _load_safe_cached(arquivo)
+    _queue_background_reload(arquivo)
     filter_key = source.get("filter_key", text_widget)
     filters = _filter_state.get(filter_key, {})
     filtrados = _apply_filters(registros, filters)
@@ -2049,6 +2134,14 @@ def _populate_text(text_widget, info_label):
     info_label.config(
         text=f"Arquivo: {arquivo} — registros: {len(filtrados)} (de {len(registros)}){status_hint}"
     )
+    render_signature = (arquivo, _record_diff_signature(filtrados), get_active_theme_name())
+    previous_signature = _widget_render_cache.get(text_widget)
+    if previous_signature == render_signature:
+        _perf_metrics["frames_skipped"] = int(_perf_metrics.get("frames_skipped", 0)) + 1
+        _update_sticky_header_for_text(text_widget)
+        return
+    _widget_render_cache[text_widget] = render_signature
+    t_render_start = time.perf_counter()
     preserve_position = not _should_return_to_top(text_widget)
     previous_view = None
     if preserve_position:
@@ -2076,8 +2169,7 @@ def _populate_text(text_widget, info_label):
             prefix = "controle" if formatter == format_creative_entry else ("encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else "observacao"))
             rec_tag = f"{prefix}_record_{idx}"
         linha = formatter(r)
-        hover_idx = _text_hover_marker.get(text_widget)
-        marker = "●" if idx in _text_breakpoints.get(text_widget, set()) or hover_idx == idx else " "
+        marker = "●"
         numbered = f"{marker} {idx + 1:>3}  {linha}"
         text_tags = [row_tag]
         if rec_tag:
@@ -2140,7 +2232,8 @@ def _populate_text(text_widget, info_label):
                 num_tag = f"line_number_{idx}"
                 text_widget.tag_add(num_tag, start, f"{start} + {len(prefix)}c")
                 text_widget.tag_add("line_number", start, f"{start} + {len(prefix)}c")
-                text_widget.tag_configure(num_tag, foreground=UI_THEME.get("muted_text", "#A6A6A6"))
+                base_num_color = UI_THEME.get("focus_text", "#FFFFFF") if idx in _text_breakpoints.get(text_widget, set()) else UI_THEME.get("muted_text", "#A6A6A6")
+                text_widget.tag_configure(num_tag, foreground=base_num_color)
                 text_widget.tag_bind(num_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_line_number_click(tw, rec, tag, pos))
                 _record_num_tag_map.setdefault(text_widget, {})[rec_tag] = num_tag
             except Exception:
@@ -2191,11 +2284,39 @@ def _populate_text(text_widget, info_label):
         except Exception:
             pass
     _update_sticky_header_for_text(text_widget)
+    elapsed_render = (time.perf_counter() - t_render_start) * 1000
+    _perf_sample("refresh_apply", elapsed_render)
+    _perf_metrics["records_rendered"] = int(_perf_metrics.get("records_rendered", 0)) + int(len(filtrados))
+
+
+
+def _emit_perf_metrics():
+    hover_summary = _perf_summary(_perf_metrics.get("hover_samples_ms", []))
+    refresh_summary = _perf_summary(_perf_metrics.get("refresh_apply_samples_ms", []))
+    report_status(
+        "ux_metrics",
+        "OK",
+        stage="interaction_perf",
+        details={
+            "hover_handler_ms": hover_summary,
+            "refresh_apply_ms": refresh_summary,
+            "records_rendered": int(_perf_metrics.get("records_rendered", 0)),
+            "frame_drop_rate": round(int(_perf_metrics.get("frames_skipped", 0)) / max(1, hover_summary.get("count", 1)), 4),
+        },
+    )
 
 def _schedule_update(text_widgets, info_label):
     global _monitor_after_id
+    now = time.monotonic()
+    active_interaction = False
+    for tw in text_widgets:
+        ts = _text_last_interaction_ts.get(tw)
+        if ts is not None and (now - ts) < 1.2:
+            active_interaction = True
+            break
     for tw in text_widgets:
         if tw in _text_edit_lock:
+            active_interaction = True
             continue
         try:
             _populate_text(tw, info_label)
@@ -2204,10 +2325,10 @@ def _schedule_update(text_widgets, info_label):
             continue
     # schedule next update
     _refresh_cards_relative_meta()
+    dynamic_refresh = int(_runtime_refresh_ms * (1.8 if active_interaction else 1.0))
+    _emit_perf_metrics()
     try:
-        _monitor_after_id = text_widgets[0].after(
-            int(_runtime_refresh_ms), lambda: _schedule_update(text_widgets, info_label)
-        )
+        _monitor_after_id = text_widgets[0].after(dynamic_refresh, lambda: _schedule_update(text_widgets, info_label))
     except Exception:
         _monitor_after_id = None
 
@@ -2827,97 +2948,161 @@ def _restore_hover_if_needed(text_widget, hover_tag):
         return
     _apply_hover_line(text_widget, line, hover_tag)
 
-def _bind_hover_highlight(text_widget):
-    hover_tag = "hover_line"
-    text_widget.tag_configure(hover_tag, background=UI_THEME["focus_bg"], foreground=UI_THEME["focus_text"])
-    _hover_state[text_widget] = None
+def _register_hover_motion_callback(text_widget, callback):
+    if not callable(callback):
+        return
+    _hover_motion_callbacks.setdefault(text_widget, []).append(callback)
 
-    def on_motion(event):
-        if text_widget in _text_edit_lock:
-            return
-        try:
-            index = text_widget.index(f"@{event.x},{event.y}")
-        except Exception:
-            return
-        line = index.split(".")[0]
-        tag_names = text_widget.tag_names(index)
-        rec_tag = next((t for t in tag_names if "_record_" in t), None)
+
+def _hover_tag_at_index(text_widget, index):
+    try:
+        for tag in text_widget.tag_names(index):
+            if "_record_" in tag:
+                return tag
+    except Exception:
+        return None
+    return None
+
+
+def _apply_hover_motion_pipeline(text_widget, x, y):
+    if text_widget in _text_edit_lock:
+        return
+    _mark_text_interaction(text_widget)
+    state = _hover_runtime_state.setdefault(text_widget, {"last_record_tag": None, "last_line": None, "pending_after": None, "last_event": None, "last_hover_range": None, "last_callback_token": None})
+    t0 = time.perf_counter()
+    try:
+        index = text_widget.index(f"@{x},{y}")
+    except Exception:
+        return
+    line = index.split(".")[0]
+    rec_tag = _hover_tag_at_index(text_widget, index)
+    hover_tag = "hover_line"
+
+    prev_tag = state.get("last_record_tag")
+    prev_line = state.get("last_line")
+
+    if rec_tag != prev_tag:
+        if prev_tag:
+            _set_record_marker(text_widget, prev_tag, False)
         if rec_tag:
-            _clear_all_hover_markers(text_widget)
-            num_map = _record_num_tag_map.get(text_widget, {})
-            prev_token = _hover_state.get(text_widget)
-            prev_tag = prev_token[4:] if isinstance(prev_token, str) and prev_token.startswith("tag:") else None
-            if prev_tag and prev_tag != rec_tag:
-                _set_record_marker(text_widget, prev_tag, False)
-                prev_num = num_map.get(prev_tag)
-                try:
-                    prev_idx = int(str(prev_tag).rsplit("_", 1)[1])
-                except Exception:
-                    prev_idx = None
-                if prev_num:
-                    text_widget.tag_configure(prev_num, foreground=UI_THEME.get("muted_text", "#A6A6A6"))
-            cur_num = num_map.get(rec_tag)
-            if cur_num:
-                text_widget.tag_configure(cur_num, foreground=UI_THEME.get("muted_text", "#A6A6A6"))
-            try:
-                hover_idx = int(str(rec_tag).rsplit("_", 1)[1])
-            except Exception:
-                hover_idx = None
-            _text_hover_marker[text_widget] = hover_idx
             _set_record_marker(text_widget, rec_tag, True)
-            token = f"tag:{rec_tag}"
-            if _hover_state.get(text_widget) == token:
-                return
-            _clear_hover_line(text_widget, hover_tag)
-            if _apply_hover_record(text_widget, rec_tag, hover_tag):
-                _hover_state[text_widget] = token
-            return
-        if _text_hover_marker.get(text_widget) is not None:
-            prev_token = _hover_state.get(text_widget)
-            prev_tag = prev_token[4:] if isinstance(prev_token, str) and prev_token.startswith("tag:") else None
-            if prev_tag:
-                _set_record_marker(text_widget, prev_tag, False)
-            prev_num = (_record_num_tag_map.get(text_widget, {}) or {}).get(prev_tag) if prev_tag else None
-            if prev_num:
-                try:
-                    prev_idx = int(str(prev_tag).rsplit("_", 1)[1])
-                except Exception:
-                    prev_idx = None
-                text_widget.tag_configure(prev_num, foreground=UI_THEME.get("muted_text", "#A6A6A6"))
-            _text_hover_marker[text_widget] = None
+        state["last_record_tag"] = rec_tag
+
+    target_range = None
+    hover_token = None
+    if rec_tag:
+        try:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if ranges and len(ranges) >= 2:
+                target_range = (str(ranges[0]), str(ranges[1]))
+                hover_token = f"tag:{rec_tag}"
+        except Exception:
+            target_range = None
+            hover_token = None
+        _text_hover_marker[text_widget] = rec_tag
+    else:
+        _text_hover_marker[text_widget] = None
         try:
             line_text = text_widget.get(f"{line}.0", f"{line}.end")
         except Exception:
             line_text = ""
-        if not line_text.strip():
-            _clear_hover_line(text_widget, hover_tag)
-            return
-        if _hover_state.get(text_widget) == line:
-            return
-        _clear_hover_line(text_widget, hover_tag)
-        _apply_hover_line(text_widget, line, hover_tag)
-        _hover_state[text_widget] = line
+        if line_text.strip():
+            start_line = f"{line}.0"
+            end_line = f"{line}.0 lineend+1c"
+            target_range = (start_line, end_line)
+            hover_token = line
 
-    text_widget.bind("<Motion>", on_motion)
+    prev_range = state.get("last_hover_range")
+    if prev_range and (not target_range or prev_range != target_range):
+        try:
+            text_widget.tag_remove(hover_tag, prev_range[0], prev_range[1])
+        except Exception:
+            pass
+        state["last_hover_range"] = None
+
+    if target_range and state.get("last_hover_range") != target_range:
+        try:
+            text_widget.tag_add(hover_tag, target_range[0], target_range[1])
+            state["last_hover_range"] = target_range
+        except Exception:
+            state["last_hover_range"] = None
+
+    _hover_state[text_widget] = hover_token
+    if rec_tag is None:
+        state["last_line"] = line if target_range else None
+    else:
+        state["last_line"] = prev_line
+
+    callback_token = hover_token or ""
+    if callback_token != state.get("last_callback_token"):
+        state["last_callback_token"] = callback_token
+        for cb in _hover_motion_callbacks.get(text_widget, []):
+            try:
+                cb(rec_tag=rec_tag, line=line, index=index)
+            except Exception:
+                continue
+
+    elapsed = (time.perf_counter() - t0) * 1000
+    _perf_sample("hover", elapsed)
+
+def _bind_hover_highlight(text_widget):
+    # compatibilidade: busca de tags segue regra "_record_" in t dentro do pipeline
+    hover_tag = "hover_line"
+    text_widget.tag_configure(hover_tag, background=UI_THEME["focus_bg"], foreground=UI_THEME["focus_text"])
+    _hover_state[text_widget] = None
+    _hover_runtime_state[text_widget] = {"last_record_tag": None, "last_line": None, "pending_after": None, "last_event": None, "last_hover_range": None, "last_callback_token": None}
+
+    def on_motion(event):
+        state = _hover_runtime_state.setdefault(text_widget, {"last_record_tag": None, "last_line": None, "pending_after": None, "last_event": None, "last_hover_range": None, "last_callback_token": None})
+        state["last_event"] = (event.x, event.y)
+        pending = state.get("pending_after")
+        if pending:
+            try:
+                text_widget.after_cancel(pending)
+            except Exception:
+                pass
+        state["pending_after"] = text_widget.after(24, lambda tw=text_widget: _flush_hover_motion(tw))
 
     def _on_leave(_event):
-        _clear_all_hover_markers(text_widget)
-        prev_token = _hover_state.get(text_widget)
-        prev_tag = prev_token[4:] if isinstance(prev_token, str) and prev_token.startswith("tag:") else None
+        state = _hover_runtime_state.get(text_widget) or {}
+        pending = state.get("pending_after")
+        if pending:
+            try:
+                text_widget.after_cancel(pending)
+            except Exception:
+                pass
+            state["pending_after"] = None
+        prev_tag = state.get("last_record_tag")
         if prev_tag:
             _set_record_marker(text_widget, prev_tag, False)
-        prev_num = (_record_num_tag_map.get(text_widget, {}) or {}).get(prev_tag) if prev_tag else None
-        if prev_num:
+        state["last_record_tag"] = None
+        state["last_line"] = None
+        prev_range = state.get("last_hover_range")
+        if prev_range:
             try:
-                prev_idx = int(str(prev_tag).rsplit("_", 1)[1])
+                text_widget.tag_remove(hover_tag, prev_range[0], prev_range[1])
             except Exception:
-                prev_idx = None
-            text_widget.tag_configure(prev_num, foreground=UI_THEME.get("muted_text", "#A6A6A6"))
-        _clear_hover_line(text_widget, hover_tag)
-        if _text_hover_marker.get(text_widget) is not None:
-            _text_hover_marker[text_widget] = None
+                pass
+        state["last_hover_range"] = None
+        state["last_callback_token"] = None
+        _text_hover_marker[text_widget] = None
+        for cb in _hover_motion_callbacks.get(text_widget, []):
+            try:
+                cb(rec_tag=None, line=None, index=None)
+            except Exception:
+                continue
 
+    text_widget.bind("<Motion>", on_motion)
     text_widget.bind("<Leave>", _on_leave)
+
+
+def _flush_hover_motion(text_widget):
+    state = _hover_runtime_state.get(text_widget) or {}
+    state["pending_after"] = None
+    evt = state.get("last_event")
+    if not evt:
+        return
+    _apply_hover_motion_pipeline(text_widget, evt[0], evt[1])
 
 def _find_encomenda_record_at_index(text_widget, index):
     try:
@@ -3567,14 +3752,16 @@ def _build_text_actions(frame, text_widget, info_label, path):
             return None
         return None
 
-    def on_motion(event):
+    def _on_hover_pipeline(rec_tag=None, **_kwargs):
         if edit_state.get("active"):
             return
-        tag = _tag_at_event(event)
-        if tag:
-            _show_for(tag, pin=False)
+        if rec_tag:
+            if current.get("rec_tag") != rec_tag or not inline_wrap.winfo_ismapped():
+                _show_for(rec_tag, pin=False)
         else:
             _hide_inline(unpin=False)
+
+    _register_hover_motion_callback(text_widget, _on_hover_pipeline)
 
     def on_click(event):
         tag = _tag_at_event(event)
@@ -3589,7 +3776,6 @@ def _build_text_actions(frame, text_widget, info_label, path):
         if not current.get("pinned") and not edit_state.get("active"):
             _hide_inline(unpin=False)
 
-    text_widget.bind("<Motion>", on_motion, add="+")
     text_widget.bind("<Button-1>", on_click, add="+")
     text_widget.bind("<Leave>", on_leave, add="+")
 
