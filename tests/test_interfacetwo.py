@@ -170,7 +170,7 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertEqual(registros[0].get('NOME'), 'LUCAS')
 
 
-    def test_collect_status_cards_data_counts_pending_without_sem_contato(self):
+    def test_collect_status_cards_data_uses_monitor_totals_for_pending(self):
         original_load_safe = interfacetwo._load_safe
 
         def fake_load_safe(path):
@@ -193,11 +193,35 @@ class InterfaceTwoTests(unittest.TestCase):
         finally:
             interfacetwo._load_safe = original_load_safe
 
-        self.assertEqual(out.get('ativos'), 2)
-        self.assertEqual(out.get('pendentes'), 3)
+        self.assertEqual(out.get('ativos'), 5)
+        self.assertEqual(out.get('pendentes'), 1)
         self.assertEqual(out.get('sem_contato'), 2)
         self.assertEqual(out.get('avisado'), 2)
         self.assertEqual(out.get('alta_severidade'), 1)
+
+
+    def test_collect_status_cards_data_counts_non_classified_as_pending(self):
+        original_load_safe = interfacetwo._load_safe
+
+        def fake_load_safe(path):
+            if path in (interfacetwo.ANALISES_ARQUIVO, interfacetwo.AVISOS_ARQUIVO):
+                return []
+            if path == interfacetwo.ARQUIVO:
+                return [{"STATUS": "MORADOR"}, {"STATUS": "VISITANTE"}]
+            if path == interfacetwo.ENCOMENDAS_ARQUIVO:
+                return [{"STATUS_ENCOMENDA": "SEM CONTATO"}]
+            return []
+
+        interfacetwo._load_safe = fake_load_safe
+        try:
+            out = interfacetwo._collect_status_cards_data()
+        finally:
+            interfacetwo._load_safe = original_load_safe
+
+        self.assertEqual(out.get('ativos'), 3)
+        self.assertEqual(out.get('sem_contato'), 1)
+        self.assertEqual(out.get('avisado'), 0)
+        self.assertEqual(out.get('pendentes'), 2)
 
     def test_filter_bar_defines_save_preset_before_button_binding(self):
         import inspect
@@ -372,6 +396,28 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('if edit_state.get("active"):', source)
         self.assertNotIn('if current.get("pinned") or edit_state.get("active"):', source)
 
+    def test_text_actions_split_triangle_and_tail_button_positions(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_text_actions)
+        self.assertIn('btn_down = _mini_btn(status_row, "▼"', source)
+        self.assertIn('btn_up = _mini_btn(status_row, "▲"', source)
+        self.assertIn('btn_down.configure(padx=1, pady=1)', source)
+        self.assertIn('btn_up.configure(padx=1, pady=1)', source)
+        self.assertIn('if (not pin) and _inline_state.get("visible") and _inline_state.get("tag") == tag', source)
+        self.assertIn('_hover_state = {"tag": None, "line": None, "last_ts": 0.0}', source)
+        self.assertIn('cached_tag = (_text_line_tag_map.get(text_widget) or {}).get(line_no)', source)
+        self.assertIn('_show_for(tag, pin=True)', source)
+        self.assertIn('text_widget.bind("<Button-1>", on_click, add="+")', source)
+        self.assertNotIn('text_widget.bind("<Motion>", on_motion, add="+")', source)
+        self.assertIn('def _place_status_for_tag(rec_tag):', source)
+        self.assertIn('def _place_tail_for_tag(rec_tag):', source)
+        self.assertIn('line_text.find("[ID ")', source)
+        self.assertIn('line_end = text_widget.index(f"{start} lineend")', source)
+        self.assertIn('gap_start = 6', source)
+        self.assertIn('id_pos = line_text.find("[ID ")', source)
+        self.assertIn('tx = max(8, min(left_x + max(0, (right_x - left_x - sw) // 2), text_widget.winfo_width() - sw - 8))', source)
+        self.assertIn('ty = max(0, int(y + max(0, (h - sh) // 2) - 6))', source)
+
     def test_text_actions_hide_inline_after_triangle_status_change(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_text_actions)
@@ -379,6 +425,45 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('_apply_record_status_style(rec_tag, new_status)', source)
         self.assertIn('_update_status_cards()', source)
         self.assertIn('_forced_visible_records.setdefault(text_widget, set()).add(_record_force_visibility_key(rec))', source)
+
+    def test_cards_context_refresh_only_after_user_timeline_selection(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_monitor_ui)
+        self.assertIn('global _cards_context_user_selected', source)
+        self.assertIn('_cards_context_user_selected = True', source)
+        self.assertIn('if not _cards_context_user_selected:', source)
+
+    def test_update_status_cards_reapplies_selected_consumo_context(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._update_status_cards)
+        self.assertIn('if callable(_cards_context_refresh_hook):', source)
+        self.assertIn('_cards_context_refresh_hook()', source)
+
+    def test_monitor_ui_normalizes_controle_filter_status_on_startup(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_monitor_ui)
+        self.assertIn('controle_filters = dict(_filter_state.get("controle") or _default_filters())', source)
+        self.assertIn('controle_filters["status"] = "Todos"', source)
+
+    def test_monitor_ui_registers_cards_context_refresh_hook(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_monitor_ui)
+        self.assertIn('_cards_context_refresh_hook = _refresh_cards_for_current_consumo_selection', source)
+        self.assertIn('_animate_cards_for_day(consumo_selected_day, show_total=(consumo_selected_mode == "total"))', source)
+
+    def test_text_actions_normalize_controle_status_filter_before_save(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_text_actions)
+        self.assertIn('if filter_key == "controle":', source)
+        self.assertIn('current_filter["status"] = "Todos"', source)
+        self.assertIn('_filter_state[filter_key] = current_filter', source)
+
+    def test_populate_text_adds_gap_between_row_number_and_id_text(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._populate_text)
+        self.assertIn('numbered = f"{marker} {idx + 1:>3}  {linha}"', source)
+        self.assertIn('if isinstance(linha, str) and linha.startswith("[ID "):', source)
+        self.assertIn('linha = f"    {linha}"', source)
 
     def test_populate_text_keeps_triangle_updated_record_visible(self):
         import inspect
