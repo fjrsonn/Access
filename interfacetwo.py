@@ -218,7 +218,15 @@ def _set_record_marker(text_widget, rec_tag: str, active: bool):
     num_tag = (_record_num_tag_map.get(text_widget, {}) or {}).get(rec_tag)
     if not num_tag:
         return
-    color = UI_THEME.get("focus_text", "#FFFFFF") if active else UI_THEME.get("muted_text", "#A6A6A6")
+    try:
+        idx = int(str(rec_tag).rsplit("_", 1)[1])
+    except Exception:
+        idx = None
+    is_fixed = idx in (_text_breakpoints.get(text_widget, set()) or set()) if idx is not None else False
+    if active or is_fixed:
+        color = UI_THEME.get("focus_text", "#FFFFFF")
+    else:
+        color = UI_THEME.get("surface", "#151A22")
     try:
         text_widget.tag_configure(num_tag, foreground=color)
     except Exception:
@@ -2232,7 +2240,7 @@ def _populate_text(text_widget, info_label):
                 num_tag = f"line_number_{idx}"
                 text_widget.tag_add(num_tag, start, f"{start} + {len(prefix)}c")
                 text_widget.tag_add("line_number", start, f"{start} + {len(prefix)}c")
-                base_num_color = UI_THEME.get("focus_text", "#FFFFFF") if idx in _text_breakpoints.get(text_widget, set()) else UI_THEME.get("muted_text", "#A6A6A6")
+                base_num_color = UI_THEME.get("focus_text", "#FFFFFF") if idx in _text_breakpoints.get(text_widget, set()) else UI_THEME.get("surface", "#151A22")
                 text_widget.tag_configure(num_tag, foreground=base_num_color)
                 text_widget.tag_bind(num_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_line_number_click(tw, rec, tag, pos))
                 _record_num_tag_map.setdefault(text_widget, {})[rec_tag] = num_tag
