@@ -3681,6 +3681,15 @@ def _build_text_actions(frame, text_widget, info_label, path):
         except Exception:
             return None
 
+    def _edit_visual_anchor(rec_tag):
+        rng = _editable_range_from_tag(rec_tag)
+        if not rng:
+            return "insert"
+        try:
+            return text_widget.index(f"{rng[1]} -1c")
+        except Exception:
+            return "insert"
+
     def _keep_insert_inside_edit_range():
         rng = edit_state.get("range")
         if not rng:
@@ -3789,14 +3798,14 @@ def _build_text_actions(frame, text_widget, info_label, path):
                 return "break"
             if key not in nav_keys and not key.startswith("Shift") and not key.startswith("Control"):
                 edit_state["dirty"] = True
-            text_widget.after_idle(lambda tag=rec_tag: _place_for_tag(tag, anchor_idx="insert"))
+            text_widget.after_idle(lambda tag=rec_tag: _place_for_tag(tag, anchor_idx=_edit_visual_anchor(tag)))
             return None
 
         def _guard_pointer(_event=None):
             if not edit_state.get("active"):
                 return None
             _keep_insert_inside_edit_range()
-            text_widget.after_idle(lambda tag=rec_tag: _place_for_tag(tag, anchor_idx="insert"))
+            text_widget.after_idle(lambda tag=rec_tag: _place_for_tag(tag, anchor_idx=_edit_visual_anchor(tag)))
             return None
 
         try:
@@ -3807,7 +3816,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
             pass
 
         _toggle_edit_buttons(True)
-        _place_for_tag(rec_tag, anchor_idx="insert")
+        _place_for_tag(rec_tag, anchor_idx=_edit_visual_anchor(rec_tag))
         _place_toolbar_for_tag(rec_tag)
 
     # ordem invertida solicitada (direita <- esquerda do pedido original): copiar, sem contato, avisado, editar, fechar
@@ -3867,7 +3876,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
                 pass
             current["pinned"] = True
             _show_for(active_tag, pin=True)
-            _place_for_tag(active_tag, anchor_idx="insert")
+            _place_for_tag(active_tag, anchor_idx=_edit_visual_anchor(active_tag))
             return "break"
         if not tag:
             _hide_inline(unpin=True)
