@@ -455,5 +455,12 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('if not tag or tag != active_tag:', source)
         self.assertIn('_keep_insert_inside_edit_range()', source)
 
+    def test_save_range_uses_max_index_to_persist_expanded_edit(self):
+        import inspect
+        source = inspect.getsource(interfacetwo._build_text_actions)
+        self.assertIn('def _resolve_edit_save_range(rec_tag):', source)
+        self.assertIn('max_idx = edit_state.get("max_index")', source)
+        self.assertIn('if text_widget.compare(max_idx, ">", end):', source)
+
 if __name__ == "__main__":
     unittest.main()

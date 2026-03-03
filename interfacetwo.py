@@ -3359,7 +3359,7 @@ def _apply_light_theme(widget):
 
 def _build_text_actions(frame, text_widget, info_label, path):
     current = {"record": None, "rec_tag": None, "pinned": False}
-    edit_state = {"active": False, "tag": None, "dirty": False, "range": None}
+    edit_state = {"active": False, "tag": None, "dirty": False, "range": None, "max_index": None}
 
     is_orient_obs = os.path.basename(path) in ("orientacoes.json", "observacoes.json")
     is_encomendas = os.path.basename(path) == "encomendasend.json"
@@ -3733,7 +3733,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
             return
 
     def _finish_editing(reload_text=True):
-        edit_state.update({"active": False, "tag": None, "dirty": False, "range": None})
+        edit_state.update({"active": False, "tag": None, "dirty": False, "range": None, "max_index": None})
         _text_edit_lock.discard(text_widget)
         _edit_active_record_tag.pop(text_widget, None)
         _set_filters_enabled(True)
@@ -3766,12 +3766,26 @@ def _build_text_actions(frame, text_widget, info_label, path):
             return
         _finish_editing(reload_text=True)
 
+    def _resolve_edit_save_range(rec_tag):
+        rng = _editable_range_from_tag(rec_tag) or edit_state.get("range")
+        if not rng:
+            return None
+        start, end = rng
+        max_idx = edit_state.get("max_index")
+        if max_idx:
+            try:
+                if text_widget.compare(max_idx, ">", end):
+                    end = max_idx
+            except Exception:
+                pass
+        return (start, end)
+
     def save_edit():
         rec = current.get("record")
         rec_tag = current.get("rec_tag")
         if not rec or not rec_tag:
             return
-        rng = _editable_range_from_tag(rec_tag) or edit_state.get("range")
+        rng = _resolve_edit_save_range(rec_tag)
         if not rng:
             return
         try:
@@ -3804,7 +3818,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
         if not editable_range:
             return
         start, end = editable_range
-        edit_state.update({"active": True, "tag": rec_tag, "dirty": False, "range": (start, end)})
+        edit_state.update({"active": True, "tag": rec_tag, "dirty": False, "range": (start, end), "max_index": end})
         _edit_active_record_tag[text_widget] = rec_tag
         for _tag in (_record_bullet_tag_map.get(text_widget, {}) or {}).keys():
             _set_record_marker(text_widget, _tag, _tag == rec_tag)
@@ -3843,6 +3857,14 @@ def _build_text_actions(frame, text_widget, info_label, path):
                 return "break"
             if key not in nav_keys and not key.startswith("Shift") and not key.startswith("Control"):
                 edit_state["dirty"] = True
+                def _after_edit(tag=rec_tag):
+                    try:
+                        edit_state["max_index"] = text_widget.index("insert")
+                    except Exception:
+                        pass
+                    _place_for_tag(tag, anchor_idx=_edit_visual_anchor(tag))
+                text_widget.after_idle(_after_edit)
+                return None
             text_widget.after_idle(lambda tag=rec_tag: _place_for_tag(tag, anchor_idx=_edit_visual_anchor(tag)))
             return None
 
