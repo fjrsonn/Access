@@ -2169,7 +2169,7 @@ def _populate_text(text_widget, info_label):
             prefix = "controle" if formatter == format_creative_entry else ("encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else "observacao"))
             rec_tag = f"{prefix}_record_{idx}"
         linha = formatter(r)
-        marker = "●" if idx in _text_breakpoints.get(text_widget, set()) else " "
+        marker = "●"
         numbered = f"{marker} {idx + 1:>3}  {linha}"
         text_tags = [row_tag]
         if rec_tag:
@@ -2232,7 +2232,8 @@ def _populate_text(text_widget, info_label):
                 num_tag = f"line_number_{idx}"
                 text_widget.tag_add(num_tag, start, f"{start} + {len(prefix)}c")
                 text_widget.tag_add("line_number", start, f"{start} + {len(prefix)}c")
-                text_widget.tag_configure(num_tag, foreground=UI_THEME.get("muted_text", "#A6A6A6"))
+                base_num_color = UI_THEME.get("focus_text", "#FFFFFF") if idx in _text_breakpoints.get(text_widget, set()) else UI_THEME.get("muted_text", "#A6A6A6")
+                text_widget.tag_configure(num_tag, foreground=base_num_color)
                 text_widget.tag_bind(num_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_line_number_click(tw, rec, tag, pos))
                 _record_num_tag_map.setdefault(text_widget, {})[rec_tag] = num_tag
             except Exception:
@@ -2967,7 +2968,7 @@ def _apply_hover_motion_pipeline(text_widget, x, y):
     if text_widget in _text_edit_lock:
         return
     _mark_text_interaction(text_widget)
-    state = _hover_runtime_state.setdefault(text_widget, {"last_record_tag": None, "last_line": None, "pending_after": None, "last_event": None})
+    state = _hover_runtime_state.setdefault(text_widget, {"last_record_tag": None, "last_line": None, "pending_after": None, "last_event": None, "last_hover_range": None, "last_callback_token": None})
     t0 = time.perf_counter()
     try:
         index = text_widget.index(f"@{x},{y}")
@@ -2987,12 +2988,17 @@ def _apply_hover_motion_pipeline(text_widget, x, y):
             _set_record_marker(text_widget, rec_tag, True)
         state["last_record_tag"] = rec_tag
 
+    target_range = None
+    hover_token = None
     if rec_tag:
-        token = f"tag:{rec_tag}"
-        if _hover_state.get(text_widget) != token:
-            _clear_hover_line(text_widget, hover_tag)
-            if _apply_hover_record(text_widget, rec_tag, hover_tag):
-                _hover_state[text_widget] = token
+        try:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if ranges and len(ranges) >= 2:
+                target_range = (str(ranges[0]), str(ranges[1]))
+                hover_token = f"tag:{rec_tag}"
+        except Exception:
+            target_range = None
+            hover_token = None
         _text_hover_marker[text_widget] = rec_tag
     else:
         _text_hover_marker[text_widget] = None
@@ -3000,35 +3006,54 @@ def _apply_hover_motion_pipeline(text_widget, x, y):
             line_text = text_widget.get(f"{line}.0", f"{line}.end")
         except Exception:
             line_text = ""
-        if not line_text.strip():
-            if prev_line is not None:
-                _clear_hover_line(text_widget, hover_tag)
-                state["last_line"] = None
-        elif prev_line != line:
-            _clear_hover_line(text_widget, hover_tag)
-            _apply_hover_line(text_widget, line, hover_tag)
-            _hover_state[text_widget] = line
-            state["last_line"] = line
+        if line_text.strip():
+            start_line = f"{line}.0"
+            end_line = f"{line}.0 lineend+1c"
+            target_range = (start_line, end_line)
+            hover_token = line
 
-    for cb in _hover_motion_callbacks.get(text_widget, []):
+    prev_range = state.get("last_hover_range")
+    if prev_range and (not target_range or prev_range != target_range):
         try:
-            cb(rec_tag=rec_tag, line=line, index=index)
+            text_widget.tag_remove(hover_tag, prev_range[0], prev_range[1])
         except Exception:
-            continue
+            pass
+        state["last_hover_range"] = None
+
+    if target_range and state.get("last_hover_range") != target_range:
+        try:
+            text_widget.tag_add(hover_tag, target_range[0], target_range[1])
+            state["last_hover_range"] = target_range
+        except Exception:
+            state["last_hover_range"] = None
+
+    _hover_state[text_widget] = hover_token
+    if rec_tag is None:
+        state["last_line"] = line if target_range else None
+    else:
+        state["last_line"] = prev_line
+
+    callback_token = hover_token or ""
+    if callback_token != state.get("last_callback_token"):
+        state["last_callback_token"] = callback_token
+        for cb in _hover_motion_callbacks.get(text_widget, []):
+            try:
+                cb(rec_tag=rec_tag, line=line, index=index)
+            except Exception:
+                continue
 
     elapsed = (time.perf_counter() - t0) * 1000
     _perf_sample("hover", elapsed)
-
 
 def _bind_hover_highlight(text_widget):
     # compatibilidade: busca de tags segue regra "_record_" in t dentro do pipeline
     hover_tag = "hover_line"
     text_widget.tag_configure(hover_tag, background=UI_THEME["focus_bg"], foreground=UI_THEME["focus_text"])
     _hover_state[text_widget] = None
-    _hover_runtime_state[text_widget] = {"last_record_tag": None, "last_line": None, "pending_after": None, "last_event": None}
+    _hover_runtime_state[text_widget] = {"last_record_tag": None, "last_line": None, "pending_after": None, "last_event": None, "last_hover_range": None, "last_callback_token": None}
 
     def on_motion(event):
-        state = _hover_runtime_state.setdefault(text_widget, {"last_record_tag": None, "last_line": None, "pending_after": None, "last_event": None})
+        state = _hover_runtime_state.setdefault(text_widget, {"last_record_tag": None, "last_line": None, "pending_after": None, "last_event": None, "last_hover_range": None, "last_callback_token": None})
         state["last_event"] = (event.x, event.y)
         pending = state.get("pending_after")
         if pending:
@@ -3052,7 +3077,14 @@ def _bind_hover_highlight(text_widget):
             _set_record_marker(text_widget, prev_tag, False)
         state["last_record_tag"] = None
         state["last_line"] = None
-        _clear_hover_line(text_widget, hover_tag)
+        prev_range = state.get("last_hover_range")
+        if prev_range:
+            try:
+                text_widget.tag_remove(hover_tag, prev_range[0], prev_range[1])
+            except Exception:
+                pass
+        state["last_hover_range"] = None
+        state["last_callback_token"] = None
         _text_hover_marker[text_widget] = None
         for cb in _hover_motion_callbacks.get(text_widget, []):
             try:
@@ -3724,7 +3756,8 @@ def _build_text_actions(frame, text_widget, info_label, path):
         if edit_state.get("active"):
             return
         if rec_tag:
-            _show_for(rec_tag, pin=False)
+            if current.get("rec_tag") != rec_tag or not inline_wrap.winfo_ismapped():
+                _show_for(rec_tag, pin=False)
         else:
             _hide_inline(unpin=False)
 
