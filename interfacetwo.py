@@ -3461,16 +3461,19 @@ def _build_text_actions(frame, text_widget, info_label, path):
             if not ranges or len(ranges) < 2:
                 return
             start, end = ranges[0], ranges[1]
-            box = text_widget.bbox(start)
+            end_idx = text_widget.index(f"{end} -1c")
+            box = text_widget.bbox(end_idx)
             if not box:
-                box = text_widget.bbox(end)
+                box = text_widget.bbox(start)
             if not box:
                 return
             x, y, w, h = box
             inline_wrap.update_idletasks()
             fw = max(inline_wrap.winfo_reqwidth(), 80)
             fh = max(inline_wrap.winfo_reqheight(), 16)
-            tx = max(8, text_widget.winfo_width() - fw - 12)
+            tx_preferred = int(x + w + 8)
+            tx_limit = max(8, text_widget.winfo_width() - fw - 12)
+            tx = max(8, min(tx_preferred, tx_limit))
             ty = max(0, y + max(0, (h - fh) // 2))
             inline_wrap.place(x=tx, y=ty)
             inline_wrap.lift()
