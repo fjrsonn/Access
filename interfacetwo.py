@@ -1620,7 +1620,7 @@ def _record_hash_key(r: dict) -> str:
 
 
 def _record_original_id(r: dict) -> str:
-    return str(r.get("ID") or r.get("id") or r.get("_entrada_id") or "-")
+    return str(r.get("ID") or r.get("id") or r.get("_entrada_id") or r.get("id_aviso") or "-")
 
 def format_creative_entry(r: dict) -> str:
     modelo = r.get("MODELO") or ""
@@ -1754,7 +1754,16 @@ def format_aviso_entry(r: dict) -> str:
     status = (r.get("status") or {}) if isinstance(r.get("status"), dict) else {}
     ativo = bool(status.get("ativo"))
     prefix = "[ATIVO ⚠]" if ativo else "[INATIVO]"
-    return f"[ID {_record_original_id(r)}] {prefix} {msg}"
+    ts = (r.get("timestamps") or {}) if isinstance(r.get("timestamps"), dict) else {}
+    gerado = str(ts.get("gerado_em") or r.get("DATA_HORA") or "").strip()
+    tipo = str(r.get("tipo") or "").strip()
+    detalhes = []
+    if tipo:
+        detalhes.append(tipo)
+    if gerado:
+        detalhes.append(gerado)
+    suffix = f" ({' • '.join(detalhes)})" if detalhes else ""
+    return f"[ID {_record_original_id(r)}] {prefix} {msg}{suffix}"
 
 def _normalize_date_value(value: str):
     if not value:
@@ -2256,7 +2265,7 @@ def _populate_text(text_widget, info_label):
                 record_line_map[line_no] = r
             except Exception:
                 pass
-            status = (r.get("STATUS_ENCOMENDA") or r.get("STATUS") or "").strip().upper()
+            status = str(r.get("STATUS_ENCOMENDA") or r.get("STATUS") or "").strip().upper()
             if status == "AVISADO":
                 try:
                     text_widget.tag_add("status_avisado", start, end)
