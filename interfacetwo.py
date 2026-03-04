@@ -1620,7 +1620,7 @@ def _record_hash_key(r: dict) -> str:
 
 
 def _record_original_id(r: dict) -> str:
-    return str(r.get("ID") or r.get("id") or r.get("_entrada_id") or "-")
+    return str(r.get("ID") or r.get("id") or r.get("_entrada_id") or r.get("id_aviso") or "-")
 
 def format_creative_entry(r: dict) -> str:
     modelo = r.get("MODELO") or ""
@@ -1746,6 +1746,24 @@ def format_orientacao_entry(r: dict) -> str:
 def format_observacao_entry(r: dict) -> str:
     texto = str(r.get("texto") or r.get("texto_original") or "")
     return f"[ID {_record_original_id(r)}] {texto}"
+
+def format_aviso_entry(r: dict) -> str:
+    msg = str(r.get("mensagem") or r.get("texto") or r.get("texto_original") or "")
+    if not msg:
+        msg = str(r.get("tipo") or "Aviso sem descrição")
+    status = (r.get("status") or {}) if isinstance(r.get("status"), dict) else {}
+    ativo = bool(status.get("ativo"))
+    prefix = "[ATIVO ⚠]" if ativo else "[INATIVO]"
+    ts = (r.get("timestamps") or {}) if isinstance(r.get("timestamps"), dict) else {}
+    gerado = str(ts.get("gerado_em") or r.get("DATA_HORA") or "").strip()
+    tipo = str(r.get("tipo") or "").strip()
+    detalhes = []
+    if tipo:
+        detalhes.append(tipo)
+    if gerado:
+        detalhes.append(gerado)
+    suffix = f" ({' • '.join(detalhes)})" if detalhes else ""
+    return f"[ID {_record_original_id(r)}] {prefix} {msg}{suffix}"
 
 def _normalize_date_value(value: str):
     if not value:
@@ -2203,12 +2221,12 @@ def _populate_text(text_widget, info_label):
     text_widget.tag_configure("row_odd", background=UI_THEME.get("surface", "#151A22"))
     text_widget.tag_configure("line_number", foreground=UI_THEME.get("muted_text", "#A6A6A6"))
     for idx, r in enumerate(filtrados):
-        is_clickable = formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry)
+        is_clickable = formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry, format_aviso_entry)
         row_tag = "row_even" if idx % 2 == 0 else "row_odd"
         rec_tag = None
         if is_clickable:
             has_clickable_records = True
-            prefix = "controle" if formatter == format_creative_entry else ("encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else "observacao"))
+            prefix = "controle" if formatter == format_creative_entry else ("encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else ("aviso" if formatter == format_aviso_entry else "observacao")))
             rec_tag = f"{prefix}_record_{idx}"
         linha = formatter(r)
         marker = "●"
@@ -2247,7 +2265,7 @@ def _populate_text(text_widget, info_label):
                 record_line_map[line_no] = r
             except Exception:
                 pass
-            status = (r.get("STATUS_ENCOMENDA") or r.get("STATUS") or "").strip().upper()
+            status = str(r.get("STATUS_ENCOMENDA") or r.get("STATUS") or "").strip().upper()
             if status == "AVISADO":
                 try:
                     text_widget.tag_add("status_avisado", start, end)
@@ -2311,7 +2329,7 @@ def _populate_text(text_widget, info_label):
         _encomenda_tag_map.pop(text_widget, None)
         _encomenda_line_map.pop(text_widget, None)
 
-    if has_clickable_records or formatter in (format_creative_entry, format_orientacao_entry, format_observacao_entry):
+    if has_clickable_records or formatter in (format_creative_entry, format_orientacao_entry, format_observacao_entry, format_aviso_entry):
         _record_tag_map_generic[text_widget] = record_tag_map
     else:
         _record_tag_map_generic.pop(text_widget, None)
@@ -3883,6 +3901,10 @@ def _build_text_actions(frame, text_widget, info_label, path):
             text_widget.focus_set()
             text_widget.tag_add("edit_outline", start, end)
             text_widget.tag_configure("edit_outline", background=UI_THEME.get("surface_alt", "#1F2937"), foreground=UI_THEME.get("text", "#E6EDF3"))
+            try:
+                text_widget.tag_lower("edit_outline", "sel")
+            except Exception:
+                pass
             text_widget.mark_set("insert", start)
         except Exception:
             pass
@@ -4645,8 +4667,6 @@ def _build_monitor_ui(container):
     consumo_selected_mode = "day"
     consumo_line_intro_running = False
     consumo_line_intro_done = False
-    consumo_pinned_tip_text = ""
-    consumo_pinned_tip_kind = ""
 
     def _aggregate_all_days() -> dict:
         total = _empty_day_metrics()
@@ -4812,13 +4832,11 @@ def _build_monitor_ui(container):
             _draw_polyline_progress([(x, y) for x, y, *_ in coords], line_progress)
 
         def _on_day_click(day_key: str, show_total: bool = False):
-            nonlocal consumo_selected_day, consumo_selected_mode, consumo_pinned_tip_text, consumo_pinned_tip_kind
+            nonlocal consumo_selected_day, consumo_selected_mode
             global _cards_context_user_selected
             _cards_context_user_selected = True
             consumo_selected_day = day_key
             consumo_selected_mode = "total" if show_total else "day"
-            consumo_pinned_tip_text = "Total" if show_total else str(day_key)
-            consumo_pinned_tip_kind = "total" if show_total else "day"
             if show_total:
                 total_sel = int(_aggregate_all_days().get("total", 0) or 0)
                 if _control_filtered_count_var is not None:
@@ -4832,10 +4850,7 @@ def _build_monitor_ui(container):
 
         point_tip = {"win": None}
 
-        def _hide_point_tip(_event=None, *, force=False):
-            nonlocal consumo_pinned_tip_text
-            if consumo_pinned_tip_text and not force:
-                return
+        def _hide_point_tip(_event=None):
             try:
                 if point_tip.get("win") is not None:
                     point_tip["win"].destroy()
@@ -4844,7 +4859,7 @@ def _build_monitor_ui(container):
             point_tip["win"] = None
 
         def _show_point_tip(event=None, text="", anchor=None, force_right=False):
-            _hide_point_tip(force=True)
+            _hide_point_tip()
             if not text:
                 return
             try:
@@ -4931,11 +4946,14 @@ def _build_monitor_ui(container):
         consumo_days_canvas.tag_bind(marker_item, "<Motion>", lambda _evt, px=marker_x, py=marker_y: _show_point_tip(_evt, "Total", anchor=(px, py), force_right=True))
         consumo_days_canvas.tag_bind(marker_item, "<Leave>", lambda _evt: (consumo_days_canvas.configure(cursor=""), _hide_point_tip()))
 
-        if consumo_pinned_tip_text:
-            if consumo_pinned_tip_kind == "total":
-                _show_point_tip(text="Total", anchor=(marker_x, marker_y), force_right=True)
-            elif selected_anchor:
-                _show_point_tip(text=consumo_selected_day, anchor=selected_anchor, force_right=True)
+        try:
+            consumo_days_canvas.bind("<Leave>", lambda _evt: (consumo_days_canvas.configure(cursor=""), _hide_point_tip()), add="+")
+            consumo_days_canvas.bind("<ButtonRelease>", lambda _evt: _hide_point_tip(), add="+")
+            consumo_days_canvas.bind("<FocusOut>", lambda _evt: _hide_point_tip(), add="+")
+            consumo_days_canvas.bind("<Unmap>", lambda _evt: _hide_point_tip(), add="+")
+            consumo_days_canvas.bind("<Destroy>", lambda _evt: _hide_point_tip(), add="+")
+        except Exception:
+            pass
 
         if consumo_selected_mode == "total":
             total_selected = int(_aggregate_all_days().get("total", 0) or 0)
@@ -4991,7 +5009,7 @@ def _build_monitor_ui(container):
     metrics_accessibility_label = build_label(container, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
     metrics_accessibility_label.configure(textvariable=_metrics_accessibility_var)
 
-    hints = build_label(container, "Atalhos: Ctrl+F buscar • Ctrl+Enter aplicar • Ctrl+Shift+L limpar • Alt+1..4 abas • Alt+E exportar • Alt+V salvar visão", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    hints = build_label(container, "Atalhos: Ctrl+F buscar • Ctrl+Enter aplicar • Ctrl+Shift+L limpar • Alt+1..5 abas • Alt+E exportar • Alt+V salvar visão", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
 
     def _sync_details_panel_visibility():
         show_details = bool(details_visible.get())
@@ -5055,11 +5073,13 @@ def _build_monitor_ui(container):
     encomendas_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
     orientacoes_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
     observacoes_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
+    avisos_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
 
     notebook.add(controle_frame, text="CONTROLE")
     notebook.add(encomendas_frame, text="ENCOMENDAS")
     notebook.add(orientacoes_frame, text="ORIENTAÇÕES")
     notebook.add(observacoes_frame, text="OBSERVAÇÕES")
+    notebook.add(avisos_frame, text="AVISOS")
 
     def _select_tab(index: int):
         try:
@@ -5074,7 +5094,7 @@ def _build_monitor_ui(container):
     tab_button_normal_bg = UI_THEME.get("bg", UI_THEME["surface"])
     tab_button_selected_bg = UI_THEME.get("surface", UI_THEME["bg"])
     tab_button_hover_bg = UI_THEME.get("border", tab_button_normal_bg)
-    for idx, label in enumerate(["CONTROLE", "ENCOMENDAS", "ORIENTAÇÕES", "OBSERVAÇÕES"]):
+    for idx, label in enumerate(["CONTROLE", "ENCOMENDAS", "ORIENTAÇÕES", "OBSERVAÇÕES", "AVISOS"]):
         btn_frame = tk.Frame(tab_button_bar, bg=tab_border_color)
         btn_tab = build_secondary_button(btn_frame, label, lambda i=idx: _select_tab(i), padx=12)
         try:
@@ -5134,7 +5154,7 @@ def _build_monitor_ui(container):
         def _show_shortcuts(_e=None):
             messagebox.showinfo(
                 "Atalhos do monitor",
-                "Ctrl+F: foco na busca\nCtrl+Enter: aplicar filtros\nCtrl+Shift+L: limpar filtros\nAlt+1..4: trocar abas\nF1: ajuda de atalhos",
+                "Ctrl+F: foco na busca\nCtrl+Enter: aplicar filtros\nCtrl+Shift+L: limpar filtros\nAlt+1..5: trocar abas\nF1: ajuda de atalhos",
                 parent=root_win,
             )
             return "break"
@@ -5142,6 +5162,7 @@ def _build_monitor_ui(container):
         root_win.bind("<Alt-Key-2>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+2"}), _select_tab(1), "break")[2], add="+")
         root_win.bind("<Alt-Key-3>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+3"}), _select_tab(2), "break")[2], add="+")
         root_win.bind("<Alt-Key-4>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+4"}), _select_tab(3), "break")[2], add="+")
+        root_win.bind("<Alt-Key-5>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+5"}), _select_tab(4), "break")[2], add="+")
         root_win.bind("<F1>", _show_shortcuts, add="+")
     except Exception:
         pass
@@ -5187,6 +5208,7 @@ def _build_monitor_ui(container):
         (encomendas_frame, ENCOMENDAS_ARQUIVO, format_encomenda_entry, "encomendas"),
         (orientacoes_frame, ORIENTACOES_ARQUIVO, format_orientacao_entry, "orientacoes"),
         (observacoes_frame, OBSERVACOES_ARQUIVO, format_observacao_entry, "observacoes"),
+        (avisos_frame, AVISOS_ARQUIVO, format_aviso_entry, "avisos"),
     ]
 
     def _control_filtered_records():
@@ -5331,7 +5353,7 @@ def _build_monitor_ui(container):
         filter_bar._filter_target_widget = text_widget
         _filter_bars[str(filter_key)] = filter_bar
         _apply_filter_visibility(str(filter_key))
-        if formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry):
+        if formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry, format_aviso_entry):
             text_widget.tag_configure("status_avisado", foreground=UI_THEME["status_avisado_text"])
             text_widget.tag_configure("status_sem_contato", foreground=UI_THEME["status_sem_contato_text"])
         if formatter == format_encomenda_entry:
@@ -5345,7 +5367,7 @@ def _build_monitor_ui(container):
         _sticky_header_state[text_widget] = {"var": sticky_var, "formatter": formatter, "scroll_setter": text_scroll.set}
         _bind_sticky_header_updates(text_widget)
         _bind_hover_highlight(text_widget)
-        if formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry):
+        if formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry, format_aviso_entry):
             _build_text_actions(frame, text_widget, info_label, arquivo)
         if filter_key == "controle":
             details_panel = tk.Frame(details_host, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
@@ -5372,7 +5394,7 @@ def _build_monitor_ui(container):
         _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter, "filter_key": filter_key, "widget": text_widget, "info_label": info_label}
 
     if not prefs.get("onboarding_seen"):
-        _announce_feedback("Use Ctrl+F para busca e Alt+1..4 para trocar abas", "info")
+        _announce_feedback("Use Ctrl+F para busca e Alt+1..5 para trocar abas", "info")
 
     _apply_density()
     if op_mode_var.get():
