@@ -210,6 +210,11 @@ _perf_metrics = {
 
 def _scroll_text_widget(text_widget, *args):
     _mark_text_interaction(text_widget)
+    for cb in _text_scroll_callbacks.get(text_widget, []):
+        try:
+            cb()
+        except Exception:
+            continue
     try:
         text_widget.yview(*args)
     except Exception:
