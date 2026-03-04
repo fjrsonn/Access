@@ -370,6 +370,10 @@ class AppMetricCard(tk.Frame):
                     segment = "consumed"
                 elif "segment_remaining" in tags:
                     segment = "remaining"
+            try:
+                self.donut_canvas.configure(cursor="hand2" if segment else "")
+            except Exception:
+                pass
             if segment != self._donut_hover_segment:
                 self._donut_hover_segment = segment
                 self._draw_donut()
@@ -383,6 +387,10 @@ class AppMetricCard(tk.Frame):
         if self._donut_hover_segment is None:
             return
         self._donut_hover_segment = None
+        try:
+            self.donut_canvas.configure(cursor="")
+        except Exception:
+            pass
         self._draw_donut()
 
     def set_donut_visibility(self, visible: bool):
