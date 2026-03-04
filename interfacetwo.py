@@ -3882,7 +3882,8 @@ def _build_text_actions(frame, text_widget, info_label, path):
             text_widget.config(state="normal")
             text_widget.focus_set()
             text_widget.tag_add("edit_outline", start, end)
-            text_widget.tag_configure("edit_outline", background=UI_THEME.get("surface_alt", "#1F2937"), foreground=UI_THEME.get("text", "#E6EDF3"))
+            # manter apenas contraste de texto para não ocultar highlight azul de seleção
+            text_widget.tag_configure("edit_outline", foreground=UI_THEME.get("text", "#E6EDF3"))
             text_widget.mark_set("insert", start)
         except Exception:
             pass
@@ -4645,8 +4646,6 @@ def _build_monitor_ui(container):
     consumo_selected_mode = "day"
     consumo_line_intro_running = False
     consumo_line_intro_done = False
-    consumo_pinned_tip_text = ""
-    consumo_pinned_tip_kind = ""
 
     def _aggregate_all_days() -> dict:
         total = _empty_day_metrics()
@@ -4832,10 +4831,7 @@ def _build_monitor_ui(container):
 
         point_tip = {"win": None}
 
-        def _hide_point_tip(_event=None, *, force=False):
-            nonlocal consumo_pinned_tip_text
-            if consumo_pinned_tip_text and not force:
-                return
+        def _hide_point_tip(_event=None):
             try:
                 if point_tip.get("win") is not None:
                     point_tip["win"].destroy()
@@ -4844,7 +4840,7 @@ def _build_monitor_ui(container):
             point_tip["win"] = None
 
         def _show_point_tip(event=None, text="", anchor=None, force_right=False):
-            _hide_point_tip(force=True)
+            _hide_point_tip()
             if not text:
                 return
             try:
@@ -4930,12 +4926,6 @@ def _build_monitor_ui(container):
         consumo_days_canvas.tag_bind(marker_item, "<Enter>", lambda _evt, px=marker_x, py=marker_y: (consumo_days_canvas.configure(cursor="hand2"), _show_point_tip(_evt, "Total", anchor=(px, py), force_right=True)))
         consumo_days_canvas.tag_bind(marker_item, "<Motion>", lambda _evt, px=marker_x, py=marker_y: _show_point_tip(_evt, "Total", anchor=(px, py), force_right=True))
         consumo_days_canvas.tag_bind(marker_item, "<Leave>", lambda _evt: (consumo_days_canvas.configure(cursor=""), _hide_point_tip()))
-
-        if consumo_pinned_tip_text:
-            if consumo_pinned_tip_kind == "total":
-                _show_point_tip(text="Total", anchor=(marker_x, marker_y), force_right=True)
-            elif selected_anchor:
-                _show_point_tip(text=consumo_selected_day, anchor=selected_anchor, force_right=True)
 
         if consumo_selected_mode == "total":
             total_selected = int(_aggregate_all_days().get("total", 0) or 0)
