@@ -210,6 +210,11 @@ _perf_metrics = {
 
 def _scroll_text_widget(text_widget, *args):
     _mark_text_interaction(text_widget)
+    for cb in _text_scroll_callbacks.get(text_widget, []):
+        try:
+            cb()
+        except Exception:
+            continue
     try:
         text_widget.yview(*args)
     except Exception:
@@ -4806,11 +4811,13 @@ def _build_monitor_ui(container):
             _draw_polyline_progress([(x, y) for x, y, *_ in coords], line_progress)
 
         def _on_day_click(day_key: str, show_total: bool = False):
-            nonlocal consumo_selected_day, consumo_selected_mode
+            nonlocal consumo_selected_day, consumo_selected_mode, consumo_pinned_tip_text, consumo_pinned_tip_kind
             global _cards_context_user_selected
             _cards_context_user_selected = True
             consumo_selected_day = day_key
             consumo_selected_mode = "total" if show_total else "day"
+            consumo_pinned_tip_text = "Total" if show_total else str(day_key)
+            consumo_pinned_tip_kind = "total" if show_total else "day"
             if show_total:
                 total_sel = int(_aggregate_all_days().get("total", 0) or 0)
                 if _control_filtered_count_var is not None:
