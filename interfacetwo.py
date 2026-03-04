@@ -4517,6 +4517,7 @@ def _build_monitor_ui(container):
         order = ["ativos", "pendentes", "sem_contato", "avisado"]
         duration_ms = 780
         steps = 20
+        _start_days_line_intro(duration_ms=duration_ms * len(order), steps=steps * len(order))
 
         def _animate_donuts_sync():
             for key in order:
@@ -4552,13 +4553,10 @@ def _build_monitor_ui(container):
     consumo_title = build_label(consumo_header, "Consumo por dia", bg=UI_THEME["bg"], font=theme_font("font_lg", "bold"))
     consumo_title.pack(side=tk.LEFT)
 
-    consumo_hint = build_label(consumo_header, "Cada ponto representa um dia. Clique para atualizar os gráficos; a bolinha vazada indica o estado atual.", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    consumo_hint = build_label(consumo_header, "Cada ponto representa um dia...", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
     consumo_hint.pack(side=tk.LEFT, anchor="w", padx=(theme_space("space_2", 8), 0))
 
-    consumo_day_var = tk.StringVar(value="")
-    consumo_day_label = build_label(consumo_header, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
-    consumo_day_label.configure(textvariable=consumo_day_var)
-    consumo_day_label.pack(side=tk.RIGHT, anchor="e")
+    consumo_day_var = tk.StringVar(value="Cada ponto representa um dia...")
 
     consumo_graph_frame = tk.Frame(container, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
     consumo_graph_frame.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
@@ -4634,6 +4632,8 @@ def _build_monitor_ui(container):
     consumo_por_dia = _build_consumo_por_dia()
     consumo_selected_day = max(consumo_por_dia.keys()) if consumo_por_dia else datetime.now().strftime("%Y-%m-%d")
     consumo_selected_mode = "day"
+    consumo_line_intro_running = False
+    consumo_line_intro_done = False
 
     def _aggregate_all_days() -> dict:
         total = _empty_day_metrics()
@@ -4737,13 +4737,13 @@ def _build_monitor_ui(container):
         except Exception:
             pass
 
-    def _draw_days_timeline(_event=None):
+    def _draw_days_timeline(_event=None, *, line_progress=1.0):
         nonlocal consumo_selected_day, consumo_selected_mode, consumo_por_dia
         consumo_por_dia = _build_consumo_por_dia()
         consumo_days_canvas.delete("all")
         day_keys = sorted(consumo_por_dia.keys())
         if not day_keys:
-            consumo_day_var.set("Sem dados de consumo por plantão")
+            consumo_day_var.set("Cada ponto representa um dia...")
             consumo_days_canvas.create_text(12, 12, anchor="nw", text="Sem registros com DATA_HORA", fill=UI_THEME.get("muted_text", "#9BA7B4"), font=theme_font("font_sm"))
             return
         if consumo_selected_day not in consumo_por_dia:
@@ -4767,17 +4767,33 @@ def _build_monitor_ui(container):
                 y = margin_y + (plot_h * 0.5)
             else:
                 ratio = (total - min_total) / (max_total - min_total)
-                # Curva de acentuação para destacar melhor aclive/declive entre dias.
-                # ratio^0.6 amplia diferenças visuais sem alterar o comprimento horizontal.
                 ratio = max(0.0, min(1.0, ratio)) ** 0.6
                 y = margin_y + plot_h * (1 - ratio)
             coords.append((x, y, day_key, total))
 
-        if len(coords) >= 2:
+        def _draw_polyline_progress(points, progress):
+            if len(points) < 2:
+                return
+            p = max(0.0, min(1.0, float(progress)))
+            max_seg = len(points) - 1
+            pos = p * max_seg
+            full = int(pos)
+            frac = pos - full
+            draw_pts = [points[0]]
+            for i in range(1, full + 1):
+                draw_pts.append(points[i])
+            if full < max_seg:
+                x1, y1 = points[full]
+                x2, y2 = points[full + 1]
+                draw_pts.append((x1 + (x2 - x1) * frac, y1 + (y2 - y1) * frac))
             line_points = []
-            for x, y, *_ in coords:
-                line_points.extend([x, y])
-            consumo_days_canvas.create_line(*line_points, fill="#FFFFFF", width=1.2, smooth=True)
+            for xx, yy in draw_pts:
+                line_points.extend([xx, yy])
+            if len(line_points) >= 4:
+                consumo_days_canvas.create_line(*line_points, fill="#FFFFFF", width=1.2, smooth=True)
+
+        if len(coords) >= 2:
+            _draw_polyline_progress([(x, y) for x, y, *_ in coords], line_progress)
 
         def _on_day_click(day_key: str, show_total: bool = False):
             nonlocal consumo_selected_day, consumo_selected_mode
@@ -4787,14 +4803,10 @@ def _build_monitor_ui(container):
             consumo_selected_mode = "total" if show_total else "day"
             if show_total:
                 total_sel = int(_aggregate_all_days().get("total", 0) or 0)
-                restante_sel = max(0, 1000 - total_sel)
-                consumo_day_var.set(f"Total acumulado: {day_key} • Usados: {total_sel} • Restantes(base1000): {restante_sel}")
                 if _control_filtered_count_var is not None:
                     _control_filtered_count_var.set(f"TOTAL {day_key} Registros: {total_sel}")
             else:
                 total_sel = int((consumo_por_dia.get(day_key) or {}).get("total", 0) or 0)
-                restante_sel = max(0, 1000 - total_sel)
-                consumo_day_var.set(f"Dia selecionado: {day_key} • Usados: {total_sel} • Restantes(base1000): {restante_sel}")
                 if _control_filtered_count_var is not None:
                     _control_filtered_count_var.set(f"{day_key} Registros: {total_sel}")
             _animate_cards_for_day(day_key, show_total=show_total)
@@ -4817,49 +4829,58 @@ def _build_monitor_ui(container):
             consumo_days_canvas.tag_bind(item, "<Button-1>", lambda _evt, d=day_key: _on_day_click(d))
 
         last_x, last_y, last_day_key, _last_total = coords[-1]
-        marker_x = min(width - margin_x, last_x + max(12, step * 0.45))
         marker_r = 6
+        min_gap = max(20, marker_r + 8)
+        marker_x = min(width - margin_x, last_x + max(min_gap, step * 0.6))
+        marker_y = last_y
+        if (marker_x - last_x) < min_gap:
+            marker_x = max(margin_x + marker_r, min(width - margin_x - marker_r, last_x))
+            marker_y = max(margin_y + marker_r, last_y - 14)
         marker_item = consumo_days_canvas.create_oval(
             marker_x - marker_r,
-            last_y - marker_r,
+            marker_y - marker_r,
             marker_x + marker_r,
-            last_y + marker_r,
+            marker_y + marker_r,
             fill="",
             outline="#FFFFFF",
             width=2,
         )
-        all_total = int(_aggregate_all_days().get("total", 0) or 0)
-        marker_restante = max(0, 1000 - all_total)
         consumo_days_canvas.tag_bind(marker_item, "<Button-1>", lambda _evt, d=last_day_key: _on_day_click(d, show_total=True))
         consumo_days_canvas.tag_bind(marker_item, "<Enter>", lambda _evt: consumo_days_canvas.configure(cursor="hand2"))
         consumo_days_canvas.tag_bind(marker_item, "<Leave>", lambda _evt: consumo_days_canvas.configure(cursor=""))
-        return_marker_x = marker_x - 14
-        return_marker_r = 4
-        return_marker_item = consumo_days_canvas.create_oval(
-            return_marker_x - return_marker_r,
-            last_y - return_marker_r,
-            return_marker_x + return_marker_r,
-            last_y + return_marker_r,
-            fill="#FFFFFF",
-            outline="#FFFFFF",
-            width=1,
-        )
-        consumo_days_canvas.tag_bind(return_marker_item, "<Button-1>", lambda _evt, d=last_day_key: _on_day_click(d, show_total=True))
-        consumo_days_canvas.tag_bind(return_marker_item, "<Enter>", lambda _evt: consumo_days_canvas.configure(cursor="hand2"))
-        consumo_days_canvas.tag_bind(return_marker_item, "<Leave>", lambda _evt: consumo_days_canvas.configure(cursor=""))
 
         if consumo_selected_mode == "total":
             total_selected = int(_aggregate_all_days().get("total", 0) or 0)
-            restante_selected = max(0, 1000 - total_selected)
-            consumo_day_var.set(f"Total acumulado: {consumo_selected_day} • Usados: {total_selected} • Restantes(base1000): {restante_selected}")
             if _control_filtered_count_var is not None:
                 _control_filtered_count_var.set(f"TOTAL {consumo_selected_day} Registros: {total_selected}")
         else:
             total_selected = int((consumo_por_dia.get(consumo_selected_day) or {}).get("total", 0) or 0)
-            restante_selected = max(0, 1000 - total_selected)
-            consumo_day_var.set(f"Dia selecionado: {consumo_selected_day} • Usados: {total_selected} • Restantes(base1000): {restante_selected}")
             if _control_filtered_count_var is not None:
                 _control_filtered_count_var.set(f"{consumo_selected_day} Registros: {total_selected}")
+
+    def _start_days_line_intro(duration_ms=3120, steps=28):
+        nonlocal consumo_line_intro_running, consumo_line_intro_done
+        if consumo_line_intro_running or consumo_line_intro_done:
+            return
+        consumo_line_intro_running = True
+        steps = max(8, int(steps))
+        tick_ms = max(12, int(duration_ms / steps))
+
+        def _step(i=0):
+            nonlocal consumo_line_intro_running, consumo_line_intro_done
+            progress = min(1.0, i / float(steps))
+            _draw_days_timeline(line_progress=progress)
+            if i >= steps:
+                consumo_line_intro_running = False
+                consumo_line_intro_done = True
+                return
+            try:
+                consumo_days_canvas.after(tick_ms, lambda: _step(i + 1))
+            except Exception:
+                consumo_line_intro_running = False
+                consumo_line_intro_done = True
+
+        _step(0)
 
     def _refresh_cards_for_current_consumo_selection():
         global _cards_context_user_selected
