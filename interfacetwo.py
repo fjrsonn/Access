@@ -185,6 +185,7 @@ _filter_toggle_buttons = {}
 _filter_toggle_state = {"visible": False}
 _text_breakpoints = {}
 _text_hover_marker = {}
+_hover_suspend_widgets = set()
 _record_num_tag_map = {}
 _record_bullet_tag_map = {}
 _text_record_ranges = {}
@@ -2987,6 +2988,8 @@ def _hover_tag_at_index(text_widget, index):
 def _apply_hover_motion_pipeline(text_widget, x, y):
     if text_widget in _text_edit_lock:
         return
+    if text_widget in _hover_suspend_widgets:
+        return
     _mark_text_interaction(text_widget)
     state = _hover_runtime_state.setdefault(text_widget, {"last_record_tag": None, "last_line": None, "pending_after": None, "last_event": None, "last_hover_range": None, "last_callback_token": None})
     t0 = time.perf_counter()
@@ -3073,6 +3076,12 @@ def _bind_hover_highlight(text_widget):
     _hover_runtime_state[text_widget] = {"last_record_tag": None, "last_line": None, "pending_after": None, "last_event": None, "last_hover_range": None, "last_callback_token": None}
 
     def on_motion(event):
+        if text_widget in _hover_suspend_widgets:
+            try:
+                text_widget.configure(cursor="arrow")
+            except Exception:
+                pass
+            return
         state = _hover_runtime_state.setdefault(text_widget, {"last_record_tag": None, "last_line": None, "pending_after": None, "last_event": None, "last_hover_range": None, "last_callback_token": None})
         state["last_event"] = (event.x, event.y)
         pending = state.get("pending_after")
@@ -3084,6 +3093,10 @@ def _bind_hover_highlight(text_widget):
         state["pending_after"] = text_widget.after(8, lambda tw=text_widget: _flush_hover_motion(tw))
 
     def _on_leave(_event):
+        try:
+            text_widget.configure(cursor="arrow")
+        except Exception:
+            pass
         state = _hover_runtime_state.get(text_widget) or {}
         pending = state.get("pending_after")
         if pending:
@@ -3123,6 +3136,14 @@ def _flush_hover_motion(text_widget):
     if not evt:
         return
     _apply_hover_motion_pipeline(text_widget, evt[0], evt[1])
+    try:
+        idx = text_widget.index(f"@{evt[0]},{evt[1]}")
+        line = idx.split(".")[0]
+        line_text = text_widget.get(f"{line}.0", f"{line}.end")
+        has_target = bool(_hover_tag_at_index(text_widget, idx) or line_text.strip())
+        text_widget.configure(cursor=("hand2" if has_target else "arrow"))
+    except Exception:
+        pass
 
 def _find_encomenda_record_at_index(text_widget, index):
     try:
@@ -3358,7 +3379,7 @@ def _apply_light_theme(widget):
         pass
 
 def _build_text_actions(frame, text_widget, info_label, path):
-    current = {"record": None, "rec_tag": None, "pinned": False}
+    current = {"record": None, "rec_tag": None, "pinned": False, "hover_suspended": False}
     edit_state = {"active": False, "tag": None, "dirty": False, "range": None, "max_index": None}
 
     is_orient_obs = os.path.basename(path) in ("orientacoes.json", "observacoes.json")
@@ -3498,6 +3519,13 @@ def _build_text_actions(frame, text_widget, info_label, path):
             if not box:
                 return
             x, y, w, h = box
+            line_box = text_widget.dlineinfo(end_idx)
+            if line_box:
+                line_y = int(line_box[1])
+                line_h = max(int(line_box[3]), 1)
+            else:
+                line_y = int(y)
+                line_h = max(int(h), 1)
             inline_wrap.update_idletasks()
             fw = max(inline_wrap.winfo_reqwidth(), 80)
             fh = max(inline_wrap.winfo_reqheight(), 16)
@@ -3505,18 +3533,28 @@ def _build_text_actions(frame, text_widget, info_label, path):
             tx_preferred = int(x + w + 2)
             tx_limit = max(8, text_widget.winfo_width() - fw - 12)
             tx = max(8, min(tx_preferred, tx_limit))
-            # centraliza visualmente os ícones com o meio da linha de texto
+            # mantém alinhamento visual centralizado, mas sem subir para cobrir a linha anterior
             buttons_row.update_idletasks()
             icon_h = max(buttons_row.winfo_reqheight(), 12)
-            text_center_y = y + (h / 2)
+            text_center_y = line_y + (line_h / 2)
             align_bias = -1
-            ty = max(0, int(round(text_center_y - (icon_h / 2) + align_bias)))
+            ty_center = int(round(text_center_y - (icon_h / 2) + align_bias))
+            ty = max(0, max(line_y, ty_center))
             inline_wrap.place(x=tx, y=ty)
             inline_wrap.lift()
             _inline_state["visible"] = True
             _inline_state["tag"] = rec_tag
         except Exception:
             return
+
+    def _refresh_inline_position():
+        rec_tag = current.get("rec_tag")
+        if not rec_tag:
+            return
+        if not (current.get("pinned") or edit_state.get("active") or _inline_state.get("visible")):
+            return
+        anchor_idx = _edit_visual_anchor(rec_tag) if edit_state.get("active") else None
+        _place_for_tag(rec_tag, anchor_idx=anchor_idx)
 
     def _place_toolbar_for_tag(_rec_tag=None):
         if not is_orient_obs:
@@ -3753,6 +3791,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
         try:
             text_widget.tag_remove("edit_outline", "1.0", tk.END)
             text_widget.config(state="disabled")
+            text_widget.configure(cursor="hand2")
         except Exception:
             pass
         if reload_text:
@@ -3826,6 +3865,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
         _set_filters_enabled(False)
         try:
             text_widget.config(state="normal")
+            text_widget.configure(cursor="xterm")
             text_widget.focus_set()
             text_widget.tag_add("edit_outline", start, end)
             text_widget.tag_configure("edit_outline", background=UI_THEME.get("surface_alt", "#1F2937"), foreground=UI_THEME.get("text", "#E6EDF3"))
@@ -3919,7 +3959,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
         return None
 
     def _on_hover_pipeline(rec_tag=None, **_kwargs):
-        if edit_state.get("active"):
+        if edit_state.get("active") or current.get("hover_suspended"):
             return
         if rec_tag:
             if current.get("rec_tag") != rec_tag or not inline_wrap.winfo_ismapped():
@@ -3956,8 +3996,31 @@ def _build_text_actions(frame, text_widget, info_label, path):
         if not current.get("pinned") and not edit_state.get("active"):
             _hide_inline(unpin=False)
 
+    def _on_middle_press(_event=None):
+        current["hover_suspended"] = True
+        _hover_suspend_widgets.add(text_widget)
+        try:
+            text_widget.configure(cursor="arrow")
+        except Exception:
+            pass
+        _hide_inline(unpin=False)
+        return None
+
+    def _on_middle_release(_event=None):
+        current["hover_suspended"] = False
+        _hover_suspend_widgets.discard(text_widget)
+        try:
+            text_widget.configure(cursor="hand2")
+        except Exception:
+            pass
+        return None
+
     text_widget.bind("<Button-1>", on_click, add="+")
     text_widget.bind("<Leave>", on_leave, add="+")
+    text_widget.bind("<ButtonPress-2>", _on_middle_press, add="+")
+    text_widget.bind("<ButtonRelease-2>", _on_middle_release, add="+")
+    for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>", "<Configure>", "<Prior>", "<Next>"):
+        text_widget.bind(seq, lambda _e: text_widget.after_idle(_refresh_inline_position), add="+")
 
     _text_action_ui[text_widget] = {
         "frame": inline_wrap,
@@ -5120,6 +5183,7 @@ def _build_monitor_ui(container):
         text_widget = tk.Text(
             text_area_wrap,
             wrap="word",
+            cursor="hand2",
             bg=UI_THEME["surface"],
             fg=UI_THEME.get("on_surface", UI_THEME["text"]),
             insertbackground=UI_THEME.get("on_surface", UI_THEME["text"]),
