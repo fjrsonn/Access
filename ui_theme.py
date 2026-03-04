@@ -515,9 +515,10 @@ def refresh_theme(widget_tree, context="default"):
 
 
 def attach_tooltip(widget, text):
-    tip = {"win": None, "watch_after": None}
+    tip = {"win": None, "watch_after": None, "watch_enabled": False}
 
     def _cancel_watchdog():
+        tip["watch_enabled"] = False
         after_id = tip.get("watch_after")
         if not after_id:
             return
@@ -528,7 +529,7 @@ def attach_tooltip(widget, text):
         tip["watch_after"] = None
 
     def _watch_pointer():
-        if tip.get("win") is None:
+        if tip.get("win") is None or not tip.get("watch_enabled"):
             tip["watch_after"] = None
             return
         try:
@@ -541,7 +542,10 @@ def attach_tooltip(widget, text):
             if not (left <= px <= right and top <= py <= bottom):
                 _hide()
                 return
-            tip["watch_after"] = widget.after(120, _watch_pointer)
+            if tip.get("watch_enabled"):
+                tip["watch_after"] = widget.after(120, _watch_pointer)
+            else:
+                tip["watch_after"] = None
         except Exception:
             _hide()
 
@@ -558,9 +562,11 @@ def attach_tooltip(widget, text):
             lbl.pack()
             tip["win"] = tw
             _cancel_watchdog()
+            tip["watch_enabled"] = True
             tip["watch_after"] = widget.after(120, _watch_pointer)
         except Exception:
             tip["win"] = None
+            tip["watch_enabled"] = False
 
     def _hide(_e=None):
         _cancel_watchdog()
