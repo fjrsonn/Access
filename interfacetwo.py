@@ -3883,6 +3883,10 @@ def _build_text_actions(frame, text_widget, info_label, path):
             text_widget.focus_set()
             text_widget.tag_add("edit_outline", start, end)
             text_widget.tag_configure("edit_outline", background=UI_THEME.get("surface_alt", "#1F2937"), foreground=UI_THEME.get("text", "#E6EDF3"))
+            try:
+                text_widget.tag_lower("edit_outline", "sel")
+            except Exception:
+                pass
             text_widget.mark_set("insert", start)
         except Exception:
             pass
