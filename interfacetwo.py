@@ -1849,7 +1849,7 @@ def _apply_filters(registros, filters):
             continue
         if not _record_matches_query(r, query):
             continue
-        record_status = (safe(r.get("STATUS") if r.get("STATUS") is not None else r.get("STATUS_ENCOMENDA")) or "-").strip().upper()
+        record_status = str(safe(r.get("STATUS") if r.get("STATUS") is not None else r.get("STATUS_ENCOMENDA")) or "-").strip().upper()
         record_bloco = (safe(r.get("BLOCO")) or "-").strip().upper()
         if status_filter != "TODOS" and record_status != status_filter:
             continue
