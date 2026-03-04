@@ -4645,6 +4645,8 @@ def _build_monitor_ui(container):
     consumo_selected_mode = "day"
     consumo_line_intro_running = False
     consumo_line_intro_done = False
+    consumo_pinned_tip_text = ""
+    consumo_pinned_tip_kind = ""
 
     def _aggregate_all_days() -> dict:
         total = _empty_day_metrics()
@@ -4810,11 +4812,13 @@ def _build_monitor_ui(container):
             _draw_polyline_progress([(x, y) for x, y, *_ in coords], line_progress)
 
         def _on_day_click(day_key: str, show_total: bool = False):
-            nonlocal consumo_selected_day, consumo_selected_mode
+            nonlocal consumo_selected_day, consumo_selected_mode, consumo_pinned_tip_text, consumo_pinned_tip_kind
             global _cards_context_user_selected
             _cards_context_user_selected = True
             consumo_selected_day = day_key
             consumo_selected_mode = "total" if show_total else "day"
+            consumo_pinned_tip_text = "Total" if show_total else str(day_key)
+            consumo_pinned_tip_kind = "total" if show_total else "day"
             if show_total:
                 total_sel = int(_aggregate_all_days().get("total", 0) or 0)
                 if _control_filtered_count_var is not None:
@@ -4828,7 +4832,10 @@ def _build_monitor_ui(container):
 
         point_tip = {"win": None}
 
-        def _hide_point_tip(_event=None):
+        def _hide_point_tip(_event=None, *, force=False):
+            nonlocal consumo_pinned_tip_text
+            if consumo_pinned_tip_text and not force:
+                return
             try:
                 if point_tip.get("win") is not None:
                     point_tip["win"].destroy()
@@ -4836,8 +4843,8 @@ def _build_monitor_ui(container):
                 pass
             point_tip["win"] = None
 
-        def _show_point_tip(event, text, anchor=None, force_right=False):
-            _hide_point_tip()
+        def _show_point_tip(event=None, text="", anchor=None, force_right=False):
+            _hide_point_tip(force=True)
             if not text:
                 return
             try:
@@ -4846,9 +4853,12 @@ def _build_monitor_ui(container):
                 if force_right and anchor:
                     x = int(consumo_days_canvas.winfo_rootx() + float(anchor[0]) + 14)
                     y = int(consumo_days_canvas.winfo_rooty() + float(anchor[1]) + 8)
-                else:
+                elif event is not None:
                     x = int(event.x_root + 14)
                     y = int(event.y_root + 10)
+                else:
+                    x = int(consumo_days_canvas.winfo_rootx() + 18)
+                    y = int(consumo_days_canvas.winfo_rooty() + 18)
                 tw.wm_geometry(f"+{x}+{y}")
                 lbl = tk.Label(
                     tw,
@@ -4875,8 +4885,11 @@ def _build_monitor_ui(container):
                 point_tip["win"] = None
 
         point_default = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
+        selected_anchor = None
         for x, y, day_key, total in coords:
             is_selected = day_key == consumo_selected_day
+            if is_selected:
+                selected_anchor = (x, y)
             radius = 4 if is_selected else 3
             color = "#FFFFFF" if is_selected else point_default
             item = consumo_days_canvas.create_oval(
@@ -4917,6 +4930,12 @@ def _build_monitor_ui(container):
         consumo_days_canvas.tag_bind(marker_item, "<Enter>", lambda _evt, px=marker_x, py=marker_y: (consumo_days_canvas.configure(cursor="hand2"), _show_point_tip(_evt, "Total", anchor=(px, py), force_right=True)))
         consumo_days_canvas.tag_bind(marker_item, "<Motion>", lambda _evt, px=marker_x, py=marker_y: _show_point_tip(_evt, "Total", anchor=(px, py), force_right=True))
         consumo_days_canvas.tag_bind(marker_item, "<Leave>", lambda _evt: (consumo_days_canvas.configure(cursor=""), _hide_point_tip()))
+
+        if consumo_pinned_tip_text:
+            if consumo_pinned_tip_kind == "total":
+                _show_point_tip(text="Total", anchor=(marker_x, marker_y), force_right=True)
+            elif selected_anchor:
+                _show_point_tip(text=consumo_selected_day, anchor=selected_anchor, force_right=True)
 
         if consumo_selected_mode == "total":
             total_selected = int(_aggregate_all_days().get("total", 0) or 0)
@@ -5295,6 +5314,8 @@ def _build_monitor_ui(container):
             undo=True,
             autoseparators=True,
             maxundo=-1,
+            selectbackground=UI_THEME.get("selection_bg", UI_THEME.get("focus_bg", "#1F6FEB")),
+            selectforeground=UI_THEME.get("selection_fg", UI_THEME.get("focus_text", "#FFFFFF")),
         )
         text_scroll = _ChatGPTLikeScrollbar(
             text_area_wrap,
