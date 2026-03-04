@@ -219,6 +219,26 @@ def _scroll_text_widget(text_widget, *args):
         text_widget.yview(*args)
     except Exception:
         return
+    for cb in _text_scroll_callbacks.get(text_widget, []):
+        try:
+            cb()
+        except Exception:
+            continue
+
+
+def _register_scroll_callback(text_widget, callback):
+    if not callable(callback):
+        return
+    _text_scroll_callbacks.setdefault(text_widget, []).append(callback)
+
+
+def _suppress_hover_temporarily(text_widget, duration_ms=220):
+    _hover_suppressed_until[text_widget] = time.monotonic() + (max(0, duration_ms) / 1000.0)
+
+
+def _is_hover_suppressed(text_widget):
+    deadline = _hover_suppressed_until.get(text_widget)
+    return bool(deadline and time.monotonic() < deadline)
 
 
 def _register_scroll_callback(text_widget, callback):
@@ -3999,10 +4019,15 @@ def _build_text_actions(frame, text_widget, info_label, path):
     def _on_scroll_activity():
         _suppress_hover_temporarily(text_widget)
         if edit_state.get("active"):
-            # Durante edição, manter salvar/cancelar estáticos para não "passearem"
-            # entre registros ao rolar a lista.
+            # Em edição, manter os botões presos ao MESMO registro, reposicionando
+            # apenas após o scroll efetivo para evitar troca visual de registro.
+            active_tag = edit_state.get("tag")
+            if active_tag:
+                text_widget.after_idle(
+                    lambda tag=active_tag: _place_for_tag(tag, anchor_idx=_edit_visual_anchor(tag))
+                )
             return
-        _hide_inline(unpin=False)
+        text_widget.after_idle(lambda: _hide_inline(unpin=False))
 
     _register_scroll_callback(text_widget, _on_scroll_activity)
     for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
