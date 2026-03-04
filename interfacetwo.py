@@ -4644,6 +4644,8 @@ def _build_monitor_ui(container):
     consumo_por_dia = _build_consumo_por_dia()
     consumo_selected_day = max(consumo_por_dia.keys()) if consumo_por_dia else datetime.now().strftime("%Y-%m-%d")
     consumo_selected_mode = "day"
+    consumo_pinned_tip_text = ""
+    consumo_pinned_tip_kind = ""
     consumo_line_intro_running = False
     consumo_line_intro_done = False
 
