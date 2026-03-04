@@ -4836,15 +4836,19 @@ def _build_monitor_ui(container):
                 pass
             point_tip["win"] = None
 
-        def _show_point_tip(event, text):
+        def _show_point_tip(event, text, anchor=None, force_right=False):
             _hide_point_tip()
             if not text:
                 return
             try:
                 tw = tk.Toplevel(consumo_days_canvas)
                 tw.wm_overrideredirect(True)
-                x = int(event.x_root + 14)
-                y = int(event.y_root + 10)
+                if force_right and anchor:
+                    x = int(consumo_days_canvas.winfo_rootx() + float(anchor[0]) + 14)
+                    y = int(consumo_days_canvas.winfo_rooty() + float(anchor[1]) + 8)
+                else:
+                    x = int(event.x_root + 14)
+                    y = int(event.y_root + 10)
                 tw.wm_geometry(f"+{x}+{y}")
                 lbl = tk.Label(
                     tw,
@@ -4858,6 +4862,14 @@ def _build_monitor_ui(container):
                     font=theme_font("font_sm"),
                 )
                 lbl.pack()
+                tw.update_idletasks()
+                sw = max(320, int(consumo_days_canvas.winfo_screenwidth() or 0))
+                sh = max(240, int(consumo_days_canvas.winfo_screenheight() or 0))
+                tw_w = max(40, int(tw.winfo_reqwidth() or 0))
+                tw_h = max(20, int(tw.winfo_reqheight() or 0))
+                x = max(8, min(x, sw - tw_w - 8))
+                y = max(8, min(y, sh - tw_h - 8))
+                tw.wm_geometry(f"+{x}+{y}")
                 point_tip["win"] = tw
             except Exception:
                 point_tip["win"] = None
@@ -4877,8 +4889,12 @@ def _build_monitor_ui(container):
                 width=2 if is_selected else 1,
             )
             consumo_days_canvas.tag_bind(item, "<Button-1>", lambda _evt, d=day_key: _on_day_click(d))
-            consumo_days_canvas.tag_bind(item, "<Enter>", lambda _evt, d=day_key: (consumo_days_canvas.configure(cursor="hand2"), _show_point_tip(_evt, d)))
-            consumo_days_canvas.tag_bind(item, "<Motion>", lambda _evt, d=day_key: _show_point_tip(_evt, d))
+            if is_selected:
+                consumo_days_canvas.tag_bind(item, "<Enter>", lambda _evt, d=day_key, px=x, py=y: (consumo_days_canvas.configure(cursor="hand2"), _show_point_tip(_evt, d, anchor=(px, py), force_right=True)))
+                consumo_days_canvas.tag_bind(item, "<Motion>", lambda _evt, d=day_key, px=x, py=y: _show_point_tip(_evt, d, anchor=(px, py), force_right=True))
+            else:
+                consumo_days_canvas.tag_bind(item, "<Enter>", lambda _evt, d=day_key: (consumo_days_canvas.configure(cursor="hand2"), _show_point_tip(_evt, d)))
+                consumo_days_canvas.tag_bind(item, "<Motion>", lambda _evt, d=day_key: _show_point_tip(_evt, d))
             consumo_days_canvas.tag_bind(item, "<Leave>", lambda _evt: (consumo_days_canvas.configure(cursor=""), _hide_point_tip()))
 
         last_x, last_y, last_day_key, _last_total = coords[-1]
@@ -4898,8 +4914,8 @@ def _build_monitor_ui(container):
             width=2,
         )
         consumo_days_canvas.tag_bind(marker_item, "<Button-1>", lambda _evt, d=last_day_key: _on_day_click(d, show_total=True))
-        consumo_days_canvas.tag_bind(marker_item, "<Enter>", lambda _evt: (consumo_days_canvas.configure(cursor="hand2"), _show_point_tip(_evt, "Total")))
-        consumo_days_canvas.tag_bind(marker_item, "<Motion>", lambda _evt: _show_point_tip(_evt, "Total"))
+        consumo_days_canvas.tag_bind(marker_item, "<Enter>", lambda _evt, px=marker_x, py=marker_y: (consumo_days_canvas.configure(cursor="hand2"), _show_point_tip(_evt, "Total", anchor=(px, py), force_right=True)))
+        consumo_days_canvas.tag_bind(marker_item, "<Motion>", lambda _evt, px=marker_x, py=marker_y: _show_point_tip(_evt, "Total", anchor=(px, py), force_right=True))
         consumo_days_canvas.tag_bind(marker_item, "<Leave>", lambda _evt: (consumo_days_canvas.configure(cursor=""), _hide_point_tip()))
 
         if consumo_selected_mode == "total":
