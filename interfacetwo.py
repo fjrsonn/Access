@@ -1747,6 +1747,15 @@ def format_observacao_entry(r: dict) -> str:
     texto = str(r.get("texto") or r.get("texto_original") or "")
     return f"[ID {_record_original_id(r)}] {texto}"
 
+def format_aviso_entry(r: dict) -> str:
+    msg = str(r.get("mensagem") or r.get("texto") or r.get("texto_original") or "")
+    if not msg:
+        msg = str(r.get("tipo") or "Aviso sem descrição")
+    status = (r.get("status") or {}) if isinstance(r.get("status"), dict) else {}
+    ativo = bool(status.get("ativo"))
+    prefix = "[ATIVO ⚠]" if ativo else "[INATIVO]"
+    return f"[ID {_record_original_id(r)}] {prefix} {msg}"
+
 def _normalize_date_value(value: str):
     if not value:
         return None
@@ -2203,12 +2212,12 @@ def _populate_text(text_widget, info_label):
     text_widget.tag_configure("row_odd", background=UI_THEME.get("surface", "#151A22"))
     text_widget.tag_configure("line_number", foreground=UI_THEME.get("muted_text", "#A6A6A6"))
     for idx, r in enumerate(filtrados):
-        is_clickable = formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry)
+        is_clickable = formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry, format_aviso_entry)
         row_tag = "row_even" if idx % 2 == 0 else "row_odd"
         rec_tag = None
         if is_clickable:
             has_clickable_records = True
-            prefix = "controle" if formatter == format_creative_entry else ("encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else "observacao"))
+            prefix = "controle" if formatter == format_creative_entry else ("encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else ("aviso" if formatter == format_aviso_entry else "observacao")))
             rec_tag = f"{prefix}_record_{idx}"
         linha = formatter(r)
         marker = "●"
@@ -2311,7 +2320,7 @@ def _populate_text(text_widget, info_label):
         _encomenda_tag_map.pop(text_widget, None)
         _encomenda_line_map.pop(text_widget, None)
 
-    if has_clickable_records or formatter in (format_creative_entry, format_orientacao_entry, format_observacao_entry):
+    if has_clickable_records or formatter in (format_creative_entry, format_orientacao_entry, format_observacao_entry, format_aviso_entry):
         _record_tag_map_generic[text_widget] = record_tag_map
     else:
         _record_tag_map_generic.pop(text_widget, None)
@@ -4991,7 +5000,7 @@ def _build_monitor_ui(container):
     metrics_accessibility_label = build_label(container, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
     metrics_accessibility_label.configure(textvariable=_metrics_accessibility_var)
 
-    hints = build_label(container, "Atalhos: Ctrl+F buscar • Ctrl+Enter aplicar • Ctrl+Shift+L limpar • Alt+1..4 abas • Alt+E exportar • Alt+V salvar visão", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    hints = build_label(container, "Atalhos: Ctrl+F buscar • Ctrl+Enter aplicar • Ctrl+Shift+L limpar • Alt+1..5 abas • Alt+E exportar • Alt+V salvar visão", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
 
     def _sync_details_panel_visibility():
         show_details = bool(details_visible.get())
@@ -5055,11 +5064,13 @@ def _build_monitor_ui(container):
     encomendas_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
     orientacoes_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
     observacoes_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
+    avisos_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
 
     notebook.add(controle_frame, text="CONTROLE")
     notebook.add(encomendas_frame, text="ENCOMENDAS")
     notebook.add(orientacoes_frame, text="ORIENTAÇÕES")
     notebook.add(observacoes_frame, text="OBSERVAÇÕES")
+    notebook.add(avisos_frame, text="AVISOS")
 
     def _select_tab(index: int):
         try:
@@ -5074,7 +5085,7 @@ def _build_monitor_ui(container):
     tab_button_normal_bg = UI_THEME.get("bg", UI_THEME["surface"])
     tab_button_selected_bg = UI_THEME.get("surface", UI_THEME["bg"])
     tab_button_hover_bg = UI_THEME.get("border", tab_button_normal_bg)
-    for idx, label in enumerate(["CONTROLE", "ENCOMENDAS", "ORIENTAÇÕES", "OBSERVAÇÕES"]):
+    for idx, label in enumerate(["CONTROLE", "ENCOMENDAS", "ORIENTAÇÕES", "OBSERVAÇÕES", "AVISOS"]):
         btn_frame = tk.Frame(tab_button_bar, bg=tab_border_color)
         btn_tab = build_secondary_button(btn_frame, label, lambda i=idx: _select_tab(i), padx=12)
         try:
@@ -5134,7 +5145,7 @@ def _build_monitor_ui(container):
         def _show_shortcuts(_e=None):
             messagebox.showinfo(
                 "Atalhos do monitor",
-                "Ctrl+F: foco na busca\nCtrl+Enter: aplicar filtros\nCtrl+Shift+L: limpar filtros\nAlt+1..4: trocar abas\nF1: ajuda de atalhos",
+                "Ctrl+F: foco na busca\nCtrl+Enter: aplicar filtros\nCtrl+Shift+L: limpar filtros\nAlt+1..5: trocar abas\nF1: ajuda de atalhos",
                 parent=root_win,
             )
             return "break"
@@ -5142,6 +5153,7 @@ def _build_monitor_ui(container):
         root_win.bind("<Alt-Key-2>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+2"}), _select_tab(1), "break")[2], add="+")
         root_win.bind("<Alt-Key-3>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+3"}), _select_tab(2), "break")[2], add="+")
         root_win.bind("<Alt-Key-4>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+4"}), _select_tab(3), "break")[2], add="+")
+        root_win.bind("<Alt-Key-5>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+5"}), _select_tab(4), "break")[2], add="+")
         root_win.bind("<F1>", _show_shortcuts, add="+")
     except Exception:
         pass
@@ -5187,6 +5199,7 @@ def _build_monitor_ui(container):
         (encomendas_frame, ENCOMENDAS_ARQUIVO, format_encomenda_entry, "encomendas"),
         (orientacoes_frame, ORIENTACOES_ARQUIVO, format_orientacao_entry, "orientacoes"),
         (observacoes_frame, OBSERVACOES_ARQUIVO, format_observacao_entry, "observacoes"),
+        (avisos_frame, AVISOS_ARQUIVO, format_aviso_entry, "avisos"),
     ]
 
     def _control_filtered_records():
@@ -5331,7 +5344,7 @@ def _build_monitor_ui(container):
         filter_bar._filter_target_widget = text_widget
         _filter_bars[str(filter_key)] = filter_bar
         _apply_filter_visibility(str(filter_key))
-        if formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry):
+        if formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry, format_aviso_entry):
             text_widget.tag_configure("status_avisado", foreground=UI_THEME["status_avisado_text"])
             text_widget.tag_configure("status_sem_contato", foreground=UI_THEME["status_sem_contato_text"])
         if formatter == format_encomenda_entry:
@@ -5345,7 +5358,7 @@ def _build_monitor_ui(container):
         _sticky_header_state[text_widget] = {"var": sticky_var, "formatter": formatter, "scroll_setter": text_scroll.set}
         _bind_sticky_header_updates(text_widget)
         _bind_hover_highlight(text_widget)
-        if formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry):
+        if formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry, format_aviso_entry):
             _build_text_actions(frame, text_widget, info_label, arquivo)
         if filter_key == "controle":
             details_panel = tk.Frame(details_host, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
@@ -5372,7 +5385,7 @@ def _build_monitor_ui(container):
         _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter, "filter_key": filter_key, "widget": text_widget, "info_label": info_label}
 
     if not prefs.get("onboarding_seen"):
-        _announce_feedback("Use Ctrl+F para busca e Alt+1..4 para trocar abas", "info")
+        _announce_feedback("Use Ctrl+F para busca e Alt+1..5 para trocar abas", "info")
 
     _apply_density()
     if op_mode_var.get():
