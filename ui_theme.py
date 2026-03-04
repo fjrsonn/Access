@@ -523,11 +523,15 @@ def attach_tooltip(widget, text):
         try:
             tw = tk.Toplevel(widget)
             tw.wm_overrideredirect(True)
-            x = widget.winfo_rootx() + 10
+            x = widget.winfo_rootx() + max(0, (widget.winfo_width() // 2))
             y = widget.winfo_rooty() + widget.winfo_height() + 8
             tw.wm_geometry(f"+{x}+{y}")
             lbl = tk.Label(tw, text=text, bg=UI_THEME.get("surface_alt", "#1B2430"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), relief="solid", bd=1, padx=6, pady=4, font=theme_font("font_sm"))
             lbl.pack()
+            tw.update_idletasks()
+            x = int(widget.winfo_rootx() + (widget.winfo_width() / 2) - (tw.winfo_reqwidth() / 2))
+            y = int(widget.winfo_rooty() + widget.winfo_height() + 8)
+            tw.wm_geometry(f"+{x}+{y}")
             tip["win"] = tw
         except Exception:
             tip["win"] = None
