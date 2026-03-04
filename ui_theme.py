@@ -515,7 +515,35 @@ def refresh_theme(widget_tree, context="default"):
 
 
 def attach_tooltip(widget, text):
-    tip = {"win": None}
+    tip = {"win": None, "watch_after": None}
+
+    def _cancel_watchdog():
+        after_id = tip.get("watch_after")
+        if not after_id:
+            return
+        try:
+            widget.after_cancel(after_id)
+        except Exception:
+            pass
+        tip["watch_after"] = None
+
+    def _watch_pointer():
+        if tip.get("win") is None:
+            tip["watch_after"] = None
+            return
+        try:
+            px = int(widget.winfo_pointerx())
+            py = int(widget.winfo_pointery())
+            left = int(widget.winfo_rootx())
+            top = int(widget.winfo_rooty())
+            right = left + int(widget.winfo_width())
+            bottom = top + int(widget.winfo_height())
+            if not (left <= px <= right and top <= py <= bottom):
+                _hide()
+                return
+            tip["watch_after"] = widget.after(120, _watch_pointer)
+        except Exception:
+            _hide()
 
     def _show(_e=None):
         if not text or tip["win"] is not None:
@@ -529,10 +557,13 @@ def attach_tooltip(widget, text):
             lbl = tk.Label(tw, text=text, bg=UI_THEME.get("surface_alt", "#1B2430"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), relief="solid", bd=1, padx=6, pady=4, font=theme_font("font_sm"))
             lbl.pack()
             tip["win"] = tw
+            _cancel_watchdog()
+            tip["watch_after"] = widget.after(120, _watch_pointer)
         except Exception:
             tip["win"] = None
 
     def _hide(_e=None):
+        _cancel_watchdog()
         try:
             if tip["win"] is not None:
                 tip["win"].destroy()
@@ -544,5 +575,9 @@ def attach_tooltip(widget, text):
         widget.bind("<Enter>", _show, add="+")
         widget.bind("<Leave>", _hide, add="+")
         widget.bind("<ButtonPress>", _hide, add="+")
+        widget.bind("<ButtonRelease>", _hide, add="+")
+        widget.bind("<FocusOut>", _hide, add="+")
+        widget.bind("<Destroy>", _hide, add="+")
+        widget.bind("<Unmap>", _hide, add="+")
     except Exception:
         pass
