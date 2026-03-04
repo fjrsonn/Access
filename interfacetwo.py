@@ -4751,9 +4751,12 @@ def _build_monitor_ui(container):
 
         width = max(360, int(consumo_days_canvas.winfo_width() or 360))
         height = max(44, int(consumo_days_canvas.winfo_height() or 44))
-        margin_x = 18
+        margin_left = 18
+        # reserva espaço no lado direito para o marcador de TOTAL ficar
+        # sempre à frente (à direita) do ponto do dia atual
+        margin_right = 42
         margin_y = 8
-        plot_w = max(10, width - margin_x * 2)
+        plot_w = max(10, width - margin_left - margin_right)
         plot_h = max(10, height - margin_y * 2)
         step = plot_w / max(1, len(day_keys) - 1)
         totals = [int((consumo_por_dia.get(day) or {}).get("total", 0) or 0) for day in day_keys]
@@ -4761,7 +4764,7 @@ def _build_monitor_ui(container):
 
         coords = []
         for idx, day_key in enumerate(day_keys):
-            x = margin_x + idx * step
+            x = margin_left + idx * step
             total = totals[idx]
             if max_total == min_total:
                 y = margin_y + (plot_h * 0.5)
@@ -4831,11 +4834,10 @@ def _build_monitor_ui(container):
         last_x, last_y, last_day_key, _last_total = coords[-1]
         marker_r = 6
         min_gap = max(20, marker_r + 8)
-        marker_x = min(width - margin_x, last_x + max(min_gap, step * 0.6))
+        marker_x = min(width - marker_r - 8, last_x + max(min_gap, step * 0.6))
+        # garante sempre o marcador de total à frente do último dia
+        marker_x = max(last_x + min_gap, marker_x)
         marker_y = last_y
-        if (marker_x - last_x) < min_gap:
-            marker_x = max(margin_x + marker_r, min(width - margin_x - marker_r, last_x))
-            marker_y = max(margin_y + marker_r, last_y - 14)
         marker_item = consumo_days_canvas.create_oval(
             marker_x - marker_r,
             marker_y - marker_r,
