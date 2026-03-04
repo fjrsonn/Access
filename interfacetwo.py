@@ -241,21 +241,6 @@ def _is_hover_suppressed(text_widget):
     return bool(deadline and time.monotonic() < deadline)
 
 
-def _register_scroll_callback(text_widget, callback):
-    if not callable(callback):
-        return
-    _text_scroll_callbacks.setdefault(text_widget, []).append(callback)
-
-
-def _suppress_hover_temporarily(text_widget, duration_ms=220):
-    _hover_suppressed_until[text_widget] = time.monotonic() + (max(0, duration_ms) / 1000.0)
-
-
-def _is_hover_suppressed(text_widget):
-    deadline = _hover_suppressed_until.get(text_widget)
-    return bool(deadline and time.monotonic() < deadline)
-
-
 def _set_record_marker(text_widget, rec_tag: str, active: bool):
     if not rec_tag:
         return
@@ -3411,8 +3396,10 @@ def _build_text_actions(frame, text_widget, info_label, path):
     buttons_row.pack(side=tk.TOP, fill=tk.X)
     toolbar_parent = frame if is_orient_obs else text_widget
     toolbar_wrap = tk.Frame(toolbar_parent, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
-    toolbar = tk.Frame(toolbar_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
-    toolbar.pack(side=tk.TOP, fill=tk.X)
+    toolbar_center = tk.Frame(toolbar_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    toolbar_center.pack(side=tk.TOP, fill=tk.X)
+    toolbar = tk.Frame(toolbar_center, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    toolbar.pack(side=tk.TOP, pady=2)
 
     _inline_state = {"visible": False, "tag": None}
 
@@ -3696,7 +3683,12 @@ def _build_text_actions(frame, text_widget, info_label, path):
     def _apply_heading(): _apply_wrapper("# ")
     def _apply_bold(): _apply_wrapper("**", "**")
     def _apply_italic(): _apply_wrapper("*", "*")
+    def _apply_underline(): _apply_wrapper("__", "__")
+    def _apply_strike(): _apply_wrapper("~~", "~~")
+    def _apply_code(): _apply_wrapper("`", "`")
+    def _apply_quote(): _apply_wrapper("> ")
     def _apply_link(): _apply_wrapper("[", "](https://)")
+    def _apply_bullet_list(): _apply_wrapper("- ")
 
     def _apply_align(mode):
         if not edit_state.get("active"):
@@ -3958,12 +3950,17 @@ def _build_text_actions(frame, text_widget, info_label, path):
             ("H", _apply_heading),
             ("B", _apply_bold),
             ("I", _apply_italic),
+            ("U", _apply_underline),
+            ("S", _apply_strike),
+            ("`", _apply_code),
+            ("❝", _apply_quote),
+            ("•", _apply_bullet_list),
             ("🔗", _apply_link),
             ("⟸", lambda: _apply_align("left")),
             ("≡", lambda: _apply_align("center")),
             ("⟹", lambda: _apply_align("right")),
         ]:
-            _mini_btn(toolbar, lbl, cmd).pack(side=tk.LEFT, padx=1, pady=1)
+            _mini_btn(toolbar, lbl, cmd).pack(side=tk.LEFT, padx=2, pady=1)
 
     def _tag_at_event(event):
         try:
