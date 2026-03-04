@@ -195,6 +195,8 @@ _forced_visible_records = {}
 _edit_active_record_tag = {}
 _hover_runtime_state = {}
 _hover_motion_callbacks = {}
+_text_scroll_callbacks = {}
+_hover_suppressed_until = {}
 _data_load_cache = {}
 _widget_render_cache = {}
 _background_refresh_pending = set()
@@ -212,6 +214,26 @@ def _scroll_text_widget(text_widget, *args):
         text_widget.yview(*args)
     except Exception:
         return
+    for cb in _text_scroll_callbacks.get(text_widget, []):
+        try:
+            cb()
+        except Exception:
+            continue
+
+
+def _register_scroll_callback(text_widget, callback):
+    if not callable(callback):
+        return
+    _text_scroll_callbacks.setdefault(text_widget, []).append(callback)
+
+
+def _suppress_hover_temporarily(text_widget, duration_ms=220):
+    _hover_suppressed_until[text_widget] = time.monotonic() + (max(0, duration_ms) / 1000.0)
+
+
+def _is_hover_suppressed(text_widget):
+    deadline = _hover_suppressed_until.get(text_widget)
+    return bool(deadline and time.monotonic() < deadline)
 
 
 def _set_record_marker(text_widget, rec_tag: str, active: bool):
@@ -3369,8 +3391,10 @@ def _build_text_actions(frame, text_widget, info_label, path):
     buttons_row.pack(side=tk.TOP, fill=tk.X)
     toolbar_parent = frame if is_orient_obs else text_widget
     toolbar_wrap = tk.Frame(toolbar_parent, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
-    toolbar = tk.Frame(toolbar_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
-    toolbar.pack(side=tk.TOP, fill=tk.X)
+    toolbar_center = tk.Frame(toolbar_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    toolbar_center.pack(side=tk.TOP, fill=tk.X)
+    toolbar = tk.Frame(toolbar_center, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    toolbar.pack(side=tk.TOP, pady=2)
 
     _inline_state = {"visible": False, "tag": None}
 
@@ -3496,6 +3520,11 @@ def _build_text_actions(frame, text_widget, info_label, path):
             if not box:
                 box = text_widget.bbox(start)
             if not box:
+                try:
+                    inline_wrap.place_forget()
+                except Exception:
+                    pass
+                _inline_state["visible"] = False
                 return
             x, y, w, h = box
             inline_wrap.update_idletasks()
@@ -3504,13 +3533,23 @@ def _build_text_actions(frame, text_widget, info_label, path):
             # nasce imediatamente após o final do texto do registro
             tx_preferred = int(x + w + 2)
             tx_limit = max(8, text_widget.winfo_width() - fw - 12)
+            wrapped_to_next_line = tx_preferred > tx_limit
             tx = max(8, min(tx_preferred, tx_limit))
-            # centraliza visualmente os ícones com o meio da linha de texto
+            # quando fica na linha principal, centraliza com o meio do texto
             buttons_row.update_idletasks()
             icon_h = max(buttons_row.winfo_reqheight(), 12)
-            text_center_y = y + (h / 2)
-            align_bias = -1
-            ty = max(0, int(round(text_center_y - (icon_h / 2) + align_bias)))
+            if wrapped_to_next_line:
+                # se quebrar para baixo, ancora no início do conteúdo da linha para não cobrir texto acima
+                try:
+                    first_box = text_widget.bbox(start)
+                except Exception:
+                    first_box = None
+                tx = max(8, min((first_box[0] if first_box else x), tx_limit))
+                ty = max(0, int(y + h + 1))
+            else:
+                text_center_y = y + (h / 2)
+                align_bias = -1
+                ty = max(0, int(round(text_center_y - (icon_h / 2) + align_bias)))
             inline_wrap.place(x=tx, y=ty)
             inline_wrap.lift()
             _inline_state["visible"] = True
@@ -3639,7 +3678,12 @@ def _build_text_actions(frame, text_widget, info_label, path):
     def _apply_heading(): _apply_wrapper("# ")
     def _apply_bold(): _apply_wrapper("**", "**")
     def _apply_italic(): _apply_wrapper("*", "*")
+    def _apply_underline(): _apply_wrapper("__", "__")
+    def _apply_strike(): _apply_wrapper("~~", "~~")
+    def _apply_code(): _apply_wrapper("`", "`")
+    def _apply_quote(): _apply_wrapper("> ")
     def _apply_link(): _apply_wrapper("[", "](https://)")
+    def _apply_bullet_list(): _apply_wrapper("- ")
 
     def _apply_align(mode):
         if not edit_state.get("active"):
@@ -3901,12 +3945,17 @@ def _build_text_actions(frame, text_widget, info_label, path):
             ("H", _apply_heading),
             ("B", _apply_bold),
             ("I", _apply_italic),
+            ("U", _apply_underline),
+            ("S", _apply_strike),
+            ("`", _apply_code),
+            ("❝", _apply_quote),
+            ("•", _apply_bullet_list),
             ("🔗", _apply_link),
             ("⟸", lambda: _apply_align("left")),
             ("≡", lambda: _apply_align("center")),
             ("⟹", lambda: _apply_align("right")),
         ]:
-            _mini_btn(toolbar, lbl, cmd).pack(side=tk.LEFT, padx=1, pady=1)
+            _mini_btn(toolbar, lbl, cmd).pack(side=tk.LEFT, padx=2, pady=1)
 
     def _tag_at_event(event):
         try:
@@ -3920,6 +3969,9 @@ def _build_text_actions(frame, text_widget, info_label, path):
 
     def _on_hover_pipeline(rec_tag=None, **_kwargs):
         if edit_state.get("active"):
+            return
+        if _is_hover_suppressed(text_widget):
+            _hide_inline(unpin=False)
             return
         if rec_tag:
             if current.get("rec_tag") != rec_tag or not inline_wrap.winfo_ismapped():
@@ -3956,6 +4008,25 @@ def _build_text_actions(frame, text_widget, info_label, path):
         if not current.get("pinned") and not edit_state.get("active"):
             _hide_inline(unpin=False)
 
+    def _on_scroll_activity():
+        _suppress_hover_temporarily(text_widget)
+        if edit_state.get("active"):
+            # Em edição, manter os botões presos ao MESMO registro, reposicionando
+            # apenas após o scroll efetivo para evitar troca visual de registro.
+            active_tag = edit_state.get("tag")
+            if active_tag:
+                text_widget.after_idle(
+                    lambda tag=active_tag: _place_for_tag(tag, anchor_idx=_edit_visual_anchor(tag))
+                )
+            return
+        text_widget.after_idle(lambda: _hide_inline(unpin=False))
+
+    _register_scroll_callback(text_widget, _on_scroll_activity)
+    for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+        try:
+            text_widget.bind(seq, lambda _e: _on_scroll_activity(), add="+")
+        except Exception:
+            pass
     text_widget.bind("<Button-1>", on_click, add="+")
     text_widget.bind("<Leave>", on_leave, add="+")
 
