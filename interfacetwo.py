@@ -3999,9 +3999,8 @@ def _build_text_actions(frame, text_widget, info_label, path):
     def _on_scroll_activity():
         _suppress_hover_temporarily(text_widget)
         if edit_state.get("active"):
-            active_tag = edit_state.get("tag")
-            if active_tag:
-                _place_for_tag(active_tag, anchor_idx=_edit_visual_anchor(active_tag))
+            # Durante edição, manter salvar/cancelar estáticos para não "passearem"
+            # entre registros ao rolar a lista.
             return
         _hide_inline(unpin=False)
 
@@ -4011,11 +4010,6 @@ def _build_text_actions(frame, text_widget, info_label, path):
             text_widget.bind(seq, lambda _e: _on_scroll_activity(), add="+")
         except Exception:
             pass
-    try:
-        text_widget.bind("<Configure>", lambda _e: _on_scroll_activity() if edit_state.get("active") else None, add="+")
-    except Exception:
-        pass
-
     text_widget.bind("<Button-1>", on_click, add="+")
     text_widget.bind("<Leave>", on_leave, add="+")
 
