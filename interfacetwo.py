@@ -195,6 +195,8 @@ _forced_visible_records = {}
 _edit_active_record_tag = {}
 _hover_runtime_state = {}
 _hover_motion_callbacks = {}
+_text_scroll_callbacks = {}
+_hover_suppressed_until = {}
 _data_load_cache = {}
 _widget_render_cache = {}
 _background_refresh_pending = set()
@@ -212,6 +214,26 @@ def _scroll_text_widget(text_widget, *args):
         text_widget.yview(*args)
     except Exception:
         return
+    for cb in _text_scroll_callbacks.get(text_widget, []):
+        try:
+            cb()
+        except Exception:
+            continue
+
+
+def _register_scroll_callback(text_widget, callback):
+    if not callable(callback):
+        return
+    _text_scroll_callbacks.setdefault(text_widget, []).append(callback)
+
+
+def _suppress_hover_temporarily(text_widget, duration_ms=220):
+    _hover_suppressed_until[text_widget] = time.monotonic() + (max(0, duration_ms) / 1000.0)
+
+
+def _is_hover_suppressed(text_widget):
+    deadline = _hover_suppressed_until.get(text_widget)
+    return bool(deadline and time.monotonic() < deadline)
 
 
 def _set_record_marker(text_widget, rec_tag: str, active: bool):
@@ -3496,6 +3518,11 @@ def _build_text_actions(frame, text_widget, info_label, path):
             if not box:
                 box = text_widget.bbox(start)
             if not box:
+                try:
+                    inline_wrap.place_forget()
+                except Exception:
+                    pass
+                _inline_state["visible"] = False
                 return
             x, y, w, h = box
             inline_wrap.update_idletasks()
@@ -3504,13 +3531,23 @@ def _build_text_actions(frame, text_widget, info_label, path):
             # nasce imediatamente após o final do texto do registro
             tx_preferred = int(x + w + 2)
             tx_limit = max(8, text_widget.winfo_width() - fw - 12)
+            wrapped_to_next_line = tx_preferred > tx_limit
             tx = max(8, min(tx_preferred, tx_limit))
-            # centraliza visualmente os ícones com o meio da linha de texto
+            # quando fica na linha principal, centraliza com o meio do texto
             buttons_row.update_idletasks()
             icon_h = max(buttons_row.winfo_reqheight(), 12)
-            text_center_y = y + (h / 2)
-            align_bias = -1
-            ty = max(0, int(round(text_center_y - (icon_h / 2) + align_bias)))
+            if wrapped_to_next_line:
+                # se quebrar para baixo, ancora no início do conteúdo da linha para não cobrir texto acima
+                try:
+                    first_box = text_widget.bbox(start)
+                except Exception:
+                    first_box = None
+                tx = max(8, min((first_box[0] if first_box else x), tx_limit))
+                ty = max(0, int(y + h + 1))
+            else:
+                text_center_y = y + (h / 2)
+                align_bias = -1
+                ty = max(0, int(round(text_center_y - (icon_h / 2) + align_bias)))
             inline_wrap.place(x=tx, y=ty)
             inline_wrap.lift()
             _inline_state["visible"] = True
@@ -3921,6 +3958,9 @@ def _build_text_actions(frame, text_widget, info_label, path):
     def _on_hover_pipeline(rec_tag=None, **_kwargs):
         if edit_state.get("active"):
             return
+        if _is_hover_suppressed(text_widget):
+            _hide_inline(unpin=False)
+            return
         if rec_tag:
             if current.get("rec_tag") != rec_tag or not inline_wrap.winfo_ismapped():
                 _show_for(rec_tag, pin=False)
@@ -3956,6 +3996,25 @@ def _build_text_actions(frame, text_widget, info_label, path):
         if not current.get("pinned") and not edit_state.get("active"):
             _hide_inline(unpin=False)
 
+    def _on_scroll_activity():
+        _suppress_hover_temporarily(text_widget)
+        if edit_state.get("active"):
+            # Em edição, manter os botões presos ao MESMO registro, reposicionando
+            # apenas após o scroll efetivo para evitar troca visual de registro.
+            active_tag = edit_state.get("tag")
+            if active_tag:
+                text_widget.after_idle(
+                    lambda tag=active_tag: _place_for_tag(tag, anchor_idx=_edit_visual_anchor(tag))
+                )
+            return
+        text_widget.after_idle(lambda: _hide_inline(unpin=False))
+
+    _register_scroll_callback(text_widget, _on_scroll_activity)
+    for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+        try:
+            text_widget.bind(seq, lambda _e: _on_scroll_activity(), add="+")
+        except Exception:
+            pass
     text_widget.bind("<Button-1>", on_click, add="+")
     text_widget.bind("<Leave>", on_leave, add="+")
 
