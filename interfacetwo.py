@@ -210,6 +210,11 @@ _perf_metrics = {
 
 def _scroll_text_widget(text_widget, *args):
     _mark_text_interaction(text_widget)
+    for cb in _text_scroll_callbacks.get(text_widget, []):
+        try:
+            cb()
+        except Exception:
+            continue
     try:
         text_widget.yview(*args)
     except Exception:
@@ -219,6 +224,21 @@ def _scroll_text_widget(text_widget, *args):
             cb()
         except Exception:
             continue
+
+
+def _register_scroll_callback(text_widget, callback):
+    if not callable(callback):
+        return
+    _text_scroll_callbacks.setdefault(text_widget, []).append(callback)
+
+
+def _suppress_hover_temporarily(text_widget, duration_ms=220):
+    _hover_suppressed_until[text_widget] = time.monotonic() + (max(0, duration_ms) / 1000.0)
+
+
+def _is_hover_suppressed(text_widget):
+    deadline = _hover_suppressed_until.get(text_widget)
+    return bool(deadline and time.monotonic() < deadline)
 
 
 def _register_scroll_callback(text_widget, callback):
