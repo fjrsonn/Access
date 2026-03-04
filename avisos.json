@@ -1216,7 +1216,8 @@
       "timestamps": {
         "gerado_em": "17/02/2026 09:09:03",
         "exibido_em": null,
-        "fechado_em": "27/02/2026 17:32:02"
+        "fechado_em": "27/02/2026 17:32:02",
+        "snooze_until": "04/03/2026 02:54:47"
       },
       "status": {
         "ativo": false,
@@ -8342,7 +8343,8 @@
       "timestamps": {
         "gerado_em": "27/02/2026 15:10:45",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": null,
+        "snooze_until": "04/03/2026 03:01:06"
       },
       "status": {
         "ativo": true,
@@ -9116,7 +9118,8 @@
       "timestamps": {
         "gerado_em": "27/02/2026 15:10:45",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": null,
+        "snooze_until": "04/03/2026 03:21:09"
       },
       "status": {
         "ativo": true,
@@ -26746,11 +26749,11 @@
       "timestamps": {
         "gerado_em": "27/02/2026 15:10:45",
         "exibido_em": null,
-        "fechado_em": null
+        "fechado_em": "04/03/2026 02:48:11"
       },
       "status": {
-        "ativo": true,
-        "fechado_pelo_usuario": false
+        "ativo": false,
+        "fechado_pelo_usuario": true
       }
     },
     {
@@ -27482,6 +27485,50 @@
       },
       "timestamps": {
         "gerado_em": "28/02/2026 01:18:52",
+        "exibido_em": null,
+        "fechado_em": null
+      },
+      "status": {
+        "ativo": true,
+        "fechado_pelo_usuario": false
+      }
+    },
+    {
+      "id_aviso": "AVISO-000641",
+      "identidade": "ENCOMENDA|3|104|SEM_CONTATO",
+      "tipo": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
+      "nivel": "warn",
+      "mensagem": "AVISO: HA 1 ENCOMENDAS PARA O BLOCO 3 APARTAMENTO 104 DATA E HORA 27/01/2026 18:45:17 SEM CONTATO DATA HORA 02/03/2026 00:18:06!",
+      "ui": {
+        "background_color": "#FFFF00",
+        "opacity": 0.7,
+        "text_color": "#000000",
+        "icone": "⚠",
+        "exibir_botao_fechar": true
+      },
+      "referencias": {
+        "bloco": "3",
+        "apartamento": "104",
+        "quantidade": 1,
+        "ultimo_registro_id": 777,
+        "origem_status": "SEM_CONTATO"
+      },
+      "ultimo_registro": {
+        "NOME": "DIEGO",
+        "SOBRENOME": "FERREIRA",
+        "BLOCO": "3",
+        "APARTAMENTO": "104",
+        "TIPO": "ENVELOPE",
+        "LOJA": "ALIEXPRESS",
+        "IDENTIFICACAO": "PKG00777",
+        "_entrada_id": 777,
+        "DATA_HORA": "27/01/2026 18:45:17",
+        "ID": 777,
+        "STATUS_ENCOMENDA": "SEM CONTATO",
+        "STATUS_DATA_HORA": "02/03/2026 00:18:06"
+      },
+      "timestamps": {
+        "gerado_em": "04/03/2026 02:48:11",
         "exibido_em": null,
         "fechado_em": null
       },

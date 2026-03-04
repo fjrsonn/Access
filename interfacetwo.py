@@ -195,6 +195,8 @@ _forced_visible_records = {}
 _edit_active_record_tag = {}
 _hover_runtime_state = {}
 _hover_motion_callbacks = {}
+_text_scroll_callbacks = {}
+_hover_suppressed_until = {}
 _data_load_cache = {}
 _widget_render_cache = {}
 _background_refresh_pending = set()
@@ -208,10 +210,35 @@ _perf_metrics = {
 
 def _scroll_text_widget(text_widget, *args):
     _mark_text_interaction(text_widget)
+    for cb in _text_scroll_callbacks.get(text_widget, []):
+        try:
+            cb()
+        except Exception:
+            continue
     try:
         text_widget.yview(*args)
     except Exception:
         return
+    for cb in _text_scroll_callbacks.get(text_widget, []):
+        try:
+            cb()
+        except Exception:
+            continue
+
+
+def _register_scroll_callback(text_widget, callback):
+    if not callable(callback):
+        return
+    _text_scroll_callbacks.setdefault(text_widget, []).append(callback)
+
+
+def _suppress_hover_temporarily(text_widget, duration_ms=220):
+    _hover_suppressed_until[text_widget] = time.monotonic() + (max(0, duration_ms) / 1000.0)
+
+
+def _is_hover_suppressed(text_widget):
+    deadline = _hover_suppressed_until.get(text_widget)
+    return bool(deadline and time.monotonic() < deadline)
 
 
 def _set_record_marker(text_widget, rec_tag: str, active: bool):
@@ -3032,6 +3059,11 @@ def _apply_hover_motion_pipeline(text_widget, x, y):
             target_range = (start_line, end_line)
             hover_token = line
 
+    try:
+        text_widget.configure(cursor="hand2" if rec_tag else "")
+    except Exception:
+        pass
+
     prev_range = state.get("last_hover_range")
     if prev_range and (not target_range or prev_range != target_range):
         try:
@@ -3369,8 +3401,10 @@ def _build_text_actions(frame, text_widget, info_label, path):
     buttons_row.pack(side=tk.TOP, fill=tk.X)
     toolbar_parent = frame if is_orient_obs else text_widget
     toolbar_wrap = tk.Frame(toolbar_parent, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
-    toolbar = tk.Frame(toolbar_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
-    toolbar.pack(side=tk.TOP, fill=tk.X)
+    toolbar_center = tk.Frame(toolbar_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    toolbar_center.pack(side=tk.TOP, fill=tk.X)
+    toolbar = tk.Frame(toolbar_center, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    toolbar.pack(side=tk.TOP, pady=2)
 
     _inline_state = {"visible": False, "tag": None}
 
@@ -3496,6 +3530,11 @@ def _build_text_actions(frame, text_widget, info_label, path):
             if not box:
                 box = text_widget.bbox(start)
             if not box:
+                try:
+                    inline_wrap.place_forget()
+                except Exception:
+                    pass
+                _inline_state["visible"] = False
                 return
             x, y, w, h = box
             inline_wrap.update_idletasks()
@@ -3504,13 +3543,23 @@ def _build_text_actions(frame, text_widget, info_label, path):
             # nasce imediatamente após o final do texto do registro
             tx_preferred = int(x + w + 2)
             tx_limit = max(8, text_widget.winfo_width() - fw - 12)
+            wrapped_to_next_line = tx_preferred > tx_limit
             tx = max(8, min(tx_preferred, tx_limit))
-            # centraliza visualmente os ícones com o meio da linha de texto
+            # quando fica na linha principal, centraliza com o meio do texto
             buttons_row.update_idletasks()
             icon_h = max(buttons_row.winfo_reqheight(), 12)
-            text_center_y = y + (h / 2)
-            align_bias = -1
-            ty = max(0, int(round(text_center_y - (icon_h / 2) + align_bias)))
+            if wrapped_to_next_line:
+                # se quebrar para baixo, ancora no início do conteúdo da linha para não cobrir texto acima
+                try:
+                    first_box = text_widget.bbox(start)
+                except Exception:
+                    first_box = None
+                tx = max(8, min((first_box[0] if first_box else x), tx_limit))
+                ty = max(0, int(y + h + 1))
+            else:
+                text_center_y = y + (h / 2)
+                align_bias = -1
+                ty = max(0, int(round(text_center_y - (icon_h / 2) + align_bias)))
             inline_wrap.place(x=tx, y=ty)
             inline_wrap.lift()
             _inline_state["visible"] = True
@@ -3639,7 +3688,12 @@ def _build_text_actions(frame, text_widget, info_label, path):
     def _apply_heading(): _apply_wrapper("# ")
     def _apply_bold(): _apply_wrapper("**", "**")
     def _apply_italic(): _apply_wrapper("*", "*")
+    def _apply_underline(): _apply_wrapper("__", "__")
+    def _apply_strike(): _apply_wrapper("~~", "~~")
+    def _apply_code(): _apply_wrapper("`", "`")
+    def _apply_quote(): _apply_wrapper("> ")
     def _apply_link(): _apply_wrapper("[", "](https://)")
+    def _apply_bullet_list(): _apply_wrapper("- ")
 
     def _apply_align(mode):
         if not edit_state.get("active"):
@@ -3894,19 +3948,33 @@ def _build_text_actions(frame, text_widget, info_label, path):
     btn_close = _mini_btn(buttons_row, "✕", delete_record, glow=UI_THEME.get("danger", "#DC2626"))
     btn_save = _mini_btn(buttons_row, "💾", save_edit, glow=UI_THEME.get("success", "#16A34A"))
     btn_cancel = _mini_btn(buttons_row, "↩", cancel_edit, glow=UI_THEME.get("danger", "#DC2626"))
+    attach_tooltip(btn_copy, "Copiar registro")
+    attach_tooltip(btn_down, "Marcar como sem contato")
+    attach_tooltip(btn_up, "Marcar como avisado")
+    attach_tooltip(btn_edit, "Editar registro")
+    attach_tooltip(btn_close, "Excluir registro")
+    attach_tooltip(btn_save, "Salvar edição")
+    attach_tooltip(btn_cancel, "Cancelar edição")
     _toggle_edit_buttons(False)
 
     if is_orient_obs:
-        for lbl, cmd in [
-            ("H", _apply_heading),
-            ("B", _apply_bold),
-            ("I", _apply_italic),
-            ("🔗", _apply_link),
-            ("⟸", lambda: _apply_align("left")),
-            ("≡", lambda: _apply_align("center")),
-            ("⟹", lambda: _apply_align("right")),
+        for lbl, cmd, tip in [
+            ("H", _apply_heading, "Título"),
+            ("B", _apply_bold, "Negrito"),
+            ("I", _apply_italic, "Itálico"),
+            ("U", _apply_underline, "Sublinhado"),
+            ("S", _apply_strike, "Tachado"),
+            ("`", _apply_code, "Código"),
+            ("❝", _apply_quote, "Citação"),
+            ("•", _apply_bullet_list, "Lista"),
+            ("🔗", _apply_link, "Inserir link"),
+            ("⟸", lambda: _apply_align("left"), "Alinhar à esquerda"),
+            ("≡", lambda: _apply_align("center"), "Centralizar"),
+            ("⟹", lambda: _apply_align("right"), "Alinhar à direita"),
         ]:
-            _mini_btn(toolbar, lbl, cmd).pack(side=tk.LEFT, padx=1, pady=1)
+            _b = _mini_btn(toolbar, lbl, cmd)
+            _b.pack(side=tk.LEFT, padx=2, pady=1)
+            attach_tooltip(_b, tip)
 
     def _tag_at_event(event):
         try:
@@ -3920,6 +3988,9 @@ def _build_text_actions(frame, text_widget, info_label, path):
 
     def _on_hover_pipeline(rec_tag=None, **_kwargs):
         if edit_state.get("active"):
+            return
+        if _is_hover_suppressed(text_widget):
+            _hide_inline(unpin=False)
             return
         if rec_tag:
             if current.get("rec_tag") != rec_tag or not inline_wrap.winfo_ismapped():
@@ -3956,6 +4027,25 @@ def _build_text_actions(frame, text_widget, info_label, path):
         if not current.get("pinned") and not edit_state.get("active"):
             _hide_inline(unpin=False)
 
+    def _on_scroll_activity():
+        _suppress_hover_temporarily(text_widget)
+        if edit_state.get("active"):
+            # Em edição, manter os botões presos ao MESMO registro, reposicionando
+            # apenas após o scroll efetivo para evitar troca visual de registro.
+            active_tag = edit_state.get("tag")
+            if active_tag:
+                text_widget.after_idle(
+                    lambda tag=active_tag: _place_for_tag(tag, anchor_idx=_edit_visual_anchor(tag))
+                )
+            return
+        text_widget.after_idle(lambda: _hide_inline(unpin=False))
+
+    _register_scroll_callback(text_widget, _on_scroll_activity)
+    for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+        try:
+            text_widget.bind(seq, lambda _e: _on_scroll_activity(), add="+")
+        except Exception:
+            pass
     text_widget.bind("<Button-1>", on_click, add="+")
     text_widget.bind("<Leave>", on_leave, add="+")
 
@@ -4441,6 +4531,7 @@ def _build_monitor_ui(container):
         order = ["ativos", "pendentes", "sem_contato", "avisado"]
         duration_ms = 780
         steps = 20
+        _start_days_line_intro(duration_ms=duration_ms * len(order), steps=steps * len(order))
 
         def _animate_donuts_sync():
             for key in order:
@@ -4476,13 +4567,7 @@ def _build_monitor_ui(container):
     consumo_title = build_label(consumo_header, "Consumo por dia", bg=UI_THEME["bg"], font=theme_font("font_lg", "bold"))
     consumo_title.pack(side=tk.LEFT)
 
-    consumo_hint = build_label(consumo_header, "Cada ponto representa um dia. Clique para atualizar os gráficos; a bolinha vazada indica o estado atual.", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
-    consumo_hint.pack(side=tk.LEFT, anchor="w", padx=(theme_space("space_2", 8), 0))
-
     consumo_day_var = tk.StringVar(value="")
-    consumo_day_label = build_label(consumo_header, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
-    consumo_day_label.configure(textvariable=consumo_day_var)
-    consumo_day_label.pack(side=tk.RIGHT, anchor="e")
 
     consumo_graph_frame = tk.Frame(container, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
     consumo_graph_frame.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
@@ -4558,6 +4643,10 @@ def _build_monitor_ui(container):
     consumo_por_dia = _build_consumo_por_dia()
     consumo_selected_day = max(consumo_por_dia.keys()) if consumo_por_dia else datetime.now().strftime("%Y-%m-%d")
     consumo_selected_mode = "day"
+    consumo_line_intro_running = False
+    consumo_line_intro_done = False
+    consumo_pinned_tip_text = ""
+    consumo_pinned_tip_kind = ""
 
     def _aggregate_all_days() -> dict:
         total = _empty_day_metrics()
@@ -4661,13 +4750,13 @@ def _build_monitor_ui(container):
         except Exception:
             pass
 
-    def _draw_days_timeline(_event=None):
+    def _draw_days_timeline(_event=None, *, line_progress=1.0):
         nonlocal consumo_selected_day, consumo_selected_mode, consumo_por_dia
         consumo_por_dia = _build_consumo_por_dia()
         consumo_days_canvas.delete("all")
-        day_keys = sorted(consumo_por_dia.keys())
+        day_keys = sorted(consumo_por_dia.keys())[-31:]
         if not day_keys:
-            consumo_day_var.set("Sem dados de consumo por plantão")
+            consumo_day_var.set("")
             consumo_days_canvas.create_text(12, 12, anchor="nw", text="Sem registros com DATA_HORA", fill=UI_THEME.get("muted_text", "#9BA7B4"), font=theme_font("font_sm"))
             return
         if consumo_selected_day not in consumo_por_dia:
@@ -4675,9 +4764,12 @@ def _build_monitor_ui(container):
 
         width = max(360, int(consumo_days_canvas.winfo_width() or 360))
         height = max(44, int(consumo_days_canvas.winfo_height() or 44))
-        margin_x = 18
+        margin_left = 18
+        # reserva espaço no lado direito para o marcador de TOTAL ficar
+        # sempre à frente (à direita) do ponto do dia atual
+        margin_right = 42
         margin_y = 8
-        plot_w = max(10, width - margin_x * 2)
+        plot_w = max(10, width - margin_left - margin_right)
         plot_h = max(10, height - margin_y * 2)
         step = plot_w / max(1, len(day_keys) - 1)
         totals = [int((consumo_por_dia.get(day) or {}).get("total", 0) or 0) for day in day_keys]
@@ -4685,48 +4777,119 @@ def _build_monitor_ui(container):
 
         coords = []
         for idx, day_key in enumerate(day_keys):
-            x = margin_x + idx * step
+            x = margin_left + idx * step
             total = totals[idx]
             if max_total == min_total:
                 y = margin_y + (plot_h * 0.5)
             else:
                 ratio = (total - min_total) / (max_total - min_total)
-                # Curva de acentuação para destacar melhor aclive/declive entre dias.
-                # ratio^0.6 amplia diferenças visuais sem alterar o comprimento horizontal.
                 ratio = max(0.0, min(1.0, ratio)) ** 0.6
                 y = margin_y + plot_h * (1 - ratio)
             coords.append((x, y, day_key, total))
 
-        if len(coords) >= 2:
+        def _draw_polyline_progress(points, progress):
+            if len(points) < 2:
+                return
+            p = max(0.0, min(1.0, float(progress)))
+            max_seg = len(points) - 1
+            pos = p * max_seg
+            full = int(pos)
+            frac = pos - full
+            draw_pts = [points[0]]
+            for i in range(1, full + 1):
+                draw_pts.append(points[i])
+            if full < max_seg:
+                x1, y1 = points[full]
+                x2, y2 = points[full + 1]
+                draw_pts.append((x1 + (x2 - x1) * frac, y1 + (y2 - y1) * frac))
             line_points = []
-            for x, y, *_ in coords:
-                line_points.extend([x, y])
-            consumo_days_canvas.create_line(*line_points, fill="#FFFFFF", width=1.2, smooth=True)
+            for xx, yy in draw_pts:
+                line_points.extend([xx, yy])
+            if len(line_points) >= 4:
+                consumo_days_canvas.create_line(*line_points, fill="#FFFFFF", width=1.2, smooth=True)
+
+        if len(coords) >= 2:
+            _draw_polyline_progress([(x, y) for x, y, *_ in coords], line_progress)
 
         def _on_day_click(day_key: str, show_total: bool = False):
-            nonlocal consumo_selected_day, consumo_selected_mode
+            nonlocal consumo_selected_day, consumo_selected_mode, consumo_pinned_tip_text, consumo_pinned_tip_kind
             global _cards_context_user_selected
             _cards_context_user_selected = True
             consumo_selected_day = day_key
             consumo_selected_mode = "total" if show_total else "day"
+            consumo_pinned_tip_text = "Total" if show_total else str(day_key)
+            consumo_pinned_tip_kind = "total" if show_total else "day"
             if show_total:
                 total_sel = int(_aggregate_all_days().get("total", 0) or 0)
-                restante_sel = max(0, 1000 - total_sel)
-                consumo_day_var.set(f"Total acumulado: {day_key} • Usados: {total_sel} • Restantes(base1000): {restante_sel}")
                 if _control_filtered_count_var is not None:
                     _control_filtered_count_var.set(f"TOTAL {day_key} Registros: {total_sel}")
             else:
                 total_sel = int((consumo_por_dia.get(day_key) or {}).get("total", 0) or 0)
-                restante_sel = max(0, 1000 - total_sel)
-                consumo_day_var.set(f"Dia selecionado: {day_key} • Usados: {total_sel} • Restantes(base1000): {restante_sel}")
                 if _control_filtered_count_var is not None:
                     _control_filtered_count_var.set(f"{day_key} Registros: {total_sel}")
             _animate_cards_for_day(day_key, show_total=show_total)
             _draw_days_timeline()
 
+        point_tip = {"win": None}
+
+        def _hide_point_tip(_event=None, *, force=False):
+            nonlocal consumo_pinned_tip_text
+            if consumo_pinned_tip_text and not force:
+                return
+            try:
+                if point_tip.get("win") is not None:
+                    point_tip["win"].destroy()
+            except Exception:
+                pass
+            point_tip["win"] = None
+
+        def _show_point_tip(event=None, text="", anchor=None, force_right=False):
+            _hide_point_tip(force=True)
+            if not text:
+                return
+            try:
+                tw = tk.Toplevel(consumo_days_canvas)
+                tw.wm_overrideredirect(True)
+                if force_right and anchor:
+                    x = int(consumo_days_canvas.winfo_rootx() + float(anchor[0]) + 14)
+                    y = int(consumo_days_canvas.winfo_rooty() + float(anchor[1]) + 8)
+                elif event is not None:
+                    x = int(event.x_root + 14)
+                    y = int(event.y_root + 10)
+                else:
+                    x = int(consumo_days_canvas.winfo_rootx() + 18)
+                    y = int(consumo_days_canvas.winfo_rooty() + 18)
+                tw.wm_geometry(f"+{x}+{y}")
+                lbl = tk.Label(
+                    tw,
+                    text=text,
+                    bg=UI_THEME.get("surface_alt", "#1B2430"),
+                    fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
+                    relief="solid",
+                    bd=1,
+                    padx=6,
+                    pady=4,
+                    font=theme_font("font_sm"),
+                )
+                lbl.pack()
+                tw.update_idletasks()
+                sw = max(320, int(consumo_days_canvas.winfo_screenwidth() or 0))
+                sh = max(240, int(consumo_days_canvas.winfo_screenheight() or 0))
+                tw_w = max(40, int(tw.winfo_reqwidth() or 0))
+                tw_h = max(20, int(tw.winfo_reqheight() or 0))
+                x = max(8, min(x, sw - tw_w - 8))
+                y = max(8, min(y, sh - tw_h - 8))
+                tw.wm_geometry(f"+{x}+{y}")
+                point_tip["win"] = tw
+            except Exception:
+                point_tip["win"] = None
+
         point_default = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
+        selected_anchor = None
         for x, y, day_key, total in coords:
             is_selected = day_key == consumo_selected_day
+            if is_selected:
+                selected_anchor = (x, y)
             radius = 4 if is_selected else 3
             color = "#FFFFFF" if is_selected else point_default
             item = consumo_days_canvas.create_oval(
@@ -4739,51 +4902,73 @@ def _build_monitor_ui(container):
                 width=2 if is_selected else 1,
             )
             consumo_days_canvas.tag_bind(item, "<Button-1>", lambda _evt, d=day_key: _on_day_click(d))
+            if is_selected:
+                consumo_days_canvas.tag_bind(item, "<Enter>", lambda _evt, d=day_key, px=x, py=y: (consumo_days_canvas.configure(cursor="hand2"), _show_point_tip(_evt, d, anchor=(px, py), force_right=True)))
+                consumo_days_canvas.tag_bind(item, "<Motion>", lambda _evt, d=day_key, px=x, py=y: _show_point_tip(_evt, d, anchor=(px, py), force_right=True))
+            else:
+                consumo_days_canvas.tag_bind(item, "<Enter>", lambda _evt, d=day_key: (consumo_days_canvas.configure(cursor="hand2"), _show_point_tip(_evt, d)))
+                consumo_days_canvas.tag_bind(item, "<Motion>", lambda _evt, d=day_key: _show_point_tip(_evt, d))
+            consumo_days_canvas.tag_bind(item, "<Leave>", lambda _evt: (consumo_days_canvas.configure(cursor=""), _hide_point_tip()))
 
         last_x, last_y, last_day_key, _last_total = coords[-1]
-        marker_x = min(width - margin_x, last_x + max(12, step * 0.45))
         marker_r = 6
+        min_gap = max(20, marker_r + 8)
+        marker_x = min(width - marker_r - 8, last_x + max(min_gap, step * 0.6))
+        # garante sempre o marcador de total à frente do último dia
+        marker_x = max(last_x + min_gap, marker_x)
+        marker_y = last_y
         marker_item = consumo_days_canvas.create_oval(
             marker_x - marker_r,
-            last_y - marker_r,
+            marker_y - marker_r,
             marker_x + marker_r,
-            last_y + marker_r,
+            marker_y + marker_r,
             fill="",
             outline="#FFFFFF",
             width=2,
         )
-        all_total = int(_aggregate_all_days().get("total", 0) or 0)
-        marker_restante = max(0, 1000 - all_total)
         consumo_days_canvas.tag_bind(marker_item, "<Button-1>", lambda _evt, d=last_day_key: _on_day_click(d, show_total=True))
-        consumo_days_canvas.tag_bind(marker_item, "<Enter>", lambda _evt: consumo_days_canvas.configure(cursor="hand2"))
-        consumo_days_canvas.tag_bind(marker_item, "<Leave>", lambda _evt: consumo_days_canvas.configure(cursor=""))
-        return_marker_x = marker_x - 14
-        return_marker_r = 4
-        return_marker_item = consumo_days_canvas.create_oval(
-            return_marker_x - return_marker_r,
-            last_y - return_marker_r,
-            return_marker_x + return_marker_r,
-            last_y + return_marker_r,
-            fill="#FFFFFF",
-            outline="#FFFFFF",
-            width=1,
-        )
-        consumo_days_canvas.tag_bind(return_marker_item, "<Button-1>", lambda _evt, d=last_day_key: _on_day_click(d, show_total=True))
-        consumo_days_canvas.tag_bind(return_marker_item, "<Enter>", lambda _evt: consumo_days_canvas.configure(cursor="hand2"))
-        consumo_days_canvas.tag_bind(return_marker_item, "<Leave>", lambda _evt: consumo_days_canvas.configure(cursor=""))
+        consumo_days_canvas.tag_bind(marker_item, "<Enter>", lambda _evt, px=marker_x, py=marker_y: (consumo_days_canvas.configure(cursor="hand2"), _show_point_tip(_evt, "Total", anchor=(px, py), force_right=True)))
+        consumo_days_canvas.tag_bind(marker_item, "<Motion>", lambda _evt, px=marker_x, py=marker_y: _show_point_tip(_evt, "Total", anchor=(px, py), force_right=True))
+        consumo_days_canvas.tag_bind(marker_item, "<Leave>", lambda _evt: (consumo_days_canvas.configure(cursor=""), _hide_point_tip()))
+
+        if consumo_pinned_tip_text:
+            if consumo_pinned_tip_kind == "total":
+                _show_point_tip(text="Total", anchor=(marker_x, marker_y), force_right=True)
+            elif selected_anchor:
+                _show_point_tip(text=consumo_selected_day, anchor=selected_anchor, force_right=True)
 
         if consumo_selected_mode == "total":
             total_selected = int(_aggregate_all_days().get("total", 0) or 0)
-            restante_selected = max(0, 1000 - total_selected)
-            consumo_day_var.set(f"Total acumulado: {consumo_selected_day} • Usados: {total_selected} • Restantes(base1000): {restante_selected}")
             if _control_filtered_count_var is not None:
                 _control_filtered_count_var.set(f"TOTAL {consumo_selected_day} Registros: {total_selected}")
         else:
             total_selected = int((consumo_por_dia.get(consumo_selected_day) or {}).get("total", 0) or 0)
-            restante_selected = max(0, 1000 - total_selected)
-            consumo_day_var.set(f"Dia selecionado: {consumo_selected_day} • Usados: {total_selected} • Restantes(base1000): {restante_selected}")
             if _control_filtered_count_var is not None:
                 _control_filtered_count_var.set(f"{consumo_selected_day} Registros: {total_selected}")
+
+    def _start_days_line_intro(duration_ms=3120, steps=28):
+        nonlocal consumo_line_intro_running, consumo_line_intro_done
+        if consumo_line_intro_running or consumo_line_intro_done:
+            return
+        consumo_line_intro_running = True
+        steps = max(8, int(steps))
+        tick_ms = max(12, int(duration_ms / steps))
+
+        def _step(i=0):
+            nonlocal consumo_line_intro_running, consumo_line_intro_done
+            progress = min(1.0, i / float(steps))
+            _draw_days_timeline(line_progress=progress)
+            if i >= steps:
+                consumo_line_intro_running = False
+                consumo_line_intro_done = True
+                return
+            try:
+                consumo_days_canvas.after(tick_ms, lambda: _step(i + 1))
+            except Exception:
+                consumo_line_intro_running = False
+                consumo_line_intro_done = True
+
+        _step(0)
 
     def _refresh_cards_for_current_consumo_selection():
         global _cards_context_user_selected
@@ -5129,6 +5314,8 @@ def _build_monitor_ui(container):
             undo=True,
             autoseparators=True,
             maxundo=-1,
+            selectbackground=UI_THEME.get("selection_bg", UI_THEME.get("focus_bg", "#1F6FEB")),
+            selectforeground=UI_THEME.get("selection_fg", UI_THEME.get("focus_text", "#FFFFFF")),
         )
         text_scroll = _ChatGPTLikeScrollbar(
             text_area_wrap,

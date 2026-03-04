@@ -11597,9 +11597,9 @@
       ]
     },
     {
-      "identidade": "ENCOMENDA|3|104|SEM_STATUS",
+      "identidade": "ENCOMENDA|3|104|SEM_CONTATO",
       "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
-      "origem_status": "SEM_STATUS",
+      "origem_status": "SEM_CONTATO",
       "bloco": "3",
       "apartamento": "104",
       "quantidade": 1,
@@ -11615,7 +11615,8 @@
           "_entrada_id": 777,
           "DATA_HORA": "27/01/2026 18:45:17",
           "ID": 777,
-          "STATUS_ENCOMENDA": "PENDENTE"
+          "STATUS_ENCOMENDA": "SEM CONTATO",
+          "STATUS_DATA_HORA": "02/03/2026 00:18:06"
         }
       ]
     },

@@ -1656,7 +1656,7 @@
         {
             "id": 29,
             "tipo": "OBSERVACAO",
-            "texto": "●   1  [ID 29] ●   1  [ID 29] Observacao 29: registrar recado para HUGO ALVES no bloco 14, apartamento 128.",
+            "texto": " 1  [ID 29] Observacao 29: registrar recado para HUGO ALVES no bloco 14, apartamento 128.",
             "campos_extraidos_confirmados": {
                 "BLOCO": [
                     "14"
