@@ -10905,7 +10905,8 @@
             "DATA_HORA": "27/01/2026 21:33:30",
             "_entrada_id": 781,
             "MORADOR SEM TAG": "SIM",
-            "ID": 781
+            "ID": 781,
+            "texto": "●   2  [ID 781] Em 27/01/2026 às 21:33:30, Victor Oliveira, sem contato, chegou ao Bloco 13, Apartamento 217, em um Jetta azul, placa NCP1308."
         },
         {
             "NOME": "KAREN",
@@ -10977,21 +10978,6 @@
             "_entrada_id": 787,
             "MORADOR SEM TAG": "NAO",
             "ID": 787
-        },
-        {
-            "NOME": "ELISA",
-            "SOBRENOME": "FERREIRA",
-            "BLOCO": "5",
-            "APARTAMENTO": "19",
-            "PLACA": "PCI6307",
-            "MODELO": "HB20",
-            "COR": "CINZA",
-            "STATUS": "SEM CONTATO",
-            "DATA_HORA": "27/01/2026 23:48:24",
-            "_entrada_id": 788,
-            "MORADOR SEM TAG": "NAO",
-            "ID": 788,
-            "texto": "1  [ID 788] Às 23:48:24 do dia 27/01/2026, Elisa Ferreira, morador, acessou o local conduzindo um Hb20 cinza, placa PCI6307."
         },
         {
             "NOME": "QUELLY",

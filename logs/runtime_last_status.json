@@ -1,10 +1,22 @@
 {
-  "timestamp": "2026-03-03 08:30:55",
-  "action": "monitor",
+  "timestamp": "2026-03-04 00:44:59",
+  "action": "ux_metrics",
   "status": "OK",
-  "stage": "populate_text_done",
+  "stage": "interaction_perf",
   "details": {
-    "source": "c:\\Users\\Flavio Jr\\Desktop\\Access\\observacoes.json",
-    "visible": 50
+    "hover_handler_ms": {
+      "count": 49,
+      "p50": 0.104,
+      "p95": 2.604,
+      "p99": 11.205
+    },
+    "refresh_apply_ms": {
+      "count": 4,
+      "p50": 60.56,
+      "p95": 61.155,
+      "p99": 61.155
+    },
+    "records_rendered": 1696,
+    "frame_drop_rate": 0.3878
   }
 }
