@@ -1402,29 +1402,40 @@ def post_validate_and_clean_record(rec: dict, modelos_hint: Iterable[str]=None, 
 # ---------- UI: SuggestEntry (completo) ----------
 class SuggestEntry(tk.Frame):
     MAX_VISIBLE = 8
-    def __init__(self, master):
+    MAX_TEXT_LINES = 6
+    def __init__(self, master, open_monitor_callback=None):
         super().__init__(master)
         self.submit_callback = None
+        self.open_monitor_callback = open_monitor_callback
         self._composer_menu = None
-        self.entry_var = tk.StringVar()
-        self.input_shell = tk.Frame(self, bd=0, highlightthickness=1, padx=8, pady=4)
+        self.input_shell = tk.Canvas(self, bd=0, highlightthickness=0, relief="flat", height=86)
         self.input_shell.pack(side=tk.TOP, fill=tk.X, pady=(0, theme_space("space_2", 8)))
+        self._shell_bg_item = None
+        self._shell_window_item = None
 
-        self.btn_plus = tk.Button(self.input_shell, text="＋", width=2, relief="flat", command=self._on_plus_click, cursor="hand2", font=theme_font("font_lg", "bold"))
-        self.btn_plus.pack(side=tk.LEFT, padx=(10, 6), pady=8)
+        self.input_content = tk.Frame(self.input_shell, bd=0, highlightthickness=0)
+        self.btn_plus = tk.Canvas(self.input_content, width=36, height=36, highlightthickness=0, bd=0, cursor="hand2")
+        self.btn_plus.pack(side=tk.LEFT, padx=(14, 10), pady=(0, 0))
+        self._btn_plus_icon = self.btn_plus.create_text(18, 18, text="+", font=theme_font("font_lg", "bold"))
 
-        self.entry = tk.Entry(self.input_shell, textvariable=self.entry_var, font=theme_font("font_lg"), relief="flat", bd=0)
-        self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(4, 4), pady=10)
+        self.entry = tk.Text(self.input_content, font=theme_font("font_lg"), relief="flat", bd=0, wrap="word", height=1)
+        self.entry.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 12), pady=(0, 0))
 
-        self.btn_dictate = tk.Button(self.input_shell, text="🎙", width=2, relief="flat", command=self._on_dictate_click, cursor="hand2", font=theme_font("font_lg"))
-        self.btn_dictate.pack(side=tk.RIGHT, padx=(4, 10), pady=8)
-        self.btn_voice = tk.Button(self.input_shell, text="🔊", width=2, relief="flat", command=self._on_voice_click, cursor="hand2", font=theme_font("font_lg"))
-        self.btn_voice.pack(side=tk.RIGHT, padx=(4, 2), pady=8)
-        self.btn_send = tk.Canvas(self.input_shell, width=34, height=34, highlightthickness=0, bd=0, cursor="hand2")
-        self.btn_send.pack(side=tk.RIGHT, padx=(4, 8), pady=6)
-        self._btn_send_bg = self.btn_send.create_oval(2, 2, 32, 32, width=0)
-        self._btn_send_icon = self.btn_send.create_text(17, 17, text="➤", font=theme_font("font_md", "bold"))
-        self.btn_send.bind("<Button-1>", lambda _e: self._on_submit_click())
+        self.btn_dictate = tk.Canvas(self.input_content, width=36, height=36, highlightthickness=0, bd=0, cursor="hand2")
+        self.btn_dictate.pack(side=tk.RIGHT, padx=(2, 4), pady=(0, 0))
+        self._btn_dictate_icon = self.btn_dictate.create_text(18, 18, text="🎙", font=theme_font("font_md"))
+
+        self.btn_voice = tk.Canvas(self.input_content, width=38, height=38, highlightthickness=0, bd=0, cursor="hand2")
+        self.btn_voice.pack(side=tk.RIGHT, padx=(2, 6), pady=(0, 0))
+        self._btn_voice_bg = self.btn_voice.create_oval(2, 2, 36, 36, width=0)
+        self._btn_voice_b1 = self.btn_voice.create_rectangle(11, 20, 13, 30, width=0)
+        self._btn_voice_b2 = self.btn_voice.create_rectangle(16, 16, 18, 30, width=0)
+        self._btn_voice_b3 = self.btn_voice.create_rectangle(21, 12, 23, 30, width=0)
+        self._btn_voice_b4 = self.btn_voice.create_rectangle(26, 18, 28, 30, width=0)
+
+        self.btn_plus.bind("<Button-1>", lambda _e: self._on_plus_click())
+        self.btn_dictate.bind("<Button-1>", lambda _e: self._on_dictate_click())
+        self.btn_voice.bind("<Button-1>", lambda _e: self._on_voice_click())
         self.entry.focus_set()
         self.font = tkfont.Font(font=self.entry["font"]); self._orig_entry_bg = self.entry.cget("bg")
         try: self._orig_entry_fg = self.entry.cget("fg")
@@ -1475,7 +1486,7 @@ class SuggestEntry(tk.Frame):
         self.entry.bind("<Tab>", self.on_tab, add="+")
         self.entry.bind("<Down>", self.on_down); self.entry.bind("<Up>", self.on_up); self.entry.bind("<Return>", self.on_return); self.entry.bind("<Escape>", self.on_escape)
         self.entry.bind("<Control-space>", lambda e: (self.show_db(), "break"))
-        self.entry.bind("<Button-3>", self._on_plus_click, add="+")
+        self.input_shell.bind("<Configure>", self._on_shell_resize, add="+")
 
         self.tree.bind("<Double-1>", self.on_tree_double); self.tree.bind("<Button-1>", self.on_tree_click)
         self.tree.bind("<Motion>", self.on_tree_motion); self.tree.bind("<Return>", self.on_tree_return)
@@ -1486,15 +1497,14 @@ class SuggestEntry(tk.Frame):
         except Exception:
             pass
         try:
-            attach_tooltip(self.btn_plus, "Mais")
+            attach_tooltip(self.btn_plus, "Abrir Monitor de Acessos")
             attach_tooltip(self.btn_dictate, "Ditar")
             attach_tooltip(self.btn_voice, "Usar voz")
-            attach_tooltip(self.btn_send, "Enviar")
         except Exception:
             pass
-        self.btn_send.bind("<Enter>", lambda _e: self._set_send_button_state(hover=True), add="+")
-        self.btn_send.bind("<Leave>", lambda _e: self._set_send_button_state(hover=False), add="+")
         self.refresh_theme()
+        self._on_shell_resize()
+        self._auto_resize_textarea()
 
     def _composer_palette(self):
         # Tokens visuais aproximados ao composer do ChatGPT, respeitando o tema ativo.
@@ -1506,8 +1516,64 @@ class SuggestEntry(tk.Frame):
             "soft_hover": UI_THEME.get("surface_alt", "#F3F4F6"),
             "send_bg": UI_THEME.get("primary", "#111827"),
             "send_bg_active": UI_THEME.get("primary_active", "#374151"),
+            "send_disabled": UI_THEME.get("muted_text", "#9CA3AF"),
             "send_fg": UI_THEME.get("on_primary", "#FFFFFF"),
+            "plus_fg": UI_THEME.get("on_primary", "#FFFFFF"),
+            "voice_bg": UI_THEME.get("surface", "#FFFFFF"),
+            "voice_fg": UI_THEME.get("primary", "#1F6FEB"),
         }
+
+    @staticmethod
+    def _rounded_points(x1, y1, x2, y2, r):
+        r = max(2, min(r, int((x2 - x1) / 2), int((y2 - y1) / 2)))
+        return [
+            x1 + r, y1, x2 - r, y1, x2, y1, x2, y1 + r,
+            x2, y2 - r, x2, y2, x2 - r, y2, x1 + r, y2,
+            x1, y2, x1, y2 - r, x1, y1 + r, x1, y1
+        ]
+
+    def _on_shell_resize(self, _event=None):
+        try:
+            w = max(self.input_shell.winfo_width(), 320)
+            h = max(self.input_shell.winfo_height(), 78)
+            points = self._rounded_points(2, 2, w - 2, h - 2, r=38)
+            palette = self._composer_palette()
+            if self._shell_bg_item is None:
+                self._shell_bg_item = self.input_shell.create_polygon(points, smooth=True, splinesteps=24, outline=palette["shell_border"], fill=palette["shell_bg"], width=1)
+            else:
+                self.input_shell.coords(self._shell_bg_item, *points)
+                self.input_shell.itemconfigure(self._shell_bg_item, outline=palette["shell_border"], fill=palette["shell_bg"])
+            if self._shell_window_item is None:
+                self._shell_window_item = self.input_shell.create_window(14, int(h / 2), window=self.input_content, anchor="w", width=max(140, w - 36), height=max(44, h - 20))
+            else:
+                self.input_shell.coords(self._shell_window_item, 14, int(h / 2))
+                self.input_shell.itemconfigure(self._shell_window_item, width=max(140, w - 36), height=max(44, h - 20))
+        except Exception:
+            pass
+
+    def _get_entry_text(self):
+        return self.entry.get("1.0", "end-1c")
+
+    def _set_entry_text(self, text):
+        self.entry.delete("1.0", "end")
+        if text:
+            self.entry.insert("1.0", text)
+        self.entry.mark_set("insert", "end-1c")
+        self._auto_resize_textarea()
+
+    def _clear_entry(self):
+        self._set_entry_text("")
+
+    def _is_shift_pressed(self, event):
+        return bool(getattr(event, "state", 0) & 0x0001)
+
+    def _auto_resize_textarea(self):
+        try:
+            line_count = int(self.entry.index("end-1c").split(".")[0])
+            visible = min(max(1, line_count), self.MAX_TEXT_LINES)
+            self.entry.configure(height=visible)
+        except Exception:
+            pass
 
     def refresh_theme(self):
         try:
@@ -1515,7 +1581,8 @@ class SuggestEntry(tk.Frame):
             shell_bg = palette["shell_bg"]
             shell_border = palette["shell_border"]
             shell_fg = palette["shell_fg"]
-            self.input_shell.configure(bg=shell_bg, highlightbackground=shell_border, highlightcolor=UI_THEME.get("primary", "#1F6FEB"), highlightthickness=1)
+            self.input_shell.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
+            self.input_content.configure(bg=shell_bg)
             self.frame.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"), highlightbackground=UI_THEME.get("light_border", "#D1D5DB"))
             self.shortcuts_hint.configure(fg=UI_THEME.get("muted_text", "#6B7280"), bg=UI_THEME.get("light_bg", "#F5F7FA"))
             self.entry.configure(
@@ -1526,32 +1593,20 @@ class SuggestEntry(tk.Frame):
                 fg=shell_fg,
                 insertbackground=shell_fg,
             )
-            for btn in (self.btn_plus, self.btn_dictate, self.btn_voice):
-                btn.configure(
-                    bg=shell_bg,
-                    fg=palette["muted"],
-                    activebackground=palette["soft_hover"],
-                    activeforeground=shell_fg,
-                    highlightthickness=0,
-                    bd=0,
-                    relief="flat",
-                )
-            self.btn_send.configure(bg=shell_bg)
-            self._set_send_button_state(hover=False)
+            self.btn_plus.configure(bg=shell_bg)
+            self.btn_plus.itemconfigure(self._btn_plus_icon, fill=palette["plus_fg"])
+            self.btn_dictate.configure(bg=shell_bg)
+            self.btn_dictate.itemconfigure(self._btn_dictate_icon, fill=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
+            self.btn_voice.configure(bg=shell_bg)
+            self.btn_voice.itemconfigure(self._btn_voice_bg, fill=palette["voice_bg"])
+            for bar in (self._btn_voice_b1, self._btn_voice_b2, self._btn_voice_b3, self._btn_voice_b4):
+                self.btn_voice.itemconfigure(bar, fill=palette["voice_fg"])
             self.overlay.configure(fg=UI_THEME.get("overlay_text", "gray65"), bg=self.entry.cget("bg"))
+            self._on_shell_resize()
             style = ttk.Style(self)
             style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background=UI_THEME.get("surface", "#FFFFFF"), fieldbackground=UI_THEME.get("surface", "#FFFFFF"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
             style.configure("Suggest.Treeview.Heading", font=theme_font("font_md", "bold"), background=UI_THEME.get("surface_alt", "#E5E7EB"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
             style.map("Suggest.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME.get("focus_bg", "#DBEAFE")))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("focus_text", "#111827")))])
-        except Exception:
-            pass
-
-    def _set_send_button_state(self, hover=False):
-        try:
-            palette = self._composer_palette()
-            fill = palette["send_bg_active"] if hover else palette["send_bg"]
-            self.btn_send.itemconfigure(self._btn_send_bg, fill=fill)
-            self.btn_send.itemconfigure(self._btn_send_icon, fill=palette["send_fg"])
         except Exception:
             pass
 
@@ -1560,25 +1615,17 @@ class SuggestEntry(tk.Frame):
 
     def _on_plus_click(self):
         try:
-            if self._composer_menu is None:
-                self._composer_menu = tk.Menu(self, tearoff=0)
-            self._composer_menu.delete(0, "end")
-            self._composer_menu.add_command(label="Abrir sugestões", command=self.show_db)
-            self._composer_menu.add_command(label="Limpar campo", command=lambda: self.entry_var.set(""))
-            self._composer_menu.add_separator()
-            self._composer_menu.add_command(label="Modo IA", command=lambda: self.entry_var.set("IA "))
-            x = self.btn_plus.winfo_rootx()
-            y = self.btn_plus.winfo_rooty() + self.btn_plus.winfo_height() + 2
-            self._composer_menu.tk_popup(x, y)
-            self._composer_menu.grab_release()
+            if callable(self.open_monitor_callback):
+                self.open_monitor_callback()
         except Exception:
             pass
 
     def _on_dictate_click(self):
         try:
-            self.entry.insert(tk.END, " [ditado] ")
+            self.entry.insert("end", " [ditado] ")
             self.entry.focus_set()
-            self.entry.icursor(tk.END)
+            self.entry.mark_set("insert", "end-1c")
+            self._auto_resize_textarea()
             if _warning_bar:
                 _warning_bar.show_messages(["🎙 Ditar ativado (modo local)."], level="info")
         except Exception:
@@ -1592,21 +1639,9 @@ class SuggestEntry(tk.Frame):
         except Exception:
             pass
 
-    def _on_submit_click(self):
-        if callable(self.submit_callback):
-            try:
-                self.submit_callback()
-                return
-            except Exception:
-                pass
-        try:
-            save_text(entry_widget=self.entry)
-        except Exception:
-            pass
-
     # overlay helpers
     def _typed_x(self):
-        t = self.entry_var.get().rstrip(); return t, self.font.measure(t)
+        t = self._get_entry_text().rstrip(); return t, self.font.measure(t)
 
     def _show_overlay_for_last_token(self, suggestion_text: str, last_token: str):
         cut_chars = token_common_prefix_len(last_token, suggestion_text)
@@ -1633,9 +1668,10 @@ class SuggestEntry(tk.Frame):
 
     # key handlers
     def on_key(self, event):
+        self._auto_resize_textarea()
         k = event.keysym
         if self.ia_waiting_for_query and k not in ("Up","Down","Left","Right","Return","Tab","Escape"):
-            try: self.entry_var.set(""); self.entry.icursor(0)
+            try: self._clear_entry()
             except Exception:
                 pass
             self.ia_waiting_for_query=False
@@ -1650,7 +1686,7 @@ class SuggestEntry(tk.Frame):
             try: self.tree.selection_remove(sel)
             except Exception:
                 pass
-        typed = self.entry_var.get()
+        typed = self._get_entry_text()
         if not typed.strip(): self.hide_list(); self._hide_overlay(); return
         tok_list = tokens(typed); last_token = tok_list[-1] if tok_list else typed.strip()
         self._last_query_token = last_token
@@ -1665,10 +1701,10 @@ class SuggestEntry(tk.Frame):
 
     def on_tab(self, event):
         if self.ia_mode: return "break"
-        if not self.entry_var.get().strip(): return "break"
+        if not self._get_entry_text().strip(): return "break"
         # Completion from overlay / spelling suggestion
         if self.correction:
-            typed = self.entry_var.get()
+            typed = self._get_entry_text()
             tok_list = tokens(typed)
             last_token = tok_list[-1] if tok_list else typed
             cut = token_common_prefix_len(last_token, self.correction)
@@ -1680,14 +1716,9 @@ class SuggestEntry(tk.Frame):
                     new_text = typed + suffix
                 else:
                     new_text = typed + " " + suffix
-                self.entry_var.set(new_text)
+                self._set_entry_text(new_text)
                 try:
-                    self.entry.icursor(len(new_text))
-                    self.entry.selection_clear()
                     self.entry.focus_set()
-                    try: self.entry.xview_moveto(1.0)
-                    except Exception:
-                        pass
                 except Exception:
                     pass
             self._hide_overlay(); self.correction="";
@@ -1711,7 +1742,7 @@ class SuggestEntry(tk.Frame):
                 self._just_accepted=True
                 return "break"
             return "break"
-        return None if self.entry_var.get().strip() else "break"
+        return None if self._get_entry_text().strip() else "break"
 
     def on_down(self, event):
         if self.list_visible:
@@ -1736,7 +1767,7 @@ class SuggestEntry(tk.Frame):
         return None
 
     def on_return(self, event):
-        text_raw = (self.entry_var.get() or ""); text = text_raw.strip()
+        text_raw = (self._get_entry_text() or ""); text = text_raw.strip()
         if not self.ia_mode:
             if re.fullmatch(r"\s*(ia|ai)([,.\s]*)?$", text, flags=re.IGNORECASE) or re.match(r"^\s*(ia|ai)\b", text, flags=re.IGNORECASE):
                 self.ia_mode=True; self.ia_waiting_for_query=True
@@ -1749,7 +1780,7 @@ class SuggestEntry(tk.Frame):
             command = text.lower()
             if command in DB_PANEL_COMMANDS:
                 try:
-                    self.entry_var.set(""); self.entry.icursor(0)
+                    self._clear_entry()
                 except Exception:
                     pass
                 self._open_db_panel(DB_PANEL_COMMANDS[command], command)
@@ -1759,8 +1790,13 @@ class SuggestEntry(tk.Frame):
                 except Exception:
                     pass
                 return "break"
-            query_text = text; self.entry_var.set(""); self.entry.icursor(0)
+            query_text = text; self._clear_entry()
             threading.Thread(target=self._send_query_to_ia_thread, args=(query_text,), daemon=True).start()
+            return "break"
+
+        if self._is_shift_pressed(event):
+            self.entry.insert("insert", "\n")
+            self._auto_resize_textarea()
             return "break"
         if self.list_visible:
             sel = self.tree.selection()
@@ -2050,8 +2086,8 @@ class SuggestEntry(tk.Frame):
     def _accept_into_entry(self, idx, hide=False, append_all=False):
         if idx < 0 or idx >= len(self.suggestions): return
         disp, rec = self.suggestions[idx]; name_text = full_name(rec)
-        self.entry_var.set(name_text)
-        try: self.entry.icursor(len(name_text)); self.entry.select_clear(); self.entry.focus_set()
+        self._set_entry_text(name_text)
+        try: self.entry.focus_set()
         except Exception:
             pass
         steps=[]
@@ -2077,10 +2113,10 @@ class SuggestEntry(tk.Frame):
             pass
 
     def _apply_step_token(self, token):
-        current = self.entry_var.get().strip()
+        current = self._get_entry_text().strip()
         if current.upper().endswith(token.upper()): return
-        new_text = f"{current} {token}".strip(); self.entry_var.set(new_text)
-        try: self.entry.icursor(len(new_text)); self.entry.select_clear(); self.entry.focus_set()
+        new_text = f"{current} {token}".strip(); self._set_entry_text(new_text)
+        try: self.entry.focus_set()
         except Exception:
             pass
         if self.step_idx + 1 < len(self.steps):
@@ -2094,7 +2130,7 @@ class SuggestEntry(tk.Frame):
             pass
 
     def show_list(self, matches):
-        if not self.entry_var.get().strip(): self.hide_list(); self._hide_overlay(); return
+        if not self._get_entry_text().strip(): self.hide_list(); self._hide_overlay(); return
 
         def _highlight_match(text, query):
             txt = str(text or "")
@@ -2190,7 +2226,7 @@ class SuggestEntry(tk.Frame):
 
     def show_db(self):
         if self.ia_mode: self.hide_list(); self._hide_overlay(); return
-        typed = self.entry_var.get().strip()
+        typed = self._get_entry_text().strip()
         if not typed: self.hide_list(); return
         matches = search_prefix(typed)
         if not matches: matches = search_fuzzy(typed)
@@ -2206,7 +2242,7 @@ class SuggestEntry(tk.Frame):
             elif HAS_IA_MODULE and hasattr(ia_module, "activate_agent_prompt"):
                 try: ia_module.activate_agent_prompt()
                 except Exception as e: print("Falha ao ativar prompt do agente:", e)
-            try: self.entry_var.set(""); self.entry.icursor(0)
+            try: self._clear_entry()
             except Exception:
                 pass
             try: self.entry.configure(bg="black", fg="white", insertbackground="white")
@@ -2230,7 +2266,7 @@ class SuggestEntry(tk.Frame):
             try: self.entry.configure(bg=self._orig_entry_bg, fg=self._orig_entry_fg, insertbackground=self._orig_insert_bg)
             except Exception:
                 pass
-            try: self.entry_var.set(""); self.entry.icursor(0); self.entry.focus_set()
+            try: self._clear_entry(); self.entry.focus_set()
             except Exception:
                 pass
         except Exception:
@@ -2250,6 +2286,33 @@ def _compute_next_in_id(regs):
             pass
     return max_id + 1
 
+
+def _read_input_widget_text(entry_widget):
+    try:
+        return (entry_widget.get("1.0", "end-1c") or "").strip()
+    except Exception:
+        try:
+            return (entry_widget.get() or "").strip()
+        except Exception:
+            return ""
+
+
+def _clear_input_widget(entry_widget):
+    try:
+        entry_widget.delete("1.0", "end")
+        if hasattr(entry_widget, "configure"):
+            try:
+                entry_widget.configure(height=1)
+            except Exception:
+                pass
+        return
+    except Exception:
+        pass
+    try:
+        entry_widget.delete(0, "end")
+    except Exception:
+        pass
+
 def save_text(entry_widget=None, btn=None):
     started_at = time.time()
 
@@ -2260,7 +2323,7 @@ def save_text(entry_widget=None, btn=None):
         report_status("ux_metrics", "OK", stage=stage, details=details)
     if entry_widget is None:
         return
-    txt = entry_widget.get().strip()
+    txt = _read_input_widget_text(entry_widget)
     if not txt:
         return
     report_status("user_input", "STARTED", stage="save_text", details={"text_len": len(txt)})
@@ -2293,7 +2356,7 @@ def save_text(entry_widget=None, btn=None):
         _save_for_review(txt, now_str, decision_meta=decision)
         report_status("user_input", "OK", stage="saved_for_review", details={"path": REVIEW_QUEUE_FILE})
         try:
-            entry_widget.delete(0, "end")
+            _clear_input_widget(entry_widget)
         except Exception as e:
             _log_ui("WARNING", "entry_clear_failed", "Falha ao limpar entrada", error=str(e))
         _report_save_metric("save_completed", destino="revisao")
@@ -2304,7 +2367,7 @@ def save_text(entry_widget=None, btn=None):
         _save_structured_text(ORIENTACOES_FILE, txt_formal, now_str, "ORIENTACAO", decision_meta=decision)
         report_status("user_input", "OK", stage="saved_orientacao", details={"path": ORIENTACOES_FILE})
         try:
-            entry_widget.delete(0, "end")
+            _clear_input_widget(entry_widget)
         except Exception as e:
             _log_ui("WARNING", "entry_clear_failed", "Falha ao limpar entrada", error=str(e))
         _report_save_metric("save_completed", destino="orientacoes")
@@ -2314,7 +2377,7 @@ def save_text(entry_widget=None, btn=None):
         _save_structured_text(OBSERVACOES_FILE, txt_formal, now_str, "OBSERVACAO", decision_meta=decision)
         report_status("user_input", "OK", stage="saved_observacao", details={"path": OBSERVACOES_FILE})
         try:
-            entry_widget.delete(0, "end")
+            _clear_input_widget(entry_widget)
         except Exception as e:
             _log_ui("WARNING", "entry_clear_failed", "Falha ao limpar entrada", error=str(e))
         _report_save_metric("save_completed", destino="observacoes")
@@ -2326,7 +2389,7 @@ def save_text(entry_widget=None, btn=None):
         if log_audit_event:
             log_audit_event("texto_persistido", "ENCOMENDAS_INIT", txt, motivo=decision.get("motivo"), score=decision.get("score"))
         try:
-            entry_widget.delete(0, "end")
+            _clear_input_widget(entry_widget)
         except Exception as e:
             _log_ui("WARNING", "entry_clear_failed", "Falha ao limpar entrada", error=str(e))
         if btn:
@@ -2345,7 +2408,7 @@ def save_text(entry_widget=None, btn=None):
         txt_formal = _formalize_notes_text(txt, "ORIENTACAO")
         _save_structured_text(ORIENTACOES_FILE, txt_formal, now_str, "ORIENTACAO")
         try:
-            entry_widget.delete(0, "end")
+            _clear_input_widget(entry_widget)
         except Exception as e:
             _log_ui("WARNING", "entry_clear_failed", "Falha ao limpar entrada", error=str(e))
         _report_save_metric("save_completed", destino="orientacoes_keywords")
@@ -2354,7 +2417,7 @@ def save_text(entry_widget=None, btn=None):
         txt_formal = _formalize_notes_text(txt, "OBSERVACAO")
         _save_structured_text(OBSERVACOES_FILE, txt_formal, now_str, "OBSERVACAO")
         try:
-            entry_widget.delete(0, "end")
+            _clear_input_widget(entry_widget)
         except Exception as e:
             _log_ui("WARNING", "entry_clear_failed", "Falha ao limpar entrada", error=str(e))
         _report_save_metric("save_completed", destino="observacoes_keywords")
@@ -2434,7 +2497,7 @@ def save_text(entry_widget=None, btn=None):
     except Exception as e:
         report_status("user_input", "ERROR", stage="save_dadosinit_failed", details={"error": str(e), "path": IN_FILE})
         _log_ui("ERROR", "save_dadosinit_failed", "Erro save (IN_FILE)", error=str(e))
-    try: entry_widget.delete(0, "end")
+    try: _clear_input_widget(entry_widget)
     except Exception:
         pass
     if btn:
@@ -2525,13 +2588,18 @@ class AvisoBar(tk.Frame):
             self.font = tkfont.Font(font=self.entry_widget["font"])
         except Exception:
             self.font = tkfont.Font(family="Segoe UI", size=11)
-        self.config(bg=UI_THEME.get("surface_alt", "#E5E7EB"), bd=1, relief="flat", highlightthickness=1, highlightbackground=UI_THEME.get("border", "#D1D5DB"))
+        self.config(bg=UI_THEME.get("light_bg", "#F5F7FA"), bd=0, relief="flat", highlightthickness=0)
+        self._shell = tk.Canvas(self, bd=0, highlightthickness=0, relief="flat", height=34, bg=UI_THEME.get("light_bg", "#F5F7FA"))
+        self._shell.pack(fill=tk.X)
+        self._shell_bg = None
+        self._content = tk.Frame(self._shell, bd=0, highlightthickness=0)
+        self._content_win = self._shell.create_window(8, 17, window=self._content, anchor="w")
         self.msg_var = tk.StringVar()
-        self.lbl = tk.Label(self, textvariable=self.msg_var, anchor="w", font=self.font, bd=0)
+        self.lbl = tk.Label(self._content, textvariable=self.msg_var, anchor="w", font=self.font, bd=0)
         self.lbl.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=(2,2))
-        self.btn_detail = tk.Button(self, text="Detalhes", width=9, command=self._open_alert_center, relief="flat", cursor="hand2")
+        self.btn_detail = tk.Button(self._content, text="Detalhes", width=9, command=self._open_alert_center, relief="flat", cursor="hand2")
         self.btn_detail.pack(side=tk.RIGHT, padx=(0,4), pady=(2,2))
-        self.btn_close = tk.Button(self, text="Fechar", width=8, command=self._on_close_click, relief="flat", cursor="hand2")
+        self.btn_close = tk.Button(self._content, text="Fechar", width=8, command=self._on_close_click, relief="flat", cursor="hand2")
         self.btn_close.pack(side=tk.RIGHT, padx=(0,6), pady=(2,2))
         self._active_avisos = []
         self._idx = 0
@@ -2539,9 +2607,10 @@ class AvisoBar(tk.Frame):
         self._visible = False
         self._paused = False
         self._counter_var = tk.StringVar(value="")
-        self.lbl_counter = tk.Label(self, textvariable=self._counter_var, anchor="e", font=theme_font("font_sm"), bd=0)
+        self.lbl_counter = tk.Label(self._content, textvariable=self._counter_var, anchor="e", font=theme_font("font_sm"), bd=0)
         self.lbl_counter.pack(side=tk.RIGHT, padx=(0, 4))
-        for w in (self, self.lbl, self.lbl_counter):
+        self._shell.bind("<Configure>", self._on_shell_resize, add="+")
+        for w in (self, self._shell, self.lbl, self.lbl_counter):
             try:
                 w.bind("<Enter>", lambda _e: self._set_paused(True), add="+")
                 w.bind("<Leave>", lambda _e: self._set_paused(False), add="+")
@@ -2557,10 +2626,35 @@ class AvisoBar(tk.Frame):
             pass
         self._apply_component_theme()
 
+    def _on_shell_resize(self, _event=None):
+        try:
+            w = max(self._shell.winfo_width(), 280)
+            h = max(self._shell.winfo_height(), 30)
+            r = max(8, min(16, int(h / 2)))
+            points = [
+                8 + r, 3, w - 8 - r, 3, w - 8, 3, w - 8, 3 + r,
+                w - 8, h - 3 - r, w - 8, h - 3, w - 8 - r, h - 3, 8 + r, h - 3,
+                8, h - 3, 8, h - 3 - r, 8, 3 + r, 8, 3
+            ]
+            if self._shell_bg is None:
+                self._shell_bg = self._shell.create_polygon(points, smooth=True, splinesteps=20, width=1)
+                self._shell.tag_lower(self._shell_bg)
+            else:
+                self._shell.coords(self._shell_bg, *points)
+            self._shell.coords(self._content_win, 12, int(h / 2))
+            self._shell.itemconfigure(self._content_win, width=max(120, w - 24), height=max(20, h - 8))
+            self._apply_component_theme()
+        except Exception:
+            pass
+
     def _apply_component_theme(self):
         bg = UI_THEME.get("surface_alt", "#E5E7EB")
         fg = UI_THEME.get("on_surface", UI_THEME.get("text", "#111827"))
-        self.config(bg=bg, highlightbackground=UI_THEME.get("border", "#D1D5DB"), highlightcolor=UI_THEME.get("primary", "#1F6FEB"))
+        self.config(bg=UI_THEME.get("light_bg", "#F5F7FA"))
+        self._shell.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
+        self._content.configure(bg=bg)
+        if self._shell_bg is not None:
+            self._shell.itemconfigure(self._shell_bg, fill=bg, outline=UI_THEME.get("border", "#D1D5DB"))
         try:
             self.lbl.config(bg=bg, fg=fg)
             self.lbl_counter.config(bg=bg, fg=UI_THEME.get("muted_text", "#6B7280"))
@@ -3059,20 +3153,6 @@ def start_ui():
 
     centered.bind("<Configure>", _constrain_width, add="+")
 
-    s = SuggestEntry(container)
-    aviso_bar = AvisoBar(container, s.entry)
-    _warning_bar = WarningBar(container, s.entry, aviso_bar=aviso_bar)
-    s.set_submit_callback(lambda: save_text(entry_widget=s.entry, btn=btn_save))
-    s.pack(fill=tk.X)
-
-    btn_frame = tk.Frame(centered, bg=UI_THEME.get("light_bg", "#F5F7FA")); btn_frame.grid(row=1, column=0, sticky="ew", pady=(theme_space("space_3", 12),theme_space("space_3", 12)))
-    theme_frame = tk.Frame(centered, bg=UI_THEME.get("light_bg", "#F5F7FA")); theme_frame.grid(row=2, column=0, sticky="ew", pady=(0, theme_space("space_2", 8)))
-    theme_label = tk.Label(theme_frame, text="Tema:", bg=UI_THEME.get("light_bg", "#F5F7FA"), fg=UI_THEME.get("text", "#111827")); theme_label.pack(side=tk.LEFT)
-    theme_var = tk.StringVar(value=get_active_theme_name())
-    theme_combo = ttk.Combobox(theme_frame, textvariable=theme_var, values=available_theme_names(), state="readonly")
-    theme_combo.pack(side=tk.LEFT, padx=(6, 0))
-    btn_save = build_primary_button(btn_frame, "Salvar", lambda: save_text(entry_widget=s.entry, btn=btn_save), padx=18)
-    btn_save.pack(side=tk.LEFT, padx=(0,10))
     def open_monitor_embedded():
         try:
             import interfacetwo
@@ -3085,12 +3165,22 @@ def start_ui():
         except Exception as e:
             print("Falha ao embutir monitor (abrindo fallback):", e); open_monitor_fallback_subprocess()
 
+    s = SuggestEntry(container, open_monitor_callback=open_monitor_embedded)
+    aviso_bar = AvisoBar(container, s.entry)
+    _warning_bar = WarningBar(container, s.entry, aviso_bar=aviso_bar)
+    s.set_submit_callback(lambda: save_text(entry_widget=s.entry))
+    s.pack(fill=tk.X)
+
+    theme_frame = tk.Frame(centered, bg=UI_THEME.get("light_bg", "#F5F7FA")); theme_frame.grid(row=1, column=0, sticky="ew", pady=(0, theme_space("space_2", 8)))
+    theme_label = tk.Label(theme_frame, text="Tema:", bg=UI_THEME.get("light_bg", "#F5F7FA"), fg=UI_THEME.get("text", "#111827")); theme_label.pack(side=tk.LEFT)
+    theme_var = tk.StringVar(value=get_active_theme_name())
+    theme_combo = ttk.Combobox(theme_frame, textvariable=theme_var, values=available_theme_names(), state="readonly")
+    theme_combo.pack(side=tk.LEFT, padx=(6, 0))
     def _refresh_theme():
         apply_ttk_theme_styles(root)
         refresh_theme(root, context="interfaceone")
         root.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
         container.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
-        btn_frame.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
         theme_frame.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
         try:
             theme_label.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"), fg=UI_THEME.get("text", "#111827"))
@@ -3108,28 +3198,6 @@ def start_ui():
             _warning_bar.refresh_theme()
         except Exception:
             pass
-        try:
-            btn_save.configure(
-                bg=UI_THEME.get("primary", "#1F6FEB"),
-                fg=UI_THEME.get("on_primary", UI_THEME.get("text", "#E6EDF3")),
-                activebackground=UI_THEME.get("primary_active", "#215DB0"),
-                activeforeground=UI_THEME.get("on_primary", UI_THEME.get("text", "#E6EDF3")),
-                highlightbackground=UI_THEME.get("border", "#D1D5DB"),
-                highlightcolor=UI_THEME.get("primary", "#1F6FEB"),
-            )
-        except Exception:
-            pass
-        try:
-            btn_dados.configure(
-                bg=UI_THEME.get("surface_alt", "#E5E7EB"),
-                fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")),
-                activebackground=UI_THEME.get("border", "#D1D5DB"),
-                activeforeground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")),
-                highlightbackground=UI_THEME.get("border", "#D1D5DB"),
-                highlightcolor=UI_THEME.get("primary", "#1F6FEB"),
-            )
-        except Exception:
-            pass
 
     def _on_theme_change(_event=None):
         apply_theme(theme_var.get())
@@ -3137,11 +3205,6 @@ def start_ui():
 
     theme_combo.bind("<<ComboboxSelected>>", _on_theme_change, add="+")
 
-    btn_dados = build_secondary_button(btn_frame, "Monitor de Dados", open_monitor_embedded, padx=18)
-    bind_button_states(btn_save, UI_THEME.get("primary", "#1F6FEB"), UI_THEME.get("primary_active", "#215DB0"))
-    bind_button_states(btn_dados, UI_THEME.get("surface_alt", "#E5E7EB"), UI_THEME.get("light_border", "#D1D5DB"))
-    btn_dados.pack(side=tk.LEFT)
-    attach_tooltip(btn_dados, "Abre o monitor de dados em janela separada")
     def ctrl_enter(ev):
         if s.list_visible:
             sel = s.tree.selection()
@@ -3150,8 +3213,8 @@ def start_ui():
                 except: idx = 0
                 s._accept_into_entry(idx, hide=True, append_all=True); s._just_accepted=True; return "break"
             else:
-                save_text(entry_widget=s.entry, btn=btn_save); return "break"
-        save_text(entry_widget=s.entry, btn=btn_save); return "break"
+                save_text(entry_widget=s.entry); return "break"
+        save_text(entry_widget=s.entry); return "break"
     root.bind("<Control-Return>", ctrl_enter)
     root.bind("<Control-m>", lambda _e: (open_monitor_embedded(), "break"), add="+")
     root.bind("<Control-l>", lambda _e: (aviso_bar._open_alert_center(), "break"), add="+")
