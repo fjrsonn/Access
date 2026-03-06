@@ -2514,8 +2514,6 @@ class AvisoBar(tk.Frame):
         self.msg_var = tk.StringVar()
         self.lbl = tk.Label(self, textvariable=self.msg_var, anchor="w", font=self.font, bd=0)
         self.lbl.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=(2,2))
-        self.btn_detail = tk.Button(self, text="Detalhes", width=9, command=self._open_alert_center, relief="flat", cursor="hand2")
-        self.btn_detail.pack(side=tk.RIGHT, padx=(0,4), pady=(2,2))
         self.btn_close = tk.Button(self, text="Fechar", width=8, command=self._on_close_click, relief="flat", cursor="hand2")
         self.btn_close.pack(side=tk.RIGHT, padx=(0,6), pady=(2,2))
         self._active_avisos = []
