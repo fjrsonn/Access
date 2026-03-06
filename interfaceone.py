@@ -1412,16 +1412,19 @@ class _CanvasEntryComposer(tk.Canvas):
         self._highlight_bg = kwargs.pop("highlightbackground", self._bg)
         self._highlight_color = kwargs.pop("highlightcolor", self._bg)
         self._highlight_thickness = int(kwargs.pop("highlightthickness", 0) or 0)
+        canvas_bd = kwargs.pop("bd", 0)
+        canvas_relief = kwargs.pop("relief", "flat")
+        canvas_takefocus = kwargs.pop("takefocus", 1)
         super().__init__(
             parent,
             height=max(34, self._font.metrics("linespace") + 16),
-            bd=0,
-            relief="flat",
+            bd=canvas_bd,
+            relief=canvas_relief,
             bg=self._bg,
             highlightthickness=self._highlight_thickness,
             highlightbackground=self._highlight_bg,
             highlightcolor=self._highlight_color,
-            takefocus=1,
+            takefocus=canvas_takefocus,
             **kwargs,
         )
         self._blink_visible = True
