@@ -1489,15 +1489,14 @@ class SuggestEntry(tk.Frame):
     def _composer_palette(self):
         # Tokens visuais aproximados ao composer do ChatGPT, respeitando o tema ativo.
         return {
-            # Interface One usa a mesma base cromática escura do monitor (Interface Two).
-            "shell_bg": UI_THEME.get("bg", "#0F1115"),
-            "shell_border": UI_THEME.get("border", "#4B4B4B"),
-            "shell_fg": UI_THEME.get("on_surface", UI_THEME.get("text", "#ECECF1")),
-            "muted": UI_THEME.get("muted_text", "#A1A1AA"),
-            "soft_hover": UI_THEME.get("surface_alt", "#3A3A3A"),
-            "send_bg": UI_THEME.get("primary", "#10A37F"),
-            "send_bg_active": UI_THEME.get("primary_active", "#0E8E6D"),
-            "send_fg": UI_THEME.get("on_primary", "#FFFFFF"),
+            "shell_bg": "#252526",
+            "shell_border": "#3C3C3C",
+            "shell_fg": "#3C3C3C",
+            "muted": "#3C3C3C",
+            "soft_hover": "#252526",
+            "send_bg": "#252526",
+            "send_bg_active": "#252526",
+            "send_fg": "#3C3C3C",
         }
 
     def refresh_theme(self):
@@ -1507,13 +1506,13 @@ class SuggestEntry(tk.Frame):
             shell_border = palette["shell_border"]
             shell_fg = palette["shell_fg"]
             self.input_shell.configure(bg=shell_bg, highlightbackground=shell_border, highlightcolor=UI_THEME.get("primary", "#1F6FEB"))
-            self.frame.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"), highlightbackground=UI_THEME.get("light_border", "#D1D5DB"))
-            self.shortcuts_hint.configure(fg=UI_THEME.get("muted_text", "#6B7280"), bg=UI_THEME.get("light_bg", "#F5F7FA"))
+            self.frame.configure(bg="#1E1E1E", highlightbackground="#3C3C3C")
+            self.shortcuts_hint.configure(fg="#3C3C3C", bg="#1E1E1E")
             self.entry.configure(
                 highlightbackground=UI_THEME.get("border", "#2B3442"),
                 highlightcolor=UI_THEME.get("border", "#2B3442"),
                 highlightthickness=0,
-                bg=UI_THEME.get("surface_alt", "#1B2430"),
+                bg="#252526",
                 fg=shell_fg,
                 insertbackground=shell_fg,
             )
@@ -1526,7 +1525,7 @@ class SuggestEntry(tk.Frame):
                     highlightthickness=0,
                     bd=0,
                 )
-            self.overlay.configure(fg=UI_THEME.get("overlay_text", "gray65"), bg=self.entry.cget("bg"))
+            self.overlay.configure(fg="#3C3C3C", bg=self.entry.cget("bg"))
             style = ttk.Style(self)
             style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background=UI_THEME.get("surface", "#FFFFFF"), fieldbackground=UI_THEME.get("surface", "#FFFFFF"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
             style.configure("Suggest.Treeview.Heading", font=theme_font("font_md", "bold"), background=UI_THEME.get("surface_alt", "#E5E7EB"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
@@ -2629,12 +2628,12 @@ class AvisoBar(tk.Frame):
         aviso = self._active_avisos[self._idx % len(self._active_avisos)]
         ui = aviso.get("ui", {}) or {}
         bg = ui.get("background_color") or "#FFFF00"
-        blended = self._blend_with_white(bg, alpha=0.7)
         try:
-            self.config(bg=blended)
-            self.lbl.config(bg=blended, fg=ui.get("text_color", "#111111"))
-            self.lbl_counter.config(bg=blended, fg="#333333")
-            self.btn_close.config(bg=blended, fg="#111111", activebackground=blended)
+            self.config(bg=bg)
+            self.lbl.config(bg=bg, fg="#000000")
+            self.lbl_counter.config(bg=bg, fg="#000000")
+            self.btn_detail.config(bg=bg, fg="#000000", activebackground=bg, activeforeground="#000000")
+            self.btn_close.config(bg=bg, fg="#000000", activebackground=bg, activeforeground="#000000")
         except:
             pass
         disp = self._format_display_text(aviso)
@@ -3023,8 +3022,8 @@ def start_ui():
     report_status("ux_metrics", "OK", stage="theme_contrast_check", details=validate_theme_contrast())
     root = tk.Tk(); root.title("Controle de Acesso")
     apply_ttk_theme_styles(root)
-    root.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
-    container = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); container.pack(padx=theme_space("space_4", 14), pady=theme_space("space_4", 14), fill=tk.X)
+    root.configure(bg="#1E1E1E")
+    container = tk.Frame(root, bg="#1E1E1E"); container.pack(padx=theme_space("space_4", 14), pady=theme_space("space_4", 14), fill=tk.X)
 
     s = SuggestEntry(container)
     aviso_bar = AvisoBar(container, s.entry)
@@ -3038,8 +3037,8 @@ def start_ui():
     def _refresh_theme():
         apply_ttk_theme_styles(root)
         refresh_theme(root, context="interfaceone")
-        root.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
-        container.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
+        root.configure(bg="#1E1E1E")
+        container.configure(bg="#1E1E1E")
         try:
             s.refresh_theme()
         except Exception:
