@@ -2992,8 +2992,11 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
     attach_tooltip(btn_apply, "Aplica os filtros atuais")
     attach_tooltip(btn_clear, "Limpa todos os filtros")
     attach_tooltip(btn_save_preset, "Salva os filtros como preset")
+    attach_tooltip(btn_rename_preset, "Renomeia o preset selecionado")
+    attach_tooltip(btn_delete_preset, "Exclui o preset selecionado")
     attach_tooltip(btn_default_preset, "Define o preset selecionado como padrão da aba")
     attach_tooltip(btn_undo_filter, "Restaura o último conjunto de filtros")
+    attach_tooltip(btn_advanced, "Mostra ou oculta filtros avançados")
     attach_tooltip(quick_today_btn, "Filtra registros do dia atual")
     attach_tooltip(quick_sem_contato_btn, "Mostra apenas status sem contato")
     attach_tooltip(quick_alta_btn, "Busca ocorrências de alta severidade")
@@ -5360,12 +5363,16 @@ def _build_monitor_ui(container):
         except Exception as exc:
             _announce_feedback(f"Falha ao exportar CSV: {exc}", "danger")
 
-    btn_top_export.configure(command=lambda: _with_warning(theme_bar.winfo_toplevel(), "Exportar CSV", "Gerar CSV apenas com registros do dia atual?", lambda: (report_status("ux_metrics", "OK", stage="toolbar_export_csv", details={"source": "controle", "scope": "today"}), _export_control_csv())))
-    btn_top_reload.configure(command=lambda: _with_warning(theme_bar.winfo_toplevel(), "Recarregar", "Reiniciar atualização do monitor e recarregar os bancos agora?", lambda: forcar_recarregar(monitor_widgets, info_label)))
-    btn_top_clear.configure(command=lambda: _with_warning(theme_bar.winfo_toplevel(), "Limpar bancos", "Abrir seleção de bancos para apagar?", lambda: _open_clear_databases_dialog(theme_bar.winfo_toplevel(), monitor_widgets, info_label)))
-    btn_top_toggle_filters.configure(command=lambda: _with_warning(theme_bar.winfo_toplevel(), "Mostrar filtros", "Alternar visualização dos filtros da aba atual?", lambda: _toggle_filters("global")))
+    btn_top_export.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_export_csv", details={"source": "controle", "scope": "today"}), _export_control_csv()))
+    btn_top_reload.configure(command=lambda: forcar_recarregar(monitor_widgets, info_label))
+    btn_top_clear.configure(command=lambda: _open_clear_databases_dialog(theme_bar.winfo_toplevel(), monitor_widgets, info_label))
+    btn_top_toggle_filters.configure(command=lambda: _toggle_filters("global"))
+    attach_tooltip(btn_top_details, "Mostra ou oculta painel de detalhes")
+    attach_tooltip(btn_top_export, "Exporta CSV somente com registros do dia atual")
     attach_tooltip(btn_top_reload, "Reinicia a atualização do monitor e recarrega todos os bancos")
     attach_tooltip(btn_top_clear, "Abre seleção de bancos para apagar com backup por data")
+    attach_tooltip(btn_top_toggle_filters, "Mostra ou oculta os filtros da aba ativa")
+    attach_tooltip(btn_eye, "Mostra ou oculta a barra superior de botões")
 
     try:
         root_win.bind("<Alt-e>", lambda _e: (btn_top_export.invoke(), "break")[1], add="+")
