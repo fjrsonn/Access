@@ -1494,7 +1494,8 @@ class SuggestEntry(tk.Frame):
     def _composer_palette(self):
         # Tokens visuais aproximados ao composer do ChatGPT, respeitando o tema ativo.
         return {
-            "shell_bg": UI_THEME.get("surface", "#2F2F2F"),
+            # Interface One usa a mesma base cromática escura do monitor (Interface Two).
+            "shell_bg": UI_THEME.get("bg", "#0F1115"),
             "shell_border": UI_THEME.get("border", "#4B4B4B"),
             "shell_fg": UI_THEME.get("on_surface", UI_THEME.get("text", "#ECECF1")),
             "muted": UI_THEME.get("muted_text", "#A1A1AA"),
@@ -1514,9 +1515,9 @@ class SuggestEntry(tk.Frame):
             self.frame.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"), highlightbackground=UI_THEME.get("light_border", "#D1D5DB"))
             self.shortcuts_hint.configure(fg=UI_THEME.get("muted_text", "#6B7280"), bg=UI_THEME.get("light_bg", "#F5F7FA"))
             self.entry.configure(
-                highlightbackground=UI_THEME.get("light_border", "#D1D5DB"),
+                highlightbackground=UI_THEME.get("border", "#2B3442"),
                 highlightcolor=UI_THEME.get("primary", "#1F6FEB"),
-                bg=shell_bg,
+                bg=UI_THEME.get("surface_alt", "#1B2430"),
                 fg=shell_fg,
                 insertbackground=shell_fg,
             )
