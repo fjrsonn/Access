@@ -2571,6 +2571,11 @@ def _default_filters():
         "bloco": "Todos",
     }
 
+def _with_warning(parent, title: str, message: str, action):
+    if not messagebox.askyesno(title, message, parent=parent):
+        return
+    action()
+
 def _announce_feedback(text: str, tone: str = "info"):
     icon_map = {"info": "ℹ", "success": "✅", "warning": "⚠", "danger": "⛔", "error": "⛔"}
     if _feedback_banner is not None:
@@ -2885,22 +2890,22 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
     preset_combo = ttk.Combobox(top_row, textvariable=preset_var, values=["Preset (opcional)"] + sorted(presets.keys()), state="readonly")
     preset_combo.grid(row=0, column=5, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_1", 4), sticky="ew")
 
-    btn_apply = build_primary_button(top_row, "Aplicar", apply_filters)
+    btn_apply = build_primary_button(top_row, "Aplicar", lambda: _with_warning(bar.winfo_toplevel(), "Aplicar filtros", "Deseja aplicar os filtros desta aba?", apply_filters))
     btn_apply.grid(row=0, column=6, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="e")
-    btn_clear = build_secondary_warning_button(top_row, "Limpar", clear_filters)
+    btn_clear = build_secondary_warning_button(top_row, "Limpar", lambda: _with_warning(bar.winfo_toplevel(), "Limpar filtros", "Deseja limpar os filtros desta aba?", clear_filters))
     btn_clear.grid(row=0, column=7, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="e")
     auto_apply_chk = tk.Checkbutton(top_row, text="Aplicar automaticamente", variable=auto_apply_var, bg=UI_THEME["surface"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), activebackground=UI_THEME["surface"], activeforeground=UI_THEME.get("on_surface", UI_THEME["text"]), selectcolor=UI_THEME.get("surface_alt", UI_THEME["surface"]))
     auto_apply_chk.grid(row=0, column=9, padx=(theme_space("space_1", 4), 0), pady=theme_space("space_1", 4), sticky="e")
 
-    btn_save_preset = build_secondary_button(actions_row, "Salvar preset", _save_preset)
-    btn_rename_preset = build_secondary_button(actions_row, "Renomear preset", _rename_selected_preset)
-    btn_delete_preset = build_secondary_danger_button(actions_row, "Excluir preset", _delete_selected_preset)
-    btn_default_preset = build_secondary_button(actions_row, "Fixar preset da aba", _set_default_preset_for_tab)
-    btn_undo_filter = build_secondary_button(actions_row, "Desfazer", _undo_last_filter)
-    btn_advanced = build_secondary_button(actions_row, "Filtros avançados", _toggle_advanced)
-    quick_today_btn = build_secondary_button(actions_row, "Hoje", lambda: _quick_filter("today"), padx=8)
-    quick_sem_contato_btn = build_secondary_button(actions_row, "Sem contato", lambda: _quick_filter("sem_contato"), padx=8)
-    quick_alta_btn = build_secondary_button(actions_row, "Alta", lambda: _quick_filter("alta"), padx=8)
+    btn_save_preset = build_secondary_button(actions_row, "Salvar preset", lambda: _with_warning(bar.winfo_toplevel(), "Salvar preset", "Salvar o preset atual desta aba?", _save_preset))
+    btn_rename_preset = build_secondary_button(actions_row, "Renomear preset", lambda: _with_warning(bar.winfo_toplevel(), "Renomear preset", "Deseja renomear o preset selecionado?", _rename_selected_preset))
+    btn_delete_preset = build_secondary_danger_button(actions_row, "Excluir preset", lambda: _with_warning(bar.winfo_toplevel(), "Excluir preset", "Deseja excluir o preset selecionado?", _delete_selected_preset))
+    btn_default_preset = build_secondary_button(actions_row, "Fixar preset da aba", lambda: _with_warning(bar.winfo_toplevel(), "Preset padrão", "Deseja alterar o preset padrão desta aba?", _set_default_preset_for_tab))
+    btn_undo_filter = build_secondary_button(actions_row, "Desfazer", lambda: _with_warning(bar.winfo_toplevel(), "Desfazer", "Deseja desfazer o último filtro aplicado?", _undo_last_filter))
+    btn_advanced = build_secondary_button(actions_row, "Filtros avançados", lambda: _with_warning(bar.winfo_toplevel(), "Filtros avançados", "Deseja alternar os filtros avançados?", _toggle_advanced))
+    quick_today_btn = build_secondary_button(actions_row, "Hoje", lambda: _with_warning(bar.winfo_toplevel(), "Filtro rápido", "Aplicar filtro rápido de hoje?", lambda: _quick_filter("today")), padx=8)
+    quick_sem_contato_btn = build_secondary_button(actions_row, "Sem contato", lambda: _with_warning(bar.winfo_toplevel(), "Filtro rápido", "Aplicar filtro rápido sem contato?", lambda: _quick_filter("sem_contato")), padx=8)
+    quick_alta_btn = build_secondary_button(actions_row, "Alta", lambda: _with_warning(bar.winfo_toplevel(), "Filtro rápido", "Aplicar filtro rápido de alta prioridade?", lambda: _quick_filter("alta")), padx=8)
 
     build_label(actions_row, "Ações", font=theme_font("font_sm"), muted=True).grid(row=0, column=0, padx=(0, theme_space("space_1", 4)), sticky="w")
     btn_save_preset.grid(row=0, column=1, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
@@ -3726,6 +3731,8 @@ def _build_text_actions(frame, text_widget, info_label, path):
     def delete_record():
         rec = current.get("record")
         if not rec:
+            return
+        if not _themed_confirm_dialog(text_widget.winfo_toplevel(), "Excluir registro", "Deseja excluir este registro?", confirm_label="EXCLUIR", danger=True):
             return
         try:
             token = _record_force_visibility_key(rec)
@@ -5144,7 +5151,7 @@ def _build_monitor_ui(container):
         details_visible.set(not details_visible.get())
         _sync_details_panel_visibility()
 
-    btn_top_details.configure(command=_toggle_details_panel)
+    btn_top_details.configure(command=lambda: _with_warning(theme_bar.winfo_toplevel(), "Detalhes", "Alternar painel de detalhes?", _toggle_details_panel))
 
     def _toggle_top_controls():
         if theme_bar.winfo_manager():
@@ -5152,7 +5159,7 @@ def _build_monitor_ui(container):
         else:
             theme_bar.pack(fill=tk.X, padx=10, pady=(6, 0), before=title_row)
 
-    btn_eye.configure(command=_toggle_top_controls)
+    btn_eye.configure(command=lambda: _with_warning(container.winfo_toplevel(), "Barra de botões", "Mostrar ou ocultar a barra de botões superiores?", _toggle_top_controls))
 
     _status_bar = AppStatusBar(container, text="UX: aguardando eventos")
     global _feedback_banner

@@ -203,7 +203,7 @@ class InterfaceTwoTests(unittest.TestCase):
         import inspect
         source = inspect.getsource(interfacetwo._build_filter_bar)
         save_def = source.find("def _save_preset")
-        save_button = source.find("build_secondary_button(actions_row, \"Salvar preset\", _save_preset)")
+        save_button = source.find("build_secondary_button(actions_row, \"Salvar preset\", lambda")
         self.assertNotEqual(save_def, -1)
         self.assertNotEqual(save_button, -1)
         self.assertLess(save_def, save_button)
