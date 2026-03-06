@@ -2511,17 +2511,17 @@ def _open_clear_databases_dialog(parent, text_widgets, info_label):
                 _atomic_write(path, _wipe_payload_for_file(path))
                 backups.append(backup_name)
             except Exception as exc:
-                messagebox.showerror("Limpar bancos", f"Falha ao limpar {name}: {exc}", parent=dialog)
+                _announce_feedback(f"Falha ao limpar {name}: {exc}", "danger")
                 return
         dialog.destroy()
         forcar_recarregar(text_widgets, info_label)
-        messagebox.showinfo("Limpar bancos", "Bancos apagados com backup:\n" + "\n".join(backups), parent=parent)
+        _announce_feedback("Bancos apagados com backup: " + ", ".join(backups), "success")
 
     build_secondary_danger_button(dialog, "APAGAR", _delete_selected).pack(side=tk.BOTTOM, pady=(0, 16), ipadx=24)
 
 def limpar_dados(text_widgets, info_label, action_button=None):
     if not os.path.exists(ARQUIVO):
-        messagebox.showinfo("Limpar dados", "Arquivo não existe.")
+        _announce_feedback("Arquivo não existe.", "warning")
         return
     if action_button is not None:
         try:
@@ -2533,7 +2533,7 @@ def limpar_dados(text_widgets, info_label, action_button=None):
         bak = os.path.join(os.path.dirname(ARQUIVO), f"dadosend_backup_{ts}.json")
         shutil.copy2(ARQUIVO, bak)
     except Exception as e:
-        messagebox.showerror("Erro", f"Erro ao criar backup: {e}")
+        _announce_feedback(f"Erro ao criar backup: {e}", "danger")
         if action_button is not None:
             try:
                 action_button.configure(state="normal", text="Limpar")
@@ -2543,14 +2543,14 @@ def limpar_dados(text_widgets, info_label, action_button=None):
     try:
         _atomic_write(ARQUIVO, {"registros": []})
     except Exception as e:
-        messagebox.showerror("Erro", f"Erro ao limpar arquivo: {e}")
+        _announce_feedback(f"Erro ao limpar arquivo: {e}", "danger")
         if action_button is not None:
             try:
                 action_button.configure(state="normal", text="Limpar")
             except Exception:
                 pass
         return
-    messagebox.showinfo("Limpar dados", f"Backup salvo em:\n{bak}\nArquivo limpo.")
+    _announce_feedback(f"Backup salvo em: {os.path.basename(bak)}. Arquivo limpo.", "success")
     for tw in text_widgets:
         _populate_text(tw, info_label)
     if action_button is not None:
@@ -5260,11 +5260,7 @@ def _build_monitor_ui(container):
     try:
         root_win = container.winfo_toplevel()
         def _show_shortcuts(_e=None):
-            messagebox.showinfo(
-                "Atalhos do monitor",
-                "Ctrl+F: foco na busca\nCtrl+Enter: aplicar filtros\nCtrl+Shift+L: limpar filtros\nAlt+1..5: trocar abas\nF1: ajuda de atalhos",
-                parent=root_win,
-            )
+            _announce_feedback("Atalhos: Ctrl+F buscar • Ctrl+Enter aplicar • Ctrl+Shift+L limpar • Alt+1..5 abas • Alt+E exportar", "info")
             return "break"
         root_win.bind("<Alt-Key-1>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+1"}), _select_tab(0), "break")[2], add="+")
         root_win.bind("<Alt-Key-2>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+2"}), _select_tab(1), "break")[2], add="+")
