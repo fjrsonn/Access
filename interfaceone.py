@@ -1419,8 +1419,6 @@ class SuggestEntry(tk.Frame):
         self.btn_dictate.pack(side=tk.RIGHT, padx=(4, 10), pady=8)
         self.btn_voice = tk.Button(self.input_shell, text="🔊", width=2, relief="flat", command=self._on_voice_click, cursor="hand2", font=theme_font("font_lg"))
         self.btn_voice.pack(side=tk.RIGHT, padx=(4, 2), pady=8)
-        self.btn_send = tk.Button(self.input_shell, text="⬆", width=2, relief="flat", command=self._on_submit_click, cursor="hand2", font=theme_font("font_lg", "bold"))
-        self.btn_send.pack(side=tk.RIGHT, padx=(4, 2), pady=8)
         self.entry.focus_set()
         self.font = tkfont.Font(font=self.entry["font"]); self._orig_entry_bg = self.entry.cget("bg")
         try: self._orig_entry_fg = self.entry.cget("fg")
@@ -1484,7 +1482,6 @@ class SuggestEntry(tk.Frame):
             attach_tooltip(self.btn_plus, "Mais")
             attach_tooltip(self.btn_dictate, "Ditar")
             attach_tooltip(self.btn_voice, "Usar voz")
-            attach_tooltip(self.btn_send, "Enviar")
         except Exception:
             pass
         self.refresh_theme()
@@ -1529,14 +1526,6 @@ class SuggestEntry(tk.Frame):
                     highlightthickness=0,
                     bd=0,
                 )
-            self.btn_send.configure(
-                bg=palette["send_bg"],
-                fg=palette["send_fg"],
-                activebackground=palette["send_bg_active"],
-                activeforeground=palette["send_fg"],
-                highlightthickness=0,
-                bd=0,
-            )
             self.overlay.configure(fg=UI_THEME.get("overlay_text", "gray65"), bg=self.entry.cget("bg"))
             style = ttk.Style(self)
             style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background=UI_THEME.get("surface", "#FFFFFF"), fieldbackground=UI_THEME.get("surface", "#FFFFFF"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
@@ -3040,17 +3029,14 @@ def start_ui():
     s = SuggestEntry(container)
     aviso_bar = AvisoBar(container, s.entry)
     _warning_bar = WarningBar(container, s.entry, aviso_bar=aviso_bar)
-    s.set_submit_callback(lambda: save_text(entry_widget=s.entry, btn=btn_save))
+    s.set_submit_callback(lambda: save_text(entry_widget=s.entry))
     s.pack(fill=tk.X)
 
-    btn_frame = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); btn_frame.pack(padx=theme_space("space_4", 14), pady=(theme_space("space_3", 12),theme_space("space_3", 12)))
     theme_frame = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); theme_frame.pack(padx=theme_space("space_4", 14), pady=(0, theme_space("space_2", 8)), fill=tk.X)
     theme_label = tk.Label(theme_frame, text="Tema:", bg=UI_THEME.get("light_bg", "#F5F7FA"), fg=UI_THEME.get("text", "#111827")); theme_label.pack(side=tk.LEFT)
     theme_var = tk.StringVar(value=get_active_theme_name())
     theme_combo = ttk.Combobox(theme_frame, textvariable=theme_var, values=available_theme_names(), state="readonly")
     theme_combo.pack(side=tk.LEFT, padx=(6, 0))
-    btn_save = build_primary_button(btn_frame, "Salvar", lambda: save_text(entry_widget=s.entry, btn=btn_save), padx=18)
-    btn_save.pack(side=tk.LEFT, padx=(0,10))
     def open_monitor_embedded():
         _open_monitor_window(root)
 
@@ -3059,7 +3045,6 @@ def start_ui():
         refresh_theme(root, context="interfaceone")
         root.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
         container.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
-        btn_frame.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
         theme_frame.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
         try:
             theme_label.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"), fg=UI_THEME.get("text", "#111827"))
@@ -3077,28 +3062,6 @@ def start_ui():
             _warning_bar.refresh_theme()
         except Exception:
             pass
-        try:
-            btn_save.configure(
-                bg=UI_THEME.get("primary", "#1F6FEB"),
-                fg=UI_THEME.get("on_primary", UI_THEME.get("text", "#E6EDF3")),
-                activebackground=UI_THEME.get("primary_active", "#215DB0"),
-                activeforeground=UI_THEME.get("on_primary", UI_THEME.get("text", "#E6EDF3")),
-                highlightbackground=UI_THEME.get("border", "#D1D5DB"),
-                highlightcolor=UI_THEME.get("primary", "#1F6FEB"),
-            )
-        except Exception:
-            pass
-        try:
-            btn_dados.configure(
-                bg=UI_THEME.get("surface_alt", "#E5E7EB"),
-                fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")),
-                activebackground=UI_THEME.get("border", "#D1D5DB"),
-                activeforeground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")),
-                highlightbackground=UI_THEME.get("border", "#D1D5DB"),
-                highlightcolor=UI_THEME.get("primary", "#1F6FEB"),
-            )
-        except Exception:
-            pass
 
     def _on_theme_change(_event=None):
         apply_theme(theme_var.get())
@@ -3106,11 +3069,6 @@ def start_ui():
 
     theme_combo.bind("<<ComboboxSelected>>", _on_theme_change, add="+")
 
-    btn_dados = build_secondary_button(btn_frame, "Monitor de Dados", open_monitor_embedded, padx=18)
-    bind_button_states(btn_save, UI_THEME.get("primary", "#1F6FEB"), UI_THEME.get("primary_active", "#215DB0"))
-    bind_button_states(btn_dados, UI_THEME.get("surface_alt", "#E5E7EB"), UI_THEME.get("light_border", "#D1D5DB"))
-    btn_dados.pack(side=tk.LEFT)
-    attach_tooltip(btn_dados, "Abre o monitor de dados em janela separada")
     def ctrl_enter(ev):
         if s.list_visible:
             sel = s.tree.selection()
@@ -3119,8 +3077,8 @@ def start_ui():
                 except: idx = 0
                 s._accept_into_entry(idx, hide=True, append_all=True); s._just_accepted=True; return "break"
             else:
-                save_text(entry_widget=s.entry, btn=btn_save); return "break"
-        save_text(entry_widget=s.entry, btn=btn_save); return "break"
+                save_text(entry_widget=s.entry); return "break"
+        save_text(entry_widget=s.entry); return "break"
     root.bind("<Control-Return>", ctrl_enter)
     root.bind("<Control-m>", lambda _e: (open_monitor_embedded(), "break"), add="+")
     root.bind("<Control-l>", lambda _e: (aviso_bar._open_alert_center(), "break"), add="+")
