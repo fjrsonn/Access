@@ -2442,6 +2442,48 @@ def _build_db_clear_targets():
     }
 
 
+def _themed_confirm_dialog(parent, title: str, message: str, confirm_label: str = "Confirmar", danger: bool = False):
+    result = {"ok": False}
+    dialog = tk.Toplevel(parent)
+    dialog.title(title)
+    dialog.configure(bg=UI_THEME.get("surface", "#151A22"))
+    dialog.transient(parent)
+    dialog.grab_set()
+    dialog.resizable(False, False)
+
+    width, height = 420, 170
+    try:
+        root_x, root_y = parent.winfo_rootx(), parent.winfo_rooty()
+        root_w, root_h = parent.winfo_width(), parent.winfo_height()
+        x = root_x + max(0, (root_w - width) // 2)
+        y = root_y + max(0, (root_h - height) // 2)
+        dialog.geometry(f"{width}x{height}+{x}+{y}")
+    except Exception:
+        pass
+
+    build_label(dialog, title, bg=UI_THEME.get("surface", "#151A22"), font=theme_font("font_lg", "bold")).pack(fill=tk.X, padx=14, pady=(14, 8))
+    build_label(dialog, message, bg=UI_THEME.get("surface", "#151A22"), font=theme_font("font_md")).pack(fill=tk.X, padx=14, pady=(0, 10))
+
+    actions = tk.Frame(dialog, bg=UI_THEME.get("surface", "#151A22"))
+    actions.pack(fill=tk.X, padx=14, pady=(0, 14))
+
+    def _confirm():
+        result["ok"] = True
+        dialog.destroy()
+
+    def _cancel():
+        dialog.destroy()
+
+    build_secondary_button(actions, "Cancelar", _cancel).pack(side=tk.RIGHT)
+    if danger:
+        build_secondary_danger_button(actions, confirm_label, _confirm).pack(side=tk.RIGHT, padx=(0, 8))
+    else:
+        build_primary_button(actions, confirm_label, _confirm).pack(side=tk.RIGHT, padx=(0, 8))
+
+    dialog.wait_window()
+    return bool(result["ok"])
+
+
 def _open_clear_databases_dialog(parent, text_widgets, info_label):
     targets = _build_db_clear_targets()
     dialog = tk.Toplevel(parent)
@@ -2495,7 +2537,7 @@ def _open_clear_databases_dialog(parent, text_widgets, info_label):
         if not selected_names:
             messagebox.showwarning("Limpar bancos", "Selecione ao menos um banco para apagar.", parent=dialog)
             return
-        if not messagebox.askyesno("Limpar bancos", f"Apagar {len(selected_names)} banco(s) selecionado(s)?", parent=dialog):
+        if not _themed_confirm_dialog(dialog, "Confirmar limpeza", f"Apagar {len(selected_names)} banco(s) selecionado(s)?", confirm_label="APAGAR", danger=True):
             return
         ts = datetime.now().strftime("%d.%m.%Y.%Hh%M")
         backups = []
@@ -2530,8 +2572,7 @@ def limpar_dados(text_widgets, info_label, action_button=None):
             action_button.configure(state="disabled", text="Processando...")
         except Exception:
             pass
-    resp = messagebox.askyesno("Limpar dados", "Criar backup e limpar dadosend.json (registros serão removidos)?")
-    if not resp:
+    if not _themed_confirm_dialog(info_label.winfo_toplevel(), "Limpar dados", "Criar backup e limpar dadosend.json (registros serão removidos)?", confirm_label="APAGAR", danger=True):
         if action_button is not None:
             try:
                 action_button.configure(state="normal", text="Limpar")
@@ -2844,8 +2885,6 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
         current = (preset_var.get() or "").strip()
         if not current or current == "Preset (opcional)":
             _flash_feedback("Selecione um preset para excluir", "warning")
-            return
-        if not messagebox.askyesno("Excluir preset", f"Excluir preset '{current}'?", parent=bar.winfo_toplevel()):
             return
         _delete_filter_preset(current)
         _refresh_preset_combo("Preset (opcional)")
@@ -3743,6 +3782,8 @@ def _build_text_actions(frame, text_widget, info_label, path):
     def delete_record():
         rec = current.get("record")
         if not rec:
+            return
+        if not _themed_confirm_dialog(text_widget.winfo_toplevel(), "Excluir registro", "Deseja excluir este registro?", confirm_label="EXCLUIR", danger=True):
             return
         try:
             token = _record_force_visibility_key(rec)
