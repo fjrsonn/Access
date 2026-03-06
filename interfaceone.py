@@ -1399,6 +1399,119 @@ def post_validate_and_clean_record(rec: dict, modelos_hint: Iterable[str]=None, 
 
     return rec
 
+# ---------- UI: Suggest list compat (Listbox no lugar de Treeview) ----------
+class _SuggestListboxCompat:
+    def __init__(self, parent, font):
+        self.widget = tk.Listbox(
+            parent,
+            activestyle="none",
+            selectmode=tk.SINGLE,
+            relief="flat",
+            bd=0,
+            highlightthickness=0,
+            font=font,
+            bg="#1E1E1E",
+            fg=UI_THEME.get("text", "#D4D4D4"),
+            selectbackground="#252526",
+            selectforeground=UI_THEME.get("text", "#D4D4D4"),
+            exportselection=False,
+        )
+        self._items = []
+
+    def pack(self, *a, **k):
+        return self.widget.pack(*a, **k)
+
+    def bind(self, *a, **k):
+        return self.widget.bind(*a, **k)
+
+    def yview(self, *a):
+        return self.widget.yview(*a)
+
+    def see(self, i):
+        try:
+            self.widget.see(int(i))
+        except Exception:
+            pass
+
+    def focus(self, i=None):
+        return None
+
+    def heading(self, *a, **k):
+        return None
+
+    def column(self, *a, **k):
+        return None
+
+    def identify_row(self, y):
+        try:
+            idx = int(self.widget.nearest(y))
+        except Exception:
+            return ""
+        return str(idx) if 0 <= idx < len(self._items) else ""
+
+    def insert(self, _parent, _where, iid, values=()):
+        try:
+            idx = int(iid)
+        except Exception:
+            idx = len(self._items)
+        nome = str(values[0]) if values else ""
+        det = str(values[1]) if len(values) > 1 else ""
+        text = f"{nome}   |   {det}" if det else nome
+        if idx >= len(self._items):
+            self._items.append(text)
+            self.widget.insert(tk.END, text)
+        else:
+            self._items.insert(idx, text)
+            self.widget.insert(idx, text)
+
+    def get_children(self):
+        return tuple(str(i) for i in range(len(self._items)-1, -1, -1))
+
+    def delete(self, iid):
+        try:
+            i = int(iid)
+        except Exception:
+            return
+        if 0 <= i < len(self._items):
+            del self._items[i]
+            self.widget.delete(i)
+
+    def selection(self):
+        try:
+            sel = self.widget.curselection()
+            return tuple(str(i) for i in sel)
+        except Exception:
+            return tuple()
+
+    def selection_set(self, iid):
+        try:
+            i = int(iid)
+            self.widget.selection_clear(0, tk.END)
+            self.widget.selection_set(i)
+            self.widget.activate(i)
+        except Exception:
+            pass
+
+    def selection_remove(self, iid):
+        try:
+            i = int(iid)
+            self.widget.selection_clear(i)
+        except Exception:
+            pass
+
+    def configure(self, **kwargs):
+        # Compat para chamadas herdadas de Treeview
+        kwargs = dict(kwargs or {})
+        kwargs.pop("style", None)
+        field_bg = kwargs.pop("fieldbackground", None)
+        if field_bg is not None:
+            kwargs.setdefault("bg", field_bg)
+        if "background" in kwargs and "bg" not in kwargs:
+            kwargs["bg"] = kwargs.pop("background")
+        if "foreground" in kwargs and "fg" not in kwargs:
+            kwargs["fg"] = kwargs.pop("foreground")
+        return self.widget.configure(**kwargs)
+
 # ---------- UI: SuggestEntry (completo) ----------
 class SuggestEntry(tk.Frame):
     MAX_VISIBLE = 8
@@ -1430,25 +1543,15 @@ class SuggestEntry(tk.Frame):
         self.overlay = tk.Label(self, text="", anchor="w", font=self.entry["font"], fg=UI_THEME.get("overlay_text", "gray65"), bg=self._orig_entry_bg, bd=0); self.overlay_visible=False
         # suggestion list
         self.frame = tk.Frame(self, bg="#1E1E1E", highlightbackground="#1E1E1E", highlightthickness=0, bd=0); self.sbar = tk.Scrollbar(self.frame, orient=tk.VERTICAL)
-        self.tree = ttk.Treeview(self.frame, columns=("nome","detalhes"), show="headings", height=8); self.tree.heading("nome", text="Nome"); self.tree.heading("detalhes", text="Detalhes")
-        self.tree.column("nome", width=220, anchor="w"); self.tree.column("detalhes", width=620, anchor="w")
+        self.tree = _SuggestListboxCompat(self.frame, theme_font("font_md"))
 
         def _on_suggest_resize(event=None):
-            try:
-                total = max(int(self.frame.winfo_width()) - 24, 300)
-                self.tree.column("nome", width=max(120, int(total * 0.30)), minwidth=100)
-                self.tree.column("detalhes", width=max(180, int(total * 0.70)), minwidth=140)
-            except Exception:
-                pass
+            return None
 
         self.frame.bind("<Configure>", lambda _e: _on_suggest_resize(), add="+")
         self.tree.configure(yscrollcommand=self.sbar.set); self.sbar.config(command=self.tree.yview, bg="#1E1E1E", troughcolor="#1E1E1E", activebackground="#252526", highlightthickness=0, bd=0); self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,0), pady=6); self.sbar.pack(side=tk.RIGHT, fill=tk.Y, pady=6, padx=(0,6))
         try:
-            style = ttk.Style(self)
-            style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background="#1E1E1E", fieldbackground="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0, relief="flat", bordercolor="#1E1E1E", lightcolor="#1E1E1E", darkcolor="#1E1E1E")
-            style.configure("Suggest.Treeview.Heading", font=theme_font("font_md", "bold"), background="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0, relief="flat", bordercolor="#1E1E1E", lightcolor="#1E1E1E", darkcolor="#1E1E1E")
-            style.map("Suggest.Treeview", background=[("selected", "#252526")], foreground=[("selected", UI_THEME.get("text", "#D4D4D4"))])
-            self.tree.configure(style="Suggest.Treeview", background="#1E1E1E", fieldbackground="#1E1E1E", borderwidth=0)
+            self.tree.configure(background="#1E1E1E", fieldbackground="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0)
         except Exception:
             pass
         try:
@@ -1527,10 +1630,7 @@ class SuggestEntry(tk.Frame):
                     bd=0,
                 )
             self.overlay.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg=self.entry.cget("bg"))
-            style = ttk.Style(self)
-            style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background="#1E1E1E", fieldbackground="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0, relief="flat", bordercolor="#1E1E1E", lightcolor="#1E1E1E", darkcolor="#1E1E1E")
-            style.configure("Suggest.Treeview.Heading", font=theme_font("font_md", "bold"), background="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0, relief="flat", bordercolor="#1E1E1E", lightcolor="#1E1E1E", darkcolor="#1E1E1E")
-            style.map("Suggest.Treeview", background=[("selected", "#252526")], foreground=[("selected", UI_THEME.get("text", "#D4D4D4"))])
+            self.tree.configure(background="#1E1E1E", fieldbackground="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0)
         except Exception:
             pass
 
@@ -2127,11 +2227,6 @@ class SuggestEntry(tk.Frame):
         for i,(nome,det,rec) in enumerate(rows):
             self.tree.insert("", "end", str(i), values=(nome, det))
 
-        try:
-            self.tree.column("nome", width=col_nome_w, minwidth=40)
-            self.tree.column("detalhes", width=col_det_w, minwidth=60)
-        except Exception:
-            pass
 
         visible = min(len(rows), self.MAX_VISIBLE) if rows else 0
         if visible <= 0: self.hide_list(); return
