@@ -1445,9 +1445,9 @@ class SuggestEntry(tk.Frame):
         self.tree.configure(yscrollcommand=self.sbar.set); self.sbar.config(command=self.tree.yview); self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,0), pady=6); self.sbar.pack(side=tk.RIGHT, fill=tk.Y, pady=6, padx=(0,6))
         try:
             style = ttk.Style(self)
-            style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background=UI_THEME.get("surface", "#FFFFFF"), fieldbackground=UI_THEME.get("surface", "#FFFFFF"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
+            style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background="#1E1E1E", fieldbackground="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"))
             style.configure("Suggest.Treeview.Heading", font=theme_font("font_md", "bold"))
-            style.map("Suggest.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME.get("focus_bg", "#DBEAFE")))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("focus_text", "#111827")))])
+            style.map("Suggest.Treeview", background=[("selected", "#252526")], foreground=[("selected", UI_THEME.get("text", "#D4D4D4"))])
             self.tree.configure(style="Suggest.Treeview")
         except Exception:
             pass
@@ -1488,15 +1488,16 @@ class SuggestEntry(tk.Frame):
 
     def _composer_palette(self):
         # Tokens visuais aproximados ao composer do ChatGPT, respeitando o tema ativo.
+        text_color = UI_THEME.get("text", "#D4D4D4")
         return {
             "shell_bg": "#252526",
             "shell_border": "#3C3C3C",
-            "shell_fg": "#3C3C3C",
-            "muted": "#3C3C3C",
+            "shell_fg": text_color,
+            "muted": text_color,
             "soft_hover": "#252526",
             "send_bg": "#252526",
             "send_bg_active": "#252526",
-            "send_fg": "#3C3C3C",
+            "send_fg": text_color,
         }
 
     def refresh_theme(self):
@@ -1507,7 +1508,7 @@ class SuggestEntry(tk.Frame):
             shell_fg = palette["shell_fg"]
             self.input_shell.configure(bg=shell_bg, highlightbackground=shell_border, highlightcolor=UI_THEME.get("primary", "#1F6FEB"))
             self.frame.configure(bg="#1E1E1E", highlightbackground="#3C3C3C")
-            self.shortcuts_hint.configure(fg="#3C3C3C", bg="#1E1E1E")
+            self.shortcuts_hint.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg="#1E1E1E")
             self.entry.configure(
                 highlightbackground=UI_THEME.get("border", "#2B3442"),
                 highlightcolor=UI_THEME.get("border", "#2B3442"),
@@ -1525,11 +1526,11 @@ class SuggestEntry(tk.Frame):
                     highlightthickness=0,
                     bd=0,
                 )
-            self.overlay.configure(fg="#3C3C3C", bg=self.entry.cget("bg"))
+            self.overlay.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg=self.entry.cget("bg"))
             style = ttk.Style(self)
-            style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background=UI_THEME.get("surface", "#FFFFFF"), fieldbackground=UI_THEME.get("surface", "#FFFFFF"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
-            style.configure("Suggest.Treeview.Heading", font=theme_font("font_md", "bold"), background=UI_THEME.get("surface_alt", "#E5E7EB"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
-            style.map("Suggest.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME.get("focus_bg", "#DBEAFE")))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("focus_text", "#111827")))])
+            style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background="#1E1E1E", fieldbackground="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"))
+            style.configure("Suggest.Treeview.Heading", font=theme_font("font_md", "bold"), background="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"))
+            style.map("Suggest.Treeview", background=[("selected", "#252526")], foreground=[("selected", UI_THEME.get("text", "#D4D4D4"))])
         except Exception:
             pass
 
