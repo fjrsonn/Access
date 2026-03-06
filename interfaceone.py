@@ -1407,21 +1407,24 @@ class SuggestEntry(tk.Frame):
         self.submit_callback = None
         self._composer_menu = None
         self.entry_var = tk.StringVar()
-        self.input_shell = tk.Frame(self, bd=0, highlightthickness=1)
+        self.input_shell = tk.Frame(self, bd=0, highlightthickness=1, padx=8, pady=4)
         self.input_shell.pack(side=tk.TOP, fill=tk.X, pady=(0, theme_space("space_2", 8)))
 
         self.btn_plus = tk.Button(self.input_shell, text="＋", width=2, relief="flat", command=self._on_plus_click, cursor="hand2", font=theme_font("font_lg", "bold"))
         self.btn_plus.pack(side=tk.LEFT, padx=(10, 6), pady=8)
 
         self.entry = tk.Entry(self.input_shell, textvariable=self.entry_var, font=theme_font("font_lg"), relief="flat", bd=0)
-        self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(4, 4), pady=8)
+        self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(4, 4), pady=10)
 
         self.btn_dictate = tk.Button(self.input_shell, text="🎙", width=2, relief="flat", command=self._on_dictate_click, cursor="hand2", font=theme_font("font_lg"))
         self.btn_dictate.pack(side=tk.RIGHT, padx=(4, 10), pady=8)
         self.btn_voice = tk.Button(self.input_shell, text="🔊", width=2, relief="flat", command=self._on_voice_click, cursor="hand2", font=theme_font("font_lg"))
         self.btn_voice.pack(side=tk.RIGHT, padx=(4, 2), pady=8)
-        self.btn_send = tk.Button(self.input_shell, text="⬆", width=2, relief="flat", command=self._on_submit_click, cursor="hand2", font=theme_font("font_lg", "bold"))
-        self.btn_send.pack(side=tk.RIGHT, padx=(4, 2), pady=8)
+        self.btn_send = tk.Canvas(self.input_shell, width=34, height=34, highlightthickness=0, bd=0, cursor="hand2")
+        self.btn_send.pack(side=tk.RIGHT, padx=(4, 8), pady=6)
+        self._btn_send_bg = self.btn_send.create_oval(2, 2, 32, 32, width=0)
+        self._btn_send_icon = self.btn_send.create_text(17, 17, text="➤", font=theme_font("font_md", "bold"))
+        self.btn_send.bind("<Button-1>", lambda _e: self._on_submit_click())
         self.entry.focus_set()
         self.font = tkfont.Font(font=self.entry["font"]); self._orig_entry_bg = self.entry.cget("bg")
         try: self._orig_entry_fg = self.entry.cget("fg")
@@ -1489,18 +1492,20 @@ class SuggestEntry(tk.Frame):
             attach_tooltip(self.btn_send, "Enviar")
         except Exception:
             pass
+        self.btn_send.bind("<Enter>", lambda _e: self._set_send_button_state(hover=True), add="+")
+        self.btn_send.bind("<Leave>", lambda _e: self._set_send_button_state(hover=False), add="+")
         self.refresh_theme()
 
     def _composer_palette(self):
         # Tokens visuais aproximados ao composer do ChatGPT, respeitando o tema ativo.
         return {
-            "shell_bg": UI_THEME.get("surface", "#2F2F2F"),
-            "shell_border": UI_THEME.get("border", "#4B4B4B"),
-            "shell_fg": UI_THEME.get("on_surface", UI_THEME.get("text", "#ECECF1")),
-            "muted": UI_THEME.get("muted_text", "#A1A1AA"),
-            "soft_hover": UI_THEME.get("surface_alt", "#3A3A3A"),
-            "send_bg": UI_THEME.get("primary", "#10A37F"),
-            "send_bg_active": UI_THEME.get("primary_active", "#0E8E6D"),
+            "shell_bg": UI_THEME.get("surface", "#FFFFFF"),
+            "shell_border": UI_THEME.get("light_border", "#D1D5DB"),
+            "shell_fg": UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")),
+            "muted": UI_THEME.get("muted_text", "#6B7280"),
+            "soft_hover": UI_THEME.get("surface_alt", "#F3F4F6"),
+            "send_bg": UI_THEME.get("primary", "#111827"),
+            "send_bg_active": UI_THEME.get("primary_active", "#374151"),
             "send_fg": UI_THEME.get("on_primary", "#FFFFFF"),
         }
 
@@ -1510,12 +1515,13 @@ class SuggestEntry(tk.Frame):
             shell_bg = palette["shell_bg"]
             shell_border = palette["shell_border"]
             shell_fg = palette["shell_fg"]
-            self.input_shell.configure(bg=shell_bg, highlightbackground=shell_border, highlightcolor=UI_THEME.get("primary", "#1F6FEB"))
+            self.input_shell.configure(bg=shell_bg, highlightbackground=shell_border, highlightcolor=UI_THEME.get("primary", "#1F6FEB"), highlightthickness=1)
             self.frame.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"), highlightbackground=UI_THEME.get("light_border", "#D1D5DB"))
             self.shortcuts_hint.configure(fg=UI_THEME.get("muted_text", "#6B7280"), bg=UI_THEME.get("light_bg", "#F5F7FA"))
             self.entry.configure(
-                highlightbackground=UI_THEME.get("light_border", "#D1D5DB"),
+                highlightbackground=shell_bg,
                 highlightcolor=UI_THEME.get("primary", "#1F6FEB"),
+                highlightthickness=0,
                 bg=shell_bg,
                 fg=shell_fg,
                 insertbackground=shell_fg,
@@ -1528,20 +1534,24 @@ class SuggestEntry(tk.Frame):
                     activeforeground=shell_fg,
                     highlightthickness=0,
                     bd=0,
+                    relief="flat",
                 )
-            self.btn_send.configure(
-                bg=palette["send_bg"],
-                fg=palette["send_fg"],
-                activebackground=palette["send_bg_active"],
-                activeforeground=palette["send_fg"],
-                highlightthickness=0,
-                bd=0,
-            )
+            self.btn_send.configure(bg=shell_bg)
+            self._set_send_button_state(hover=False)
             self.overlay.configure(fg=UI_THEME.get("overlay_text", "gray65"), bg=self.entry.cget("bg"))
             style = ttk.Style(self)
             style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background=UI_THEME.get("surface", "#FFFFFF"), fieldbackground=UI_THEME.get("surface", "#FFFFFF"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
             style.configure("Suggest.Treeview.Heading", font=theme_font("font_md", "bold"), background=UI_THEME.get("surface_alt", "#E5E7EB"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
             style.map("Suggest.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME.get("focus_bg", "#DBEAFE")))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("focus_text", "#111827")))])
+        except Exception:
+            pass
+
+    def _set_send_button_state(self, hover=False):
+        try:
+            palette = self._composer_palette()
+            fill = palette["send_bg_active"] if hover else palette["send_bg"]
+            self.btn_send.itemconfigure(self._btn_send_bg, fill=fill)
+            self.btn_send.itemconfigure(self._btn_send_icon, fill=palette["send_fg"])
         except Exception:
             pass
 
@@ -3033,7 +3043,21 @@ def start_ui():
     root = tk.Tk(); root.title("Controle de Acesso")
     apply_ttk_theme_styles(root)
     root.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
-    container = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); container.pack(padx=theme_space("space_4", 14), pady=theme_space("space_4", 14), fill=tk.X)
+    root.grid_columnconfigure(0, weight=1)
+    centered = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA"))
+    centered.pack(fill=tk.X, padx=theme_space("space_4", 14), pady=theme_space("space_4", 14))
+    centered.grid_columnconfigure(0, weight=1)
+    container = tk.Frame(centered, bg=UI_THEME.get("light_bg", "#F5F7FA"))
+    container.grid(row=0, column=0, sticky="ew")
+
+    def _constrain_width(_event=None):
+        try:
+            target = min(max(centered.winfo_width(), 320), 800)
+            container.configure(width=target)
+        except Exception:
+            pass
+
+    centered.bind("<Configure>", _constrain_width, add="+")
 
     s = SuggestEntry(container)
     aviso_bar = AvisoBar(container, s.entry)
@@ -3041,8 +3065,8 @@ def start_ui():
     s.set_submit_callback(lambda: save_text(entry_widget=s.entry, btn=btn_save))
     s.pack(fill=tk.X)
 
-    btn_frame = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); btn_frame.pack(padx=theme_space("space_4", 14), pady=(theme_space("space_3", 12),theme_space("space_3", 12)))
-    theme_frame = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); theme_frame.pack(padx=theme_space("space_4", 14), pady=(0, theme_space("space_2", 8)), fill=tk.X)
+    btn_frame = tk.Frame(centered, bg=UI_THEME.get("light_bg", "#F5F7FA")); btn_frame.grid(row=1, column=0, sticky="ew", pady=(theme_space("space_3", 12),theme_space("space_3", 12)))
+    theme_frame = tk.Frame(centered, bg=UI_THEME.get("light_bg", "#F5F7FA")); theme_frame.grid(row=2, column=0, sticky="ew", pady=(0, theme_space("space_2", 8)))
     theme_label = tk.Label(theme_frame, text="Tema:", bg=UI_THEME.get("light_bg", "#F5F7FA"), fg=UI_THEME.get("text", "#111827")); theme_label.pack(side=tk.LEFT)
     theme_var = tk.StringVar(value=get_active_theme_name())
     theme_combo = ttk.Combobox(theme_frame, textvariable=theme_var, values=available_theme_names(), state="readonly")
