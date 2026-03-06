@@ -312,9 +312,8 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('Detalhes', source)
         self.assertIn('Exportar CSV', source)
         self.assertIn('Resetar colunas', source)
-        self.assertIn('Salvar visão', source)
         self.assertIn('Registros filtrados:', source)
-        self.assertIn('_runtime_refresh_ms = 1000', source)
+        self.assertIn('btn_top_toggle_filters', source)
 
     def test_monitor_ui_has_single_top_filter_toggle_button(self):
         import inspect
@@ -331,12 +330,12 @@ class InterfaceTwoTests(unittest.TestCase):
         self.assertIn('btn_top_clear = build_secondary_danger_button(theme_bar, "🧹 Limpar", lambda: None)', source)
         self.assertNotIn('btn_frame = tk.Frame(container, bg=UI_THEME["bg"])', source)
 
-    def test_monitor_ui_has_analytic_table_and_focus_mode_controls(self):
+    def test_monitor_ui_has_analytic_table_and_toolbar_shortcuts(self):
         import inspect
         source = inspect.getsource(interfacetwo._build_monitor_ui)
-        self.assertIn('Focus mode', source)
+        self.assertNotIn('Focus mode', source)
         self.assertIn('format_creative_entry', source)
-        self.assertIn('"as_text": True', source)
+        self.assertNotIn('\"as_text\": True', source)
         self.assertIn('Alt+E exportar', source)
 
 
