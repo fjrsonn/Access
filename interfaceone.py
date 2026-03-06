@@ -1405,22 +1405,23 @@ class SuggestEntry(tk.Frame):
     def __init__(self, master):
         super().__init__(master)
         self.submit_callback = None
+        self._composer_menu = None
         self.entry_var = tk.StringVar()
-        self.input_shell = tk.Frame(self, bd=1, highlightthickness=1)
+        self.input_shell = tk.Frame(self, bd=0, highlightthickness=1)
         self.input_shell.pack(side=tk.TOP, fill=tk.X, pady=(0, theme_space("space_2", 8)))
 
-        self.btn_plus = tk.Button(self.input_shell, text="＋", width=3, relief="flat", command=self._on_plus_click, cursor="hand2")
-        self.btn_plus.pack(side=tk.LEFT, padx=(6, 4), pady=6)
+        self.btn_plus = tk.Button(self.input_shell, text="＋", width=2, relief="flat", command=self._on_plus_click, cursor="hand2", font=theme_font("font_lg", "bold"))
+        self.btn_plus.pack(side=tk.LEFT, padx=(10, 6), pady=8)
 
         self.entry = tk.Entry(self.input_shell, textvariable=self.entry_var, font=theme_font("font_lg"), relief="flat", bd=0)
-        self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(2, 2), pady=6)
+        self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(4, 4), pady=8)
 
-        self.btn_dictate = tk.Button(self.input_shell, text="🎙", width=3, relief="flat", command=self._on_dictate_click, cursor="hand2")
-        self.btn_dictate.pack(side=tk.RIGHT, padx=(4, 6), pady=6)
-        self.btn_voice = tk.Button(self.input_shell, text="🔊", width=3, relief="flat", command=self._on_voice_click, cursor="hand2")
-        self.btn_voice.pack(side=tk.RIGHT, padx=(4, 2), pady=6)
-        self.btn_send = tk.Button(self.input_shell, text="↑", width=3, relief="flat", command=self._on_submit_click, cursor="hand2")
-        self.btn_send.pack(side=tk.RIGHT, padx=(4, 2), pady=6)
+        self.btn_dictate = tk.Button(self.input_shell, text="🎙", width=2, relief="flat", command=self._on_dictate_click, cursor="hand2", font=theme_font("font_lg"))
+        self.btn_dictate.pack(side=tk.RIGHT, padx=(4, 10), pady=8)
+        self.btn_voice = tk.Button(self.input_shell, text="🔊", width=2, relief="flat", command=self._on_voice_click, cursor="hand2", font=theme_font("font_lg"))
+        self.btn_voice.pack(side=tk.RIGHT, padx=(4, 2), pady=8)
+        self.btn_send = tk.Button(self.input_shell, text="⬆", width=2, relief="flat", command=self._on_submit_click, cursor="hand2", font=theme_font("font_lg", "bold"))
+        self.btn_send.pack(side=tk.RIGHT, padx=(4, 2), pady=8)
         self.entry.focus_set()
         self.font = tkfont.Font(font=self.entry["font"]); self._orig_entry_bg = self.entry.cget("bg")
         try: self._orig_entry_fg = self.entry.cget("fg")
@@ -1471,6 +1472,7 @@ class SuggestEntry(tk.Frame):
         self.entry.bind("<Tab>", self.on_tab, add="+")
         self.entry.bind("<Down>", self.on_down); self.entry.bind("<Up>", self.on_up); self.entry.bind("<Return>", self.on_return); self.entry.bind("<Escape>", self.on_escape)
         self.entry.bind("<Control-space>", lambda e: (self.show_db(), "break"))
+        self.entry.bind("<Button-3>", self._on_plus_click, add="+")
 
         self.tree.bind("<Double-1>", self.on_tree_double); self.tree.bind("<Button-1>", self.on_tree_click)
         self.tree.bind("<Motion>", self.on_tree_motion); self.tree.bind("<Return>", self.on_tree_return)
@@ -1480,13 +1482,34 @@ class SuggestEntry(tk.Frame):
             threading.Thread(target=lambda: sync_suggestions(force=False), daemon=True).start()
         except Exception:
             pass
+        try:
+            attach_tooltip(self.btn_plus, "Mais")
+            attach_tooltip(self.btn_dictate, "Ditar")
+            attach_tooltip(self.btn_voice, "Usar voz")
+            attach_tooltip(self.btn_send, "Enviar")
+        except Exception:
+            pass
         self.refresh_theme()
+
+    def _composer_palette(self):
+        # Tokens visuais aproximados ao composer do ChatGPT, respeitando o tema ativo.
+        return {
+            "shell_bg": UI_THEME.get("surface", "#2F2F2F"),
+            "shell_border": UI_THEME.get("border", "#4B4B4B"),
+            "shell_fg": UI_THEME.get("on_surface", UI_THEME.get("text", "#ECECF1")),
+            "muted": UI_THEME.get("muted_text", "#A1A1AA"),
+            "soft_hover": UI_THEME.get("surface_alt", "#3A3A3A"),
+            "send_bg": UI_THEME.get("primary", "#10A37F"),
+            "send_bg_active": UI_THEME.get("primary_active", "#0E8E6D"),
+            "send_fg": UI_THEME.get("on_primary", "#FFFFFF"),
+        }
 
     def refresh_theme(self):
         try:
-            shell_bg = UI_THEME.get("surface", "#FFFFFF")
-            shell_border = UI_THEME.get("border", UI_THEME.get("light_border", "#D1D5DB"))
-            shell_fg = UI_THEME.get("on_surface", UI_THEME.get("text", "#111827"))
+            palette = self._composer_palette()
+            shell_bg = palette["shell_bg"]
+            shell_border = palette["shell_border"]
+            shell_fg = palette["shell_fg"]
             self.input_shell.configure(bg=shell_bg, highlightbackground=shell_border, highlightcolor=UI_THEME.get("primary", "#1F6FEB"))
             self.frame.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"), highlightbackground=UI_THEME.get("light_border", "#D1D5DB"))
             self.shortcuts_hint.configure(fg=UI_THEME.get("muted_text", "#6B7280"), bg=UI_THEME.get("light_bg", "#F5F7FA"))
@@ -1500,17 +1523,17 @@ class SuggestEntry(tk.Frame):
             for btn in (self.btn_plus, self.btn_dictate, self.btn_voice):
                 btn.configure(
                     bg=shell_bg,
-                    fg=UI_THEME.get("muted_text", "#6B7280"),
-                    activebackground=UI_THEME.get("surface_alt", "#E5E7EB"),
+                    fg=palette["muted"],
+                    activebackground=palette["soft_hover"],
                     activeforeground=shell_fg,
                     highlightthickness=0,
                     bd=0,
                 )
             self.btn_send.configure(
-                bg=UI_THEME.get("primary", "#1F6FEB"),
-                fg=UI_THEME.get("on_primary", "#FFFFFF"),
-                activebackground=UI_THEME.get("primary_active", "#215DB0"),
-                activeforeground=UI_THEME.get("on_primary", "#FFFFFF"),
+                bg=palette["send_bg"],
+                fg=palette["send_fg"],
+                activebackground=palette["send_bg_active"],
+                activeforeground=palette["send_fg"],
                 highlightthickness=0,
                 bd=0,
             )
@@ -1527,23 +1550,35 @@ class SuggestEntry(tk.Frame):
 
     def _on_plus_click(self):
         try:
-            self.show_db()
+            if self._composer_menu is None:
+                self._composer_menu = tk.Menu(self, tearoff=0)
+            self._composer_menu.delete(0, "end")
+            self._composer_menu.add_command(label="Abrir sugestões", command=self.show_db)
+            self._composer_menu.add_command(label="Limpar campo", command=lambda: self.entry_var.set(""))
+            self._composer_menu.add_separator()
+            self._composer_menu.add_command(label="Modo IA", command=lambda: self.entry_var.set("IA "))
+            x = self.btn_plus.winfo_rootx()
+            y = self.btn_plus.winfo_rooty() + self.btn_plus.winfo_height() + 2
+            self._composer_menu.tk_popup(x, y)
+            self._composer_menu.grab_release()
         except Exception:
             pass
 
     def _on_dictate_click(self):
-        # Placeholder visual para o botão de ditado no novo composer.
         try:
-            self.entry.insert(tk.END, " ")
+            self.entry.insert(tk.END, " [ditado] ")
             self.entry.focus_set()
+            self.entry.icursor(tk.END)
+            if _warning_bar:
+                _warning_bar.show_messages(["🎙 Ditar ativado (modo local)."], level="info")
         except Exception:
             pass
 
     def _on_voice_click(self):
-        # Placeholder visual para o botão de voz no novo composer.
         try:
             self.entry.focus_set()
-            self.entry.bell()
+            if _warning_bar:
+                _warning_bar.show_messages(["🔊 Voz ativada (modo local)."], level="info")
         except Exception:
             pass
 
