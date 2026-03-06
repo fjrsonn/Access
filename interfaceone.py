@@ -1405,7 +1405,6 @@ class SuggestEntry(tk.Frame):
     def __init__(self, master):
         super().__init__(master)
         self.submit_callback = None
-        self._composer_menu = None
         self.entry_var = tk.StringVar()
         self.input_shell = tk.Frame(self, bd=0, highlightthickness=1)
         self.input_shell.pack(side=tk.TOP, fill=tk.X, pady=(0, theme_space("space_2", 8)))
@@ -1455,8 +1454,7 @@ class SuggestEntry(tk.Frame):
         except Exception:
             pass
         try:
-            self.entry.configure(highlightthickness=1, highlightbackground=UI_THEME.get("light_border", "#D1D5DB"), highlightcolor=UI_THEME.get("primary", "#1F6FEB"))
-            bind_focus_ring(self.entry)
+            self.entry.configure(highlightthickness=0, highlightbackground=UI_THEME.get("border", "#2B3442"), highlightcolor=UI_THEME.get("border", "#2B3442"))
             bind_focus_ring(self.tree)
         except Exception:
             pass
@@ -1494,7 +1492,8 @@ class SuggestEntry(tk.Frame):
     def _composer_palette(self):
         # Tokens visuais aproximados ao composer do ChatGPT, respeitando o tema ativo.
         return {
-            "shell_bg": UI_THEME.get("surface", "#2F2F2F"),
+            # Interface One usa a mesma base cromática escura do monitor (Interface Two).
+            "shell_bg": UI_THEME.get("bg", "#0F1115"),
             "shell_border": UI_THEME.get("border", "#4B4B4B"),
             "shell_fg": UI_THEME.get("on_surface", UI_THEME.get("text", "#ECECF1")),
             "muted": UI_THEME.get("muted_text", "#A1A1AA"),
@@ -1514,9 +1513,10 @@ class SuggestEntry(tk.Frame):
             self.frame.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"), highlightbackground=UI_THEME.get("light_border", "#D1D5DB"))
             self.shortcuts_hint.configure(fg=UI_THEME.get("muted_text", "#6B7280"), bg=UI_THEME.get("light_bg", "#F5F7FA"))
             self.entry.configure(
-                highlightbackground=UI_THEME.get("light_border", "#D1D5DB"),
-                highlightcolor=UI_THEME.get("primary", "#1F6FEB"),
-                bg=shell_bg,
+                highlightbackground=UI_THEME.get("border", "#2B3442"),
+                highlightcolor=UI_THEME.get("border", "#2B3442"),
+                highlightthickness=0,
+                bg=UI_THEME.get("surface_alt", "#1B2430"),
                 fg=shell_fg,
                 insertbackground=shell_fg,
             )
@@ -1548,21 +1548,11 @@ class SuggestEntry(tk.Frame):
     def set_submit_callback(self, callback):
         self.submit_callback = callback
 
-    def _on_plus_click(self):
+    def _on_plus_click(self, _event=None):
         try:
-            if self._composer_menu is None:
-                self._composer_menu = tk.Menu(self, tearoff=0)
-            self._composer_menu.delete(0, "end")
-            self._composer_menu.add_command(label="Abrir sugestões", command=self.show_db)
-            self._composer_menu.add_command(label="Limpar campo", command=lambda: self.entry_var.set(""))
-            self._composer_menu.add_separator()
-            self._composer_menu.add_command(label="Modo IA", command=lambda: self.entry_var.set("IA "))
-            x = self.btn_plus.winfo_rootx()
-            y = self.btn_plus.winfo_rooty() + self.btn_plus.winfo_height() + 2
-            self._composer_menu.tk_popup(x, y)
-            self._composer_menu.grab_release()
+            _open_monitor_window(self.winfo_toplevel())
         except Exception:
-            pass
+            open_monitor_fallback_subprocess()
 
     def _on_dictate_click(self):
         try:
@@ -2482,6 +2472,22 @@ def save_text(entry_widget=None, btn=None):
             _log_ui("ERROR", "fallback_db_append_exception", "Erro ao parsear / anexar ao DB (fallback)", error=str(e))
 
 # ---------- open monitor fallback (mantido) ----------
+def _open_monitor_window(parent=None):
+    try:
+        import interfacetwo
+        if getattr(interfacetwo, "_monitor_toplevel", None):
+            try:
+                interfacetwo._monitor_toplevel.lift()
+                interfacetwo._monitor_toplevel.focus_force()
+            except Exception:
+                pass
+            return
+        interfacetwo.create_monitor_toplevel(parent)
+    except Exception as e:
+        print("Falha ao abrir monitor (abrindo fallback):", e)
+        open_monitor_fallback_subprocess()
+
+
 def open_monitor_fallback_subprocess():
     try:
         target = os.path.join(os.path.dirname(__file__), "interfacetwo.py")
@@ -2519,8 +2525,6 @@ class AvisoBar(tk.Frame):
         self.msg_var = tk.StringVar()
         self.lbl = tk.Label(self, textvariable=self.msg_var, anchor="w", font=self.font, bd=0)
         self.lbl.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=(2,2))
-        self.btn_detail = tk.Button(self, text="Detalhes", width=9, command=self._open_alert_center, relief="flat", cursor="hand2")
-        self.btn_detail.pack(side=tk.RIGHT, padx=(0,4), pady=(2,2))
         self.btn_close = tk.Button(self, text="Fechar", width=8, command=self._on_close_click, relief="flat", cursor="hand2")
         self.btn_close.pack(side=tk.RIGHT, padx=(0,6), pady=(2,2))
         self._active_avisos = []
@@ -2554,7 +2558,6 @@ class AvisoBar(tk.Frame):
         try:
             self.lbl.config(bg=bg, fg=fg)
             self.lbl_counter.config(bg=bg, fg=UI_THEME.get("muted_text", "#6B7280"))
-            self.btn_detail.config(bg=bg, fg=fg, activebackground=UI_THEME.get("surface", "#FFFFFF"), activeforeground=fg, highlightthickness=0, bd=0)
             self.btn_close.config(bg=bg, fg=fg, activebackground=UI_THEME.get("surface", "#FFFFFF"), activeforeground=fg, highlightthickness=0, bd=0)
         except Exception:
             pass
@@ -2642,7 +2645,6 @@ class AvisoBar(tk.Frame):
             self.config(bg=blended)
             self.lbl.config(bg=blended, fg=ui.get("text_color", "#111111"))
             self.lbl_counter.config(bg=blended, fg="#333333")
-            self.btn_detail.config(bg=blended, fg="#111111", activebackground=blended)
             self.btn_close.config(bg=blended, fg="#111111", activebackground=blended)
         except:
             pass
@@ -3050,16 +3052,7 @@ def start_ui():
     btn_save = build_primary_button(btn_frame, "Salvar", lambda: save_text(entry_widget=s.entry, btn=btn_save), padx=18)
     btn_save.pack(side=tk.LEFT, padx=(0,10))
     def open_monitor_embedded():
-        try:
-            import interfacetwo
-            if getattr(interfacetwo, "_monitor_toplevel", None):
-                try: interfacetwo._monitor_toplevel.lift(); interfacetwo._monitor_toplevel.focus_force()
-                except Exception:
-                    pass
-                return
-            interfacetwo.create_monitor_toplevel(root)
-        except Exception as e:
-            print("Falha ao embutir monitor (abrindo fallback):", e); open_monitor_fallback_subprocess()
+        _open_monitor_window(root)
 
     def _refresh_theme():
         apply_ttk_theme_styles(root)
