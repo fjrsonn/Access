@@ -2407,9 +2407,117 @@ def _cancel_scheduled(text_widgets):
     _monitor_after_id = None
 
 def forcar_recarregar(text_widgets, info_label):
+    _data_load_cache.clear()
+    for source in (ARQUIVO, ENCOMENDAS_ARQUIVO, ORIENTACOES_ARQUIVO, OBSERVACOES_ARQUIVO, AVISOS_ARQUIVO, ANALISES_ARQUIVO):
+        _queue_background_reload(source)
     for tw in text_widgets:
         _populate_text(tw, info_label)
     _update_status_cards()
+
+
+def _wipe_payload_for_file(path: str):
+    try:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict) and "registros" in data:
+                return {"registros": []}
+            if isinstance(data, list):
+                return []
+    except Exception:
+        pass
+    return {"registros": []}
+
+
+def _build_db_clear_targets():
+    return {
+        "dadosinit.json": os.path.join(BASE_DIR, "dadosinit.json"),
+        "dadosend.json": ARQUIVO,
+        "encomendasinit.json": os.path.join(BASE_DIR, "encomendasinit.json"),
+        "encomendasend.json": ENCOMENDAS_ARQUIVO,
+        "orientacoes.json": ORIENTACOES_ARQUIVO,
+        "observacoes.json": OBSERVACOES_ARQUIVO,
+        "avisos.json": AVISOS_ARQUIVO,
+        "analises.json": ANALISES_ARQUIVO,
+    }
+
+
+def _open_clear_databases_dialog(parent, text_widgets, info_label):
+    targets = _build_db_clear_targets()
+    dialog = tk.Toplevel(parent)
+    dialog.title("Limpar bancos")
+    dialog.configure(bg=UI_THEME["surface"])
+    dialog.transient(parent)
+    dialog.grab_set()
+    dialog.resizable(False, False)
+
+    width, height = 420, 380
+    root_x, root_y = parent.winfo_rootx(), parent.winfo_rooty()
+    root_w, root_h = parent.winfo_width(), parent.winfo_height()
+    x = root_x + max(0, (root_w - width) // 2)
+    y = root_y + max(0, (root_h - height) // 2)
+    dialog.geometry(f"{width}x{height}+{x}+{y}")
+
+    title = build_label(dialog, "Selecione os bancos para apagar", bg=UI_THEME["surface"], font=theme_font("font_lg", "bold"))
+    title.pack(fill=tk.X, padx=16, pady=(14, 10))
+
+    selector_host = tk.Frame(dialog, bg=UI_THEME["surface"])
+    selector_host.pack(fill=tk.BOTH, expand=True, padx=16, pady=(0, 10))
+
+    vars_map = {}
+    for name in sorted(targets.keys()):
+        var = tk.BooleanVar(value=False)
+        vars_map[name] = var
+        chk = tk.Checkbutton(
+            selector_host,
+            text=name,
+            variable=var,
+            bg=UI_THEME["surface"],
+            fg=UI_THEME.get("on_surface", UI_THEME["text"]),
+            activebackground=UI_THEME["surface"],
+            selectcolor=UI_THEME.get("surface_alt", UI_THEME["surface"]),
+            anchor="w",
+        )
+        chk.pack(fill=tk.X, pady=2)
+
+    controls = tk.Frame(dialog, bg=UI_THEME["surface"])
+    controls.pack(fill=tk.X, padx=16, pady=(0, 14))
+
+    def _toggle_all(value: bool):
+        for local_var in vars_map.values():
+            local_var.set(value)
+
+    build_secondary_button(controls, "Marcar todos", lambda: _toggle_all(True)).pack(side=tk.LEFT)
+    build_secondary_button(controls, "Desmarcar", lambda: _toggle_all(False)).pack(side=tk.LEFT, padx=(6, 0))
+
+    def _delete_selected():
+        selected_names = [name for name, var in vars_map.items() if var.get()]
+        if not selected_names:
+            _announce_feedback("Selecione ao menos um banco para apagar", "warning")
+            return
+        ts = datetime.now().strftime("%d.%m.%Y.%Hh%M")
+        backups = []
+        for name in selected_names:
+            path = targets.get(name)
+            if not path:
+                continue
+            backup_name = f"{ts}.{name}"
+            backup_path = os.path.join(BASE_DIR, backup_name)
+            try:
+                if os.path.exists(path):
+                    shutil.copy2(path, backup_path)
+                else:
+                    _atomic_write(backup_path, {"registros": []})
+                _atomic_write(path, _wipe_payload_for_file(path))
+                backups.append(backup_name)
+            except Exception as exc:
+                messagebox.showerror("Limpar bancos", f"Falha ao limpar {name}: {exc}", parent=dialog)
+                return
+        dialog.destroy()
+        forcar_recarregar(text_widgets, info_label)
+        messagebox.showinfo("Limpar bancos", "Bancos apagados com backup:\n" + "\n".join(backups), parent=parent)
+
+    build_secondary_danger_button(dialog, "APAGAR", _delete_selected).pack(side=tk.BOTTOM, pady=(0, 16), ipadx=24)
 
 def limpar_dados(text_widgets, info_label, action_button=None):
     if not os.path.exists(ARQUIVO):
@@ -2420,14 +2528,6 @@ def limpar_dados(text_widgets, info_label, action_button=None):
             action_button.configure(state="disabled", text="Processando...")
         except Exception:
             pass
-    resp = messagebox.askyesno("Limpar dados", "Criar backup e limpar dadosend.json (registros serão removidos)?")
-    if not resp:
-        if action_button is not None:
-            try:
-                action_button.configure(state="normal", text="Limpar")
-            except Exception:
-                pass
-        return
     try:
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         bak = os.path.join(os.path.dirname(ARQUIVO), f"dadosend_backup_{ts}.json")
@@ -2730,8 +2830,6 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
         if not current or current == "Preset (opcional)":
             _flash_feedback("Selecione um preset para excluir", "warning")
             return
-        if not messagebox.askyesno("Excluir preset", f"Excluir preset '{current}'?", parent=bar.winfo_toplevel()):
-            return
         _delete_filter_preset(current)
         _refresh_preset_combo("Preset (opcional)")
         _flash_feedback("Preset excluído", "warning")
@@ -2771,8 +2869,15 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
     build_label(top_row, "Buscar", font=theme_font("font_sm")).grid(row=0, column=0, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
     query_entry.grid(row=0, column=1, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_1", 4), sticky="ew")
 
+    status_values_map = {
+        "controle": ["Todos", "MORADOR", "VISITANTE", "PRESTADOR", "AVISADO", "SEM CONTATO"],
+        "encomendas": ["Todos", "AVISADO", "SEM CONTATO"],
+        "orientacoes": ["Todos"],
+        "observacoes": ["Todos"],
+        "avisos": ["Todos", "ATIVO", "INATIVO"],
+    }
     build_label(top_row, "Status", font=theme_font("font_sm")).grid(row=0, column=2, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
-    status_combo = ttk.Combobox(top_row, textvariable=status_var, values=["Todos", "MORADOR", "VISITANTE", "PRESTADOR", "AVISADO", "SEM CONTATO"], state="readonly")
+    status_combo = ttk.Combobox(top_row, textvariable=status_var, values=status_values_map.get(str(filter_key), ["Todos"]), state="readonly")
     status_combo.grid(row=0, column=3, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_1", 4), sticky="ew")
 
     presets = _get_filter_presets()
@@ -2870,8 +2975,11 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
     attach_tooltip(btn_apply, "Aplica os filtros atuais")
     attach_tooltip(btn_clear, "Limpa todos os filtros")
     attach_tooltip(btn_save_preset, "Salva os filtros como preset")
+    attach_tooltip(btn_rename_preset, "Renomeia o preset selecionado")
+    attach_tooltip(btn_delete_preset, "Exclui o preset selecionado")
     attach_tooltip(btn_default_preset, "Define o preset selecionado como padrão da aba")
     attach_tooltip(btn_undo_filter, "Restaura o último conjunto de filtros")
+    attach_tooltip(btn_advanced, "Mostra ou oculta filtros avançados")
     attach_tooltip(quick_today_btn, "Filtra registros do dia atual")
     attach_tooltip(quick_sem_contato_btn, "Mostra apenas status sem contato")
     attach_tooltip(quick_alta_btn, "Busca ocorrências de alta severidade")
@@ -2901,6 +3009,7 @@ def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
         bind_focus_ring(control)
 
     tab_order = [query_entry, status_combo, preset_combo, btn_apply, btn_clear, auto_apply_chk, btn_save_preset, btn_rename_preset, btn_delete_preset, btn_default_preset, btn_undo_filter, quick_today_btn, quick_sem_contato_btn, quick_alta_btn, btn_advanced, order_combo, date_mode_combo, date_entry, time_mode_combo, time_entry, bloco_combo]
+    tab_order = [w for w in tab_order if w is not None]
     for idx, widget in enumerate(tab_order):
         nxt = tab_order[(idx + 1) % len(tab_order)]
         widget.bind("<Tab>", lambda _e, w=nxt: (w.focus_set(), "break"), add="+")
@@ -4372,15 +4481,11 @@ def _build_monitor_ui(container):
     theme_bar = tk.Frame(container, bg=UI_THEME["bg"])
     theme_bar.pack(fill=tk.X, padx=10, pady=(6, 0))
     theme_bar.pack_forget()
-    btn_top_theme = build_secondary_button(theme_bar, "🎨 Tema", lambda: None)
-    btn_top_theme.pack(side=tk.LEFT, padx=(6, 0))
     details_visible = tk.BooleanVar(value=False)
     btn_top_details = build_secondary_button(theme_bar, "🧾 Detalhes", lambda: None)
     btn_top_details.pack(side=tk.LEFT, padx=(12, 0))
     btn_top_export = build_secondary_button(theme_bar, "📤 Exportar CSV", lambda: None)
     btn_top_export.pack(side=tk.LEFT, padx=(6, 0))
-    btn_top_save_view = build_secondary_button(theme_bar, "💾 Salvar visão", lambda: None)
-    btn_top_save_view.pack(side=tk.LEFT, padx=(6, 0))
     _legacy_reset_columns_label = "Resetar colunas"
     _legacy_filtered_counter_label = "Registros filtrados:"
     _legacy_toggle_filters_label = "🧰 Ocultar filtros"
@@ -4391,13 +4496,8 @@ def _build_monitor_ui(container):
     btn_top_clear.pack(side=tk.LEFT, padx=(6, 0))
     btn_top_toggle_filters = build_secondary_button(theme_bar, "🧰 ⌃ Mostrar filtros", lambda: None)
     btn_top_toggle_filters.pack(side=tk.LEFT, padx=(6, 0))
-    op_mode_defaults = bool((_load_prefs().get("operation_mode") or False))
-    op_mode_var = tk.BooleanVar(value=op_mode_defaults)
-    op_mode_chk = tk.Checkbutton(theme_bar, text="Modo Operação", variable=op_mode_var, bg=UI_THEME["bg"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), selectcolor=UI_THEME["surface"], activebackground=UI_THEME["bg"])
-    op_mode_chk.pack(side=tk.LEFT, padx=(12, 0))
+    op_mode_var = tk.BooleanVar(value=False)
     focus_mode_var = tk.BooleanVar(value=False)
-    focus_mode_chk = tk.Checkbutton(theme_bar, text="Focus mode", variable=focus_mode_var, bg=UI_THEME["bg"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), selectcolor=UI_THEME["surface"], activebackground=UI_THEME["bg"])
-    focus_mode_chk.pack(side=tk.LEFT, padx=(8, 0))
 
     def _refresh_theme_in_place():
         try:
@@ -4465,7 +4565,7 @@ def _build_monitor_ui(container):
                 tree.configure(height=14)
             except Exception:
                 pass
-        for w in (btn_top_details, btn_top_export, btn_top_save_view, btn_top_reload, btn_top_clear, btn_top_toggle_filters):
+        for w in (btn_top_details, btn_top_export, btn_top_reload, btn_top_clear, btn_top_toggle_filters):
             try:
                 w.configure(padx=12, pady=4)
             except Exception:
@@ -4506,7 +4606,6 @@ def _build_monitor_ui(container):
         _sync_details_panel_visibility()
         report_status("ux_metrics", "OK", stage="focus_mode_toggle", details={"enabled": enabled})
 
-    btn_top_theme.configure(command=_on_theme_change)
     op_mode_var.trace_add("write", _toggle_operation_mode)
     focus_mode_var.trace_add("write", _toggle_focus_mode)
 
@@ -5009,7 +5108,7 @@ def _build_monitor_ui(container):
     metrics_accessibility_label = build_label(container, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
     metrics_accessibility_label.configure(textvariable=_metrics_accessibility_var)
 
-    hints = build_label(container, "Atalhos: Ctrl+F buscar • Ctrl+Enter aplicar • Ctrl+Shift+L limpar • Alt+1..5 abas • Alt+E exportar • Alt+V salvar visão", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    hints = build_label(container, "Atalhos: Ctrl+F buscar • Ctrl+Enter aplicar • Ctrl+Shift+L limpar • Alt+1..5 abas • Alt+E exportar", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
 
     def _sync_details_panel_visibility():
         show_details = bool(details_visible.get())
@@ -5219,7 +5318,12 @@ def _build_monitor_ui(container):
     def _export_control_csv():
         try:
             out = os.path.join(BASE_DIR, f"controle_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
-            rows = _control_filtered_records()
+            today = datetime.now().date()
+            rows = []
+            for rec in _control_filtered_records():
+                parsed_dt = _parse_data_hora(str(rec.get("DATA_HORA") or ""))
+                if parsed_dt and parsed_dt.date() == today:
+                    rows.append(rec)
             with open(out, "w", encoding="utf-8") as f:
                 f.write("id,data_hora,nome,sobrenome,bloco,apartamento,placa,modelo,cor,status,texto\n")
                 for rec in rows:
@@ -5242,29 +5346,19 @@ def _build_monitor_ui(container):
         except Exception as exc:
             _announce_feedback(f"Falha ao exportar CSV: {exc}", "danger")
 
-    def _save_control_view():
-        try:
-            _persist_ui_state({
-                "control_view": {
-                    "filters": dict(_filter_state.get("controle") or {}),
-                    "as_text": True,
-                }
-            })
-            _announce_feedback("Visão da aba CONTROLE salva", "success")
-        except Exception as exc:
-            _announce_feedback(f"Falha ao salvar visão: {exc}", "danger")
-
-    btn_top_export.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_export_csv", details={"source": "controle"}), _export_control_csv()))
-    btn_top_save_view.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_save_view", details={"source": "controle"}), _save_control_view()))
+    btn_top_export.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_export_csv", details={"source": "controle", "scope": "today"}), _export_control_csv()))
     btn_top_reload.configure(command=lambda: forcar_recarregar(monitor_widgets, info_label))
-    btn_top_clear.configure(command=lambda: limpar_dados(monitor_widgets, info_label, btn_top_clear))
+    btn_top_clear.configure(command=lambda: _open_clear_databases_dialog(theme_bar.winfo_toplevel(), monitor_widgets, info_label))
     btn_top_toggle_filters.configure(command=lambda: _toggle_filters("global"))
-    attach_tooltip(btn_top_reload, "Recarrega todos os dados do monitor")
-    attach_tooltip(btn_top_clear, "Cria backup e limpa os registros exibidos")
+    attach_tooltip(btn_top_details, "Mostra ou oculta painel de detalhes")
+    attach_tooltip(btn_top_export, "Exporta CSV somente com registros do dia atual")
+    attach_tooltip(btn_top_reload, "Reinicia a atualização do monitor e recarrega todos os bancos")
+    attach_tooltip(btn_top_clear, "Abre seleção de bancos para apagar com backup por data")
+    attach_tooltip(btn_top_toggle_filters, "Mostra ou oculta os filtros da aba ativa")
+    attach_tooltip(btn_eye, "Mostra ou oculta a barra superior de botões")
 
     try:
         root_win.bind("<Alt-e>", lambda _e: (btn_top_export.invoke(), "break")[1], add="+")
-        root_win.bind("<Alt-v>", lambda _e: (btn_top_save_view.invoke(), "break")[1], add="+")
     except Exception:
         pass
 
@@ -5397,8 +5491,6 @@ def _build_monitor_ui(container):
         _announce_feedback("Use Ctrl+F para busca e Alt+1..5 para trocar abas", "info")
 
     _apply_density()
-    if op_mode_var.get():
-        _toggle_operation_mode()
     try:
         for target in monitor_widgets:
             _populate_text(target, info_label)
