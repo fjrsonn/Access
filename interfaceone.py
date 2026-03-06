@@ -99,16 +99,16 @@ try:
     )
 except Exception:
     UI_THEME = {
-        "light_bg": "#F5F7FA",
-        "light_border": "#D1D5DB",
-        "focus_bg": "#DBEAFE",
+        "light_bg": "#1E1E1E",
+        "light_border": "#3C3C3C",
+        "focus_bg": "#252526",
         "focus_text": "#111827",
         "primary": "#1F6FEB",
         "primary_active": "#215DB0",
-        "surface_alt": "#E5E7EB",
-        "border": "#D1D5DB",
-        "text": "#111827",
-        "muted_text": "#6B7280",
+        "surface_alt": "#2D2D2D",
+        "border": "#3C3C3C",
+        "text": "#D4D4D4",
+        "muted_text": "#A6A6A6",
         "surface": "#1E1E1E",
     }
     def bind_focus_ring(*args, **kwargs):
@@ -1445,10 +1445,10 @@ class SuggestEntry(tk.Frame):
         self.tree.configure(yscrollcommand=self.sbar.set); self.sbar.config(command=self.tree.yview, bg="#1E1E1E", troughcolor="#1E1E1E", activebackground="#252526", highlightthickness=0, bd=0); self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,0), pady=6); self.sbar.pack(side=tk.RIGHT, fill=tk.Y, pady=6, padx=(0,6))
         try:
             style = ttk.Style(self)
-            style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background="#1E1E1E", fieldbackground="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0, relief="flat")
-            style.configure("Suggest.Treeview.Heading", font=theme_font("font_md", "bold"), background="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0, relief="flat")
+            style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background="#1E1E1E", fieldbackground="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0, relief="flat", bordercolor="#1E1E1E", lightcolor="#1E1E1E", darkcolor="#1E1E1E")
+            style.configure("Suggest.Treeview.Heading", font=theme_font("font_md", "bold"), background="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0, relief="flat", bordercolor="#1E1E1E", lightcolor="#1E1E1E", darkcolor="#1E1E1E")
             style.map("Suggest.Treeview", background=[("selected", "#252526")], foreground=[("selected", UI_THEME.get("text", "#D4D4D4"))])
-            self.tree.configure(style="Suggest.Treeview")
+            self.tree.configure(style="Suggest.Treeview", background="#1E1E1E", fieldbackground="#1E1E1E", borderwidth=0)
         except Exception:
             pass
         try:
@@ -1456,7 +1456,7 @@ class SuggestEntry(tk.Frame):
             bind_focus_ring(self.tree)
         except Exception:
             pass
-        self.shortcuts_hint = tk.Label(self, text="Atalhos: ↑/↓ navegar • Enter salvar • Tab completar", anchor="w", fg=UI_THEME.get("muted_text", "#6B7280"), bg=UI_THEME.get("light_bg", "#F5F7FA"), font=theme_font("font_sm"))
+        self.shortcuts_hint = tk.Label(self, text="Atalhos: ↑/↓ navegar • Enter salvar • Tab completar", anchor="w", fg=UI_THEME.get("text", "#D4D4D4"), bg="#1E1E1E", font=theme_font("font_sm"))
 
         self.ia_mode=False; self.ia_waiting_for_query=False; self.list_visible=False; self.suggestions=[]; self.correction=""; self.curr=None
         self.steps=[]; self.step_idx=0; self._has_user_navigated=False; self._just_accepted=False
@@ -1528,8 +1528,8 @@ class SuggestEntry(tk.Frame):
                 )
             self.overlay.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg=self.entry.cget("bg"))
             style = ttk.Style(self)
-            style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background="#1E1E1E", fieldbackground="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0, relief="flat")
-            style.configure("Suggest.Treeview.Heading", font=theme_font("font_md", "bold"), background="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0, relief="flat")
+            style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background="#1E1E1E", fieldbackground="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0, relief="flat", bordercolor="#1E1E1E", lightcolor="#1E1E1E", darkcolor="#1E1E1E")
+            style.configure("Suggest.Treeview.Heading", font=theme_font("font_md", "bold"), background="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0, relief="flat", bordercolor="#1E1E1E", lightcolor="#1E1E1E", darkcolor="#1E1E1E")
             style.map("Suggest.Treeview", background=[("selected", "#252526")], foreground=[("selected", UI_THEME.get("text", "#D4D4D4"))])
         except Exception:
             pass
@@ -2510,7 +2510,7 @@ class AvisoBar(tk.Frame):
             self.font = tkfont.Font(font=self.entry_widget["font"])
         except Exception:
             self.font = tkfont.Font(family="Segoe UI", size=11)
-        self.config(bg=UI_THEME.get("surface_alt", "#E5E7EB"), bd=1, relief="flat", highlightthickness=1, highlightbackground=UI_THEME.get("border", "#D1D5DB"))
+        self.config(bg=UI_THEME.get("surface_alt", "#2D2D2D"), bd=1, relief="flat", highlightthickness=1, highlightbackground=UI_THEME.get("border", "#3C3C3C"))
         self.msg_var = tk.StringVar()
         self.lbl = tk.Label(self, textvariable=self.msg_var, anchor="w", font=self.font, bd=0)
         self.lbl.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=(2,2))
@@ -2541,12 +2541,12 @@ class AvisoBar(tk.Frame):
         self._apply_component_theme()
 
     def _apply_component_theme(self):
-        bg = UI_THEME.get("surface_alt", "#E5E7EB")
-        fg = UI_THEME.get("on_surface", UI_THEME.get("text", "#111827"))
-        self.config(bg=bg, highlightbackground=UI_THEME.get("border", "#D1D5DB"), highlightcolor=UI_THEME.get("primary", "#1F6FEB"))
+        bg = UI_THEME.get("surface_alt", "#2D2D2D")
+        fg = UI_THEME.get("on_surface", UI_THEME.get("text", "#D4D4D4"))
+        self.config(bg=bg, highlightbackground=UI_THEME.get("border", "#3C3C3C"), highlightcolor=UI_THEME.get("primary", "#1F6FEB"))
         try:
             self.lbl.config(bg=bg, fg=fg)
-            self.lbl_counter.config(bg=bg, fg=UI_THEME.get("muted_text", "#6B7280"))
+            self.lbl_counter.config(bg=bg, fg=UI_THEME.get("muted_text", "#A6A6A6"))
             self.btn_detail.config(bg=bg, fg=fg, activebackground=UI_THEME.get("surface", "#1E1E1E"), activeforeground=fg, highlightthickness=0, bd=0)
             self.btn_close.config(bg=bg, fg=fg, activebackground=UI_THEME.get("surface", "#1E1E1E"), activeforeground=fg, highlightthickness=0, bd=0)
         except Exception:
@@ -2703,16 +2703,16 @@ class AvisoBar(tk.Frame):
             top = tk.Toplevel(self)
             top.title("Central de Alertas")
             top.geometry("980x520")
-            top.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
+            top.configure(bg=UI_THEME.get("bg", "#1E1E1E"))
 
             search_var = tk.StringVar()
-            header = tk.Frame(top, bg=UI_THEME.get("light_bg", "#F5F7FA"))
+            header = tk.Frame(top, bg=UI_THEME.get("bg", "#1E1E1E"))
             header.pack(fill=tk.X, padx=10, pady=10)
-            tk.Label(header, text="Buscar:", bg=UI_THEME.get("light_bg", "#F5F7FA"), fg=UI_THEME.get("text", "#111827")).pack(side=tk.LEFT)
+            tk.Label(header, text="Buscar:", bg=UI_THEME.get("bg", "#1E1E1E"), fg=UI_THEME.get("text", "#D4D4D4")).pack(side=tk.LEFT)
             ent = tk.Entry(header, textvariable=search_var, width=36)
             ent.pack(side=tk.LEFT, padx=(6, 10))
 
-            body = tk.Frame(top, bg=UI_THEME.get("light_bg", "#F5F7FA"))
+            body = tk.Frame(top, bg=UI_THEME.get("bg", "#1E1E1E"))
             body.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
             breakpoints = set()
@@ -2739,13 +2739,13 @@ class AvisoBar(tk.Frame):
                 anchor="nw",
                 width=42,
                 bg=UI_THEME.get("surface", "#1E1E1E"),
-                fg=UI_THEME.get("text", "#111827"),
+                fg=UI_THEME.get("text", "#D4D4D4"),
                 padx=10,
                 pady=8,
             )
             side.pack(side=tk.RIGHT, fill=tk.Y, padx=(10, 0))
 
-            actions = tk.Frame(top, bg=UI_THEME.get("light_bg", "#F5F7FA"))
+            actions = tk.Frame(top, bg=UI_THEME.get("bg", "#1E1E1E"))
             actions.pack(fill=tk.X, padx=10, pady=(0, 10))
 
             def _load_all():
