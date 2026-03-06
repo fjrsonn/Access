@@ -460,8 +460,42 @@ def apply_ttk_theme_styles(root=None):
     try:
         style.configure("TCombobox", fieldbackground=UI_THEME.get("surface_alt", "#1B2430"), background=UI_THEME.get("surface_alt", "#1B2430"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), bordercolor=UI_THEME.get("border", "#2B3442"), lightcolor=UI_THEME.get("border", "#2B3442"), darkcolor=UI_THEME.get("border", "#2B3442"))
         style.map("TCombobox", fieldbackground=[("readonly", UI_THEME.get("surface_alt", "#1B2430")), ("focus", UI_THEME.get("surface_alt", "#1B2430"))], foreground=[("readonly", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))), ("focus", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))], bordercolor=[("focus", UI_THEME.get("primary", "#2F81F7"))], lightcolor=[("focus", UI_THEME.get("primary", "#2F81F7"))], darkcolor=[("focus", UI_THEME.get("primary", "#2F81F7"))])
+        tree_bg = UI_THEME.get("surface", "#151A22")
+        tree_header_bg = UI_THEME.get("surface_alt", "#1B2430")
+        tree_fg = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
+        tree_selection_bg = UI_THEME.get("selection_bg", UI_THEME.get("primary", "#2F81F7"))
+        tree_selection_fg = UI_THEME.get("selection_fg", UI_THEME.get("on_primary", "#FFFFFF"))
+        for tree_style in ("Treeview", "Control.Treeview"):
+            style.configure(
+                tree_style,
+                background=tree_bg,
+                fieldbackground=tree_bg,
+                foreground=tree_fg,
+                bordercolor=UI_THEME.get("border", "#2B3442"),
+                rowheight=28,
+            )
+            style.map(
+                tree_style,
+                background=[("selected", tree_selection_bg)],
+                foreground=[("selected", tree_selection_fg)],
+            )
+        for heading_style in ("Treeview.Heading", "Control.Treeview.Heading"):
+            style.configure(
+                heading_style,
+                background=tree_header_bg,
+                foreground=tree_fg,
+                relief="flat",
+                bordercolor=UI_THEME.get("border", "#2B3442"),
+            )
+            style.map(
+                heading_style,
+                background=[("active", UI_THEME.get("soft_hover", tree_header_bg))],
+                foreground=[("active", tree_fg)],
+            )
         style.configure("Vertical.TScrollbar", troughcolor=UI_THEME.get("surface", "#151A22"), background=UI_THEME.get("surface_alt", "#1B2430"), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
         style.configure("Horizontal.TScrollbar", troughcolor=UI_THEME.get("surface", "#151A22"), background=UI_THEME.get("surface_alt", "#1B2430"), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+        style.map("Vertical.TScrollbar", background=[("active", UI_THEME.get("soft_hover", UI_THEME.get("surface_alt", "#1B2430")))])
+        style.map("Horizontal.TScrollbar", background=[("active", UI_THEME.get("soft_hover", UI_THEME.get("surface_alt", "#1B2430")))])
     except Exception:
         pass
 
