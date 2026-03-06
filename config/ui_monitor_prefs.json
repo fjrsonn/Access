@@ -40,6 +40,16 @@
       "query": "",
       "status": "Todos",
       "bloco": "Todos"
+    },
+    "avisos": {
+      "order": "Mais recentes",
+      "date_mode": "Mais recentes",
+      "date_value": "",
+      "time_mode": "Mais recentes",
+      "time_value": "",
+      "query": "",
+      "status": "Todos",
+      "bloco": "Todos"
     }
   },
   "control_sort_state": {},
@@ -66,5 +76,5 @@
     "as_text": true
   },
   "operation_mode": false,
-  "last_filter_saved_at": "2026-02-27T15:18:38.289610"
+  "last_filter_saved_at": "2026-03-06T00:25:55.320002"
 }

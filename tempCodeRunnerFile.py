@@ -1,0 +1,5485 @@
+# interfacetwo.py — monitor (suporta modo embutido via create_monitor_toplevel)
+"""
+Monitor de dados:
+- Pode ser embutido via create_monitor_toplevel(master)
+- Ou executado standalone (python interfacetwo.py)
+"""
+
+import os
+import json
+import tempfile
+import time
+import threading
+from datetime import datetime, timedelta
+import tkinter as tk
+from tkinter import messagebox, ttk, simpledialog
+import re
+import hashlib
+import math
+
+from ui_theme import (
+    UI_THEME,
+    build_card_frame,
+    build_primary_button,
+    build_secondary_button,
+    build_secondary_warning_button,
+    build_secondary_danger_button,
+    build_filter_input,
+    build_label,
+    build_badge,
+    theme_font,
+    theme_space,
+    refresh_theme,
+    apply_ttk_theme_styles,
+    attach_tooltip,
+    bind_focus_ring,
+    bind_button_states,
+    apply_theme,
+    get_active_theme_name,
+    validate_theme_contrast,
+    state_colors,
+)
+
+try:
+    from ui_components import AppMetricCard, AppStatusBar, AppFeedbackBanner, build_section_title
+except Exception:
+    class AppMetricCard(tk.Frame):
+        def __init__(self, parent, title: str, value: str = "0", tone: str = "info", icon: str = "●"):
+            super().__init__(parent, bg=UI_THEME.get("surface", "#151A22"), highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"), bd=0)
+            self.value_var = tk.StringVar(value=str(value))
+            self.meta_var = tk.StringVar(value="Atualizado agora")
+            self._tone = tone
+            self._title = title
+            self._icon = icon
+            self._label = tk.Label(self, text=f"{icon} {title}", anchor="w", bg=self.cget("bg"), fg=UI_THEME.get("muted_text", "#9AA4B2"), font=theme_font("font_sm"))
+            self._label.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_1", 4), 0))
+            self._value = tk.Label(self, textvariable=self.value_var, anchor="w", bg=self.cget("bg"), fg=state_colors(tone)[0], font=theme_font("font_xl", "bold"))
+            self._value.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(0, theme_space("space_1", 4)))
+
+        def set_value(self, value: str):
+            self.value_var.set(str(value))
+
+        def set_trend(self, _delta):
+            return None
+
+        def set_capacity(self, _used, _limit):
+            return None
+
+        def set_meta(self, text: str):
+            self.meta_var.set(str(text))
+
+        def flash(self, _duration_ms=220):
+            return None
+
+        def set_density(self, _mode: str = "confortavel"):
+            return None
+
+        def set_donut_visibility(self, _visible: bool):
+            return None
+
+        def animate_capacity_fill(self, on_done=None, **_kwargs):
+            if callable(on_done):
+                on_done()
+
+        def animate_accent_growth(self, on_done=None, **_kwargs):
+            if callable(on_done):
+                on_done()
+
+    class AppStatusBar(tk.Frame):
+        def __init__(self, parent, text: str = ""):
+            super().__init__(parent, bg=UI_THEME.get("surface_alt", "#1B2430"), highlightthickness=1, highlightbackground=UI_THEME.get("border", "#2B3442"))
+            self.var = tk.StringVar(value=text)
+            self.lbl = tk.Label(self, textvariable=self.var, anchor="w", bg=self.cget("bg"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), font=theme_font("font_sm"))
+            self.lbl.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=theme_space("space_1", 4))
+
+        def set(self, text: str, tone: str = "info"):
+            self.var.set(text)
+            bg, fg = state_colors(tone)
+            self.configure(bg=bg)
+            self.lbl.configure(bg=bg, fg=fg)
+
+    class AppFeedbackBanner(AppStatusBar):
+        def show(self, text: str, tone: str = "info", icon: str = "ℹ", timeout_ms: int = 2200):
+            self.set(f"{icon} {text}".strip(), tone=tone)
+
+        def hide(self):
+            return None
+
+    def build_section_title(parent, text: str):
+        return tk.Label(parent, text=text, bg=UI_THEME.get("bg", "#0F1115"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), font=theme_font("font_xl", "bold"), anchor="w")
+
+try:
+    from text_classifier import build_structured_fields, log_audit_event
+except Exception:
+    build_structured_fields = None
+    log_audit_event = None
+
+
+try:
+    from runtime_status import get_last_status, report_status, analisar_metricas_ux
+except Exception:
+    def get_last_status():
+        return {}
+    def report_status(*args, **kwargs):
+        return None
+    def analisar_metricas_ux(*args, **kwargs):
+        return {}
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ARQUIVO = os.path.join(BASE_DIR, "dadosend.json")
+ENCOMENDAS_ARQUIVO = os.path.join(BASE_DIR, "encomendasend.json")
+ORIENTACOES_ARQUIVO = os.path.join(BASE_DIR, "orientacoes.json")
+OBSERVACOES_ARQUIVO = os.path.join(BASE_DIR, "observacoes.json")
+ANALISES_ARQUIVO = os.path.join(BASE_DIR, "analises.json")
+AVISOS_ARQUIVO = os.path.join(BASE_DIR, "avisos.json")
+LOCK_FILE = os.path.join(BASE_DIR, "monitor.lock")
+REFRESH_MS = 2000  # 2s
+AUTO_RETURN_TOP_MS = 5 * 60 * 1000
+PREFS_FILE = os.path.join(BASE_DIR, "config", "ui_monitor_prefs.json")
+CONSUMO_24H_FILE = os.path.join(BASE_DIR, "config", "consumo_24h.json")
+CARD_CAPACITY_LIMITS = {
+    "ativos": 1500,
+    "pendentes": 1200,
+    "sem_contato": 800,
+    "avisado": 1000,
+}
+
+# internal reference to Toplevel (quando embutido)
+_monitor_toplevel = None
+_monitor_after_id = None
+_filter_state = {}
+_monitor_sources = {}
+_hover_state = {}
+_encomenda_display_map = {}
+_encomenda_tag_map = {}
+_encomenda_line_map = {}
+_encomenda_action_ui = {}
+_text_action_ui = {}
+_record_tag_map_generic = {}
+_text_edit_lock = set()
+_filter_controls = {}
+_control_table_map = {}
+_control_details_var = {}
+_control_sort_state = {}
+_control_selection_state = {}
+_restored_control_sort_state = {}
+_pending_focus_identity = None
+_ux_cards = {}
+_status_bar = None
+_feedback_banner = None
+_metrics_previous_cards = {}
+_last_filter_snapshot = {}
+_filter_auto_apply_after = {}
+_layout_density_mode = "confortavel"
+_operation_mode_enabled = False
+_runtime_refresh_ms = REFRESH_MS
+_cards_last_update_at = None
+_cards_context_refresh_hook = None
+_cards_context_user_selected = False
+_control_filtered_count_var = None
+_control_toolbar = None
+_last_quick_filter_kind = None
+_metrics_accessibility_var = None
+_filter_bars = {}
+_filter_toggle_buttons = {}
+_filter_toggle_state = {"visible": False}
+_text_breakpoints = {}
+_text_hover_marker = {}
+_record_num_tag_map = {}
+_record_bullet_tag_map = {}
+_text_record_ranges = {}
+_sticky_header_state = {}
+_consumo_24h_por_dia = {}
+_text_last_interaction_ts = {}
+_forced_visible_records = {}
+_edit_active_record_tag = {}
+_hover_runtime_state = {}
+_hover_motion_callbacks = {}
+_text_scroll_callbacks = {}
+_hover_suppressed_until = {}
+_data_load_cache = {}
+_widget_render_cache = {}
+_background_refresh_pending = set()
+_perf_metrics = {
+    "hover_samples_ms": [],
+    "refresh_apply_samples_ms": [],
+    "records_rendered": 0,
+    "frames_skipped": 0,
+}
+
+
+def _scroll_text_widget(text_widget, *args):
+    _mark_text_interaction(text_widget)
+    for cb in _text_scroll_callbacks.get(text_widget, []):
+        try:
+            cb()
+        except Exception:
+            continue
+    try:
+        text_widget.yview(*args)
+    except Exception:
+        return
+    for cb in _text_scroll_callbacks.get(text_widget, []):
+        try:
+            cb()
+        except Exception:
+            continue
+
+
+def _register_scroll_callback(text_widget, callback):
+    if not callable(callback):
+        return
+    _text_scroll_callbacks.setdefault(text_widget, []).append(callback)
+
+
+def _suppress_hover_temporarily(text_widget, duration_ms=220):
+    _hover_suppressed_until[text_widget] = time.monotonic() + (max(0, duration_ms) / 1000.0)
+
+
+def _is_hover_suppressed(text_widget):
+    deadline = _hover_suppressed_until.get(text_widget)
+    return bool(deadline and time.monotonic() < deadline)
+
+
+def _set_record_marker(text_widget, rec_tag: str, active: bool):
+    if not rec_tag:
+        return
+    bullet_tag = (_record_bullet_tag_map.get(text_widget, {}) or {}).get(rec_tag)
+    if not bullet_tag:
+        return
+    active_edit_tag = _edit_active_record_tag.get(text_widget)
+    if active_edit_tag and rec_tag != active_edit_tag:
+        try:
+            text_widget.tag_configure(bullet_tag, foreground=UI_THEME.get("surface", "#151A22"))
+        except Exception:
+            return
+        return
+    try:
+        idx = int(str(rec_tag).rsplit("_", 1)[1])
+    except Exception:
+        idx = None
+    is_fixed = idx in (_text_breakpoints.get(text_widget, set()) or set()) if idx is not None else False
+    force_active = bool(active_edit_tag and rec_tag == active_edit_tag)
+    bullet_color = UI_THEME.get("focus_text", "#FFFFFF") if (active or is_fixed or force_active) else UI_THEME.get("surface", "#151A22")
+    try:
+        text_widget.tag_configure(bullet_tag, foreground=bullet_color)
+    except Exception:
+        return
+
+
+def _clear_sticky_selected_record(text_widget):
+    state = _sticky_header_state.get(text_widget) or {}
+    if not state:
+        return
+    if state.get("selected_record") is None and state.get("selected_position") is None:
+        return
+    state["selected_record"] = None
+    state["selected_position"] = None
+
+
+def _clear_all_hover_markers(text_widget):
+    state = _hover_runtime_state.get(text_widget) or {}
+    prev_tag = state.get("last_record_tag")
+    if prev_tag:
+        _set_record_marker(text_widget, prev_tag, False)
+
+
+def _gerar_consumo_24h_base(day_key: str) -> list[int]:
+    digest = hashlib.sha256(day_key.encode("utf-8")).hexdigest()
+    values = []
+    for hour in range(24):
+        seed = int(digest[(hour % 16) * 4:((hour % 16) * 4) + 4], 16)
+        wave = 22 + int(13 * (1 + math.sin((hour / 24) * 6.28318 - 1.0)))
+        noise = seed % 16
+        values.append(max(0, min(100, wave + noise)))
+    return values
+
+
+def _normalizar_24h(points) -> list[int]:
+    base = [0] * 24
+    src = list(points or [])[:24]
+    for idx, val in enumerate(src):
+        try:
+            base[idx] = max(0, min(100, int(val)))
+        except Exception:
+            base[idx] = 0
+    return base
+
+
+def _record_force_visibility_key(record: dict) -> str:
+    rec = record or {}
+    rec_id = str(rec.get("id") or rec.get("ID") or "").strip()
+    if rec_id:
+        return f"id:{rec_id}"
+    try:
+        if str(rec.get("TIPO") or "").strip().upper() == "ENCOMENDA" or any(k in rec for k in ("STATUS_ENCOMENDA", "IDENTIFICACAO", "LOJA")):
+            return f"enc:{_record_hash_key_encomenda(rec)}"
+    except Exception:
+        pass
+    txt = str(rec.get("texto") or rec.get("texto_original") or "").strip()
+    return f"txt:{txt}"
+
+
+def _save_consumo_24h_data():
+    try:
+        os.makedirs(os.path.dirname(CONSUMO_24H_FILE), exist_ok=True)
+        with open(CONSUMO_24H_FILE, "w", encoding="utf-8") as f:
+            json.dump(_consumo_24h_por_dia, f, ensure_ascii=False, indent=2)
+    except Exception:
+        return
+
+
+def _load_consumo_24h_data():
+    global _consumo_24h_por_dia
+    if _consumo_24h_por_dia:
+        return
+    data = {}
+    try:
+        with open(CONSUMO_24H_FILE, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if isinstance(raw, dict):
+            for day_key, points in raw.items():
+                data[str(day_key)] = _normalizar_24h(points)
+    except Exception:
+        data = {}
+
+    if not data:
+        _consumo_24h_por_dia = {}
+        return
+
+    _consumo_24h_por_dia = data
+
+
+def _carregar_consumo_24h(day_key: str) -> list[int]:
+    _load_consumo_24h_data()
+    points = _consumo_24h_por_dia.get(day_key)
+    if points is None:
+        return [0] * 24
+    return list(_normalizar_24h(points))
+
+
+
+_consumo_24h_por_dia = {}
+
+
+def _gerar_consumo_24h_base(day_key: str) -> list[int]:
+    digest = hashlib.sha256(day_key.encode("utf-8")).hexdigest()
+    values = []
+    for hour in range(24):
+        seed = int(digest[(hour % 16) * 4:((hour % 16) * 4) + 4], 16)
+        wave = 22 + int(13 * (1 + math.sin((hour / 24) * 6.28318 - 1.0)))
+        noise = seed % 16
+        values.append(max(0, min(100, wave + noise)))
+    return values
+
+
+def _normalizar_24h(points) -> list[int]:
+    base = [0] * 24
+    src = list(points or [])[:24]
+    for idx, val in enumerate(src):
+        try:
+            base[idx] = max(0, min(100, int(val)))
+        except Exception:
+            base[idx] = 0
+    return base
+
+
+def _save_consumo_24h_data():
+    try:
+        os.makedirs(os.path.dirname(CONSUMO_24H_FILE), exist_ok=True)
+        with open(CONSUMO_24H_FILE, "w", encoding="utf-8") as f:
+            json.dump(_consumo_24h_por_dia, f, ensure_ascii=False, indent=2)
+    except Exception:
+        return
+
+
+def _load_consumo_24h_data():
+    global _consumo_24h_por_dia
+    if _consumo_24h_por_dia:
+        return
+    data = {}
+    try:
+        with open(CONSUMO_24H_FILE, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if isinstance(raw, dict):
+            for day_key, points in raw.items():
+                data[str(day_key)] = _normalizar_24h(points)
+    except Exception:
+        data = {}
+
+    if not data:
+        _consumo_24h_por_dia = {}
+        return
+
+    _consumo_24h_por_dia = data
+
+
+def _carregar_consumo_24h(day_key: str) -> list[int]:
+    _load_consumo_24h_data()
+    points = _consumo_24h_por_dia.get(day_key)
+    if points is None:
+        return [0] * 24
+    return list(_normalizar_24h(points))
+
+
+
+
+_consumo_24h_por_dia = {}
+
+
+def _gerar_consumo_24h_base(day_key: str) -> list[int]:
+    digest = hashlib.sha256(day_key.encode("utf-8")).hexdigest()
+    values = []
+    for hour in range(24):
+        seed = int(digest[(hour % 16) * 4:((hour % 16) * 4) + 4], 16)
+        wave = 22 + int(13 * (1 + math.sin((hour / 24) * 6.28318 - 1.0)))
+        noise = seed % 16
+        values.append(max(0, min(100, wave + noise)))
+    return values
+
+
+def _normalizar_24h(points) -> list[int]:
+    base = [0] * 24
+    src = list(points or [])[:24]
+    for idx, val in enumerate(src):
+        try:
+            base[idx] = max(0, min(100, int(val)))
+        except Exception:
+            base[idx] = 0
+    return base
+
+
+def _save_consumo_24h_data():
+    try:
+        os.makedirs(os.path.dirname(CONSUMO_24H_FILE), exist_ok=True)
+        with open(CONSUMO_24H_FILE, "w", encoding="utf-8") as f:
+            json.dump(_consumo_24h_por_dia, f, ensure_ascii=False, indent=2)
+    except Exception:
+        return
+
+
+def _load_consumo_24h_data():
+    global _consumo_24h_por_dia
+    if _consumo_24h_por_dia:
+        return
+    data = {}
+    try:
+        with open(CONSUMO_24H_FILE, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if isinstance(raw, dict):
+            for day_key, points in raw.items():
+                data[str(day_key)] = _normalizar_24h(points)
+    except Exception:
+        data = {}
+
+    if not data:
+        _consumo_24h_por_dia = {}
+        return
+
+    _consumo_24h_por_dia = data
+
+
+def _carregar_consumo_24h(day_key: str) -> list[int]:
+    _load_consumo_24h_data()
+    points = _consumo_24h_por_dia.get(day_key)
+    if points is None:
+        return [0] * 24
+    return list(_normalizar_24h(points))
+
+
+
+
+_consumo_24h_por_dia = {}
+
+
+def _gerar_consumo_24h_base(day_key: str) -> list[int]:
+    digest = hashlib.sha256(day_key.encode("utf-8")).hexdigest()
+    values = []
+    for hour in range(24):
+        seed = int(digest[(hour % 16) * 4:((hour % 16) * 4) + 4], 16)
+        wave = 22 + int(13 * (1 + math.sin((hour / 24) * 6.28318 - 1.0)))
+        noise = seed % 16
+        values.append(max(0, min(100, wave + noise)))
+    return values
+
+
+def _normalizar_24h(points) -> list[int]:
+    base = [0] * 24
+    src = list(points or [])[:24]
+    for idx, val in enumerate(src):
+        try:
+            base[idx] = max(0, min(100, int(val)))
+        except Exception:
+            base[idx] = 0
+    return base
+
+
+def _save_consumo_24h_data():
+    try:
+        os.makedirs(os.path.dirname(CONSUMO_24H_FILE), exist_ok=True)
+        with open(CONSUMO_24H_FILE, "w", encoding="utf-8") as f:
+            json.dump(_consumo_24h_por_dia, f, ensure_ascii=False, indent=2)
+    except Exception:
+        return
+
+
+def _load_consumo_24h_data():
+    global _consumo_24h_por_dia
+    if _consumo_24h_por_dia:
+        return
+    data = {}
+    try:
+        with open(CONSUMO_24H_FILE, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if isinstance(raw, dict):
+            for day_key, points in raw.items():
+                data[str(day_key)] = _normalizar_24h(points)
+    except Exception:
+        data = {}
+
+    if not data:
+        _consumo_24h_por_dia = {}
+        return
+
+    _consumo_24h_por_dia = data
+
+
+def _carregar_consumo_24h(day_key: str) -> list[int]:
+    _load_consumo_24h_data()
+    points = _consumo_24h_por_dia.get(day_key)
+    if points is None:
+        return [0] * 24
+    return list(_normalizar_24h(points))
+
+
+
+
+_consumo_24h_por_dia = {}
+
+
+def _gerar_consumo_24h_base(day_key: str) -> list[int]:
+    digest = hashlib.sha256(day_key.encode("utf-8")).hexdigest()
+    values = []
+    for hour in range(24):
+        seed = int(digest[(hour % 16) * 4:((hour % 16) * 4) + 4], 16)
+        wave = 22 + int(13 * (1 + math.sin((hour / 24) * 6.28318 - 1.0)))
+        noise = seed % 16
+        values.append(max(0, min(100, wave + noise)))
+    return values
+
+
+def _normalizar_24h(points) -> list[int]:
+    base = [0] * 24
+    src = list(points or [])[:24]
+    for idx, val in enumerate(src):
+        try:
+            base[idx] = max(0, min(100, int(val)))
+        except Exception:
+            base[idx] = 0
+    return base
+
+
+def _save_consumo_24h_data():
+    try:
+        os.makedirs(os.path.dirname(CONSUMO_24H_FILE), exist_ok=True)
+        with open(CONSUMO_24H_FILE, "w", encoding="utf-8") as f:
+            json.dump(_consumo_24h_por_dia, f, ensure_ascii=False, indent=2)
+    except Exception:
+        return
+
+
+def _load_consumo_24h_data():
+    global _consumo_24h_por_dia
+    if _consumo_24h_por_dia:
+        return
+    data = {}
+    try:
+        with open(CONSUMO_24H_FILE, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if isinstance(raw, dict):
+            for day_key, points in raw.items():
+                data[str(day_key)] = _normalizar_24h(points)
+    except Exception:
+        data = {}
+
+    if not data:
+        _consumo_24h_por_dia = {}
+        return
+
+    _consumo_24h_por_dia = data
+
+
+def _carregar_consumo_24h(day_key: str) -> list[int]:
+    _load_consumo_24h_data()
+    points = _consumo_24h_por_dia.get(day_key)
+    if points is None:
+        return [0] * 24
+    return list(_normalizar_24h(points))
+
+
+
+
+_consumo_24h_por_dia = {}
+
+
+def _gerar_consumo_24h_base(day_key: str) -> list[int]:
+    digest = hashlib.sha256(day_key.encode("utf-8")).hexdigest()
+    values = []
+    for hour in range(24):
+        seed = int(digest[(hour % 16) * 4:((hour % 16) * 4) + 4], 16)
+        wave = 22 + int(13 * (1 + math.sin((hour / 24) * 6.28318 - 1.0)))
+        noise = seed % 16
+        values.append(max(0, min(100, wave + noise)))
+    return values
+
+
+def _normalizar_24h(points) -> list[int]:
+    base = [0] * 24
+    src = list(points or [])[:24]
+    for idx, val in enumerate(src):
+        try:
+            base[idx] = max(0, min(100, int(val)))
+        except Exception:
+            base[idx] = 0
+    return base
+
+
+def _save_consumo_24h_data():
+    try:
+        os.makedirs(os.path.dirname(CONSUMO_24H_FILE), exist_ok=True)
+        with open(CONSUMO_24H_FILE, "w", encoding="utf-8") as f:
+            json.dump(_consumo_24h_por_dia, f, ensure_ascii=False, indent=2)
+    except Exception:
+        return
+
+
+def _load_consumo_24h_data():
+    global _consumo_24h_por_dia
+    if _consumo_24h_por_dia:
+        return
+    data = {}
+    try:
+        with open(CONSUMO_24H_FILE, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if isinstance(raw, dict):
+            for day_key, points in raw.items():
+                data[str(day_key)] = _normalizar_24h(points)
+    except Exception:
+        data = {}
+
+    if not data:
+        _consumo_24h_por_dia = {}
+        return
+
+    _consumo_24h_por_dia = data
+
+
+def _carregar_consumo_24h(day_key: str) -> list[int]:
+    _load_consumo_24h_data()
+    points = _consumo_24h_por_dia.get(day_key)
+    if points is None:
+        return [0] * 24
+    return list(_normalizar_24h(points))
+
+
+
+
+_consumo_24h_por_dia = {}
+
+
+def _gerar_consumo_24h_base(day_key: str) -> list[int]:
+    digest = hashlib.sha256(day_key.encode("utf-8")).hexdigest()
+    values = []
+    for hour in range(24):
+        seed = int(digest[(hour % 16) * 4:((hour % 16) * 4) + 4], 16)
+        wave = 22 + int(13 * (1 + math.sin((hour / 24) * 6.28318 - 1.0)))
+        noise = seed % 16
+        values.append(max(0, min(100, wave + noise)))
+    return values
+
+
+def _normalizar_24h(points) -> list[int]:
+    base = [0] * 24
+    src = list(points or [])[:24]
+    for idx, val in enumerate(src):
+        try:
+            base[idx] = max(0, min(100, int(val)))
+        except Exception:
+            base[idx] = 0
+    return base
+
+
+def _save_consumo_24h_data():
+    try:
+        os.makedirs(os.path.dirname(CONSUMO_24H_FILE), exist_ok=True)
+        with open(CONSUMO_24H_FILE, "w", encoding="utf-8") as f:
+            json.dump(_consumo_24h_por_dia, f, ensure_ascii=False, indent=2)
+    except Exception:
+        return
+
+
+def _load_consumo_24h_data():
+    global _consumo_24h_por_dia
+    if _consumo_24h_por_dia:
+        return
+    data = {}
+    try:
+        with open(CONSUMO_24H_FILE, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if isinstance(raw, dict):
+            for day_key, points in raw.items():
+                data[str(day_key)] = _normalizar_24h(points)
+    except Exception:
+        data = {}
+
+    if not data:
+        _consumo_24h_por_dia = {}
+        return
+
+    _consumo_24h_por_dia = data
+
+
+def _carregar_consumo_24h(day_key: str) -> list[int]:
+    _load_consumo_24h_data()
+    points = _consumo_24h_por_dia.get(day_key)
+    if points is None:
+        return [0] * 24
+    return list(_normalizar_24h(points))
+
+
+
+
+_consumo_24h_por_dia = {}
+
+
+def _gerar_consumo_24h_base(day_key: str) -> list[int]:
+    digest = hashlib.sha256(day_key.encode("utf-8")).hexdigest()
+    values = []
+    for hour in range(24):
+        seed = int(digest[(hour % 16) * 4:((hour % 16) * 4) + 4], 16)
+        wave = 22 + int(13 * (1 + math.sin((hour / 24) * 6.28318 - 1.0)))
+        noise = seed % 16
+        values.append(max(0, min(100, wave + noise)))
+    return values
+
+
+def _normalizar_24h(points) -> list[int]:
+    base = [0] * 24
+    src = list(points or [])[:24]
+    for idx, val in enumerate(src):
+        try:
+            base[idx] = max(0, min(100, int(val)))
+        except Exception:
+            base[idx] = 0
+    return base
+
+
+def _save_consumo_24h_data():
+    try:
+        os.makedirs(os.path.dirname(CONSUMO_24H_FILE), exist_ok=True)
+        with open(CONSUMO_24H_FILE, "w", encoding="utf-8") as f:
+            json.dump(_consumo_24h_por_dia, f, ensure_ascii=False, indent=2)
+    except Exception:
+        return
+
+
+def _load_consumo_24h_data():
+    global _consumo_24h_por_dia
+    if _consumo_24h_por_dia:
+        return
+    data = {}
+    try:
+        with open(CONSUMO_24H_FILE, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        if isinstance(raw, dict):
+            for day_key, points in raw.items():
+                data[str(day_key)] = _normalizar_24h(points)
+    except Exception:
+        data = {}
+
+    if not data:
+        _consumo_24h_por_dia = {}
+        return
+
+    _consumo_24h_por_dia = data
+
+
+def _carregar_consumo_24h(day_key: str) -> list[int]:
+    _load_consumo_24h_data()
+    points = _consumo_24h_por_dia.get(day_key)
+    if points is None:
+        return [0] * 24
+    return list(_normalizar_24h(points))
+
+
+
+
+
+def _summarize_sticky_header(formatter, record: dict, position: int | None = None) -> str:
+    try:
+        base = formatter(record) if callable(formatter) else str(record or "")
+    except Exception:
+        base = str(record or "")
+    txt = re.sub(r"\s+", " ", str(base or "")).strip()
+    if position is None:
+        return txt or "Sem contexto visível"
+    return f"  {position + 1:>3}  {txt or 'Sem contexto visível'}"
+
+
+def _update_sticky_header_for_text(text_widget):
+    state = _sticky_header_state.get(text_widget)
+    if not state:
+        return
+    var = state.get("var")
+    formatter = state.get("formatter")
+    if var is None:
+        return
+    selected = state.get("selected_record")
+    selected_position = state.get("selected_position")
+    if selected:
+        var.set(_summarize_sticky_header(formatter, selected, selected_position))
+        return
+
+    ranges = _text_record_ranges.get(text_widget) or []
+    if not ranges:
+        var.set("Sem registros visíveis")
+        return
+    try:
+        top_idx = text_widget.index("@0,0")
+    except Exception:
+        return
+
+    current = None
+    current_pos = 0
+    for pos, (start, end, rec) in enumerate(ranges):
+        try:
+            if text_widget.compare(start, "<=", top_idx) and text_widget.compare(top_idx, "<", end):
+                current = rec
+                current_pos = pos
+                break
+            if text_widget.compare(start, "<=", top_idx):
+                current = rec
+                current_pos = pos
+        except Exception:
+            continue
+    if current is None:
+        current = ranges[0][2]
+        current_pos = 0
+    var.set(_summarize_sticky_header(formatter, current, current_pos))
+
+
+def _update_sticky_header_with_interaction(text_widget, record, position=None):
+    state = _sticky_header_state.get(text_widget)
+    if not state:
+        return
+    state["selected_record"] = dict(record or {}) if isinstance(record, dict) else record
+    state["selected_position"] = position
+    _update_sticky_header_for_text(text_widget)
+
+
+def _mark_text_interaction(text_widget):
+    _text_last_interaction_ts[text_widget] = time.monotonic()
+
+
+def _should_return_to_top(text_widget):
+    ts = _text_last_interaction_ts.get(text_widget)
+    if ts is None:
+        return True
+    return (time.monotonic() - ts) * 1000 >= AUTO_RETURN_TOP_MS
+
+
+def _update_sticky_header_with_interaction(text_widget, record, position=None):
+    state = _sticky_header_state.get(text_widget)
+    if not state:
+        return
+    state["selected_record"] = dict(record or {}) if isinstance(record, dict) else record
+    state["selected_position"] = int(position) if isinstance(position, int) or (isinstance(position, str) and str(position).isdigit()) else None
+    _update_sticky_header_for_text(text_widget)
+
+
+def _mark_text_interaction(text_widget):
+    _text_last_interaction_ts[text_widget] = time.monotonic()
+
+
+def _should_return_to_top(text_widget):
+    ts = _text_last_interaction_ts.get(text_widget)
+    if ts is None:
+        return True
+    return (time.monotonic() - ts) * 1000 >= AUTO_RETURN_TOP_MS
+
+
+def _update_sticky_header_with_interaction(text_widget, record, position=None):
+    state = _sticky_header_state.get(text_widget)
+    if not state:
+        return
+    state["selected_record"] = dict(record or {}) if isinstance(record, dict) else record
+    state["selected_position"] = int(position) if isinstance(position, int) or (isinstance(position, str) and str(position).isdigit()) else None
+    _update_sticky_header_for_text(text_widget)
+
+
+def _mark_text_interaction(text_widget):
+    _text_last_interaction_ts[text_widget] = time.monotonic()
+
+
+def _should_return_to_top(text_widget):
+    ts = _text_last_interaction_ts.get(text_widget)
+    if ts is None:
+        return True
+    return (time.monotonic() - ts) * 1000 >= AUTO_RETURN_TOP_MS
+
+
+def _update_sticky_header_with_interaction(text_widget, record, position=None):
+    state = _sticky_header_state.get(text_widget)
+    if not state:
+        return
+    state["selected_record"] = dict(record or {}) if isinstance(record, dict) else record
+    state["selected_position"] = int(position) if isinstance(position, int) or (isinstance(position, str) and str(position).isdigit()) else None
+    _update_sticky_header_for_text(text_widget)
+
+
+def _mark_text_interaction(text_widget):
+    _text_last_interaction_ts[text_widget] = time.monotonic()
+
+
+def _should_return_to_top(text_widget):
+    ts = _text_last_interaction_ts.get(text_widget)
+    if ts is None:
+        return True
+    return (time.monotonic() - ts) * 1000 >= AUTO_RETURN_TOP_MS
+
+
+def _bind_sticky_header_updates(text_widget):
+    state = _sticky_header_state.get(text_widget) or {}
+    scroll_setter = state.get("scroll_setter")
+
+    def _on_yscroll(*args):
+        try:
+            if callable(scroll_setter):
+                scroll_setter(*args)
+        except Exception:
+            pass
+        _update_sticky_header_for_text(text_widget)
+
+    try:
+        text_widget.configure(yscrollcommand=_on_yscroll)
+    except Exception:
+        pass
+
+    for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>", "<Prior>", "<Next>", "<Up>", "<Down>"):
+        try:
+            text_widget.bind(seq, lambda _e, tw=text_widget: (_clear_sticky_selected_record(tw), _mark_text_interaction(tw)), add="+")
+        except Exception:
+            pass
+
+    for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>", "<KeyRelease>", "<Configure>"):
+        try:
+            text_widget.bind(seq, lambda _e, tw=text_widget: _update_sticky_header_for_text(tw), add="+")
+        except Exception:
+            pass
+
+def _load_prefs():
+    try:
+        with open(PREFS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _save_prefs(payload: dict):
+    try:
+        os.makedirs(os.path.dirname(PREFS_FILE), exist_ok=True)
+        with open(PREFS_FILE, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
+def _serialize_filter_state():
+    out = {}
+    for key, val in _filter_state.items():
+        out[str(key)] = dict(val or {})
+    return out
+
+
+def _restore_filter_state(snapshot: dict):
+    if not isinstance(snapshot, dict):
+        return
+    for key, val in snapshot.items():
+        _filter_state[key] = dict(val or {})
+
+
+def _persist_ui_state(extra: dict | None = None):
+    payload = _load_prefs()
+    payload["theme"] = get_active_theme_name()
+    payload["filter_state"] = _serialize_filter_state()
+    payload["control_sort_state"] = {
+        str(k): dict(v or {}) for k, v in _control_sort_state.items()
+    }
+    if extra:
+        payload.update(extra)
+    _save_prefs(payload)
+
+
+def _restore_ui_state():
+    global _restored_control_sort_state
+    prefs = _load_prefs()
+    apply_theme(prefs.get("theme") or get_active_theme_name())
+    _restore_filter_state(prefs.get("filter_state") or {})
+    restored_sort = prefs.get("control_sort_state") or {}
+    _restored_control_sort_state = dict(restored_sort) if isinstance(restored_sort, dict) else {}
+    return prefs
+
+
+
+def _get_filter_presets() -> dict:
+    prefs = _load_prefs()
+    presets = prefs.get("filter_presets") or {}
+    return dict(presets) if isinstance(presets, dict) else {}
+
+
+def _save_filter_presets(presets: dict):
+    payload = _load_prefs()
+    payload["filter_presets"] = dict(presets or {})
+    _save_prefs(payload)
+
+
+def _get_filter_default_preset(filter_key: str) -> str:
+    prefs = _load_prefs()
+    defaults = prefs.get("filter_default_presets") or {}
+    if not isinstance(defaults, dict):
+        return ""
+    return str(defaults.get(str(filter_key)) or "").strip()
+
+
+def _set_filter_default_preset(filter_key: str, preset_name: str):
+    payload = _load_prefs()
+    defaults = payload.get("filter_default_presets") or {}
+    if not isinstance(defaults, dict):
+        defaults = {}
+    name = str(preset_name or "").strip()
+    if name:
+        defaults[str(filter_key)] = name
+    else:
+        defaults.pop(str(filter_key), None)
+    payload["filter_default_presets"] = defaults
+    _save_prefs(payload)
+
+
+def _rename_filter_preset(old_name: str, new_name: str) -> bool:
+    old_name = str(old_name or "").strip()
+    new_name = str(new_name or "").strip()
+    if not old_name or not new_name or old_name == new_name:
+        return False
+    payload = _load_prefs()
+    presets = payload.get("filter_presets") or {}
+    if not isinstance(presets, dict) or old_name not in presets:
+        return False
+    if new_name in presets:
+        return False
+    presets[new_name] = presets.pop(old_name)
+    payload["filter_presets"] = presets
+    defaults = payload.get("filter_default_presets") or {}
+    if isinstance(defaults, dict):
+        payload["filter_default_presets"] = {
+            str(k): (new_name if str(v) == old_name else v)
+            for k, v in defaults.items()
+        }
+    _save_prefs(payload)
+    return True
+
+
+def _delete_filter_preset(name: str):
+    name = str(name or "").strip()
+    if not name:
+        return
+    payload = _load_prefs()
+    presets = payload.get("filter_presets") or {}
+    if isinstance(presets, dict):
+        presets.pop(name, None)
+        payload["filter_presets"] = presets
+    defaults = payload.get("filter_default_presets") or {}
+    if isinstance(defaults, dict):
+        payload["filter_default_presets"] = {
+            str(k): v for k, v in defaults.items() if str(v) != name
+        }
+    _save_prefs(payload)
+
+
+def _collect_status_cards_data() -> dict:
+    try:
+        analises = _load_safe(ANALISES_ARQUIVO)
+        avisos = _load_safe(AVISOS_ARQUIVO)
+        encomendas = _load_safe(ENCOMENDAS_ARQUIVO)
+        controle = _load_safe(ARQUIVO)
+    except Exception:
+        analises, avisos, encomendas, controle = [], [], [], []
+
+    sem_contato = 0
+    avisado = 0
+    alta_severidade = 0
+
+    def _status_text(rec: dict) -> str:
+        if not isinstance(rec, dict):
+            return ""
+        return str(
+            rec.get("STATUS_ENCOMENDA")
+            or rec.get("status_encomenda")
+            or rec.get("STATUS")
+            or rec.get("status")
+            or ""
+        ).upper().strip()
+
+    for r in analises if isinstance(analises, list) else []:
+        sev = str((r or {}).get("severidade") or (r or {}).get("SEVERIDADE") or "").lower()
+        if sev in {"alta", "crítica", "critica"}:
+            alta_severidade += 1
+
+    monitor_rows = (controle if isinstance(controle, list) else []) + (encomendas if isinstance(encomendas, list) else [])
+    ativos = len([a for a in (avisos if isinstance(avisos, list) else []) if bool(((a or {}).get("status") or {}).get("ativo"))])
+    sem_contato_encomenda = 0
+    avisado_encomenda = 0
+    for r in monitor_rows:
+        st = _status_text(r)
+        is_encomenda = isinstance(r, dict) and ("STATUS_ENCOMENDA" in r or "status_encomenda" in r)
+        if "SEM CONTATO" in st:
+            sem_contato += 1
+            if is_encomenda:
+                sem_contato_encomenda += 1
+        elif "AVISADO" in st:
+            avisado += 1
+            if is_encomenda:
+                avisado_encomenda += 1
+
+    pendentes = max(0, len(monitor_rows) - sem_contato_encomenda - avisado_encomenda)
+
+    return {
+        "ativos": ativos,
+        "pendentes": pendentes,
+        "sem_contato": sem_contato,
+        "avisado": avisado,
+        "alta_severidade": alta_severidade,
+    }
+
+
+def _update_status_cards():
+    global _metrics_previous_cards, _cards_last_update_at, _cards_context_refresh_hook
+    data = _collect_status_cards_data()
+    ux = analisar_metricas_ux() if callable(analisar_metricas_ux) else {}
+    now = datetime.now()
+    now_label = now.strftime("%H:%M:%S")
+    _cards_last_update_at = now
+    for k in ("ativos", "pendentes", "sem_contato", "avisado"):
+        card = _ux_cards.get(k)
+        if card:
+            try:
+                current = int(data.get(k, 0))
+                previous = int(_metrics_previous_cards.get(k, current))
+                card.set_value(str(current))
+                card.set_trend(current - previous)
+                card.set_capacity(current, CARD_CAPACITY_LIMITS.get(k, 1000))
+                card.set_meta(f"Atualizado às {now_label} • há 0s")
+                card.flash(260)
+            except Exception:
+                pass
+    try:
+        if callable(_cards_context_refresh_hook):
+            _cards_context_refresh_hook()
+    except Exception:
+        pass
+
+    _metrics_previous_cards = dict(data)
+    if _metrics_accessibility_var is not None:
+        try:
+            _metrics_accessibility_var.set(
+                f"Métricas: Ativos {data.get('ativos',0)}, Pendentes {data.get('pendentes',0)}, Sem contato {data.get('sem_contato',0)}, Avisado {data.get('avisado',0)}"
+            )
+        except Exception:
+            pass
+    if _status_bar is not None and isinstance(ux, dict):
+        try:
+            p95 = ((ux.get("time_to_apply_filter_ms") or {}).get("p95") or 0)
+            ok = ux.get("edit_save_success_rate") or 0
+            _status_bar.set(f"UX: p95 filtro {p95}ms • sucesso edição {round(ok*100,1)}% • trocas de tema {ux.get('theme_switch_count',0)}", tone="info")
+        except Exception:
+            pass
+
+
+def _refresh_cards_relative_meta():
+    if _cards_last_update_at is None:
+        return
+    elapsed = max(int((datetime.now() - _cards_last_update_at).total_seconds()), 0)
+    for card in _ux_cards.values():
+        try:
+            base = str(card.meta_var.get() or "")
+            if "• há" in base:
+                base = base.split("• há", 1)[0].strip()
+            card.set_meta(f"{base} • há {elapsed}s")
+        except Exception:
+            pass
+
+
+
+def set_monitor_focus_identity(identidade: str):
+    global _pending_focus_identity
+    _pending_focus_identity = (identidade or "").strip().upper()
+
+# ---------- inferência MODELO/COR (fallback a partir de 'texto') ----------
+_STATUS_WORDS = set(["MORADOR","MORADORES","VISITANTE","VISITA","VISIT","PRESTADOR","PRESTADORES","SERVICO","SERVIÇO","TECNICO","DESCONHECIDO","FUNCIONARIO","FUNCIONÁRIO"])
+
+def _tokens(text):
+    return re.findall(r"[A-Za-zÀ-ÖØ-öø-ÿ0-9\-]+", str(text or ""))
+
+def _infer_model_color_from_text(text: str):
+    if not text or not isinstance(text, str):
+        return ("", "")
+    toks = _tokens(text)
+    toks_up = [t.upper() for t in toks]
+    plate_idx = None
+    for i, t in enumerate(toks_up):
+        if re.match(r"^[A-Z]{3}\d{4}$", t):
+            plate_idx = i
+            break
+        if re.match(r"^[A-Z0-9]{5,8}$", t) and re.search(r"\d", t):
+            plate_idx = i
+            break
+    if plate_idx is None:
+        return ("", "")
+    following = []
+    for tok in toks_up[plate_idx+1:]:
+        if tok in _STATUS_WORDS:
+            break
+        following.append(tok)
+    modelo = ""
+    cor = ""
+    if following:
+        filtered = [t for t in following if not re.match(r"^BL\d+$", t) and not re.match(r"^AP\d+$", t)]
+        if filtered:
+            modelo = filtered[0].title()
+            if len(filtered) > 1:
+                for tok in filtered[1:4]:
+                    if re.search(r"[A-Za-z]", tok):
+                        cor = tok.title()
+                        break
+    return (modelo or "", cor or "")
+
+# ---------- safe IO ----------
+def _parse_json_lenient(raw: str):
+    text = str(raw or "").strip()
+    if not text:
+        return []
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # fallback 1: JSON por linha (ndjson/jsonl)
+    items = []
+    for line in text.splitlines():
+        candidate = line.strip().rstrip(",")
+        if not candidate:
+            continue
+        try:
+            items.append(json.loads(candidate))
+        except Exception:
+            continue
+    if items:
+        return items
+
+    # fallback 2: múltiplos objetos JSON concatenados sem vírgula
+    decoder = json.JSONDecoder()
+    pos = 0
+    length = len(text)
+    recovered = []
+    while pos < length:
+        while pos < length and text[pos] not in "[{":
+            pos += 1
+        if pos >= length:
+            break
+        try:
+            obj, end = decoder.raw_decode(text, pos)
+            recovered.append(obj)
+            pos = end
+        except Exception:
+            pos += 1
+    if recovered:
+        if len(recovered) == 1:
+            return recovered[0]
+        return recovered
+
+    raise json.JSONDecodeError("invalid json for known encodings", text, 0)
+
+
+def _read_json_flexible(path: str):
+    # Robustez para ambientes Windows/produção: arquivos podem chegar com BOM,
+    # codificação ANSI/latin-1 ou serializações não estritamente válidas.
+    for enc in ("utf-8", "utf-8-sig", "latin-1"):
+        try:
+            with open(path, "r", encoding=enc) as f:
+                raw = f.read()
+            return _parse_json_lenient(raw)
+        except UnicodeDecodeError:
+            continue
+        except json.JSONDecodeError:
+            continue
+    raise json.JSONDecodeError("invalid json for known encodings", "", 0)
+
+
+def _load_safe(path: str):
+    if not os.path.exists(path):
+        return []
+    try:
+        data = _read_json_flexible(path)
+        if isinstance(data, dict) and "registros" in data:
+            registros_payload = data.get("registros", [])
+            if isinstance(registros_payload, list):
+                return _normalize_records_for_monitor(registros_payload)
+            if isinstance(registros_payload, dict):
+                # caso comum em produção: "registros" como mapa id -> registro
+                return _extract_records_from_dict_payload(registros_payload)
+            return []
+        if isinstance(data, list):
+            return _normalize_records_for_monitor(data)
+        if isinstance(data, dict):
+            # tolera formatos legados/heterogêneos onde o JSON vem como
+            # objeto-mapa (id -> registro) ou wrappers diferentes de "registros"
+            return _extract_records_from_dict_payload(data)
+        return []
+    except json.JSONDecodeError:
+        print(f"[interfacetwo] JSON inválido em {path}; usando fallback sem criar .corrupted")
+        return []
+    except Exception:
+        return []
+
+
+def _source_signature(path: str):
+    try:
+        st = os.stat(path)
+        return (int(st.st_mtime_ns), int(st.st_size))
+    except Exception:
+        return None
+
+
+def _load_safe_cached(path: str):
+    signature = _source_signature(path)
+    cached = _data_load_cache.get(path)
+    if cached and cached.get("signature") == signature:
+        return cached.get("records", [])
+    records = _load_safe(path)
+    _data_load_cache[path] = {"signature": signature, "records": records}
+    return records
+
+
+def _queue_background_reload(path: str):
+    if not path or path in _background_refresh_pending:
+        return
+    _background_refresh_pending.add(path)
+
+    def _worker():
+        try:
+            _load_safe_cached(path)
+        finally:
+            _background_refresh_pending.discard(path)
+
+    try:
+        threading.Thread(target=_worker, daemon=True).start()
+    except Exception:
+        _background_refresh_pending.discard(path)
+
+
+def _record_diff_signature(records):
+    out = []
+    for rec in list(records or []):
+        if not isinstance(rec, dict):
+            out.append(str(rec))
+            continue
+        key = str(rec.get("ID") or rec.get("id") or rec.get("_entrada_id") or "")
+        if not key:
+            key = "|".join(
+                [
+                    str(rec.get("DATA_HORA") or rec.get("data_hora") or ""),
+                    str(rec.get("NOME") or rec.get("nome") or ""),
+                    str(rec.get("SOBRENOME") or rec.get("sobrenome") or ""),
+                    str(rec.get("STATUS") or rec.get("STATUS_ENCOMENDA") or rec.get("status") or ""),
+                ]
+            )
+        out.append(key)
+    return tuple(out)
+
+
+def _perf_sample(name: str, value_ms: float):
+    key = f"{name}_samples_ms"
+    bucket = _perf_metrics.setdefault(key, [])
+    bucket.append(float(value_ms))
+    if len(bucket) > 180:
+        del bucket[:-180]
+
+
+def _perf_summary(values: list[float]):
+    if not values:
+        return {"count": 0, "p50": 0.0, "p95": 0.0, "p99": 0.0}
+    seq = sorted(values)
+    n = len(seq)
+    def _pick(q):
+        idx = min(n - 1, max(0, int(round((n - 1) * q))))
+        return round(seq[idx], 3)
+    return {"count": n, "p50": _pick(0.50), "p95": _pick(0.95), "p99": _pick(0.99)}
+
+def _atomic_write(path: str, obj):
+    dirn = os.path.dirname(path) or "."
+    os.makedirs(dirn, exist_ok=True)
+    tmp = None
+    try:
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=dirn, prefix=".tmp_", suffix=".json", delete=False) as tf:
+            tmp = tf.name
+            json.dump(obj, tf, ensure_ascii=False, indent=4)
+            tf.flush()
+        os.replace(tmp, path)
+    except Exception:
+        if tmp and os.path.exists(tmp):
+            try: os.remove(tmp)
+            except Exception: pass
+        raise
+
+def safe(v):
+    return v if v and v != "-" else "-"
+
+
+def _normalize_records_for_monitor(records):
+    if not isinstance(records, list):
+        return []
+    normalized = []
+    for r in records:
+        if isinstance(r, dict):
+            normalized.append(_normalize_record_for_monitor(r))
+        elif isinstance(r, (str, int, float, bool)):
+            text = str(r)
+            normalized.append({
+                "texto": text,
+                "texto_original": text,
+                "DATA_HORA": "",
+                "NOME": "",
+                "SOBRENOME": "",
+                "BLOCO": "",
+                "APARTAMENTO": "",
+                "PLACA": "",
+                "MODELO": "",
+                "COR": "",
+                "STATUS": "",
+                "STATUS_ENCOMENDA": "",
+                "TIPO": "",
+                "LOJA": "",
+                "IDENTIFICACAO": "",
+            })
+    return normalized
+
+
+def _looks_like_monitor_record(payload: dict) -> bool:
+    if not isinstance(payload, dict):
+        return False
+    keyset = {str(k).upper() for k in payload.keys()}
+    canonical_hint = {
+        "NOME", "SOBRENOME", "BLOCO", "APARTAMENTO", "PLACA", "STATUS", "STATUS_ENCOMENDA", "DATA_HORA", "TIPO", "LOJA"
+    }
+    if keyset.intersection(canonical_hint):
+        return True
+    alias_hint = {"nome", "sobrenome", "bloco", "apartamento", "ap", "placa", "status", "status_encomenda", "data_hora", "tipo", "loja"}
+    return bool(set(payload.keys()).intersection(alias_hint))
+
+
+def _extract_records_from_dict_payload(payload: dict):
+    if not isinstance(payload, dict):
+        return []
+
+    # Caso 1: o próprio dict já é um único registro
+    if _looks_like_monitor_record(payload):
+        return _normalize_records_for_monitor([payload])
+
+    # Caso 2: wrappers conhecidos com coleção de registros
+    for key in ("dados", "data", "items", "rows", "entries"):
+        candidate = payload.get(key)
+        if isinstance(candidate, list):
+            return _normalize_records_for_monitor(candidate)
+        if isinstance(candidate, dict):
+            nested = _extract_records_from_dict_payload(candidate)
+            if nested:
+                return nested
+
+    # Caso 3: dict-mapa (id -> registro)
+    dict_values = [v for v in payload.values() if isinstance(v, dict)]
+    if dict_values and all(_looks_like_monitor_record(v) for v in dict_values):
+        return _normalize_records_for_monitor(dict_values)
+
+    # Caso 4: procurar recursivamente em qualquer sub-estrutura
+    for value in payload.values():
+        if isinstance(value, list):
+            normalized = _normalize_records_for_monitor(value)
+            if normalized:
+                return normalized
+        elif isinstance(value, dict):
+            nested = _extract_records_from_dict_payload(value)
+            if nested:
+                return nested
+
+    return []
+
+
+def _normalize_record_for_monitor(record: dict) -> dict:
+    normalized = dict(record or {})
+
+    def pick(*keys):
+        for key in keys:
+            value = record.get(key)
+            if value not in (None, ""):
+                return value
+        return ""
+
+    aliases = {
+        "NOME": ("NOME", "nome"),
+        "SOBRENOME": ("SOBRENOME", "sobrenome"),
+        "BLOCO": ("BLOCO", "bloco"),
+        "APARTAMENTO": ("APARTAMENTO", "apartamento", "ap"),
+        "PLACA": ("PLACA", "placa"),
+        "MODELO": ("MODELO", "modelo", "veiculo_modelo"),
+        "COR": ("COR", "cor", "veiculo_cor"),
+        "STATUS": ("STATUS", "status"),
+        "STATUS_ENCOMENDA": ("STATUS_ENCOMENDA", "status_encomenda"),
+        "TIPO": ("TIPO", "tipo"),
+        "LOJA": ("LOJA", "loja"),
+        "IDENTIFICACAO": ("IDENTIFICACAO", "identificacao", "identificação"),
+        "DATA_HORA": ("DATA_HORA", "data_hora", "datahora", "timestamp"),
+    }
+
+    for canonical, keys in aliases.items():
+        value = pick(*keys)
+        if value not in (None, ""):
+            normalized[canonical] = value
+
+    return normalized
+
+def format_line(r: dict) -> str:
+    modelo = r.get("MODELO") or ""
+    cor = r.get("COR") or ""
+    if (not modelo or modelo == "-") or (not cor or cor == "-"):
+        texto = r.get("texto") or r.get("texto_original") or ""
+        inf_mod, inf_cor = _infer_model_color_from_text(texto)
+        if not modelo and inf_mod:
+            modelo = inf_mod
+        if not cor and inf_cor:
+            cor = inf_cor
+
+    return (
+        f"{safe(r.get('DATA_HORA'))} | "
+        f"{safe(r.get('NOME'))} {safe(r.get('SOBRENOME'))} | "
+        f"BLOCO {safe(r.get('BLOCO'))} APARTAMENTO {safe(r.get('APARTAMENTO'))} | "
+        f"PLACA {safe(r.get('PLACA'))} | "
+        f"{safe(modelo)} | "
+        f"{safe(cor)} | "
+        f"{safe(r.get('STATUS'))}"
+    )
+
+def _split_date_time(data_hora: str):
+    parts = (data_hora or "").strip().split()
+    if len(parts) >= 2:
+        return parts[0], parts[1]
+    if len(parts) == 1:
+        return parts[0], ""
+    return "", ""
+
+def _status_phrase(status: str) -> str:
+    s = (status or "").strip().lower()
+    if not s or s == "-":
+        return "registrado"
+    if "morador" in s:
+        return "morador"
+    if "visit" in s:
+        return "visitante"
+    if "prestador" in s or "servi" in s or "tecnico" in s:
+        return "prestador de serviço"
+    if "funcion" in s:
+        return "funcionário"
+    return s
+
+def _title_name(*parts):
+    joined = " ".join(p for p in parts if p and p != "-").strip()
+    return joined.title() if joined else "Visitante"
+
+def _record_hash_key(r: dict) -> str:
+    raw = "|".join([
+        str(r.get("DATA_HORA", "")),
+        str(r.get("NOME", "")),
+        str(r.get("SOBRENOME", "")),
+        str(r.get("BLOCO", "")),
+        str(r.get("APARTAMENTO", "")),
+        str(r.get("PLACA", "")),
+        str(r.get("MODELO", "")),
+        str(r.get("COR", "")),
+        str(r.get("STATUS", "")),
+    ])
+    return hashlib.md5(raw.encode("utf-8")).hexdigest()
+
+
+def _record_original_id(r: dict) -> str:
+    return str(r.get("ID") or r.get("id") or r.get("_entrada_id") or r.get("id_aviso") or "-")
+
+def format_creative_entry(r: dict) -> str:
+    modelo = r.get("MODELO") or ""
+    cor = r.get("COR") or ""
+    if (not modelo or modelo == "-") or (not cor or cor == "-"):
+        texto = r.get("texto") or r.get("texto_original") or ""
+        inf_mod, inf_cor = _infer_model_color_from_text(texto)
+        if not modelo and inf_mod:
+            modelo = inf_mod
+        if not cor and inf_cor:
+            cor = inf_cor
+
+    data_hora = safe(r.get("DATA_HORA"))
+    data, hora = _split_date_time(data_hora)
+    nome = _title_name(r.get("NOME", ""), r.get("SOBRENOME", ""))
+    bloco = safe(r.get("BLOCO"))
+    ap = safe(r.get("APARTAMENTO"))
+    placa = safe(r.get("PLACA")).upper()
+    status = _status_phrase(r.get("STATUS"))
+    modelo_fmt = safe(modelo).title()
+    cor_fmt = safe(cor).lower()
+
+    templates = [
+        "Às {hora} do dia {data}, {nome}, {status}, acessou o local conduzindo um {modelo} {cor}, placa {placa}.",
+        "Em {data} às {hora}, {nome}, {status}, chegou ao Bloco {bloco}, Apartamento {ap}, em um {modelo} {cor}, placa {placa}.",
+        "Pouco antes, às {hora} de {data}, {nome}, {status}, entrou no Bloco {bloco}, Apartamento {ap}, dirigindo um {modelo} {cor}, placa {placa}.",
+        "Às {hora} de {data}, {nome}, {status}, acessou o Bloco {bloco}, Apartamento {ap}, com um {modelo} {cor}, placa {placa}.",
+    ]
+    key = _record_hash_key(r)
+    idx = int(key[:2], 16) % len(templates)
+    formatted = templates[idx].format(
+        hora=hora or "-",
+        data=data or "-",
+        nome=nome,
+        status=status,
+        bloco=bloco,
+        ap=ap,
+        placa=placa,
+        modelo=modelo_fmt or "-",
+        cor=cor_fmt or "-",
+    )
+    return f"[ID {_record_original_id(r)}] {formatted}"
+
+def _record_hash_key_encomenda(r: dict) -> str:
+    raw = "|".join([
+        str(r.get("DATA_HORA", "")),
+        str(r.get("NOME", "")),
+        str(r.get("SOBRENOME", "")),
+        str(r.get("BLOCO", "")),
+        str(r.get("APARTAMENTO", "")),
+        str(r.get("TIPO", "")),
+        str(r.get("LOJA", "")),
+        str(r.get("IDENTIFICACAO", "")),
+    ])
+    return hashlib.md5(raw.encode("utf-8")).hexdigest()
+
+def format_encomenda_entry(r: dict) -> str:
+    data_hora = safe(r.get("DATA_HORA"))
+    data, hora = _split_date_time(data_hora)
+    nome = _title_name(r.get("NOME", ""), r.get("SOBRENOME", ""))
+    bloco = safe(r.get("BLOCO"))
+    ap = safe(r.get("APARTAMENTO"))
+    tipo = safe(r.get("TIPO")).lower()
+    loja = safe(r.get("LOJA")).title()
+    identificacao = safe(r.get("IDENTIFICACAO"))
+
+    templates = [
+        "Às {hora} do dia {data}, chegou uma {tipo} da {loja} destinada a {nome}, moradora do bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Foi registrada às {hora} de {data} a chegada de uma {tipo} da {loja} para {nome}, do bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "No dia {data}, às {hora}, uma entrega da {loja} foi recebida para {nome}, residente no bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Encomenda da {loja} entregue às {hora} em {data} para {nome}, bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Às {hora} do dia {data}, foi entregue uma {tipo} da {loja} para {nome}, localizada no bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Registro de entrega: {tipo} da {loja} destinada a {nome}, bloco {bloco}, apartamento {ap}, recebida às {hora} de {data}, identificação {identificacao}.",
+        "Em {data}, às {hora}, uma {tipo} da {loja} chegou para {nome}, moradora do bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Às {hora} do dia {data} houve a entrega de uma {tipo} da {loja} para {nome}, bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Entrega realizada às {hora} em {data}: {tipo} da {loja} para {nome}, residente no bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+        "Uma {tipo} da {loja} foi registrada às {hora} de {data} para {nome}, do bloco {bloco}, apartamento {ap}, identificação {identificacao}.",
+    ]
+    status = safe(r.get("STATUS_ENCOMENDA"))
+    status_dh = safe(r.get("STATUS_DATA_HORA"))
+    key = _record_hash_key_encomenda(r)
+    idx = int(key[:2], 16) % len(templates)
+    base_text = templates[idx].format(
+        hora=hora or "-",
+        data=data or "-",
+        tipo=tipo or "encomenda",
+        loja=loja or "-",
+        nome=nome,
+        bloco=bloco,
+        ap=ap,
+        identificacao=identificacao,
+    )
+    texto_final = base_text
+    if status not in ("-", ""):
+        status_up = status.strip().upper()
+        if status_up == "AVISADO":
+            prefix = "[AVISADO ✅]"
+        elif status_up == "SEM CONTATO":
+            prefix = "[SEM CONTATO ⚠]"
+        else:
+            prefix = f"[{status_up}]"
+        texto_final = f"{base_text} — {prefix} {status_dh}"
+    return f"[ID {_record_original_id(r)}] {texto_final}"
+
+# ---------- UI helpers (embutido) ----------
+
+
+def _extract_multi_fields(text: str) -> dict:
+    if build_structured_fields:
+        strict, inferred = build_structured_fields(text)
+        return {k: list(dict.fromkeys((strict.get(k, []) + inferred.get(k, [])))) for k in strict.keys()}
+    return {
+        "BLOCO": [], "APARTAMENTO": [], "NOME": [], "SOBRENOME": [],
+        "HORARIO": [], "VEICULO": [], "COR": [], "PLACA": []
+    }
+
+
+
+def format_orientacao_entry(r: dict) -> str:
+    texto = str(r.get("texto") or r.get("texto_original") or "")
+    return f"[ID {_record_original_id(r)}] {texto}"
+
+def format_observacao_entry(r: dict) -> str:
+    texto = str(r.get("texto") or r.get("texto_original") or "")
+    return f"[ID {_record_original_id(r)}] {texto}"
+
+def format_aviso_entry(r: dict) -> str:
+    msg = str(r.get("mensagem") or r.get("texto") or r.get("texto_original") or "")
+    if not msg:
+        msg = str(r.get("tipo") or "Aviso sem descrição")
+    status = (r.get("status") or {}) if isinstance(r.get("status"), dict) else {}
+    ativo = bool(status.get("ativo"))
+    prefix = "[ATIVO ⚠]" if ativo else "[INATIVO]"
+    ts = (r.get("timestamps") or {}) if isinstance(r.get("timestamps"), dict) else {}
+    gerado = str(ts.get("gerado_em") or r.get("DATA_HORA") or "").strip()
+    tipo = str(r.get("tipo") or "").strip()
+    detalhes = []
+    if tipo:
+        detalhes.append(tipo)
+    if gerado:
+        detalhes.append(gerado)
+    suffix = f" ({' • '.join(detalhes)})" if detalhes else ""
+    return f"[ID {_record_original_id(r)}] {prefix} {msg}{suffix}"
+
+def _normalize_date_value(value: str):
+    if not value:
+        return None
+    for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y"):
+        try:
+            return datetime.strptime(value, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+def _normalize_time_value(value: str):
+    if not value:
+        return None
+    for fmt in ("%H:%M:%S", "%H:%M"):
+        try:
+            return datetime.strptime(value, fmt).time()
+        except ValueError:
+            continue
+    return None
+
+def _parse_data_hora(value: str):
+    if not value:
+        return None
+    for fmt in ("%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+        try:
+            return datetime.strptime(value, fmt)
+        except ValueError:
+            continue
+    return None
+
+def _record_matches_query(record: dict, query: str) -> bool:
+    if not query:
+        return True
+    needle = query.strip().lower()
+    if not needle:
+        return True
+    haystack_parts = []
+    for key, value in record.items():
+        if value is None:
+            continue
+        haystack_parts.append(str(value))
+    haystack = " ".join(haystack_parts).lower()
+    return needle in haystack
+
+
+
+def _filters_are_active(filters: dict | None) -> bool:
+    f = filters or {}
+    return any([
+        str(f.get("query") or "").strip() != "",
+        str(f.get("status") or "Todos").strip().upper() != "TODOS",
+        str(f.get("bloco") or "Todos").strip().upper() != "TODOS",
+        str(f.get("date_mode") or "Mais recentes") == "Específica",
+        str(f.get("time_mode") or "Mais recentes") == "Específica",
+    ])
+
+def _apply_filters(registros, filters):
+    if not filters:
+        return registros
+    order = filters.get("order", "Mais recentes")
+    date_mode = filters.get("date_mode", "Mais recentes")
+    date_value = filters.get("date_value", "")
+    time_mode = filters.get("time_mode", "Mais recentes")
+    time_value = filters.get("time_value", "")
+    query = filters.get("query", "")
+    status_filter = (filters.get("status", "Todos") or "Todos").strip().upper()
+    bloco_filter = (filters.get("bloco", "Todos") or "Todos").strip().upper()
+
+    normalized_date = _normalize_date_value(date_value) if date_mode == "Específica" else None
+    normalized_time = _normalize_time_value(time_value) if time_mode == "Específica" else None
+
+    filtrados = []
+    for r in registros:
+        data_hora = r.get("DATA_HORA", "")
+        data_str, hora_str = _split_date_time(data_hora)
+        record_date = _normalize_date_value(data_str)
+        record_time = _normalize_time_value(hora_str)
+
+        if normalized_date and record_date != normalized_date:
+            continue
+        if normalized_time and record_time != normalized_time:
+            continue
+        if not _record_matches_query(r, query):
+            continue
+        record_status = str(safe(r.get("STATUS") if r.get("STATUS") is not None else r.get("STATUS_ENCOMENDA")) or "-").strip().upper()
+        record_bloco = (safe(r.get("BLOCO")) or "-").strip().upper()
+        if status_filter != "TODOS" and record_status != status_filter:
+            continue
+        if bloco_filter != "TODOS" and record_bloco != bloco_filter:
+            continue
+        filtrados.append(r)
+
+    def sort_key(record):
+        parsed = _parse_data_hora(record.get("DATA_HORA", ""))
+        return parsed or datetime.min
+
+    reverse = True if order == "Mais recentes" else False
+    filtrados.sort(key=sort_key, reverse=reverse)
+    return filtrados
+
+# ---------- novo helper: handler quando tag de encomenda for clicada ----------
+def _encomenda_on_tag_click(text_widget, record, event=None, rec_tag=None):
+    """
+    Handler chamado a partir de tag_bind para o registro clicado.
+    Atualiza o UI de ações associado ao text_widget e mostra o frame de ações.
+    Também destaca visualmente o registro selecionado.
+    """
+    ui = _encomenda_action_ui.get(text_widget)
+    if not ui:
+        return
+    current = ui.get("current")
+    if current is None:
+        current = {"record": None, "rec_tag": None}
+        ui["current"] = current
+    current["record"] = record
+    current["rec_tag"] = rec_tag
+    _mark_text_interaction(text_widget)
+
+    # highlight selected record visually
+    try:
+        # remove old highlight
+        text_widget.config(state="normal")
+        text_widget.tag_remove("encomenda_selected", "1.0", tk.END)
+        if rec_tag:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if ranges and len(ranges) >= 2:
+                text_widget.tag_add("encomenda_selected", ranges[0], ranges[1])
+        text_widget.config(state="disabled")
+    except Exception:
+        try:
+            text_widget.tag_remove("encomenda_selected", "1.0", tk.END)
+        except Exception:
+            pass
+
+    show_fn = ui.get("show")
+    if callable(show_fn):
+        show_fn()
+    pos = None
+    if isinstance(rec_tag, str) and rec_tag.rsplit("_", 1)[-1].isdigit():
+        try:
+            pos = int(rec_tag.rsplit("_", 1)[-1])
+        except Exception:
+            pos = None
+    _show_selected_record_in_header(text_widget, record, pos)
+
+def _record_on_tag_click(text_widget, record, event=None, rec_tag=None, position=None):
+    ui = _text_action_ui.get(text_widget) or _encomenda_action_ui.get(text_widget)
+    if ui:
+        is_editing = ui.get("is_editing")
+        if callable(is_editing) and is_editing():
+            return
+        current = ui.get("current") or {"record": None, "rec_tag": None}
+        ui["current"] = current
+        current["record"] = record
+        current["rec_tag"] = rec_tag
+        _mark_text_interaction(text_widget)
+        show_fn = ui.get("show")
+        if callable(show_fn):
+            show_fn()
+
+    try:
+        text_widget.config(state="normal")
+        text_widget.tag_remove("controle_selected", "1.0", tk.END)
+        if rec_tag:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if ranges and len(ranges) >= 2:
+                text_widget.tag_add("controle_selected", ranges[0], ranges[1])
+        text_widget.config(state="disabled")
+    except Exception:
+        pass
+
+    details_var = _control_details_var.get(text_widget)
+    if details_var is not None:
+        _control_selection_state[text_widget] = str((record or {}).get("ID") or (record or {}).get("_entrada_id") or "")
+        _set_control_details(details_var, record)
+    _show_selected_record_in_header(text_widget, record, position)
+
+
+def _show_selected_record_in_header(text_widget, record, position=None):
+    """
+    Nova função dedicada para refletir o registro clicado no cabeçalho fixo,
+    mantendo o comportamento atual de atualização do cabeçalho.
+    """
+    _update_sticky_header_with_interaction(text_widget, record, position)
+
+
+def _on_record_line_number_click(text_widget, record, rec_tag, idx):
+    bp = _text_breakpoints.setdefault(text_widget, set())
+    if idx in bp:
+        bp.remove(idx)
+    else:
+        bp.add(idx)
+    _record_on_tag_click(text_widget, record, rec_tag=rec_tag, position=idx)
+    source = _monitor_sources.get(text_widget, {})
+    info_label = source.get("info_label")
+    if info_label is not None:
+        _populate_text(text_widget, info_label)
+
+
+def _on_record_text_click_select(text_widget, record, rec_tag, idx):
+    """
+    Clique no texto do registro: seleciona e atualiza cabeçalho sem repopular
+    toda a lista (evita travamento/delay).
+    """
+    _record_on_tag_click(text_widget, record, rec_tag=rec_tag, position=idx)
+
+def _format_control_row(record: dict):
+    nome = _title_name(record.get("NOME", ""), record.get("SOBRENOME", ""))
+    return (
+        safe(record.get("DATA_HORA")),
+        nome,
+        f"{safe(record.get('BLOCO'))}/{safe(record.get('APARTAMENTO'))}",
+        safe(record.get("PLACA")).upper(),
+        safe(record.get("STATUS")),
+    )
+
+
+
+
+def _control_sort_value(record: dict, sort_key: str):
+    if sort_key == "data_hora":
+        return _parse_data_hora(record.get("DATA_HORA", "")) or datetime.min
+    if sort_key == "nome":
+        return _title_name(record.get("NOME", ""), record.get("SOBRENOME", "")).upper()
+    if sort_key == "bloco_ap":
+        return f"{safe(record.get('BLOCO'))}/{safe(record.get('APARTAMENTO'))}"
+    if sort_key == "placa":
+        return safe(record.get("PLACA")).upper()
+    if sort_key == "status":
+        return safe(record.get("STATUS")).upper()
+    return str(record.get(sort_key, ""))
+
+
+def _set_control_details(details_var, rec):
+    if details_var is None:
+        return
+    text = "Selecione um registro para ver detalhes."
+    if rec:
+        col_gap = "\t"
+        text = (
+            f"Nome: {_title_name(rec.get('NOME',''), rec.get('SOBRENOME',''))}{col_gap}"
+            f"Modelo/Cor: {safe(rec.get('MODELO'))} / {safe(rec.get('COR'))}\n"
+            f"Bloco/AP: {safe(rec.get('BLOCO'))}/{safe(rec.get('APARTAMENTO'))}{col_gap}"
+            f"Status: {safe(rec.get('STATUS'))}\n"
+            f"Placa: {safe(rec.get('PLACA')).upper()}{col_gap}"
+            f"Data/Hora: {safe(rec.get('DATA_HORA'))}"
+        )
+
+    if isinstance(details_var, tk.Text):
+        try:
+            details_var.config(state="normal")
+            details_var.configure(tabs=(theme_space("space_9", 360),))
+            details_var.delete("1.0", tk.END)
+            details_var.insert(tk.END, text)
+            details_var.config(state="disabled")
+        except Exception:
+            pass
+        return
+
+    if not rec:
+        details_var.set("Selecione um registro para ver detalhes.")
+        return
+    details_var.set(text)
+
+
+def _restore_control_text_selection(text_widget, record_tag_map):
+    selected_record = _control_selection_state.get(text_widget)
+    if not selected_record:
+        return
+    selected_tag = None
+    selected_rec = None
+    for rec_tag, rec in (record_tag_map or {}).items():
+        rec_id = str((rec or {}).get("ID") or (rec or {}).get("_entrada_id") or "")
+        if rec_id and rec_id == selected_record:
+            selected_tag = rec_tag
+            selected_rec = rec
+            break
+    if not selected_tag:
+        return
+    try:
+        text_widget.config(state="normal")
+        text_widget.tag_remove("controle_selected", "1.0", tk.END)
+        ranges = text_widget.tag_ranges(selected_tag)
+        if ranges and len(ranges) >= 2:
+            text_widget.tag_add("controle_selected", ranges[0], ranges[1])
+        text_widget.config(state="disabled")
+    except Exception:
+        pass
+    details_var = _control_details_var.get(text_widget)
+    if details_var is not None:
+        _set_control_details(details_var, selected_rec)
+
+
+def _update_control_details(tree_widget, selection):
+    details_var = _control_details_var.get(tree_widget)
+    record_map = _control_table_map.get(tree_widget, {})
+    if details_var is None:
+        return
+    if not selection:
+        _set_control_details(details_var, None)
+        return
+    rec = record_map.get(selection[0])
+    _control_selection_state[tree_widget] = str((rec or {}).get("ID") or (rec or {}).get("_entrada_id") or "")
+    _set_control_details(details_var, rec)
+
+
+def _populate_control_table(tree_widget, info_label):
+    source = _monitor_sources.get(tree_widget, {})
+    arquivo = source.get("path", ARQUIVO)
+    registros = _load_safe_cached(arquivo)
+    _queue_background_reload(arquivo)
+    filter_key = source.get("filter_key", tree_widget)
+    filters = _filter_state.get(filter_key, {})
+    filtrados = _apply_filters(registros, filters)
+    header_filters = source.get("header_filters") or {}
+    if isinstance(header_filters, dict) and header_filters:
+        def _match_header(rec):
+            for key, val in header_filters.items():
+                txt = str(val or "").strip().upper()
+                if not txt:
+                    continue
+                rv = str((rec or {}).get(key.upper()) or (rec or {}).get(key.lower()) or "").upper()
+                if txt not in rv:
+                    return False
+            return True
+        filtrados = [r for r in filtrados if _match_header(r)]
+    if registros and not filtrados and _filters_are_active(filters):
+        _filter_state[filter_key] = _default_filters()
+        filters = _filter_state[filter_key]
+        filtrados = _apply_filters(registros, filters)
+        report_status("ux_metrics", "OK", stage="filters_auto_reset", details={"source": str(filter_key), "reason": "empty_result"})
+
+    sort_key_name = source.get("sort_key", "controle")
+    sort_state = _control_sort_state.get(sort_key_name, {"key": "data_hora", "reverse": True})
+    sort_key = sort_state.get("key", "data_hora")
+    reverse = bool(sort_state.get("reverse", True))
+    filtrados = sorted(filtrados, key=lambda rec: _control_sort_value(rec, sort_key), reverse=reverse)
+
+    last = get_last_status()
+    status_hint = ""
+    if last:
+        status_hint = f" | último status: {last.get('action','-')}:{last.get('status','-')}"
+    info_label.config(text=f"Arquivo: {arquivo} — registros: {len(filtrados)} (de {len(registros)}){status_hint}")
+    # O contador do topo foi reaproveitado para exibir o dia selecionado no gráfico
+    # de consumo por dia; por isso não atualizamos mais este texto com filtro.
+
+    selected_record = _control_selection_state.get(tree_widget)
+    global _pending_focus_identity
+    focus_ident = _pending_focus_identity
+    for iid in tree_widget.get_children():
+        tree_widget.delete(iid)
+
+    record_map = {}
+    selected_iid = None
+    if not filtrados:
+        tree_widget.insert("", tk.END, iid="empty", values=("—", "Sem registros", "Aplique filtros rápidos ou limpe busca", "", ""), tags=("empty",))
+    for idx, rec in enumerate(filtrados):
+        iid = f"row_{idx}"
+        row_tags = ["row_even" if idx % 2 == 0 else "row_odd"]
+        status = str((rec or {}).get("STATUS") or "").upper()
+        if "SEM CONTATO" in status:
+            row_tags.append("status_sem_contato")
+        if "AVISADO" in status:
+            row_tags.append("status_avisado")
+        tree_widget.insert("", tk.END, iid=iid, values=_format_control_row(rec), tags=tuple(row_tags))
+        record_map[iid] = rec
+        if selected_record and str(rec.get("ID") or rec.get("_entrada_id") or "") == selected_record:
+            selected_iid = iid
+        if focus_ident:
+            ident = f"{(rec.get('NOME') or '').strip().upper()}|{(rec.get('SOBRENOME') or '').strip().upper()}|{(rec.get('BLOCO') or '').strip().upper()}|{(rec.get('APARTAMENTO') or '').strip().upper()}"
+            if ident == focus_ident:
+                selected_iid = iid
+
+    _control_table_map[tree_widget] = record_map
+    if _operation_mode_enabled and not selected_iid:
+        for iid, rec in record_map.items():
+            st = str((rec or {}).get("STATUS") or (rec or {}).get("STATUS_ENCOMENDA") or "").upper()
+            if "PEND" in st:
+                selected_iid = iid
+                break
+    if selected_iid:
+        _pending_focus_identity = None
+        try:
+            tree_widget.selection_set(selected_iid)
+            tree_widget.focus(selected_iid)
+            tree_widget.see(selected_iid)
+        except Exception:
+            pass
+    _update_control_details(tree_widget, tree_widget.selection())
+
+def _populate_text(text_widget, info_label):
+    source = _monitor_sources.get(text_widget, {})
+    report_status("monitor", "STARTED", stage="populate_text", details={"source": source.get("path")})
+    if isinstance(text_widget, ttk.Treeview):
+        _populate_control_table(text_widget, info_label)
+        report_status("monitor", "OK", stage="populate_text_done", details={"source": source.get("path"), "view": "table"})
+        return
+    if source.get("view") == "table":
+        _populate_control_table(text_widget, info_label)
+        report_status("monitor", "OK", stage="populate_text_done", details={"source": source.get("path"), "view": "table"})
+        return
+    arquivo = source.get("path", ARQUIVO)
+    formatter = source.get("formatter", format_creative_entry)
+    registros = _load_safe_cached(arquivo)
+    _queue_background_reload(arquivo)
+    filter_key = source.get("filter_key", text_widget)
+    filters = _filter_state.get(filter_key, {})
+    filtrados = _apply_filters(registros, filters)
+    forced_tokens = _forced_visible_records.get(text_widget) or set()
+    if forced_tokens:
+        for rec in registros:
+            try:
+                token = _record_force_visibility_key(rec)
+            except Exception:
+                continue
+            if token in forced_tokens and rec not in filtrados:
+                filtrados.append(rec)
+    if registros and not filtrados and _filters_are_active(filters):
+        _filter_state[filter_key] = _default_filters()
+        filters = _filter_state[filter_key]
+        filtrados = _apply_filters(registros, filters)
+        report_status("ux_metrics", "OK", stage="filters_auto_reset", details={"source": str(filter_key), "reason": "empty_result"})
+    last = get_last_status()
+    status_hint = ""
+    if last:
+        status_hint = f" | último status: {last.get('action','-')}:{last.get('status','-')}"
+    info_label.config(
+        text=f"Arquivo: {arquivo} — registros: {len(filtrados)} (de {len(registros)}){status_hint}"
+    )
+    render_signature = (arquivo, _record_diff_signature(filtrados), get_active_theme_name())
+    previous_signature = _widget_render_cache.get(text_widget)
+    if previous_signature == render_signature:
+        _perf_metrics["frames_skipped"] = int(_perf_metrics.get("frames_skipped", 0)) + 1
+        _update_sticky_header_for_text(text_widget)
+        return
+    _widget_render_cache[text_widget] = render_signature
+    t_render_start = time.perf_counter()
+    preserve_position = not _should_return_to_top(text_widget)
+    previous_view = None
+    if preserve_position:
+        try:
+            previous_view = text_widget.yview()
+        except Exception:
+            previous_view = None
+    # sempre operar em state normal para evitar problemas na medição de ranges
+    text_widget.config(state="normal")
+    text_widget.delete("1.0", tk.END)
+    record_ranges = []
+    record_tag_map = {}
+    record_line_map = {}
+    has_clickable_records = False
+
+    text_widget.tag_configure("row_even", background=UI_THEME.get("surface", "#151A22"))
+    text_widget.tag_configure("row_odd", background=UI_THEME.get("surface", "#151A22"))
+    text_widget.tag_configure("line_number", foreground=UI_THEME.get("muted_text", "#A6A6A6"))
+    for idx, r in enumerate(filtrados):
+        is_clickable = formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry, format_aviso_entry)
+        row_tag = "row_even" if idx % 2 == 0 else "row_odd"
+        rec_tag = None
+        if is_clickable:
+            has_clickable_records = True
+            prefix = "controle" if formatter == format_creative_entry else ("encomenda" if formatter == format_encomenda_entry else ("orientacao" if formatter == format_orientacao_entry else ("aviso" if formatter == format_aviso_entry else "observacao")))
+            rec_tag = f"{prefix}_record_{idx}"
+        linha = formatter(r)
+        marker = "●"
+        numbered = f"{marker} {idx + 1:>3}  {linha}"
+        text_tags = [row_tag]
+        if rec_tag:
+            text_tags.append(rec_tag)
+        # Inserir já com a tag — isto garante que o tag cubra exatamente o texto
+        try:
+            if rec_tag:
+                text_widget.insert(tk.END, numbered + "\n\n", tuple(text_tags))
+            else:
+                text_widget.insert(tk.END, numbered + "\n\n", tuple(text_tags))
+        except Exception:
+            # fallback simples
+            text_widget.insert(tk.END, numbered + "\n\n", tuple(text_tags))
+
+        # calcular start/end com base nas ranges da tag (quando aplicável)
+        if rec_tag:
+            try:
+                ranges = text_widget.tag_ranges(rec_tag)
+                if ranges and len(ranges) >= 2:
+                    start = ranges[0]
+                    end = ranges[1]
+                else:
+                    # fallback: aproximar pelo 'end' antes das quebras adicionadas
+                    end = text_widget.index("end-2c")
+                    start = text_widget.index(f"{end} - {len(numbered)}c")
+            except Exception:
+                start = "1.0"
+                end = text_widget.index("end-2c")
+            record_ranges.append((start, end, r))
+            record_tag_map[rec_tag] = r
+            try:
+                line_no = str(start).split(".", 1)[0]
+                record_line_map[line_no] = r
+            except Exception:
+                pass
+            status = str(r.get("STATUS_ENCOMENDA") or r.get("STATUS") or "").strip().upper()
+            if status == "AVISADO":
+                try:
+                    text_widget.tag_add("status_avisado", start, end)
+                except Exception:
+                    pass
+            elif status == "SEM CONTATO":
+                try:
+                    text_widget.tag_add("status_sem_contato", start, end)
+                except Exception:
+                    pass
+
+            # bind por tag: captura o registro e a tag
+            try:
+                text_widget.tag_unbind(rec_tag, "<Button-1>")
+            except Exception:
+                pass
+            try:
+                # capturar rec_tag e r no default args
+                text_widget.tag_bind(rec_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_text_click_select(tw, rec, tag, pos))
+            except Exception:
+                pass
+            try:
+                prefix = f"{marker} {idx + 1:>3}"
+                bullet_tag = f"line_bullet_{idx}"
+                num_tag = f"line_number_{idx}"
+                text_widget.tag_add(bullet_tag, start, f"{start} + 1c")
+                text_widget.tag_add(num_tag, f"{start} + 2c", f"{start} + {len(prefix)}c")
+                text_widget.tag_add("line_number", f"{start} + 2c", f"{start} + {len(prefix)}c")
+                text_widget.tag_configure(bullet_tag, foreground=UI_THEME.get("surface", "#151A22"))
+                text_widget.tag_configure(num_tag, foreground=UI_THEME.get("muted_text", "#A6A6A6"))
+                text_widget.tag_bind(num_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_line_number_click(tw, rec, tag, pos))
+                text_widget.tag_bind(bullet_tag, "<Button-1>", lambda ev, tw=text_widget, rec=r, tag=rec_tag, pos=idx: _on_record_line_number_click(tw, rec, tag, pos))
+                _record_num_tag_map.setdefault(text_widget, {})[rec_tag] = num_tag
+                _record_bullet_tag_map.setdefault(text_widget, {})[rec_tag] = bullet_tag
+            except Exception:
+                pass
+        else:
+            # para registros não-encomenda, só guardar ranges genéricos
+            try:
+                end = text_widget.index("end-2c")
+                start = text_widget.index(f"{end} - {len(numbered)}c")
+                record_ranges.append((start, end, r))
+                try:
+                    line_no = str(start).split(".", 1)[0]
+                    record_line_map[line_no] = r
+                except Exception:
+                    pass
+            except Exception:
+                pass
+
+    # desativa edição após inserir
+    text_widget.config(state="disabled")
+    report_status("monitor", "OK", stage="populate_text_done", details={"source": arquivo, "visible": len(filtrados)})
+    _text_record_ranges[text_widget] = record_ranges
+    if formatter == format_encomenda_entry:
+        _encomenda_display_map[text_widget] = record_ranges
+        _encomenda_tag_map[text_widget] = record_tag_map
+        _encomenda_line_map[text_widget] = record_line_map
+    else:
+        _encomenda_display_map.pop(text_widget, None)
+        _encomenda_tag_map.pop(text_widget, None)
+        _encomenda_line_map.pop(text_widget, None)
+
+    if has_clickable_records or formatter in (format_creative_entry, format_orientacao_entry, format_observacao_entry, format_aviso_entry):
+        _record_tag_map_generic[text_widget] = record_tag_map
+    else:
+        _record_tag_map_generic.pop(text_widget, None)
+        _record_num_tag_map.pop(text_widget, None)
+        _record_bullet_tag_map.pop(text_widget, None)
+    if formatter == format_creative_entry:
+        _restore_control_text_selection(text_widget, record_tag_map)
+    _restore_hover_if_needed(text_widget, "hover_line")
+    if preserve_position and previous_view:
+        try:
+            text_widget.yview_moveto(previous_view[0])
+        except Exception:
+            pass
+    elif filtrados:
+        try:
+            text_widget.yview_moveto(0.0)
+        except Exception:
+            pass
+    _update_sticky_header_for_text(text_widget)
+    elapsed_render = (time.perf_counter() - t_render_start) * 1000
+    _perf_sample("refresh_apply", elapsed_render)
+    _perf_metrics["records_rendered"] = int(_perf_metrics.get("records_rendered", 0)) + int(len(filtrados))
+
+
+
+def _emit_perf_metrics():
+    hover_summary = _perf_summary(_perf_metrics.get("hover_samples_ms", []))
+    refresh_summary = _perf_summary(_perf_metrics.get("refresh_apply_samples_ms", []))
+    report_status(
+        "ux_metrics",
+        "OK",
+        stage="interaction_perf",
+        details={
+            "hover_handler_ms": hover_summary,
+            "refresh_apply_ms": refresh_summary,
+            "records_rendered": int(_perf_metrics.get("records_rendered", 0)),
+            "frame_drop_rate": round(int(_perf_metrics.get("frames_skipped", 0)) / max(1, hover_summary.get("count", 1)), 4),
+        },
+    )
+
+def _schedule_update(text_widgets, info_label):
+    global _monitor_after_id
+    now = time.monotonic()
+    active_interaction = False
+    for tw in text_widgets:
+        ts = _text_last_interaction_ts.get(tw)
+        if ts is not None and (now - ts) < 1.2:
+            active_interaction = True
+            break
+    for tw in text_widgets:
+        if tw in _text_edit_lock:
+            active_interaction = True
+            continue
+        try:
+            _populate_text(tw, info_label)
+        except Exception as e:
+            report_status("monitor", "ERROR", stage="populate_text_failed", details={"error": str(e)})
+            continue
+    # schedule next update
+    _refresh_cards_relative_meta()
+    dynamic_refresh = int(_runtime_refresh_ms * (1.8 if active_interaction else 1.0))
+    _emit_perf_metrics()
+    try:
+        _monitor_after_id = text_widgets[0].after(dynamic_refresh, lambda: _schedule_update(text_widgets, info_label))
+    except Exception:
+        _monitor_after_id = None
+
+def _cancel_scheduled(text_widgets):
+    global _monitor_after_id
+    try:
+        if _monitor_after_id and text_widgets:
+            text_widgets[0].after_cancel(_monitor_after_id)
+    except Exception:
+        pass
+    _monitor_after_id = None
+
+def forcar_recarregar(text_widgets, info_label):
+    for tw in text_widgets:
+        _populate_text(tw, info_label)
+    _update_status_cards()
+
+def limpar_dados(text_widgets, info_label, action_button=None):
+    if not os.path.exists(ARQUIVO):
+        messagebox.showinfo("Limpar dados", "Arquivo não existe.")
+        return
+    if action_button is not None:
+        try:
+            action_button.configure(state="disabled", text="Processando...")
+        except Exception:
+            pass
+    resp = messagebox.askyesno("Limpar dados", "Criar backup e limpar dadosend.json (registros serão removidos)?")
+    if not resp:
+        if action_button is not None:
+            try:
+                action_button.configure(state="normal", text="Limpar")
+            except Exception:
+                pass
+        return
+    try:
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        bak = os.path.join(os.path.dirname(ARQUIVO), f"dadosend_backup_{ts}.json")
+        shutil.copy2(ARQUIVO, bak)
+    except Exception as e:
+        messagebox.showerror("Erro", f"Erro ao criar backup: {e}")
+        if action_button is not None:
+            try:
+                action_button.configure(state="normal", text="Limpar")
+            except Exception:
+                pass
+        return
+    try:
+        _atomic_write(ARQUIVO, {"registros": []})
+    except Exception as e:
+        messagebox.showerror("Erro", f"Erro ao limpar arquivo: {e}")
+        if action_button is not None:
+            try:
+                action_button.configure(state="normal", text="Limpar")
+            except Exception:
+                pass
+        return
+    messagebox.showinfo("Limpar dados", f"Backup salvo em:\n{bak}\nArquivo limpo.")
+    for tw in text_widgets:
+        _populate_text(tw, info_label)
+    if action_button is not None:
+        try:
+            action_button.configure(state="normal", text="Limpar")
+        except Exception:
+            pass
+
+def _default_filters():
+    return {
+        "order": "Mais recentes",
+        "date_mode": "Mais recentes",
+        "date_value": "",
+        "time_mode": "Mais recentes",
+        "time_value": "",
+        "query": "",
+        "status": "Todos",
+        "bloco": "Todos",
+    }
+
+def _announce_feedback(text: str, tone: str = "info"):
+    icon_map = {"info": "ℹ", "success": "✅", "warning": "⚠", "danger": "⛔", "error": "⛔"}
+    if _feedback_banner is not None:
+        try:
+            _feedback_banner.show(text, tone=tone if tone != "error" else "danger", icon=icon_map.get(tone, "ℹ"), timeout_ms=2200)
+        except Exception:
+            pass
+
+
+def _snapshot_current_filter(filter_key):
+    return dict(_filter_state.get(filter_key) or _default_filters())
+
+def _build_filter_bar(parent, filter_key, info_label, target_widget=None):
+    target_widget = target_widget or filter_key
+    bar = build_card_frame(parent)
+    bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 6)))
+
+    top_row = tk.Frame(bar, bg=UI_THEME["surface"])
+    top_row.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(theme_space("space_2", 8), theme_space("space_1", 4)))
+    actions_row = tk.Frame(bar, bg=UI_THEME["surface"])
+    actions_row.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(0, theme_space("space_2", 8)))
+
+    order_var = tk.StringVar(value="Mais recentes")
+    date_mode_var = tk.StringVar(value="Mais recentes")
+    time_mode_var = tk.StringVar(value="Mais recentes")
+    query_var = tk.StringVar(value="")
+    status_var = tk.StringVar(value="Todos")
+    bloco_var = tk.StringVar(value="Todos")
+    advanced_visible = tk.BooleanVar(value=False)
+    preset_var = tk.StringVar(value="Preset (opcional)")
+    auto_apply_defaults = (_load_prefs().get("filter_auto_apply") or {})
+    auto_apply_var = tk.BooleanVar(value=bool(auto_apply_defaults.get(str(filter_key), False)))
+
+    advanced_frame = tk.Frame(bar, bg=UI_THEME["surface"])
+    date_entry = build_filter_input(advanced_frame, width=10)
+    time_entry = build_filter_input(advanced_frame, width=8)
+    query_entry = build_filter_input(top_row, textvariable=query_var, width=18)
+    filtro_badge = build_badge(top_row, text="Nenhum filtro ativo", tone="info")
+    filtro_badge.grid(row=0, column=8, padx=(theme_space("space_2", 8), 0), pady=theme_space("space_1", 4), sticky="e")
+
+    try:
+        parent.bind("<Control-f>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Ctrl+F", "source": str(filter_key)}), query_entry.focus_set(), "break")[2], add="+")
+        parent.bind("<Control-Shift-L>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Ctrl+Shift+L", "source": str(filter_key)}), clear_filters(), "break")[2], add="+")
+        parent.bind("<Control-Return>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Ctrl+Enter", "source": str(filter_key)}), apply_filters(), "break")[2], add="+")
+    except Exception:
+        pass
+
+    def _current_payload():
+        return {
+            "order": order_var.get(),
+            "date_mode": date_mode_var.get(),
+            "date_value": date_entry.get().strip(),
+            "time_mode": time_mode_var.get(),
+            "time_value": time_entry.get().strip(),
+            "query": query_entry.get().strip(),
+            "status": status_var.get().strip() or "Todos",
+            "bloco": bloco_var.get().strip() or "Todos",
+        }
+
+    def _count_active_filters(payload=None):
+        payload = payload or _current_payload()
+        count = 0
+        if (payload.get("query") or "").strip():
+            count += 1
+        if (payload.get("status") or "Todos") != "Todos":
+            count += 1
+        if (payload.get("bloco") or "Todos") != "Todos":
+            count += 1
+        if (payload.get("date_mode") or "Mais recentes") == "Específica" and (payload.get("date_value") or "").strip():
+            count += 1
+        if (payload.get("time_mode") or "Mais recentes") == "Específica" and (payload.get("time_value") or "").strip():
+            count += 1
+        if (payload.get("order") or "Mais recentes") != "Mais recentes":
+            count += 1
+        return count
+
+    def update_entry_state():
+        date_state = "normal" if date_mode_var.get() == "Específica" else "disabled"
+        time_state = "normal" if time_mode_var.get() == "Específica" else "disabled"
+        date_entry.configure(state=date_state)
+        time_entry.configure(state=time_state)
+
+    icon_map = {"info": "ℹ", "success": "✅", "warning": "⚠", "danger": "⛔", "error": "⛔"}
+
+    def _update_filter_badge(transient_msg=None, tone="info"):
+        active_count = _count_active_filters()
+        if transient_msg:
+            tone_key = "danger" if tone == "error" else tone
+            bg, fg = state_colors(tone_key)
+            filtro_badge.configure(
+                text=f"{icon_map.get(tone, 'ℹ')} {transient_msg}",
+                bg=bg,
+                fg=fg,
+            )
+            return
+        if active_count > 0:
+            bg, fg = state_colors("info")
+            filtro_badge.configure(
+                text=f"🔎 {active_count} filtros ativos",
+                bg=bg,
+                fg=fg,
+            )
+        else:
+            filtro_badge.configure(
+                text="○ Nenhum filtro ativo",
+                bg=UI_THEME.get("surface_alt", "#1B2430"),
+                fg=UI_THEME.get("muted_text", "#9AA4B2"),
+            )
+
+    def _set_apply_dirty_state(*_):
+        if not isinstance(btn_apply, tk.Button):
+            return
+        is_dirty = _current_payload() != (_filter_state.get(filter_key) or _default_filters())
+        if is_dirty:
+            btn_apply.configure(bg=UI_THEME.get("success", "#2DA44E"), activebackground=UI_THEME.get("success", "#2DA44E"), fg=UI_THEME.get("on_success", "#08120C"), activeforeground=UI_THEME.get("on_success", "#08120C"))
+            bind_button_states(btn_apply, UI_THEME.get("success", "#2DA44E"), UI_THEME.get("primary", "#2F81F7"))
+        else:
+            btn_apply.configure(bg=UI_THEME["primary"], activebackground=UI_THEME["primary_active"], fg=UI_THEME.get("on_primary", UI_THEME["text"]), activeforeground=UI_THEME.get("on_primary", UI_THEME["text"]))
+            bind_button_states(btn_apply, UI_THEME["primary"], UI_THEME["primary_active"])
+
+    def _flash_feedback(msg, tone="info"):
+        _announce_feedback(msg, tone)
+        if _status_bar is not None:
+            try:
+                _status_bar.set(str(msg), tone=("danger" if tone == "error" else tone))
+            except Exception:
+                pass
+
+    def _apply_payload(payload: dict):
+        if not isinstance(payload, dict):
+            return
+        order_var.set(payload.get("order") or "Mais recentes")
+        date_mode_var.set(payload.get("date_mode") or "Mais recentes")
+        time_mode_var.set(payload.get("time_mode") or "Mais recentes")
+        query_var.set(payload.get("query") or "")
+        status_var.set(payload.get("status") or "Todos")
+        bloco_var.set(payload.get("bloco") or "Todos")
+        date_entry.delete(0, tk.END); date_entry.insert(0, payload.get("date_value") or "")
+        time_entry.delete(0, tk.END); time_entry.insert(0, payload.get("time_value") or "")
+        update_entry_state()
+        _update_filter_badge()
+        _set_apply_dirty_state()
+
+    def apply_filters():
+        global _last_filter_snapshot
+        _last_filter_snapshot[filter_key] = _snapshot_current_filter(filter_key)
+        report_status("ux_metrics", "STARTED", stage="filter_apply_started", details={"source": str(filter_key)})
+        _filter_state[filter_key] = _current_payload()
+        _update_filter_badge()
+        _set_apply_dirty_state()
+        _flash_feedback("Filtros aplicados", "success")
+        _persist_ui_state({"last_filter_saved_at": datetime.now().isoformat()})
+        details = {"source": str(filter_key), "query_len": len(query_entry.get().strip())}
+        if _last_quick_filter_kind:
+            details["quick_filter_conversion"] = _last_quick_filter_kind
+        report_status("ux_metrics", "OK", stage="filter_apply", details=details)
+        _persist_ui_state()
+        _populate_text(target_widget, info_label)
+        if _last_quick_filter_kind:
+            report_status("ux_metrics", "OK", stage="quick_filter_conversion", details={"source": str(filter_key), "kind": _last_quick_filter_kind})
+
+    def clear_filters():
+        global _last_filter_snapshot
+        _last_filter_snapshot[filter_key] = _snapshot_current_filter(filter_key)
+        order_var.set("Mais recentes")
+        date_mode_var.set("Mais recentes")
+        time_mode_var.set("Mais recentes")
+        query_var.set("")
+        status_var.set("Todos")
+        bloco_var.set("Todos")
+        date_entry.delete(0, tk.END)
+        time_entry.delete(0, tk.END)
+        update_entry_state()
+        _filter_state[filter_key] = _default_filters()
+        _update_filter_badge()
+        _set_apply_dirty_state()
+        _flash_feedback("Filtros limpos", "warning")
+        report_status("ux_metrics", "OK", stage="filter_clear", details={"source": str(filter_key)})
+        _persist_ui_state()
+        _populate_text(target_widget, info_label)
+
+    def _undo_last_filter():
+        snapshot = _last_filter_snapshot.get(filter_key)
+        if not snapshot:
+            _flash_feedback("Nada para desfazer", "warning")
+            return
+        _apply_payload(snapshot)
+        _filter_state[filter_key] = dict(snapshot)
+        _flash_feedback("Último filtro desfeito", "info")
+        _populate_text(target_widget, info_label)
+
+    def _quick_filter(kind: str):
+        global _last_quick_filter_kind
+        _last_quick_filter_kind = kind
+        payload = _current_payload()
+        if kind == "today":
+            payload["date_mode"] = "Específica"
+            payload["date_value"] = datetime.now().strftime("%d/%m/%Y")
+        elif kind == "sem_contato":
+            payload["status"] = "SEM CONTATO"
+        elif kind == "alta":
+            payload["query"] = "alta"
+        _apply_payload(payload)
+        apply_filters()
+        report_status("ux_metrics", "OK", stage="quick_filter_used", details={"kind": kind, "source": str(filter_key)})
+
+    def _toggle_advanced():
+        advanced_visible.set(not advanced_visible.get())
+        if advanced_visible.get():
+            advanced_frame.pack(fill=tk.X, padx=theme_space("space_2", 8), pady=(0, theme_space("space_2", 8)))
+            btn_advanced.configure(text="Ocultar filtros avançados")
+        else:
+            advanced_frame.pack_forget()
+            btn_advanced.configure(text="Filtros avançados")
+
+    def _save_preset():
+        name = simpledialog.askstring("Salvar preset", "Nome do preset (operador/turno):", parent=bar.winfo_toplevel())
+        name = (name or "").strip()
+        if not name:
+            return
+        presets = _get_filter_presets()
+        presets[name] = _current_payload()
+        _save_filter_presets(presets)
+        _refresh_preset_combo(name)
+        _flash_feedback("Preset salvo", "success")
+
+    def _load_preset(_e=None):
+        name = (preset_var.get() or "").strip()
+        if not name or name == "Preset (opcional)":
+            return
+        presets = _get_filter_presets()
+        _apply_payload(presets.get(name) or {})
+        apply_filters()
+
+    def _refresh_preset_combo(selected="Preset (opcional)"):
+        presets_local = _get_filter_presets()
+        values = ["Preset (opcional)"] + sorted(presets_local.keys())
+        preset_combo.configure(values=values)
+        preset_var.set(selected if selected in values else "Preset (opcional)")
+
+    def _rename_selected_preset():
+        current = (preset_var.get() or "").strip()
+        if not current or current == "Preset (opcional)":
+            _flash_feedback("Selecione um preset para renomear", "warning")
+            return
+        novo = simpledialog.askstring("Renomear preset", f"Novo nome para '{current}':", parent=bar.winfo_toplevel())
+        if not novo:
+            return
+        if _rename_filter_preset(current, novo):
+            _refresh_preset_combo(novo.strip())
+            _flash_feedback("Preset renomeado", "success")
+        else:
+            _flash_feedback("Não foi possível renomear preset", "danger")
+
+    def _delete_selected_preset():
+        current = (preset_var.get() or "").strip()
+        if not current or current == "Preset (opcional)":
+            _flash_feedback("Selecione um preset para excluir", "warning")
+            return
+        if not messagebox.askyesno("Excluir preset", f"Excluir preset '{current}'?", parent=bar.winfo_toplevel()):
+            return
+        _delete_filter_preset(current)
+        _refresh_preset_combo("Preset (opcional)")
+        _flash_feedback("Preset excluído", "warning")
+
+    def _set_default_preset_for_tab():
+        current = (preset_var.get() or "").strip()
+        if not current or current == "Preset (opcional)":
+            _set_filter_default_preset(filter_key, "")
+            _flash_feedback("Preset padrão removido da aba", "info")
+            return
+        _set_filter_default_preset(filter_key, current)
+        _flash_feedback(f"Preset padrão da aba: {current}", "success")
+
+    def _schedule_auto_apply(*_):
+        global _filter_auto_apply_after
+        if not auto_apply_var.get():
+            return
+        prev = _filter_auto_apply_after.get(filter_key)
+        if prev:
+            try:
+                bar.after_cancel(prev)
+            except Exception:
+                pass
+        _filter_auto_apply_after[filter_key] = bar.after(380, lambda: (apply_filters(), _filter_auto_apply_after.pop(filter_key, None)))
+
+    def _save_auto_apply_pref(*_):
+        payload = _load_prefs()
+        auto_cfg = payload.get("filter_auto_apply") or {}
+        if not isinstance(auto_cfg, dict):
+            auto_cfg = {}
+        auto_cfg[str(filter_key)] = bool(auto_apply_var.get())
+        payload["filter_auto_apply"] = auto_cfg
+        _save_prefs(payload)
+        if auto_apply_var.get():
+            _schedule_auto_apply()
+
+    build_label(top_row, "Buscar", font=theme_font("font_sm")).grid(row=0, column=0, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
+    query_entry.grid(row=0, column=1, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_1", 4), sticky="ew")
+
+    build_label(top_row, "Status", font=theme_font("font_sm")).grid(row=0, column=2, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
+    status_combo = ttk.Combobox(top_row, textvariable=status_var, values=["Todos", "MORADOR", "VISITANTE", "PRESTADOR", "AVISADO", "SEM CONTATO"], state="readonly")
+    status_combo.grid(row=0, column=3, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_1", 4), sticky="ew")
+
+    presets = _get_filter_presets()
+    build_label(top_row, "Preset", font=theme_font("font_sm")).grid(row=0, column=4, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
+    preset_combo = ttk.Combobox(top_row, textvariable=preset_var, values=["Preset (opcional)"] + sorted(presets.keys()), state="readonly")
+    preset_combo.grid(row=0, column=5, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_1", 4), sticky="ew")
+
+    btn_apply = build_primary_button(top_row, "Aplicar", apply_filters)
+    btn_apply.grid(row=0, column=6, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="e")
+    btn_clear = build_secondary_warning_button(top_row, "Limpar", clear_filters)
+    btn_clear.grid(row=0, column=7, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="e")
+    auto_apply_chk = tk.Checkbutton(top_row, text="Aplicar automaticamente", variable=auto_apply_var, bg=UI_THEME["surface"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), activebackground=UI_THEME["surface"], activeforeground=UI_THEME.get("on_surface", UI_THEME["text"]), selectcolor=UI_THEME.get("surface_alt", UI_THEME["surface"]))
+    auto_apply_chk.grid(row=0, column=9, padx=(theme_space("space_1", 4), 0), pady=theme_space("space_1", 4), sticky="e")
+
+    btn_save_preset = build_secondary_button(actions_row, "Salvar preset", _save_preset)
+    btn_rename_preset = build_secondary_button(actions_row, "Renomear preset", _rename_selected_preset)
+    btn_delete_preset = build_secondary_danger_button(actions_row, "Excluir preset", _delete_selected_preset)
+    btn_default_preset = build_secondary_button(actions_row, "Fixar preset da aba", _set_default_preset_for_tab)
+    btn_undo_filter = build_secondary_button(actions_row, "Desfazer", _undo_last_filter)
+    btn_advanced = build_secondary_button(actions_row, "Filtros avançados", _toggle_advanced)
+    quick_today_btn = build_secondary_button(actions_row, "Hoje", lambda: _quick_filter("today"), padx=8)
+    quick_sem_contato_btn = build_secondary_button(actions_row, "Sem contato", lambda: _quick_filter("sem_contato"), padx=8)
+    quick_alta_btn = build_secondary_button(actions_row, "Alta", lambda: _quick_filter("alta"), padx=8)
+
+    build_label(actions_row, "Ações", font=theme_font("font_sm"), muted=True).grid(row=0, column=0, padx=(0, theme_space("space_1", 4)), sticky="w")
+    btn_save_preset.grid(row=0, column=1, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
+    btn_rename_preset.grid(row=0, column=2, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
+    btn_delete_preset.grid(row=0, column=3, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
+    btn_default_preset.grid(row=0, column=4, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
+    btn_undo_filter.grid(row=0, column=5, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
+
+    quick_group = tk.Frame(actions_row, bg=UI_THEME["surface_alt"], highlightbackground=UI_THEME["border"], highlightthickness=1)
+    quick_group.grid(row=0, column=6, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_1", 4), sticky="w")
+    build_label(quick_group, "Rápidos", muted=True, bg=UI_THEME["surface_alt"], font=theme_font("font_sm")).pack(side=tk.LEFT, padx=(theme_space("space_1", 4), theme_space("space_1", 4)))
+    quick_today_btn.pack(in_=quick_group, side=tk.LEFT, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4))
+    quick_sem_contato_btn.pack(in_=quick_group, side=tk.LEFT, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4))
+    quick_alta_btn.pack(in_=quick_group, side=tk.LEFT, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4))
+    btn_advanced.grid(row=0, column=7, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
+
+    if isinstance(target_widget, ttk.Treeview):
+        col_menu_btn = build_secondary_button(actions_row, "Colunas", lambda: None)
+        col_menu_btn.grid(row=0, column=8, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_1", 4), sticky="w")
+
+        def _get_tree_columns_state():
+            all_cols = list(target_widget["columns"])
+            prefs_local = _load_prefs()
+            order_saved = prefs_local.get("control_column_order") or []
+            order = [c for c in order_saved if c in all_cols] + [c for c in all_cols if c not in order_saved]
+            visible_saved = prefs_local.get("control_column_visible") or {}
+            visible = {c: bool(visible_saved.get(c, True)) for c in all_cols}
+            return all_cols, order, visible
+
+        def _save_tree_columns_state(order, visible):
+            _persist_ui_state({"control_column_order": list(order), "control_column_visible": {k: bool(v) for k, v in visible.items()}})
+
+        def _apply_tree_columns(order, visible):
+            shown = [c for c in order if visible.get(c, True)]
+            if not shown and order:
+                shown = [order[0]]
+            target_widget.configure(displaycolumns=tuple(shown or order))
+
+        def _toggle_column(col):
+            _all, order, visible = _get_tree_columns_state()
+            visible[col] = not visible.get(col, True)
+            _save_tree_columns_state(order, visible)
+            _apply_tree_columns(order, visible)
+
+        def _move_column(direction):
+            col_name = simpledialog.askstring("Reordenar coluna", f"Coluna atual ({direction}): {', '.join(target_widget['columns'])}", parent=bar.winfo_toplevel())
+            col_name = str(col_name or "").strip()
+            if not col_name:
+                return
+            _all, order, visible = _get_tree_columns_state()
+            if col_name not in order:
+                _flash_feedback("Coluna inválida", "warning")
+                return
+            idx = order.index(col_name)
+            tgt = idx - 1 if direction == "esquerda" else idx + 1
+            if tgt < 0 or tgt >= len(order):
+                return
+            order[idx], order[tgt] = order[tgt], order[idx]
+            _save_tree_columns_state(order, visible)
+            _apply_tree_columns(order, visible)
+
+        menu = tk.Menu(col_menu_btn, tearoff=0)
+        cols_all, cols_order, cols_visible = _get_tree_columns_state()
+        _apply_tree_columns(cols_order, cols_visible)
+        for col in cols_all:
+            menu.add_checkbutton(label=col, onvalue=True, offvalue=False, variable=tk.BooleanVar(value=cols_visible.get(col, True)), command=lambda c=col: _toggle_column(c))
+        menu.add_separator()
+        menu.add_command(label="Mover coluna para esquerda", command=lambda: _move_column("esquerda"))
+        menu.add_command(label="Mover coluna para direita", command=lambda: _move_column("direita"))
+        col_menu_btn.configure(command=lambda m=menu, b=col_menu_btn: m.tk_popup(b.winfo_rootx(), b.winfo_rooty() + b.winfo_height()))
+
+    attach_tooltip(btn_apply, "Aplica os filtros atuais")
+    attach_tooltip(btn_clear, "Limpa todos os filtros")
+    attach_tooltip(btn_save_preset, "Salva os filtros como preset")
+    attach_tooltip(btn_default_preset, "Define o preset selecionado como padrão da aba")
+    attach_tooltip(btn_undo_filter, "Restaura o último conjunto de filtros")
+    attach_tooltip(quick_today_btn, "Filtra registros do dia atual")
+    attach_tooltip(quick_sem_contato_btn, "Mostra apenas status sem contato")
+    attach_tooltip(quick_alta_btn, "Busca ocorrências de alta severidade")
+
+    build_label(advanced_frame, "Ordem", font=theme_font("font_sm")).grid(row=0, column=0, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
+    order_combo = ttk.Combobox(advanced_frame, textvariable=order_var, values=["Mais recentes", "Mais antigas"], state="readonly")
+    order_combo.grid(row=0, column=1, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8), sticky="ew")
+
+    build_label(advanced_frame, "Data", font=theme_font("font_sm")).grid(row=0, column=2, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
+    date_mode_combo = ttk.Combobox(advanced_frame, textvariable=date_mode_var, values=["Mais recentes", "Específica"], state="readonly")
+    date_mode_combo.grid(row=0, column=3, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="ew")
+    date_entry.grid(in_=advanced_frame, row=0, column=4, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8), sticky="w")
+
+    build_label(advanced_frame, "Hora", font=theme_font("font_sm")).grid(row=0, column=5, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
+    time_mode_combo = ttk.Combobox(advanced_frame, textvariable=time_mode_var, values=["Mais recentes", "Específica"], state="readonly")
+    time_mode_combo.grid(row=0, column=6, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="ew")
+    time_entry.grid(in_=advanced_frame, row=0, column=7, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8), sticky="w")
+
+    build_label(advanced_frame, "Bloco", font=theme_font("font_sm")).grid(row=0, column=8, padx=(0, theme_space("space_1", 4)), pady=theme_space("space_2", 8), sticky="w")
+    bloco_combo = ttk.Combobox(advanced_frame, textvariable=bloco_var, values=["Todos"] + [str(i) for i in range(1, 31)], state="readonly")
+    bloco_combo.grid(row=0, column=9, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8), sticky="ew")
+
+    preset_combo.bind("<<ComboboxSelected>>", _load_preset, add="+")
+
+    _filter_controls[filter_key] = [order_combo, date_mode_combo, date_entry, time_mode_combo, time_entry, query_entry, status_combo, bloco_combo, preset_combo, auto_apply_chk]
+    for control in _filter_controls[filter_key]:
+        bind_focus_ring(control)
+
+    tab_order = [query_entry, status_combo, preset_combo, btn_apply, btn_clear, auto_apply_chk, btn_save_preset, btn_rename_preset, btn_delete_preset, btn_default_preset, btn_undo_filter, quick_today_btn, quick_sem_contato_btn, quick_alta_btn, btn_advanced, order_combo, date_mode_combo, date_entry, time_mode_combo, time_entry, bloco_combo]
+    for idx, widget in enumerate(tab_order):
+        nxt = tab_order[(idx + 1) % len(tab_order)]
+        widget.bind("<Tab>", lambda _e, w=nxt: (w.focus_set(), "break"), add="+")
+
+    top_row.grid_columnconfigure(1, weight=3)
+    top_row.grid_columnconfigure(3, weight=1)
+    top_row.grid_columnconfigure(5, weight=1)
+    top_row.grid_columnconfigure(8, weight=1)
+    top_row.grid_columnconfigure(9, weight=1)
+
+    for c in (1, 3, 6, 9):
+        advanced_frame.grid_columnconfigure(c, weight=1)
+
+    date_mode_var.trace_add("write", lambda *_: (update_entry_state(), _set_apply_dirty_state()))
+    time_mode_var.trace_add("write", lambda *_: (update_entry_state(), _set_apply_dirty_state()))
+    query_var.trace_add("write", lambda *_: (_update_filter_badge(), _set_apply_dirty_state(), _schedule_auto_apply()))
+    status_var.trace_add("write", lambda *_: (_update_filter_badge(), _set_apply_dirty_state(), _schedule_auto_apply()))
+    bloco_var.trace_add("write", lambda *_: (_update_filter_badge(), _set_apply_dirty_state(), _schedule_auto_apply()))
+    preset_var.trace_add("write", lambda *_: _set_apply_dirty_state())
+    auto_apply_var.trace_add("write", _save_auto_apply_pref)
+
+    update_entry_state()
+    if filter_key not in _filter_state:
+        _filter_state[filter_key] = _default_filters()
+    _apply_payload(_filter_state.get(filter_key) or _default_filters())
+    default_preset = _get_filter_default_preset(filter_key)
+    if default_preset:
+        presets_now = _get_filter_presets()
+        if default_preset in presets_now:
+            preset_var.set(default_preset)
+            _apply_payload(presets_now.get(default_preset) or {})
+            apply_filters()
+    _update_filter_badge()
+    _set_apply_dirty_state()
+    return bar
+
+def _apply_hover_line(text_widget, line, hover_tag):
+    if text_widget in _text_edit_lock:
+        return
+    if not line:
+        return
+    start = f"{line}.0"
+    end = f"{line}.0 lineend+1c"
+    try:
+        text_widget.config(state="normal")
+        text_widget.tag_add(hover_tag, start, end)
+        text_widget.config(state="disabled")
+    except Exception:
+        try:
+            text_widget.tag_add(hover_tag, start, end)
+        except Exception:
+            pass
+
+
+def _apply_hover_record(text_widget, rec_tag, hover_tag):
+    if text_widget in _text_edit_lock or not rec_tag:
+        return False
+    try:
+        ranges = text_widget.tag_ranges(rec_tag)
+        if not ranges or len(ranges) < 2:
+            return False
+        text_widget.config(state="normal")
+        text_widget.tag_add(hover_tag, ranges[0], ranges[1])
+        text_widget.config(state="disabled")
+        return True
+    except Exception:
+        return False
+
+def _clear_hover_line(text_widget, hover_tag):
+    if text_widget in _text_edit_lock:
+        return
+    try:
+        text_widget.config(state="normal")
+        text_widget.tag_remove(hover_tag, "1.0", tk.END)
+        text_widget.config(state="disabled")
+    except Exception:
+        try:
+            text_widget.tag_remove(hover_tag, "1.0", tk.END)
+        except Exception:
+            pass
+    _hover_state[text_widget] = None
+
+def _restore_hover_if_needed(text_widget, hover_tag):
+    if text_widget in _text_edit_lock:
+        return
+    token = _hover_state.get(text_widget)
+    if not token:
+        return
+    if isinstance(token, str) and token.startswith("tag:"):
+        rec_tag = token[4:]
+        if _apply_hover_record(text_widget, rec_tag, hover_tag):
+            return
+        _hover_state[text_widget] = None
+        return
+    line = token
+    try:
+        line_text = text_widget.get(f"{line}.0", f"{line}.end")
+    except Exception:
+        line_text = ""
+    if not line_text.strip():
+        _hover_state[text_widget] = None
+        return
+    try:
+        x_root = text_widget.winfo_pointerx()
+        y_root = text_widget.winfo_pointery()
+        widget_at_pointer = text_widget.winfo_containing(x_root, y_root)
+        if widget_at_pointer is not text_widget:
+            return
+    except Exception:
+        return
+    _apply_hover_line(text_widget, line, hover_tag)
+
+def _register_hover_motion_callback(text_widget, callback):
+    if not callable(callback):
+        return
+    _hover_motion_callbacks.setdefault(text_widget, []).append(callback)
+
+
+def _hover_tag_at_index(text_widget, index):
+    try:
+        for tag in text_widget.tag_names(index):
+            if "_record_" in tag:
+                return tag
+    except Exception:
+        return None
+    return None
+
+
+def _apply_hover_motion_pipeline(text_widget, x, y):
+    if text_widget in _text_edit_lock:
+        return
+    _mark_text_interaction(text_widget)
+    state = _hover_runtime_state.setdefault(text_widget, {"last_record_tag": None, "last_line": None, "pending_after": None, "last_event": None, "last_hover_range": None, "last_callback_token": None})
+    t0 = time.perf_counter()
+    try:
+        index = text_widget.index(f"@{x},{y}")
+    except Exception:
+        return
+    line = index.split(".")[0]
+    rec_tag = _hover_tag_at_index(text_widget, index)
+    hover_tag = "hover_line"
+
+    prev_tag = state.get("last_record_tag")
+    prev_line = state.get("last_line")
+
+    if rec_tag != prev_tag:
+        if prev_tag:
+            _set_record_marker(text_widget, prev_tag, False)
+        if rec_tag:
+            _set_record_marker(text_widget, rec_tag, True)
+        state["last_record_tag"] = rec_tag
+
+    target_range = None
+    hover_token = None
+    if rec_tag:
+        try:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if ranges and len(ranges) >= 2:
+                target_range = (str(ranges[0]), str(ranges[1]))
+                hover_token = f"tag:{rec_tag}"
+        except Exception:
+            target_range = None
+            hover_token = None
+        _text_hover_marker[text_widget] = rec_tag
+    else:
+        _text_hover_marker[text_widget] = None
+        try:
+            line_text = text_widget.get(f"{line}.0", f"{line}.end")
+        except Exception:
+            line_text = ""
+        if line_text.strip():
+            start_line = f"{line}.0"
+            end_line = f"{line}.0 lineend+1c"
+            target_range = (start_line, end_line)
+            hover_token = line
+
+    try:
+        text_widget.configure(cursor="hand2" if rec_tag else "")
+    except Exception:
+        pass
+
+    prev_range = state.get("last_hover_range")
+    if prev_range and (not target_range or prev_range != target_range):
+        try:
+            text_widget.tag_remove(hover_tag, prev_range[0], prev_range[1])
+        except Exception:
+            pass
+        state["last_hover_range"] = None
+
+    if target_range and state.get("last_hover_range") != target_range:
+        try:
+            text_widget.tag_add(hover_tag, target_range[0], target_range[1])
+            state["last_hover_range"] = target_range
+        except Exception:
+            state["last_hover_range"] = None
+
+    _hover_state[text_widget] = hover_token
+    if rec_tag is None:
+        state["last_line"] = line if target_range else None
+    else:
+        state["last_line"] = prev_line
+
+    callback_token = hover_token or ""
+    if callback_token != state.get("last_callback_token"):
+        state["last_callback_token"] = callback_token
+        for cb in _hover_motion_callbacks.get(text_widget, []):
+            try:
+                cb(rec_tag=rec_tag, line=line, index=index)
+            except Exception:
+                continue
+
+    elapsed = (time.perf_counter() - t0) * 1000
+    _perf_sample("hover", elapsed)
+
+def _bind_hover_highlight(text_widget):
+    # compatibilidade: busca de tags segue regra "_record_" in t dentro do pipeline
+    hover_tag = "hover_line"
+    text_widget.tag_configure(hover_tag, background=UI_THEME["focus_bg"], foreground=UI_THEME["focus_text"])
+    _hover_state[text_widget] = None
+    _hover_runtime_state[text_widget] = {"last_record_tag": None, "last_line": None, "pending_after": None, "last_event": None, "last_hover_range": None, "last_callback_token": None}
+
+    def on_motion(event):
+        state = _hover_runtime_state.setdefault(text_widget, {"last_record_tag": None, "last_line": None, "pending_after": None, "last_event": None, "last_hover_range": None, "last_callback_token": None})
+        state["last_event"] = (event.x, event.y)
+        pending = state.get("pending_after")
+        if pending:
+            try:
+                text_widget.after_cancel(pending)
+            except Exception:
+                pass
+        state["pending_after"] = text_widget.after(8, lambda tw=text_widget: _flush_hover_motion(tw))
+
+    def _on_leave(_event):
+        state = _hover_runtime_state.get(text_widget) or {}
+        pending = state.get("pending_after")
+        if pending:
+            try:
+                text_widget.after_cancel(pending)
+            except Exception:
+                pass
+            state["pending_after"] = None
+        prev_tag = state.get("last_record_tag")
+        if prev_tag:
+            _set_record_marker(text_widget, prev_tag, False)
+        state["last_record_tag"] = None
+        state["last_line"] = None
+        prev_range = state.get("last_hover_range")
+        if prev_range:
+            try:
+                text_widget.tag_remove(hover_tag, prev_range[0], prev_range[1])
+            except Exception:
+                pass
+        state["last_hover_range"] = None
+        state["last_callback_token"] = None
+        _text_hover_marker[text_widget] = None
+        for cb in _hover_motion_callbacks.get(text_widget, []):
+            try:
+                cb(rec_tag=None, line=None, index=None)
+            except Exception:
+                continue
+
+    text_widget.bind("<Motion>", on_motion)
+    text_widget.bind("<Leave>", _on_leave)
+
+
+def _flush_hover_motion(text_widget):
+    state = _hover_runtime_state.get(text_widget) or {}
+    state["pending_after"] = None
+    evt = state.get("last_event")
+    if not evt:
+        return
+    _apply_hover_motion_pipeline(text_widget, evt[0], evt[1])
+
+def _find_encomenda_record_at_index(text_widget, index):
+    try:
+        line = index.split(".", 1)[0]
+        line_text = text_widget.get(f"{line}.0", f"{line}.end")
+        if not line_text.strip():
+            return None
+    except Exception:
+        pass
+
+    tag_map = _encomenda_tag_map.get(text_widget, {})
+    if tag_map:
+        try:
+            for tag in text_widget.tag_names(index):
+                if tag.startswith("encomenda_record_") and tag in tag_map:
+                    return tag_map[tag]
+        except Exception:
+            pass
+
+    ranges = _encomenda_display_map.get(text_widget, [])
+    if not ranges:
+        return None
+
+    try:
+        line_no = int(line)
+    except Exception:
+        line_no = None
+
+    for start, end, record in ranges:
+        try:
+            if text_widget.compare(index, ">=", start) and text_widget.compare(index, "<=", end):
+                return record
+        except Exception:
+            pass
+        if line_no is not None:
+            try:
+                s_line = int(str(start).split(".", 1)[0])
+                e_line = int(str(end).split(".", 1)[0])
+            except Exception:
+                continue
+            if s_line <= line_no <= e_line:
+                return record
+    return None
+
+def _update_encomenda_status(record, status):
+    registros = _load_safe(ENCOMENDAS_ARQUIVO)
+    match = None
+    for r in registros:
+        if r.get("ID") and record.get("ID") and str(r.get("ID")) == str(record.get("ID")):
+            match = r
+            break
+        if r.get("_entrada_id") and record.get("_entrada_id") and str(r.get("_entrada_id")) == str(record.get("_entrada_id")):
+            match = r
+            break
+    if match is None and record:
+        try:
+            target_key = _record_hash_key_encomenda(record)
+        except Exception:
+            target_key = None
+        if target_key:
+            for r in registros:
+                try:
+                    if _record_hash_key_encomenda(r) == target_key:
+                        match = r
+                        break
+                except Exception:
+                    continue
+    if match is None:
+        return False
+    now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    match["STATUS_ENCOMENDA"] = status
+    match["STATUS_DATA_HORA"] = now_str
+    try:
+        _atomic_write(ENCOMENDAS_ARQUIVO, {"registros": registros})
+
+        # Recalcula análises/avisos para refletir imediatamente mudança de status (AVISADO <-> SEM CONTATO).
+        try:
+            import analises as analises_mod
+            import avisos as avisos_mod
+            analises_mod.build_analises(ARQUIVO, ANALISES_ARQUIVO)
+            avisos_mod.build_avisos(ANALISES_ARQUIVO, AVISOS_ARQUIVO)
+        except Exception:
+            pass
+
+        return True
+    except Exception:
+        return False
+
+def _build_encomenda_actions(frame, text_widget, info_label):
+    action_frame = tk.Frame(frame, bg=UI_THEME["surface"])
+    action_frame.pack_forget()
+
+    # manter estado por widget dentro do mapa global
+    current = {"record": None, "rec_tag": None}
+
+    def hide_actions():
+        action_frame.pack_forget()
+        current["record"] = None
+        current["rec_tag"] = None
+        # remover highlight
+        try:
+            text_widget.config(state="normal")
+            text_widget.tag_remove("encomenda_selected", "1.0", tk.END)
+            text_widget.config(state="disabled")
+        except Exception:
+            pass
+
+    def show_actions():
+        if action_frame.winfo_ismapped():
+            return
+        action_frame.pack(fill=tk.X, padx=10, pady=(0, 8))
+
+    def apply_status(status):
+        record = current.get("record")
+        if not record:
+            return
+        if _update_encomenda_status(record, status):
+            _populate_text(text_widget, info_label)
+        hide_actions()
+
+    # botões existentes
+    tk.Button(
+        action_frame,
+        text="AVISADO",
+        command=lambda: apply_status("AVISADO"),
+        bg=UI_THEME["surface_alt"],
+        fg=UI_THEME["text"],
+        activebackground=UI_THEME["primary"],
+        activeforeground=UI_THEME["text"],
+        relief="flat",
+        padx=18,
+    ).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+    tk.Button(
+        action_frame,
+        text="SEM CONTATO",
+        command=lambda: apply_status("SEM CONTATO"),
+        bg=UI_THEME["surface_alt"],
+        fg=UI_THEME["text"],
+        activebackground=UI_THEME["primary"],
+        activeforeground=UI_THEME["text"],
+        relief="flat",
+        padx=18,
+    ).pack(side=tk.LEFT, expand=True, padx=10, pady=8)
+
+    # Armazenar a UI de ações no mapa global, incluindo current e funções de show/hide
+    _encomenda_action_ui[text_widget] = {
+        "frame": action_frame,
+        "hide": hide_actions,
+        "show": show_actions,
+        "current": current,
+    }
+
+    # --- fallback global: bind no Text que localiza o registro clicado e mostra ações ---
+    def on_click(event):
+        """
+        Handler global: quando o usuário clicar em qualquer ponto do Text, busca o registro
+        e atualiza `current` no mapa global, depois mostra o painel de ações.
+        Isso funciona mesmo quando tag_bind falha.
+        """
+        try:
+            idx = text_widget.index(f"@{event.x},{event.y}")
+        except Exception:
+            return
+        record = _find_encomenda_record_at_index(text_widget, idx)
+        ui = _encomenda_action_ui.get(text_widget)
+        if not ui:
+            return
+        if record:
+            cur = ui.get("current")
+            if cur is None:
+                cur = {"record": None, "rec_tag": None}
+                ui["current"] = cur
+            cur["record"] = record
+            # tentar achar o rec_tag correspondente (comparando hash)
+            rec_tag_found = None
+            tag_map = _encomenda_tag_map.get(text_widget, {})
+            try:
+                target_key = _record_hash_key_encomenda(record)
+            except Exception:
+                target_key = None
+            if target_key:
+                for tag, rec_obj in tag_map.items():
+                    try:
+                        if _record_hash_key_encomenda(rec_obj) == target_key:
+                            rec_tag_found = tag
+                            break
+                    except Exception:
+                        continue
+            cur["rec_tag"] = rec_tag_found
+            # destacar se houver tag encontrada
+            try:
+                text_widget.config(state="normal")
+                text_widget.tag_remove("encomenda_selected", "1.0", tk.END)
+                if rec_tag_found:
+                    ranges = text_widget.tag_ranges(rec_tag_found)
+                    if ranges and len(ranges) >= 2:
+                        text_widget.tag_add("encomenda_selected", ranges[0], ranges[1])
+                text_widget.config(state="disabled")
+            except Exception:
+                pass
+            show_fn = ui.get("show")
+            if callable(show_fn):
+                show_fn()
+        else:
+            hide_fn = ui.get("hide")
+            if callable(hide_fn):
+                hide_fn()
+
+    # garantir que não existam binds duplicados:
+    try:
+        text_widget.unbind("<Button-1>")
+    except Exception:
+        pass
+    # adicionar bind de fallback
+    text_widget.bind("<Button-1>", on_click)
+
+def _set_fullscreen(window):
+    try:
+        window.state("zoomed")
+    except Exception:
+        pass
+
+def _apply_dark_theme(widget):
+    try:
+        widget.configure(bg=UI_THEME["surface"])
+    except Exception:
+        pass
+
+def _apply_light_theme(widget):
+    try:
+        widget.configure(bg=UI_THEME["bg"])
+    except Exception:
+        pass
+
+def _build_text_actions(frame, text_widget, info_label, path):
+    current = {"record": None, "rec_tag": None, "pinned": False}
+    edit_state = {"active": False, "tag": None, "dirty": False, "range": None, "max_index": None}
+
+    is_orient_obs = os.path.basename(path) in ("orientacoes.json", "observacoes.json")
+    is_encomendas = os.path.basename(path) == "encomendasend.json"
+
+    inline_wrap = tk.Frame(text_widget, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    buttons_row = tk.Frame(inline_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    buttons_row.pack(side=tk.TOP, fill=tk.X)
+    toolbar_parent = frame if is_orient_obs else text_widget
+    toolbar_wrap = tk.Frame(toolbar_parent, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    toolbar_center = tk.Frame(toolbar_wrap, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    toolbar_center.pack(side=tk.TOP, fill=tk.X)
+    toolbar = tk.Frame(toolbar_center, bg=UI_THEME["surface"], bd=0, highlightthickness=0)
+    toolbar.pack(side=tk.TOP, pady=2)
+
+    _inline_state = {"visible": False, "tag": None}
+
+    def _mini_btn(parent, label, cmd, glow=None):
+        b = tk.Button(
+            parent,
+            text=label,
+            command=cmd,
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+            bg=UI_THEME["surface"],
+            fg=UI_THEME.get("text", "#E6EDF3"),
+            activebackground=UI_THEME.get("surface_alt", UI_THEME["surface"]),
+            activeforeground=UI_THEME.get("text", "#FFFFFF"),
+            padx=6,
+            pady=2,
+            font=theme_font("font_sm", "bold"),
+        )
+
+        def _enter(_e):
+            b.configure(bg=(glow or UI_THEME.get("focus_bg", UI_THEME.get("surface_alt", "#1F2937"))))
+
+        def _leave(_e):
+            b.configure(bg=UI_THEME["surface"])
+
+        b.bind("<Enter>", _enter, add="+")
+        b.bind("<Leave>", _leave, add="+")
+        return b
+
+    def _record_identity_match(r, rec):
+        if str(r.get("id") or r.get("ID") or "") and str(rec.get("id") or rec.get("ID") or ""):
+            return str(r.get("id") or r.get("ID")) == str(rec.get("id") or rec.get("ID"))
+        if is_encomendas:
+            try:
+                return _record_hash_key_encomenda(r) == _record_hash_key_encomenda(rec)
+            except Exception:
+                return False
+        return str(r.get("texto") or r.get("texto_original") or "") == str(rec.get("texto") or rec.get("texto_original") or "")
+
+    def _set_filters_enabled(enabled: bool):
+        for w in _filter_controls.get(text_widget, []):
+            try:
+                if isinstance(w, ttk.Combobox):
+                    w.configure(state=("readonly" if enabled else "disabled"))
+                else:
+                    w.configure(state=("normal" if enabled else "disabled"))
+            except Exception:
+                pass
+
+    def _reload():
+        _populate_text(text_widget, info_label)
+        _update_status_cards()
+
+    def _apply_record_status_style(rec_tag, status):
+        try:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if not ranges or len(ranges) < 2:
+                return
+            start, end = ranges[0], ranges[1]
+            text_widget.config(state="normal")
+            text_widget.tag_remove("status_avisado", start, end)
+            text_widget.tag_remove("status_sem_contato", start, end)
+            status_up = str(status or "").strip().upper()
+            if status_up == "AVISADO":
+                text_widget.tag_add("status_avisado", start, end)
+            elif status_up == "SEM CONTATO":
+                text_widget.tag_add("status_sem_contato", start, end)
+        except Exception:
+            return
+        finally:
+            try:
+                text_widget.config(state="disabled")
+            except Exception:
+                pass
+
+    def _hide_inline(unpin=False):
+        if edit_state.get("active"):
+            return
+        try:
+            inline_wrap.place_forget()
+        except Exception:
+            pass
+        try:
+            toolbar_wrap.place_forget()
+        except Exception:
+            pass
+        try:
+            toolbar_wrap.pack_forget()
+        except Exception:
+            pass
+        _inline_state["visible"] = False
+        _inline_state["tag"] = None
+        if unpin:
+            current["pinned"] = False
+            current["record"] = None
+            current["rec_tag"] = None
+    def _place_for_tag(rec_tag, anchor_idx=None):
+        try:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if not ranges or len(ranges) < 2:
+                return
+            start, end = ranges[0], ranges[1]
+            if anchor_idx is not None:
+                end_idx = text_widget.index(anchor_idx)
+            else:
+                # usa o último caractere visível real do registro (ignorando quebras de linha finais)
+                end_idx = text_widget.index(f"{end} -1c")
+                scan_idx = end_idx
+                for _ in range(6):
+                    try:
+                        ch = text_widget.get(scan_idx)
+                    except Exception:
+                        break
+                    if ch and ch not in ("\n", "\r"):
+                        break
+                    prev_idx = text_widget.index(f"{scan_idx} -1c")
+                    if prev_idx == scan_idx or text_widget.compare(prev_idx, "<", start):
+                        break
+                    scan_idx = prev_idx
+                end_idx = scan_idx
+            box = text_widget.bbox(end_idx)
+            if not box:
+                box = text_widget.bbox(start)
+            if not box:
+                try:
+                    inline_wrap.place_forget()
+                except Exception:
+                    pass
+                _inline_state["visible"] = False
+                return
+            x, y, w, h = box
+            inline_wrap.update_idletasks()
+            fw = max(inline_wrap.winfo_reqwidth(), 80)
+            fh = max(inline_wrap.winfo_reqheight(), 16)
+            # nasce imediatamente após o final do texto do registro
+            tx_preferred = int(x + w + 2)
+            tx_limit = max(8, text_widget.winfo_width() - fw - 12)
+            wrapped_to_next_line = tx_preferred > tx_limit
+            tx = max(8, min(tx_preferred, tx_limit))
+            # quando fica na linha principal, centraliza com o meio do texto
+            buttons_row.update_idletasks()
+            icon_h = max(buttons_row.winfo_reqheight(), 12)
+            if wrapped_to_next_line:
+                # se quebrar para baixo, ancora no início do conteúdo da linha para não cobrir texto acima
+                try:
+                    first_box = text_widget.bbox(start)
+                except Exception:
+                    first_box = None
+                tx = max(8, min((first_box[0] if first_box else x), tx_limit))
+                ty = max(0, int(y + h + 1))
+            else:
+                text_center_y = y + (h / 2)
+                align_bias = -1
+                ty = max(0, int(round(text_center_y - (icon_h / 2) + align_bias)))
+            inline_wrap.place(x=tx, y=ty)
+            inline_wrap.lift()
+            _inline_state["visible"] = True
+            _inline_state["tag"] = rec_tag
+        except Exception:
+            return
+
+    def _place_toolbar_for_tag(_rec_tag=None):
+        if not is_orient_obs:
+            return
+        try:
+            if toolbar_wrap.winfo_manager() == "pack":
+                return
+            toolbar_wrap.pack(
+                fill=tk.X,
+                padx=theme_space("space_3", 10),
+                pady=(0, theme_space("space_1", 4)),
+                before=text_widget.master,
+            )
+            toolbar_wrap.lift()
+        except Exception:
+            return
+
+    def _find_record_by_tag(tag):
+        return _record_tag_map_generic.get(text_widget, {}).get(tag) or _encomenda_tag_map.get(text_widget, {}).get(tag)
+
+    def _show_for(tag, pin=False):
+        rec = _find_record_by_tag(tag)
+        if not rec:
+            return
+        current["record"] = rec
+        current["rec_tag"] = tag
+        if pin:
+            current["pinned"] = True
+        _place_for_tag(tag)
+
+    def delete_record():
+        rec = current.get("record")
+        if not rec:
+            return
+        try:
+            token = _record_force_visibility_key(rec)
+            visible_set = _forced_visible_records.get(text_widget)
+            if visible_set and token in visible_set:
+                visible_set.discard(token)
+        except Exception:
+            pass
+        registros = _load_safe(path)
+        novo = [r for r in registros if not _record_identity_match(r, rec)]
+        if len(novo) == len(registros):
+            return
+        _atomic_write(path, {"registros": novo})
+        _hide_inline(unpin=True)
+        _reload()
+
+    def apply_status(status):
+        rec = current.get("record")
+        if not rec:
+            return
+        source = _monitor_sources.get(text_widget, {}) or {}
+        filter_key = str(source.get("filter_key") or "")
+        if filter_key == "controle":
+            current_filter = dict(_filter_state.get(filter_key) or _default_filters())
+            if str(current_filter.get("status") or "Todos").strip().upper() != "TODOS":
+                current_filter["status"] = "Todos"
+                _filter_state[filter_key] = current_filter
+        try:
+            _forced_visible_records.setdefault(text_widget, set()).add(_record_force_visibility_key(rec))
+        except Exception:
+            pass
+        registros = _load_safe(path)
+        updated = False
+        new_status = str(status or "").strip().upper()
+        for r in registros:
+            if _record_identity_match(r, rec):
+                if is_encomendas:
+                    r["STATUS_ENCOMENDA"] = new_status
+                    r["STATUS_DATA_HORA"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                    rec["STATUS_ENCOMENDA"] = new_status
+                    rec["STATUS_DATA_HORA"] = r["STATUS_DATA_HORA"]
+                else:
+                    r["STATUS"] = new_status
+                    rec["STATUS"] = new_status
+                updated = True
+                break
+        if not updated:
+            return
+        _atomic_write(path, {"registros": registros})
+        rec_tag = current.get("rec_tag")
+        if rec_tag:
+            _apply_record_status_style(rec_tag, new_status)
+        _update_status_cards()
+        _hide_inline(unpin=True)
+
+    def mark_avisado():
+        apply_status("AVISADO")
+
+    def mark_sem_contato():
+        apply_status("SEM CONTATO")
+
+    def copy_record():
+        rec = current.get("record") or {}
+        text = str(rec.get("texto") or rec.get("texto_original") or "")
+        if not text:
+            text = str(rec)
+        try:
+            text_widget.clipboard_clear()
+            text_widget.clipboard_append(text)
+            text_widget.update_idletasks()
+        except Exception:
+            pass
+
+    def _apply_wrapper(prefix, suffix=""):
+        if not edit_state.get("active"):
+            return
+        try:
+            s = text_widget.index("sel.first")
+            e = text_widget.index("sel.last")
+            txt = text_widget.get(s, e)
+            text_widget.delete(s, e)
+            text_widget.insert(s, f"{prefix}{txt}{suffix}")
+            edit_state["dirty"] = True
+        except Exception:
+            pass
+
+    def _apply_heading(): _apply_wrapper("# ")
+    def _apply_bold(): _apply_wrapper("**", "**")
+    def _apply_italic(): _apply_wrapper("*", "*")
+    def _apply_underline(): _apply_wrapper("__", "__")
+    def _apply_strike(): _apply_wrapper("~~", "~~")
+    def _apply_code(): _apply_wrapper("`", "`")
+    def _apply_quote(): _apply_wrapper("> ")
+    def _apply_link(): _apply_wrapper("[", "](https://)")
+    def _apply_bullet_list(): _apply_wrapper("- ")
+
+    def _apply_align(mode):
+        if not edit_state.get("active"):
+            return
+        if mode == "left":
+            text_widget.tag_configure("align_edit", justify="left")
+        elif mode == "center":
+            text_widget.tag_configure("align_edit", justify="center")
+        else:
+            text_widget.tag_configure("align_edit", justify="right")
+        rng = edit_state.get("range")
+        if rng:
+            text_widget.tag_add("align_edit", rng[0], rng[1])
+        edit_state["dirty"] = True
+
+    def _active_edit_bounds():
+        base = edit_state.get("range")
+        if not base:
+            return None
+        start = base[0]
+        active_tag = edit_state.get("tag")
+        if not active_tag:
+            return (start, base[1])
+        try:
+            ranges = text_widget.tag_ranges(active_tag)
+            if ranges and len(ranges) >= 2:
+                return (start, ranges[1])
+        except Exception:
+            pass
+        return (start, base[1])
+
+    def _in_edit_range(idx):
+        bounds = _active_edit_bounds()
+        if not bounds:
+            return False
+        start, end = bounds
+        try:
+            return text_widget.compare(idx, ">=", start) and text_widget.compare(idx, "<=", end)
+        except Exception:
+            return False
+
+    def _editable_range_from_tag(rec_tag):
+        try:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if not ranges or len(ranges) < 2:
+                return None
+            start, end = ranges[0], ranges[1]
+            cursor = text_widget.index(f"{end} -1c")
+            for _ in range(16):
+                if text_widget.compare(cursor, "<", start):
+                    break
+                ch = text_widget.get(cursor)
+                if ch not in ("\n", "\r"):
+                    break
+                prev_cursor = text_widget.index(f"{cursor} -1c")
+                if prev_cursor == cursor:
+                    break
+                cursor = prev_cursor
+            final_end = text_widget.index(f"{cursor} +1c")
+            return (start, final_end)
+        except Exception:
+            return None
+
+    def _edit_visual_anchor(rec_tag):
+        rng = _editable_range_from_tag(rec_tag)
+        if rng:
+            try:
+                return text_widget.index(f"{rng[1]} -1c")
+            except Exception:
+                pass
+        try:
+            ranges = text_widget.tag_ranges(rec_tag)
+            if ranges and len(ranges) >= 2:
+                return text_widget.index(f"{ranges[1]} -1c")
+        except Exception:
+            pass
+        return "insert"
+
+    def _keep_insert_inside_edit_range():
+        bounds = _active_edit_bounds()
+        if not bounds:
+            return
+        start, end = bounds
+        try:
+            idx = text_widget.index("insert")
+            if text_widget.compare(idx, "<", start):
+                text_widget.mark_set("insert", start)
+            elif text_widget.compare(idx, ">", end):
+                text_widget.mark_set("insert", end)
+        except Exception:
+            return
+
+    def _finish_editing(reload_text=True):
+        edit_state.update({"active": False, "tag": None, "dirty": False, "range": None, "max_index": None})
+        _text_edit_lock.discard(text_widget)
+        _edit_active_record_tag.pop(text_widget, None)
+        _set_filters_enabled(True)
+        try:
+            toolbar_wrap.place_forget()
+        except Exception:
+            pass
+        try:
+            toolbar_wrap.pack_forget()
+        except Exception:
+            pass
+        _toggle_edit_buttons(False)
+        try:
+            text_widget.unbind("<KeyPress>", edit_state.get("_bind_key"))
+        except Exception:
+            pass
+        try:
+            text_widget.tag_remove("edit_outline", "1.0", tk.END)
+            text_widget.config(state="disabled")
+        except Exception:
+            pass
+        if reload_text:
+            _widget_render_cache.pop(text_widget, None)
+            _reload()
+        if current.get("rec_tag"):
+            _show_for(current.get("rec_tag"), pin=True)
+
+    def cancel_edit():
+        if not edit_state.get("active"):
+            return
+        _finish_editing(reload_text=True)
+
+    def _resolve_edit_save_range(rec_tag):
+        rng = _editable_range_from_tag(rec_tag) or edit_state.get("range")
+        if not rng:
+            return None
+        start, end = rng
+        max_idx = edit_state.get("max_index")
+        if max_idx:
+            try:
+                if text_widget.compare(max_idx, ">", end):
+                    end = max_idx
+            except Exception:
+                pass
+        return (start, end)
+
+    def save_edit():
+        rec = current.get("record")
+        rec_tag = current.get("rec_tag")
+        if not rec or not rec_tag:
+            return
+        rng = _resolve_edit_save_range(rec_tag)
+        if not rng:
+            return
+        try:
+            new_text = text_widget.get(rng[0], rng[1]).strip("\n\r")
+        except Exception:
+            return
+        registros = _load_safe(path)
+        for r in registros:
+            if _record_identity_match(r, rec):
+                r["texto"] = new_text
+                break
+        _atomic_write(path, {"registros": registros})
+        _finish_editing(reload_text=True)
+
+    def _toggle_edit_buttons(active: bool):
+        for w in buttons_row.winfo_children():
+            w.pack_forget()
+        if active:
+            btn_save.pack(side=tk.LEFT, padx=2, pady=3)
+            btn_cancel.pack(side=tk.LEFT, padx=2, pady=3)
+        else:
+            for b in (btn_copy, btn_down, btn_up, btn_edit, btn_close):
+                b.pack(side=tk.LEFT, padx=2, pady=3)
+
+    def enable_edit():
+        rec_tag = current.get("rec_tag")
+        if not rec_tag:
+            return
+        editable_range = _editable_range_from_tag(rec_tag)
+        if not editable_range:
+            return
+        start, end = editable_range
+        edit_state.update({"active": True, "tag": rec_tag, "dirty": False, "range": (start, end), "max_index": end})
+        _edit_active_record_tag[text_widget] = rec_tag
+        for _tag in (_record_bullet_tag_map.get(text_widget, {}) or {}).keys():
+            _set_record_marker(text_widget, _tag, _tag == rec_tag)
+        _text_edit_lock.add(text_widget)
+        _set_filters_enabled(False)
+        try:
+            text_widget.config(state="normal")
+            text_widget.focus_set()
+            text_widget.tag_add("edit_outline", start, end)
+            text_widget.tag_configure("edit_outline", background=UI_THEME.get("surface_alt", "#1F2937"), foreground=UI_THEME.get("text", "#E6EDF3"))
+            try:
+                text_widget.tag_lower("edit_outline", "sel")
+            except Exception:
+                pass
+            text_widget.mark_set("insert", start)
+        except Exception:
+            pass
+
+        def _guard_key(event):
+            if not edit_state.get("active"):
+                return None
+            _keep_insert_inside_edit_range()
+            bounds = _active_edit_bounds()
+            if not bounds:
+                return "break"
+            rng_start, rng_end = bounds
+            idx = text_widget.index("insert")
+            sel_start = text_widget.index("sel.first") if text_widget.tag_ranges("sel") else None
+            sel_end = text_widget.index("sel.last") if text_widget.tag_ranges("sel") else None
+            if sel_start and text_widget.compare(sel_start, "<", rng_start):
+                return "break"
+            if sel_end and text_widget.compare(sel_end, ">", rng_end):
+                return "break"
+            key = str(getattr(event, "keysym", "") or "")
+            nav_keys = {"Left", "Right", "Up", "Down", "Home", "End", "Prior", "Next"}
+            if key in {"BackSpace", "Delete"}:
+                if key == "BackSpace" and text_widget.compare(idx, "<=", rng_start) and not sel_start:
+                    return "break"
+            if not _in_edit_range(idx):
+                return "break"
+            if key not in nav_keys and not key.startswith("Shift") and not key.startswith("Control"):
+                edit_state["dirty"] = True
+                def _after_edit(tag=rec_tag):
+                    try:
+                        edit_state["max_index"] = text_widget.index("insert")
+                    except Exception:
+                        pass
+                    _place_for_tag(tag, anchor_idx=_edit_visual_anchor(tag))
+                text_widget.after_idle(_after_edit)
+                return None
+            text_widget.after_idle(lambda tag=rec_tag: _place_for_tag(tag, anchor_idx=_edit_visual_anchor(tag)))
+            return None
+
+        def _guard_pointer(_event=None):
+            if not edit_state.get("active"):
+                return None
+            _keep_insert_inside_edit_range()
+            text_widget.after_idle(lambda tag=rec_tag: _place_for_tag(tag, anchor_idx=_edit_visual_anchor(tag)))
+            return None
+
+        try:
+            text_widget.bind("<KeyPress>", _guard_key, add="+")
+            text_widget.bind("<ButtonRelease-1>", _guard_pointer, add="+")
+            text_widget.bind("<KeyRelease>", _guard_pointer, add="+")
+        except Exception:
+            pass
+
+        _toggle_edit_buttons(True)
+        _place_for_tag(rec_tag, anchor_idx=_edit_visual_anchor(rec_tag))
+        _place_toolbar_for_tag(rec_tag)
+
+    # ordem invertida solicitada (direita <- esquerda do pedido original): copiar, sem contato, avisado, editar, fechar
+    btn_copy = _mini_btn(buttons_row, "⧉", copy_record)
+    btn_down = _mini_btn(buttons_row, "▼", mark_sem_contato, glow=UI_THEME.get("danger", "#DC2626"))
+    btn_up = _mini_btn(buttons_row, "▲", mark_avisado, glow=UI_THEME.get("success", "#16A34A"))
+    btn_edit = _mini_btn(buttons_row, "✎", enable_edit)
+    btn_close = _mini_btn(buttons_row, "✕", delete_record, glow=UI_THEME.get("danger", "#DC2626"))
+    btn_save = _mini_btn(buttons_row, "💾", save_edit, glow=UI_THEME.get("success", "#16A34A"))
+    btn_cancel = _mini_btn(buttons_row, "↩", cancel_edit, glow=UI_THEME.get("danger", "#DC2626"))
+    attach_tooltip(btn_copy, "Copiar registro")
+    attach_tooltip(btn_down, "Marcar como sem contato")
+    attach_tooltip(btn_up, "Marcar como avisado")
+    attach_tooltip(btn_edit, "Editar registro")
+    attach_tooltip(btn_close, "Excluir registro")
+    attach_tooltip(btn_save, "Salvar edição")
+    attach_tooltip(btn_cancel, "Cancelar edição")
+    _toggle_edit_buttons(False)
+
+    if is_orient_obs:
+        for lbl, cmd, tip in [
+            ("H", _apply_heading, "Título"),
+            ("B", _apply_bold, "Negrito"),
+            ("I", _apply_italic, "Itálico"),
+            ("U", _apply_underline, "Sublinhado"),
+            ("S", _apply_strike, "Tachado"),
+            ("`", _apply_code, "Código"),
+            ("❝", _apply_quote, "Citação"),
+            ("•", _apply_bullet_list, "Lista"),
+            ("🔗", _apply_link, "Inserir link"),
+            ("⟸", lambda: _apply_align("left"), "Alinhar à esquerda"),
+            ("≡", lambda: _apply_align("center"), "Centralizar"),
+            ("⟹", lambda: _apply_align("right"), "Alinhar à direita"),
+        ]:
+            _b = _mini_btn(toolbar, lbl, cmd)
+            _b.pack(side=tk.LEFT, padx=2, pady=1)
+            attach_tooltip(_b, tip)
+
+    def _tag_at_event(event):
+        try:
+            idx = text_widget.index(f"@{event.x},{event.y}")
+            for tag in text_widget.tag_names(idx):
+                if "_record_" in tag:
+                    return tag
+        except Exception:
+            return None
+        return None
+
+    def _on_hover_pipeline(rec_tag=None, **_kwargs):
+        if edit_state.get("active"):
+            return
+        if _is_hover_suppressed(text_widget):
+            _hide_inline(unpin=False)
+            return
+        if rec_tag:
+            if current.get("rec_tag") != rec_tag or not inline_wrap.winfo_ismapped():
+                _show_for(rec_tag, pin=False)
+        else:
+            _hide_inline(unpin=False)
+
+    _register_hover_motion_callback(text_widget, _on_hover_pipeline)
+
+    def on_click(event):
+        tag = _tag_at_event(event)
+        if edit_state.get("active"):
+            active_tag = edit_state.get("tag")
+            if not tag or tag != active_tag:
+                _keep_insert_inside_edit_range()
+                return "break"
+            try:
+                click_idx = text_widget.index(f"@{event.x},{event.y}")
+                text_widget.mark_set("insert", click_idx)
+                _keep_insert_inside_edit_range()
+            except Exception:
+                pass
+            current["pinned"] = True
+            _show_for(active_tag, pin=True)
+            _place_for_tag(active_tag, anchor_idx=_edit_visual_anchor(active_tag))
+            return "break"
+        if not tag:
+            _hide_inline(unpin=True)
+            return
+        current["pinned"] = True
+        _show_for(tag, pin=True)
+
+    def on_leave(_event):
+        if not current.get("pinned") and not edit_state.get("active"):
+            _hide_inline(unpin=False)
+
+    def _on_scroll_activity():
+        _suppress_hover_temporarily(text_widget)
+        if edit_state.get("active"):
+            # Em edição, manter os botões presos ao MESMO registro, reposicionando
+            # apenas após o scroll efetivo para evitar troca visual de registro.
+            active_tag = edit_state.get("tag")
+            if active_tag:
+                text_widget.after_idle(
+                    lambda tag=active_tag: _place_for_tag(tag, anchor_idx=_edit_visual_anchor(tag))
+                )
+            return
+        text_widget.after_idle(lambda: _hide_inline(unpin=False))
+
+    _register_scroll_callback(text_widget, _on_scroll_activity)
+    for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+        try:
+            text_widget.bind(seq, lambda _e: _on_scroll_activity(), add="+")
+        except Exception:
+            pass
+    text_widget.bind("<Button-1>", on_click, add="+")
+    text_widget.bind("<Leave>", on_leave, add="+")
+
+    _text_action_ui[text_widget] = {
+        "frame": inline_wrap,
+        "hide": lambda: _hide_inline(unpin=True),
+        "show": lambda: _show_for(current.get("rec_tag"), pin=True) if current.get("rec_tag") else None,
+        "current": current,
+        "is_editing": lambda: bool(edit_state.get("active")),
+    }
+
+
+class _ChatGPTLikeScrollbar(tk.Canvas):
+    """Lightweight custom vertical scrollbar with ChatGPT-like minimal visuals."""
+
+    def __init__(self, parent, *, command=None, width=10, **kwargs):
+        self._track_bg = kwargs.pop("track_bg", UI_THEME.get("surface", "#151A22"))
+        self._thumb_bg = kwargs.pop("thumb_bg", UI_THEME.get("text", "#E6EDF3"))
+        self._thumb_hover_bg = kwargs.pop("thumb_hover_bg", UI_THEME.get("focus_text", "#FFFFFF"))
+        super().__init__(
+            parent,
+            width=width,
+            bg=self._track_bg,
+            highlightthickness=0,
+            bd=0,
+            relief="flat",
+            cursor="arrow",
+        )
+        self._command = command
+        self._first = 0.0
+        self._last = 1.0
+        self._drag_active = False
+        self._drag_offset = 0
+        self._hover_active = False
+        self._thumb_id = self.create_rectangle(0, 0, width, 20, fill=self._thumb_bg, outline=self._thumb_bg)
+        self.bind("<Configure>", lambda _e: self._redraw())
+        self.bind("<ButtonPress-1>", self._on_press)
+        self.bind("<B1-Motion>", self._on_drag)
+        self.bind("<ButtonRelease-1>", self._on_release)
+        self.bind("<Motion>", self._on_motion)
+        self.bind("<Leave>", self._on_leave)
+
+    def set(self, first, last):
+        try:
+            self._first = max(0.0, min(float(first), 1.0))
+            self._last = max(self._first, min(float(last), 1.0))
+        except Exception:
+            self._first, self._last = 0.0, 1.0
+        self._redraw()
+
+    def _thumb_bounds(self):
+        h = max(self.winfo_height(), 1)
+        top = int(self._first * h)
+        bottom = int(self._last * h)
+        min_size = 28
+        if bottom - top < min_size:
+            bottom = min(h, top + min_size)
+            top = max(0, bottom - min_size)
+        return top, bottom
+
+    def _redraw(self):
+        w = max(self.winfo_width(), 1)
+        top, bottom = self._thumb_bounds()
+        self.coords(self._thumb_id, 0, top, w, bottom)
+        thumb_color = self._thumb_hover_bg if self._hover_active else self._thumb_bg
+        self.itemconfigure(self._thumb_id, fill=thumb_color, outline=thumb_color)
+
+    def _on_press(self, event):
+        top, bottom = self._thumb_bounds()
+        if top <= event.y <= bottom:
+            self._drag_active = True
+            self._drag_offset = event.y - top
+
+    def _on_drag(self, event):
+        if not self._drag_active:
+            return
+        h = max(self.winfo_height(), 1)
+        top, bottom = self._thumb_bounds()
+        thumb_h = max(bottom - top, 1)
+        new_top = min(max(event.y - self._drag_offset, 0), h - thumb_h)
+        fraction = new_top / float(h)
+        if callable(self._command):
+            try:
+                self._command("moveto", fraction)
+            except Exception:
+                return
+
+    def _on_release(self, _event):
+        self._drag_active = False
+
+    def _on_motion(self, event):
+        top, bottom = self._thumb_bounds()
+        is_hover = top <= event.y <= bottom
+        if is_hover != self._hover_active:
+            self._hover_active = is_hover
+            self._redraw()
+
+    def _on_leave(self, _event):
+        if self._hover_active:
+            self._hover_active = False
+            self._redraw()
+
+
+def _create_safe_scrollbar(parent, *, use_ttk=True, style_name="Monitor.Vertical.TScrollbar", **kwargs):
+    """Create a subtle themed scrollbar with graceful fallback for Tk option differences."""
+    options = dict(kwargs)
+    if use_ttk:
+        ttk_options = dict(options)
+        ttk_options.pop("relief", None)
+        ttk_options.pop("bd", None)
+        ttk_options.pop("highlightthickness", None)
+        ttk_options.pop("troughcolor", None)
+        ttk_options.pop("activebackground", None)
+        ttk_options.pop("bg", None)
+        ttk_options.pop("width", None)
+        if style_name and "style" not in ttk_options:
+            ttk_options["style"] = style_name
+        try:
+            return ttk.Scrollbar(parent, **ttk_options)
+        except tk.TclError:
+            pass
+
+    while True:
+        try:
+            return tk.Scrollbar(parent, **options)
+        except tk.TclError as exc:
+            msg = str(exc)
+            marker = 'unknown option "-'
+            if marker not in msg:
+                raise
+            unsupported = msg.split(marker, 1)[1].split('"', 1)[0]
+            if not unsupported or unsupported not in options:
+                raise
+            options.pop(unsupported, None)
+
+
+def _create_safe_panedwindow(parent, **kwargs):
+    """Create a PanedWindow while gracefully dropping unsupported Tk options."""
+    options = dict(kwargs)
+    while True:
+        try:
+            return tk.PanedWindow(parent, **options)
+        except tk.TclError as exc:
+            msg = str(exc)
+            marker = 'unknown option "-'
+            if marker not in msg:
+                raise
+            unsupported = msg.split(marker, 1)[1].split('"', 1)[0]
+            if not unsupported or unsupported not in options:
+                raise
+            options.pop(unsupported, None)
+
+
+def _bind_scrollbar_drag_behavior(scrollbar, text_widget):
+    """Allow click-and-drag only when interaction starts on the scrollbar thumb."""
+    drag_state = {"active": False}
+
+    def _is_thumb_hit(event):
+        try:
+            part = str(scrollbar.identify(event.x, event.y) or "").lower()
+        except Exception:
+            return False
+        return "thumb" in part
+
+    def _start_drag(event):
+        drag_state["active"] = _is_thumb_hit(event)
+        if drag_state["active"]:
+            _drag_to(event)
+
+    def _drag_to(event):
+        if not drag_state.get("active"):
+            return
+        try:
+            height = max(scrollbar.winfo_height(), 1)
+            fraction = min(max(float(event.y) / float(height), 0.0), 1.0)
+            _mark_text_interaction(text_widget)
+            text_widget.yview_moveto(fraction)
+        except Exception:
+            return
+
+    def _end_drag(_event):
+        drag_state["active"] = False
+
+    try:
+        scrollbar.bind("<ButtonPress-1>", _start_drag, add="+")
+        scrollbar.bind("<B1-Motion>", _drag_to, add="+")
+        scrollbar.bind("<ButtonRelease-1>", _end_drag, add="+")
+    except Exception:
+        pass
+
+
+def _configure_monitor_scrollbar_style(style_obj):
+    """Apply a minimalist vertical scrollbar style aligned to monitor theme colors."""
+    try:
+        style_obj.layout(
+            "Monitor.ChatLike.Vertical.TScrollbar",
+            [(
+                "Vertical.Scrollbar.trough",
+                {
+                    "sticky": "ns",
+                    "children": [(
+                        "Vertical.Scrollbar.thumb",
+                        {"expand": "1", "sticky": "nswe"},
+                    )],
+                },
+            )],
+        )
+    except Exception:
+        pass
+    try:
+        thumb_color = UI_THEME.get("text", "#E6EDF3")
+        thumb_active = UI_THEME.get("focus_text", "#FFFFFF")
+        trough = UI_THEME.get("surface", "#151A22")
+        style_obj.configure(
+            "Monitor.ChatLike.Vertical.TScrollbar",
+            troughcolor=trough,
+            background=trough,
+            bordercolor=trough,
+            lightcolor=thumb_color,
+            darkcolor=thumb_color,
+            arrowcolor=trough,
+            gripcount=0,
+            arrowsize=0,
+            relief="flat",
+            borderwidth=0,
+            width=12,
+        )
+        style_obj.map(
+            "Monitor.ChatLike.Vertical.TScrollbar",
+            background=[("active", thumb_active), ("!active", thumb_color)],
+            troughcolor=[("!disabled", trough)],
+        )
+    except Exception:
+        pass
+
+
+def _build_monitor_ui(container):
+    prefs = _restore_ui_state()
+    try:
+        controle_filters = dict(_filter_state.get("controle") or _default_filters())
+        controle_filters["status"] = "Todos"
+        _filter_state["controle"] = controle_filters
+    except Exception:
+        pass
+    _apply_light_theme(container)
+    apply_ttk_theme_styles(container)
+    style = ttk.Style(container)
+    try:
+        style.theme_use("clam")
+    except Exception:
+        pass
+    style.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME.get("bg", "#1E1E1E"), lightcolor=UI_THEME.get("bg", "#1E1E1E"), darkcolor=UI_THEME.get("bg", "#1E1E1E"))
+    style.layout("Monitor.Tabless.TNotebook.Tab", [])
+    style.configure("Monitor.Tabless.TNotebook", background=UI_THEME["surface"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME["surface"], lightcolor=UI_THEME["surface"], darkcolor=UI_THEME["surface"])
+    style.configure(
+        "Dark.TNotebook.Tab",
+        background=UI_THEME.get("surface_alt", UI_THEME["surface"]),
+        foreground=UI_THEME.get("on_surface", UI_THEME["text"]),
+        padding=(12, 4),
+        relief="flat",
+        borderwidth=1,
+        highlightthickness=1,
+        bordercolor=UI_THEME.get("border", UI_THEME["surface_alt"]),
+        focuscolor=UI_THEME.get("surface_alt", UI_THEME["surface"]),
+    )
+    style.map(
+        "Dark.TNotebook.Tab",
+        background=[("selected", UI_THEME.get("surface_alt", UI_THEME["surface"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
+        foreground=[("selected", UI_THEME.get("on_surface", UI_THEME["text"])), ("active", UI_THEME.get("on_surface", UI_THEME["text"]))],
+        focuscolor=[("selected", UI_THEME.get("surface_alt", UI_THEME["surface"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
+        padding=[("selected", (12, 4)), ("active", (12, 4))],
+    )
+    style.configure("Encomenda.Text", background=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]))
+    report_status("ux_metrics", "OK", stage="theme_contrast_check", details=validate_theme_contrast())
+    style.configure("Control.Treeview", background=UI_THEME["surface"], fieldbackground=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), bordercolor=UI_THEME["border"], rowheight=28)
+    style.configure("Control.Treeview.Heading", background=UI_THEME["surface_alt"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), relief="flat", font=theme_font("font_md"))
+    _configure_monitor_scrollbar_style(style)
+    style.map("Control.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME["primary"]))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("on_primary", UI_THEME["text"])))])
+
+    info_label = tk.Label(container, text=f"Arquivo: {ARQUIVO}", bg=UI_THEME["bg"], fg=UI_THEME["muted_text"], font=theme_font("font_sm"))
+    top_toggle_bar = tk.Frame(container, bg=UI_THEME.get("surface_alt", UI_THEME["bg"]), relief="flat", bd=0, highlightthickness=0)
+    top_toggle_bar.pack(fill=tk.X, padx=0, pady=(0, 0))
+    btn_eye = tk.Button(
+        top_toggle_bar,
+        text="👁",
+        command=lambda: None,
+        bg=UI_THEME.get("surface_alt", UI_THEME["bg"]),
+        fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
+        activebackground=UI_THEME.get("border", UI_THEME.get("surface_alt", "#2D2D2D")),
+        activeforeground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
+        relief="flat",
+        bd=0,
+        font=theme_font("font_xl", "bold"),
+        anchor="center",
+        padx=0,
+        pady=4,
+    )
+    btn_eye.pack(fill=tk.X)
+    top_separator = tk.Frame(container, bg="#000000", height=1)
+    top_separator.pack(fill=tk.X, padx=0, pady=(0, 0))
+
+    theme_bar = tk.Frame(container, bg=UI_THEME["bg"])
+    theme_bar.pack(fill=tk.X, padx=10, pady=(6, 0))
+    theme_bar.pack_forget()
+    btn_top_theme = build_secondary_button(theme_bar, "🎨 Tema", lambda: None)
+    btn_top_theme.pack(side=tk.LEFT, padx=(6, 0))
+    details_visible = tk.BooleanVar(value=False)
+    btn_top_details = build_secondary_button(theme_bar, "🧾 Detalhes", lambda: None)
+    btn_top_details.pack(side=tk.LEFT, padx=(12, 0))
+    btn_top_export = build_secondary_button(theme_bar, "📤 Exportar CSV", lambda: None)
+    btn_top_export.pack(side=tk.LEFT, padx=(6, 0))
+    btn_top_save_view = build_secondary_button(theme_bar, "💾 Salvar visão", lambda: None)
+    btn_top_save_view.pack(side=tk.LEFT, padx=(6, 0))
+    _legacy_reset_columns_label = "Resetar colunas"
+    _legacy_filtered_counter_label = "Registros filtrados:"
+    _legacy_toggle_filters_label = "🧰 Ocultar filtros"
+    _legacy_toggle_filters_label_show = "🧰 Mostrar filtros"
+    btn_top_reload = build_secondary_button(theme_bar, "🔄 Recarregar", lambda: None)
+    btn_top_reload.pack(side=tk.LEFT, padx=(6, 0))
+    btn_top_clear = build_secondary_danger_button(theme_bar, "🧹 Limpar", lambda: None)
+    btn_top_clear.pack(side=tk.LEFT, padx=(6, 0))
+    btn_top_toggle_filters = build_secondary_button(theme_bar, "🧰 ⌃ Mostrar filtros", lambda: None)
+    btn_top_toggle_filters.pack(side=tk.LEFT, padx=(6, 0))
+    op_mode_defaults = bool((_load_prefs().get("operation_mode") or False))
+    op_mode_var = tk.BooleanVar(value=op_mode_defaults)
+    op_mode_chk = tk.Checkbutton(theme_bar, text="Modo Operação", variable=op_mode_var, bg=UI_THEME["bg"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), selectcolor=UI_THEME["surface"], activebackground=UI_THEME["bg"])
+    op_mode_chk.pack(side=tk.LEFT, padx=(12, 0))
+    focus_mode_var = tk.BooleanVar(value=False)
+    focus_mode_chk = tk.Checkbutton(theme_bar, text="Focus mode", variable=focus_mode_var, bg=UI_THEME["bg"], fg=UI_THEME.get("on_surface", UI_THEME["text"]), selectcolor=UI_THEME["surface"], activebackground=UI_THEME["bg"])
+    focus_mode_chk.pack(side=tk.LEFT, padx=(8, 0))
+
+    def _refresh_theme_in_place():
+        try:
+            container.configure(bg=UI_THEME["bg"])
+            theme_bar.configure(bg=UI_THEME["bg"])
+            info_label.configure(bg=UI_THEME["bg"], fg=UI_THEME["muted_text"])
+        except Exception:
+            pass
+        refresh_theme(container, context="interfacetwo")
+        apply_ttk_theme_styles(container)
+        try:
+            style_local = ttk.Style(container)
+            style_local.configure("Dark.TNotebook", background=UI_THEME["bg"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME.get("bg", "#1E1E1E"), lightcolor=UI_THEME.get("bg", "#1E1E1E"), darkcolor=UI_THEME.get("bg", "#1E1E1E"))
+            style_local.layout("Monitor.Tabless.TNotebook.Tab", [])
+            style_local.configure("Monitor.Tabless.TNotebook", background=UI_THEME["surface"], borderwidth=0, relief="flat", highlightthickness=0, bordercolor=UI_THEME["surface"], lightcolor=UI_THEME["surface"], darkcolor=UI_THEME["surface"])
+            style_local.configure("Dark.TNotebook.Tab", background=UI_THEME.get("surface_alt", UI_THEME["surface"]), foreground=UI_THEME.get("on_surface", UI_THEME["text"]), padding=(12, 4), relief="flat", borderwidth=1, highlightthickness=1, bordercolor=UI_THEME.get("border", UI_THEME["surface_alt"]), focuscolor=UI_THEME.get("surface_alt", UI_THEME["surface"]))
+            style_local.map(
+                "Dark.TNotebook.Tab",
+                background=[("selected", UI_THEME.get("surface_alt", UI_THEME["surface"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
+                foreground=[("selected", UI_THEME.get("on_surface", UI_THEME["text"])), ("active", UI_THEME.get("on_surface", UI_THEME["text"]))],
+                focuscolor=[("selected", UI_THEME.get("surface_alt", UI_THEME["surface"])), ("active", UI_THEME.get("border", UI_THEME["surface_alt"]))],
+                padding=[("selected", (12, 4)), ("active", (12, 4))],
+            )
+            style_local.configure("Control.Treeview", background=UI_THEME["surface"], fieldbackground=UI_THEME["surface"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), bordercolor=UI_THEME["border"], rowheight=28)
+            style_local.configure("Control.Treeview.Heading", background=UI_THEME["surface_alt"], foreground=UI_THEME.get("on_surface", UI_THEME["text"]), relief="flat", font=theme_font("font_md"))
+            style_local.map("Control.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME["primary"]))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("on_primary", UI_THEME["text"])))])
+            _configure_monitor_scrollbar_style(style_local)
+        except Exception:
+            pass
+        for target in list(_monitor_sources.keys()):
+            try:
+                _populate_text(target, info_label)
+            except Exception:
+                pass
+        _update_status_cards()
+
+    table_trees = []
+    cards_widgets = []
+
+    def _apply_density(_mode_label=None):
+        global _layout_density_mode
+        _layout_density_mode = "confortavel"
+        rowheight = 30
+        gap = theme_space("space_2", 8)
+        try:
+            ttk.Style(container).configure("Control.Treeview", rowheight=rowheight)
+        except Exception:
+            pass
+        try:
+            cards_row.pack_configure(pady=(gap, 0))
+            if str(hints.winfo_manager()) == "pack":
+                hints.pack_configure(pady=(theme_space("space_1", 4), 0))
+            if str(info_label.winfo_manager()) == "pack":
+                info_label.pack_configure(pady=(theme_space("space_1", 4), 0))
+            notebook.pack_configure(pady=(gap, theme_space("space_3", 10)))
+        except Exception:
+            pass
+        for card in cards_widgets:
+            try:
+                card.set_density(_layout_density_mode)
+            except Exception:
+                pass
+        for tree in table_trees:
+            try:
+                tree.configure(height=14)
+            except Exception:
+                pass
+        for w in (btn_top_details, btn_top_export, btn_top_save_view, btn_top_reload, btn_top_clear, btn_top_toggle_filters):
+            try:
+                w.configure(padx=12, pady=4)
+            except Exception:
+                pass
+        _persist_ui_state({"layout_density": _layout_density_mode})
+
+    def _on_theme_change(_event=None):
+        selected = apply_theme("principal")
+        report_status("ux_metrics", "OK", stage="theme_switch", details={"theme": selected})
+        _persist_ui_state({"theme": selected})
+        _refresh_theme_in_place()
+        _apply_density()
+
+    def _toggle_operation_mode(*_args):
+        global _operation_mode_enabled, _runtime_refresh_ms
+        _operation_mode_enabled = bool(op_mode_var.get())
+        if _operation_mode_enabled:
+            apply_theme("principal")
+            _runtime_refresh_ms = 1000
+
+            focus_mode_var.set(True)
+            report_status("ux_metrics", "OK", stage="operation_mode_enabled", details={"theme": get_active_theme_name(), "refresh_ms": _runtime_refresh_ms})
+            try:
+                _status_bar.set("Modo Operação: refresh acelerado e foco em alertas críticos", tone="warning")
+            except Exception:
+                pass
+        else:
+            _runtime_refresh_ms = REFRESH_MS
+            focus_mode_var.set(False)
+            report_status("ux_metrics", "OK", stage="operation_mode_disabled", details={"refresh_ms": _runtime_refresh_ms})
+        _sync_details_panel_visibility()
+        _persist_ui_state({"operation_mode": _operation_mode_enabled})
+        _refresh_theme_in_place()
+        _apply_density()
+
+    def _toggle_focus_mode(*_args):
+        enabled = bool(focus_mode_var.get())
+        _sync_details_panel_visibility()
+        report_status("ux_metrics", "OK", stage="focus_mode_toggle", details={"enabled": enabled})
+
+    btn_top_theme.configure(command=_on_theme_change)
+    op_mode_var.trace_add("write", _toggle_operation_mode)
+    focus_mode_var.trace_add("write", _toggle_focus_mode)
+
+    title_row = tk.Frame(container, bg=UI_THEME["bg"])
+    title_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
+    title = build_section_title(title_row, "Painel Operacional")
+    title.configure(font=theme_font("font_xl", "bold"))
+    title.pack(side=tk.LEFT, fill=tk.X, expand=True)
+    global _control_filtered_count_var
+    _control_filtered_count_var = tk.StringVar(value="Registros filtrados: sem dia selecionado")
+    filtered_label = build_label(title_row, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    filtered_label.configure(textvariable=_control_filtered_count_var)
+    filtered_label.pack(side=tk.RIGHT)
+
+    cards_row = tk.Frame(container, bg=UI_THEME["bg"])
+    cards_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), 0))
+    global _ux_cards, _status_bar
+    _ux_cards = {
+        "ativos": AppMetricCard(cards_row, "Ativos", tone="info", icon="📦"),
+        "pendentes": AppMetricCard(cards_row, "Pendentes", tone="warning", icon="⏳"),
+        "sem_contato": AppMetricCard(cards_row, "Sem contato", tone="danger", icon="☎"),
+        "avisado": AppMetricCard(cards_row, "Avisado", tone="success", icon="✅"),
+    }
+    cards_tooltips = {
+        "ativos": "Total de avisos atualmente ativos no sistema.",
+        "pendentes": "Soma de alertas pendentes + status pendente.",
+        "sem_contato": "Registros com status marcado como SEM CONTATO.",
+        "avisado": "Registros com status marcado como AVISADO.",
+    }
+    card_gap = theme_space("space_1", 4)
+    for idx, key in enumerate(["ativos", "pendentes", "sem_contato", "avisado"]):
+        card = _ux_cards[key]
+        right_gap = card_gap if idx < 3 else 0
+        card.grid(row=0, column=idx, padx=(0, right_gap), pady=(0, 0), ipady=11, sticky="nsew")
+        cards_row.grid_columnconfigure(idx, weight=1, uniform="metric_cards")
+        cards_widgets.append(card)
+        attach_tooltip(card, cards_tooltips.get(key, ""))
+        try:
+            card.set_donut_visibility(False)
+        except Exception:
+            pass
+
+    def _play_metric_cards_intro_animation():
+        order = ["ativos", "pendentes", "sem_contato", "avisado"]
+        duration_ms = 780
+        steps = 20
+        _start_days_line_intro(duration_ms=duration_ms * len(order), steps=steps * len(order))
+
+        def _animate_donuts_sync():
+            for key in order:
+                card = _ux_cards.get(key)
+                if card is None:
+                    continue
+                try:
+                    card.animate_capacity_fill()
+                except Exception:
+                    continue
+
+        def _play_next(pos=0):
+            if pos >= len(order):
+                _animate_donuts_sync()
+                try:
+                    _animate_cards_for_day(consumo_selected_day)
+                except Exception:
+                    pass
+                return
+            card = _ux_cards.get(order[pos])
+            if card is None:
+                _play_next(pos + 1)
+                return
+            try:
+                card.animate_accent_growth(duration_ms=duration_ms, steps=steps, on_done=lambda: _play_next(pos + 1))
+            except Exception:
+                _play_next(pos + 1)
+
+        _play_next(0)
+
+    consumo_header = tk.Frame(container, bg=UI_THEME["bg"])
+    consumo_header.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), theme_space("space_1", 4)))
+    consumo_title = build_label(consumo_header, "Consumo por dia", bg=UI_THEME["bg"], font=theme_font("font_lg", "bold"))
+    consumo_title.pack(side=tk.LEFT)
+
+    consumo_day_var = tk.StringVar(value="")
+
+    consumo_graph_frame = tk.Frame(container, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
+    consumo_graph_frame.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
+    consumo_breakdown_canvas = None
+
+    consumo_days_canvas = tk.Canvas(consumo_graph_frame, bg=UI_THEME["bg"], height=44, highlightthickness=0, bd=0)
+    consumo_days_canvas.pack(fill=tk.X, padx=0, pady=(0, theme_space("space_1", 4)))
+
+    consumo_breakdown_canvas = None
+
+
+
+
+    def _status_text_for_consumo(rec: dict) -> str:
+        if not isinstance(rec, dict):
+            return ""
+        return str(
+            rec.get("STATUS_ENCOMENDA")
+            or rec.get("status_encomenda")
+            or rec.get("STATUS")
+            or rec.get("status")
+            or ""
+        ).upper().strip()
+
+    def _empty_day_metrics() -> dict:
+        return {
+            "total": 0,
+            "pendentes": 0,
+            "sem_contato": 0,
+            "avisado": 0,
+            "diurno": 0,
+            "noturno": 0,
+        }
+
+    def _build_consumo_por_dia() -> dict:
+        try:
+            controle = _load_safe(ARQUIVO)
+            encomendas = _load_safe(ENCOMENDAS_ARQUIVO)
+        except Exception:
+            controle, encomendas = [], []
+
+        day_map = {}
+        registros = (controle if isinstance(controle, list) else []) + (encomendas if isinstance(encomendas, list) else [])
+        for rec in registros:
+            if not isinstance(rec, dict):
+                continue
+            dt = _parse_data_hora(str(rec.get("DATA_HORA") or rec.get("data_hora") or ""))
+            if dt is None:
+                continue
+
+            if 6 <= dt.hour < 18:
+                shift = "diurno"
+                shift_date = dt.date()
+            else:
+                shift = "noturno"
+                shift_date = dt.date() if dt.hour >= 18 else (dt - timedelta(days=1)).date()
+
+            day_key = shift_date.strftime("%Y-%m-%d")
+            item = day_map.setdefault(day_key, _empty_day_metrics())
+            item["total"] += 1
+            item[shift] += 1
+
+            status_text = _status_text_for_consumo(rec)
+            if "SEM CONTATO" in status_text:
+                item["sem_contato"] += 1
+            elif "AVISADO" in status_text:
+                item["avisado"] += 1
+            else:
+                item["pendentes"] += 1
+
+        return day_map
+
+    consumo_por_dia = _build_consumo_por_dia()
+    consumo_selected_day = max(consumo_por_dia.keys()) if consumo_por_dia else datetime.now().strftime("%Y-%m-%d")
+    consumo_selected_mode = "day"
+    consumo_line_intro_running = False
+    consumo_line_intro_done = False
+
+    def _aggregate_all_days() -> dict:
+        total = _empty_day_metrics()
+        for day_key in sorted(consumo_por_dia.keys()):
+            item = consumo_por_dia.get(day_key) or _empty_day_metrics()
+            for metric_key in total.keys():
+                total[metric_key] += int(item.get(metric_key, 0) or 0)
+        return total
+
+    def _card_payload_from_metrics(metrics: dict) -> dict:
+        total = int(metrics.get("total", 0) or 0)
+        pendentes = int(metrics.get("pendentes", 0) or 0)
+        sem_contato = int(metrics.get("sem_contato", 0) or 0)
+        avisado = int(metrics.get("avisado", 0) or 0)
+
+        return {
+            "ativos": {
+                "used": total,
+                "remaining": max(0, 1000 - total),
+                "limit": 1000,
+            },
+            "pendentes": {
+                "used": sem_contato + avisado,
+                "remaining": pendentes,
+                "limit": max(1, sem_contato + avisado + pendentes),
+            },
+            "sem_contato": {
+                "used": sem_contato,
+                "remaining": pendentes,
+                "limit": max(1, sem_contato + pendentes),
+            },
+            "avisado": {
+                "used": avisado,
+                "remaining": pendentes + sem_contato,
+                "limit": max(1, avisado + pendentes + sem_contato),
+            },
+        }
+
+    def _draw_selected_day_breakdown(day_key: str):
+        if consumo_breakdown_canvas is None:
+            return
+        try:
+            consumo_breakdown_canvas.delete("all")
+        except Exception:
+            return
+
+        metrics = consumo_por_dia.get(day_key) or _empty_day_metrics()
+        total = int(metrics.get("total", 0) or 0)
+        diurno = int(metrics.get("diurno", 0) or 0)
+        noturno = int(metrics.get("noturno", 0) or 0)
+
+        width = max(260, int(consumo_breakdown_canvas.winfo_width() or 260))
+        x0, y0, x1, y1 = 12, 14, width - 12, 34
+        bar_w = max(10, x1 - x0)
+        safe_total = max(1, total)
+        diurno_w = int(round(bar_w * (diurno / float(safe_total))))
+        noturno_w = max(0, bar_w - diurno_w)
+
+        consumo_breakdown_canvas.create_rectangle(x0, y0, x1, y1, fill=UI_THEME.get("surface_alt", "#1E2430"), outline="")
+        if diurno_w > 0:
+            consumo_breakdown_canvas.create_rectangle(x0, y0, x0 + diurno_w, y1, fill="#4CC9F0", outline="")
+        if noturno_w > 0:
+            consumo_breakdown_canvas.create_rectangle(x1 - noturno_w, y0, x1, y1, fill="#4361EE", outline="")
+        consumo_breakdown_canvas.create_text(
+            x0,
+            47,
+            anchor="w",
+            text=f"{day_key} • Diurno(06-18): {diurno} • Noturno(18-06): {noturno}",
+            fill=UI_THEME.get("muted_text", "#9BA7B4"),
+            font=theme_font("font_sm"),
+        )
+
+    def _animate_cards_for_day(day_key: str, show_total: bool = False):
+        metrics = _aggregate_all_days() if show_total else (consumo_por_dia.get(day_key) or _empty_day_metrics())
+        payload = _card_payload_from_metrics(metrics)
+        header_prefix = "Total acumulado" if show_total else "Dia selecionado"
+
+        for card_key in ("ativos", "pendentes", "sem_contato", "avisado"):
+            card = _ux_cards.get(card_key)
+            if card is None:
+                continue
+            item = payload.get(card_key) or {"used": 0, "remaining": 0, "limit": 1}
+            used = int(item.get("used", 0) or 0)
+            remaining = int(item.get("remaining", 0) or 0)
+            limit = int(item.get("limit", 1) or 1)
+            try:
+                card.set_value(str(used))
+                card.set_trend(0)
+                card.set_capacity(used, limit)
+                card.set_meta(f"{header_prefix} {day_key} • Usados: {used} • Restantes: {remaining}")
+                card.flash(220)
+                card.animate_capacity_fill()
+            except Exception:
+                continue
+
+        try:
+            _status_bar.set(
+                f"{header_prefix} {day_key} aplicado (Registros: {metrics.get('total', 0)} • Pendentes: {metrics.get('pendentes', 0)} • Sem contato: {metrics.get('sem_contato', 0)} • Avisado: {metrics.get('avisado', 0)})",
+                tone="info",
+            )
+        except Exception:
+            pass
+
+    def _draw_days_timeline(_event=None, *, line_progress=1.0):
+        nonlocal consumo_selected_day, consumo_selected_mode, consumo_por_dia
+        consumo_por_dia = _build_consumo_por_dia()
+        consumo_days_canvas.delete("all")
+        day_keys = sorted(consumo_por_dia.keys())[-31:]
+        if not day_keys:
+            consumo_day_var.set("")
+            consumo_days_canvas.create_text(12, 12, anchor="nw", text="Sem registros com DATA_HORA", fill=UI_THEME.get("muted_text", "#9BA7B4"), font=theme_font("font_sm"))
+            return
+        if consumo_selected_day not in consumo_por_dia:
+            consumo_selected_day = day_keys[-1]
+
+        width = max(360, int(consumo_days_canvas.winfo_width() or 360))
+        height = max(44, int(consumo_days_canvas.winfo_height() or 44))
+        margin_left = 18
+        # reserva espaço no lado direito para o marcador de TOTAL ficar
+        # sempre à frente (à direita) do ponto do dia atual
+        margin_right = 42
+        margin_y = 8
+        plot_w = max(10, width - margin_left - margin_right)
+        plot_h = max(10, height - margin_y * 2)
+        step = plot_w / max(1, len(day_keys) - 1)
+        totals = [int((consumo_por_dia.get(day) or {}).get("total", 0) or 0) for day in day_keys]
+        min_total, max_total = min(totals), max(totals)
+
+        coords = []
+        for idx, day_key in enumerate(day_keys):
+            x = margin_left + idx * step
+            total = totals[idx]
+            if max_total == min_total:
+                y = margin_y + (plot_h * 0.5)
+            else:
+                ratio = (total - min_total) / (max_total - min_total)
+                ratio = max(0.0, min(1.0, ratio)) ** 0.6
+                y = margin_y + plot_h * (1 - ratio)
+            coords.append((x, y, day_key, total))
+
+        def _draw_polyline_progress(points, progress):
+            if len(points) < 2:
+                return
+            p = max(0.0, min(1.0, float(progress)))
+            max_seg = len(points) - 1
+            pos = p * max_seg
+            full = int(pos)
+            frac = pos - full
+            draw_pts = [points[0]]
+            for i in range(1, full + 1):
+                draw_pts.append(points[i])
+            if full < max_seg:
+                x1, y1 = points[full]
+                x2, y2 = points[full + 1]
+                draw_pts.append((x1 + (x2 - x1) * frac, y1 + (y2 - y1) * frac))
+            line_points = []
+            for xx, yy in draw_pts:
+                line_points.extend([xx, yy])
+            if len(line_points) >= 4:
+                consumo_days_canvas.create_line(*line_points, fill="#FFFFFF", width=1.2, smooth=True)
+
+        if len(coords) >= 2:
+            _draw_polyline_progress([(x, y) for x, y, *_ in coords], line_progress)
+
+        def _on_day_click(day_key: str, show_total: bool = False):
+            nonlocal consumo_selected_day, consumo_selected_mode
+            global _cards_context_user_selected
+            _cards_context_user_selected = True
+            consumo_selected_day = day_key
+            consumo_selected_mode = "total" if show_total else "day"
+            if show_total:
+                total_sel = int(_aggregate_all_days().get("total", 0) or 0)
+                if _control_filtered_count_var is not None:
+                    _control_filtered_count_var.set(f"TOTAL {day_key} Registros: {total_sel}")
+            else:
+                total_sel = int((consumo_por_dia.get(day_key) or {}).get("total", 0) or 0)
+                if _control_filtered_count_var is not None:
+                    _control_filtered_count_var.set(f"{day_key} Registros: {total_sel}")
+            _animate_cards_for_day(day_key, show_total=show_total)
+            _draw_days_timeline()
+
+        point_tip = {"win": None}
+
+        def _hide_point_tip(_event=None):
+            try:
+                if point_tip.get("win") is not None:
+                    point_tip["win"].destroy()
+            except Exception:
+                pass
+            point_tip["win"] = None
+
+        def _show_point_tip(event=None, text="", anchor=None, force_right=False):
+            _hide_point_tip()
+            if not text:
+                return
+            try:
+                tw = tk.Toplevel(consumo_days_canvas)
+                tw.wm_overrideredirect(True)
+                if force_right and anchor:
+                    x = int(consumo_days_canvas.winfo_rootx() + float(anchor[0]) + 14)
+                    y = int(consumo_days_canvas.winfo_rooty() + float(anchor[1]) + 8)
+                elif event is not None:
+                    x = int(event.x_root + 14)
+                    y = int(event.y_root + 10)
+                else:
+                    x = int(consumo_days_canvas.winfo_rootx() + 18)
+                    y = int(consumo_days_canvas.winfo_rooty() + 18)
+                tw.wm_geometry(f"+{x}+{y}")
+                lbl = tk.Label(
+                    tw,
+                    text=text,
+                    bg=UI_THEME.get("surface_alt", "#1B2430"),
+                    fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
+                    relief="solid",
+                    bd=1,
+                    padx=6,
+                    pady=4,
+                    font=theme_font("font_sm"),
+                )
+                lbl.pack()
+                tw.update_idletasks()
+                sw = max(320, int(consumo_days_canvas.winfo_screenwidth() or 0))
+                sh = max(240, int(consumo_days_canvas.winfo_screenheight() or 0))
+                tw_w = max(40, int(tw.winfo_reqwidth() or 0))
+                tw_h = max(20, int(tw.winfo_reqheight() or 0))
+                x = max(8, min(x, sw - tw_w - 8))
+                y = max(8, min(y, sh - tw_h - 8))
+                tw.wm_geometry(f"+{x}+{y}")
+                point_tip["win"] = tw
+            except Exception:
+                point_tip["win"] = None
+
+        point_default = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
+        selected_anchor = None
+        for x, y, day_key, total in coords:
+            is_selected = day_key == consumo_selected_day
+            if is_selected:
+                selected_anchor = (x, y)
+            radius = 4 if is_selected else 3
+            color = "#FFFFFF" if is_selected else point_default
+            item = consumo_days_canvas.create_oval(
+                x - radius,
+                y - radius,
+                x + radius,
+                y + radius,
+                fill=color,
+                outline=color,
+                width=2 if is_selected else 1,
+            )
+            consumo_days_canvas.tag_bind(item, "<Button-1>", lambda _evt, d=day_key: _on_day_click(d))
+            if is_selected:
+                consumo_days_canvas.tag_bind(item, "<Enter>", lambda _evt, d=day_key, px=x, py=y: (consumo_days_canvas.configure(cursor="hand2"), _show_point_tip(_evt, d, anchor=(px, py), force_right=True)))
+                consumo_days_canvas.tag_bind(item, "<Motion>", lambda _evt, d=day_key, px=x, py=y: _show_point_tip(_evt, d, anchor=(px, py), force_right=True))
+            else:
+                consumo_days_canvas.tag_bind(item, "<Enter>", lambda _evt, d=day_key: (consumo_days_canvas.configure(cursor="hand2"), _show_point_tip(_evt, d)))
+                consumo_days_canvas.tag_bind(item, "<Motion>", lambda _evt, d=day_key: _show_point_tip(_evt, d))
+            consumo_days_canvas.tag_bind(item, "<Leave>", lambda _evt: (consumo_days_canvas.configure(cursor=""), _hide_point_tip()))
+
+        last_x, last_y, last_day_key, _last_total = coords[-1]
+        marker_r = 6
+        min_gap = max(20, marker_r + 8)
+        marker_x = min(width - marker_r - 8, last_x + max(min_gap, step * 0.6))
+        # garante sempre o marcador de total à frente do último dia
+        marker_x = max(last_x + min_gap, marker_x)
+        marker_y = last_y
+        marker_item = consumo_days_canvas.create_oval(
+            marker_x - marker_r,
+            marker_y - marker_r,
+            marker_x + marker_r,
+            marker_y + marker_r,
+            fill="",
+            outline="#FFFFFF",
+            width=2,
+        )
+        consumo_days_canvas.tag_bind(marker_item, "<Button-1>", lambda _evt, d=last_day_key: _on_day_click(d, show_total=True))
+        consumo_days_canvas.tag_bind(marker_item, "<Enter>", lambda _evt, px=marker_x, py=marker_y: (consumo_days_canvas.configure(cursor="hand2"), _show_point_tip(_evt, "Total", anchor=(px, py), force_right=True)))
+        consumo_days_canvas.tag_bind(marker_item, "<Motion>", lambda _evt, px=marker_x, py=marker_y: _show_point_tip(_evt, "Total", anchor=(px, py), force_right=True))
+        consumo_days_canvas.tag_bind(marker_item, "<Leave>", lambda _evt: (consumo_days_canvas.configure(cursor=""), _hide_point_tip()))
+
+        try:
+            consumo_days_canvas.bind("<Leave>", lambda _evt: (consumo_days_canvas.configure(cursor=""), _hide_point_tip()), add="+")
+            consumo_days_canvas.bind("<ButtonRelease>", lambda _evt: _hide_point_tip(), add="+")
+            consumo_days_canvas.bind("<FocusOut>", lambda _evt: _hide_point_tip(), add="+")
+            consumo_days_canvas.bind("<Unmap>", lambda _evt: _hide_point_tip(), add="+")
+            consumo_days_canvas.bind("<Destroy>", lambda _evt: _hide_point_tip(), add="+")
+        except Exception:
+            pass
+
+        if consumo_selected_mode == "total":
+            total_selected = int(_aggregate_all_days().get("total", 0) or 0)
+            if _control_filtered_count_var is not None:
+                _control_filtered_count_var.set(f"TOTAL {consumo_selected_day} Registros: {total_selected}")
+        else:
+            total_selected = int((consumo_por_dia.get(consumo_selected_day) or {}).get("total", 0) or 0)
+            if _control_filtered_count_var is not None:
+                _control_filtered_count_var.set(f"{consumo_selected_day} Registros: {total_selected}")
+
+    def _start_days_line_intro(duration_ms=3120, steps=28):
+        nonlocal consumo_line_intro_running, consumo_line_intro_done
+        if consumo_line_intro_running or consumo_line_intro_done:
+            return
+        consumo_line_intro_running = True
+        steps = max(8, int(steps))
+        tick_ms = max(12, int(duration_ms / steps))
+
+        def _step(i=0):
+            nonlocal consumo_line_intro_running, consumo_line_intro_done
+            progress = min(1.0, i / float(steps))
+            _draw_days_timeline(line_progress=progress)
+            if i >= steps:
+                consumo_line_intro_running = False
+                consumo_line_intro_done = True
+                return
+            try:
+                consumo_days_canvas.after(tick_ms, lambda: _step(i + 1))
+            except Exception:
+                consumo_line_intro_running = False
+                consumo_line_intro_done = True
+
+        _step(0)
+
+    def _refresh_cards_for_current_consumo_selection():
+        global _cards_context_user_selected
+        if not _cards_context_user_selected:
+            return
+        try:
+            _draw_days_timeline()
+            _animate_cards_for_day(consumo_selected_day, show_total=(consumo_selected_mode == "total"))
+        except Exception:
+            return
+
+    global _cards_context_refresh_hook
+    _cards_context_refresh_hook = _refresh_cards_for_current_consumo_selection
+
+    consumo_days_canvas.bind("<Configure>", _draw_days_timeline, add="+")
+    container.after(80, _draw_days_timeline)
+
+    global _metrics_accessibility_var
+    _metrics_accessibility_var = tk.StringVar(value="Métricas: carregando")
+    metrics_accessibility_label = build_label(container, "", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+    metrics_accessibility_label.configure(textvariable=_metrics_accessibility_var)
+
+    hints = build_label(container, "Atalhos: Ctrl+F buscar • Ctrl+Enter aplicar • Ctrl+Shift+L limpar • Alt+1..5 abas • Alt+E exportar • Alt+V salvar visão", muted=True, bg=UI_THEME["bg"], font=theme_font("font_sm"))
+
+    def _sync_details_panel_visibility():
+        show_details = bool(details_visible.get())
+        hide_for_focus = bool(focus_mode_var.get()) if 'focus_mode_var' in locals() else False
+        show_info = show_details and not hide_for_focus
+        show_hints = show_info and not bool(_operation_mode_enabled)
+
+        try:
+            if show_details:
+                metrics_accessibility_label.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+            else:
+                metrics_accessibility_label.pack_forget()
+        except Exception:
+            pass
+
+        try:
+            if show_info:
+                info_label.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+            else:
+                info_label.pack_forget()
+        except Exception:
+            pass
+
+        try:
+            if show_hints:
+                hints.pack(padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0), anchor="w")
+            else:
+                hints.pack_forget()
+        except Exception:
+            pass
+
+    def _toggle_details_panel():
+        details_visible.set(not details_visible.get())
+        _sync_details_panel_visibility()
+
+    btn_top_details.configure(command=_toggle_details_panel)
+
+    def _toggle_top_controls():
+        if theme_bar.winfo_manager():
+            theme_bar.pack_forget()
+        else:
+            theme_bar.pack(fill=tk.X, padx=10, pady=(6, 0), before=title_row)
+
+    btn_eye.configure(command=_toggle_top_controls)
+
+    _status_bar = AppStatusBar(container, text="UX: aguardando eventos")
+    global _feedback_banner
+    _feedback_banner = AppFeedbackBanner(container, text="")
+
+    records_panel = tk.Frame(container, bg=UI_THEME["surface"])
+    records_panel.pack(fill=tk.BOTH, expand=True, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), theme_space("space_1", 4)))
+
+    tab_button_bar = tk.Frame(records_panel, bg=UI_THEME["surface"])
+    tab_button_bar.pack(fill=tk.X, padx=0, pady=(0, 0))
+
+    notebook = ttk.Notebook(records_panel, style="Monitor.Tabless.TNotebook")
+    notebook.pack(padx=0, pady=(0, 0), fill=tk.BOTH, expand=True)
+    notebook.configure(padding=0)
+
+    controle_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
+    encomendas_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
+    orientacoes_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
+    observacoes_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
+    avisos_frame = tk.Frame(notebook, bg=UI_THEME["surface"])
+
+    notebook.add(controle_frame, text="CONTROLE")
+    notebook.add(encomendas_frame, text="ENCOMENDAS")
+    notebook.add(orientacoes_frame, text="ORIENTAÇÕES")
+    notebook.add(observacoes_frame, text="OBSERVAÇÕES")
+    notebook.add(avisos_frame, text="AVISOS")
+
+    def _select_tab(index: int):
+        try:
+            notebook.select(index)
+        except Exception:
+            pass
+
+    tab_buttons = []
+    tab_button_frames = []
+    tab_button_bottom_borders = []
+    tab_border_color = UI_THEME.get("border", UI_THEME.get("on_surface", UI_THEME["text"]))
+    tab_button_normal_bg = UI_THEME.get("bg", UI_THEME["surface"])
+    tab_button_selected_bg = UI_THEME.get("surface", UI_THEME["bg"])
+    tab_button_hover_bg = UI_THEME.get("border", tab_button_normal_bg)
+    for idx, label in enumerate(["CONTROLE", "ENCOMENDAS", "ORIENTAÇÕES", "OBSERVAÇÕES", "AVISOS"]):
+        btn_frame = tk.Frame(tab_button_bar, bg=tab_border_color)
+        btn_tab = build_secondary_button(btn_frame, label, lambda i=idx: _select_tab(i), padx=12)
+        try:
+            btn_tab.configure(
+                font=theme_font("font_md"),
+                pady=theme_space("space_1", 4),
+                bg=tab_button_normal_bg,
+                activebackground=tab_button_normal_bg,
+                highlightbackground=tab_border_color,
+                highlightcolor=tab_border_color,
+                highlightthickness=0,
+                bd=0,
+                relief="flat",
+            )
+        except Exception:
+            pass
+        try:
+            def _on_tab_enter(_e, b=btn_tab):
+                b.configure(bg=tab_button_hover_bg, activebackground=tab_button_hover_bg)
+
+            def _on_tab_leave(_e):
+                _refresh_tab_button_state()
+
+            btn_tab.bind("<Enter>", _on_tab_enter, add="+")
+            btn_tab.bind("<Leave>", _on_tab_leave, add="+")
+        except Exception:
+            pass
+        btn_tab.pack(fill=tk.BOTH, expand=True, padx=1, pady=(1, 0))
+        btn_bottom = tk.Frame(btn_frame, height=1, bg=tab_border_color)
+        btn_bottom.pack(fill=tk.X, side=tk.BOTTOM)
+        btn_frame.pack(side=tk.LEFT, padx=(0, 0), pady=(0, 0), fill=tk.BOTH, expand=True)
+        tab_button_frames.append(btn_frame)
+        tab_buttons.append(btn_tab)
+        tab_button_bottom_borders.append(btn_bottom)
+
+    def _refresh_tab_button_state(*_):
+        try:
+            selected = notebook.index(notebook.select())
+        except Exception:
+            selected = 0
+        for idx, (btn_frame, btn, btn_bottom) in enumerate(zip(tab_button_frames, tab_buttons, tab_button_bottom_borders)):
+            try:
+                is_selected = idx == selected
+                target_bg = tab_button_selected_bg if is_selected else tab_button_normal_bg
+                frame_bg = tab_button_selected_bg if is_selected else tab_border_color
+                btn_frame.configure(bg=frame_bg)
+                btn.configure(bg=target_bg, activebackground=target_bg)
+                btn_bottom.configure(bg=tab_button_selected_bg if is_selected else tab_border_color)
+            except Exception:
+                continue
+
+    notebook.bind("<<NotebookTabChanged>>", _refresh_tab_button_state, add="+")
+    _refresh_tab_button_state()
+
+    try:
+        root_win = container.winfo_toplevel()
+        def _show_shortcuts(_e=None):
+            messagebox.showinfo(
+                "Atalhos do monitor",
+                "Ctrl+F: foco na busca\nCtrl+Enter: aplicar filtros\nCtrl+Shift+L: limpar filtros\nAlt+1..5: trocar abas\nF1: ajuda de atalhos",
+                parent=root_win,
+            )
+            return "break"
+        root_win.bind("<Alt-Key-1>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+1"}), _select_tab(0), "break")[2], add="+")
+        root_win.bind("<Alt-Key-2>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+2"}), _select_tab(1), "break")[2], add="+")
+        root_win.bind("<Alt-Key-3>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+3"}), _select_tab(2), "break")[2], add="+")
+        root_win.bind("<Alt-Key-4>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+4"}), _select_tab(3), "break")[2], add="+")
+        root_win.bind("<Alt-Key-5>", lambda _e: (report_status("ux_metrics", "OK", stage="shortcut_used", details={"shortcut": "Alt+5"}), _select_tab(4), "break")[2], add="+")
+        root_win.bind("<F1>", _show_shortcuts, add="+")
+    except Exception:
+        pass
+
+    monitor_widgets = []
+
+    def _apply_filter_visibility(source_key: str):
+        filter_bar = _filter_bars.get(source_key)
+        if not filter_bar:
+            return
+        if _filter_toggle_state.get("visible", False):
+            try:
+                filter_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)), before=filter_bar._filter_target_widget)
+            except Exception:
+                try:
+                    filter_bar.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_2", 8)))
+                except Exception:
+                    return
+        else:
+            try:
+                filter_bar.pack_forget()
+            except Exception:
+                return
+
+    def _sync_filter_toggle_labels():
+        visible = _filter_toggle_state.get("visible", False)
+        label = "🧰 ⌄ Ocultar filtros" if visible else "🧰 ⌃ Mostrar filtros"
+        for btn in [btn_top_toggle_filters]:
+            try:
+                btn.configure(text=label)
+            except Exception:
+                continue
+
+    def _toggle_filters(source_key: str = "global"):
+        _filter_toggle_state["visible"] = not _filter_toggle_state.get("visible", False)
+        for key in list(_filter_bars.keys()):
+            _apply_filter_visibility(key)
+        _sync_filter_toggle_labels()
+        report_status("ux_metrics", "OK", stage="filter_banner_toggle", details={"source": source_key, "visible": _filter_toggle_state["visible"]})
+
+    tab_configs = [
+        (controle_frame, ARQUIVO, format_creative_entry, "controle"),
+        (encomendas_frame, ENCOMENDAS_ARQUIVO, format_encomenda_entry, "encomendas"),
+        (orientacoes_frame, ORIENTACOES_ARQUIVO, format_orientacao_entry, "orientacoes"),
+        (observacoes_frame, OBSERVACOES_ARQUIVO, format_observacao_entry, "observacoes"),
+        (avisos_frame, AVISOS_ARQUIVO, format_aviso_entry, "avisos"),
+    ]
+
+    def _control_filtered_records():
+        registros = _load_safe(ARQUIVO)
+        filters = _filter_state.get("controle", {})
+        return _apply_filters(registros, filters)
+
+    def _export_control_csv():
+        try:
+            out = os.path.join(BASE_DIR, f"controle_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv")
+            rows = _control_filtered_records()
+            with open(out, "w", encoding="utf-8") as f:
+                f.write("id,data_hora,nome,sobrenome,bloco,apartamento,placa,modelo,cor,status,texto\n")
+                for rec in rows:
+                    cols = [
+                        _record_original_id(rec),
+                        str(rec.get("DATA_HORA") or ""),
+                        str(rec.get("NOME") or ""),
+                        str(rec.get("SOBRENOME") or ""),
+                        str(rec.get("BLOCO") or ""),
+                        str(rec.get("APARTAMENTO") or ""),
+                        str(rec.get("PLACA") or ""),
+                        str(rec.get("MODELO") or ""),
+                        str(rec.get("COR") or ""),
+                        str(rec.get("STATUS") or ""),
+                        format_creative_entry(rec),
+                    ]
+                    safe_cols = [str(v).replace('"', "''") for v in cols]
+                    f.write(','.join(f'"{v}"' for v in safe_cols) + "\n")
+            _announce_feedback(f"CSV exportado: {os.path.basename(out)}", "success")
+        except Exception as exc:
+            _announce_feedback(f"Falha ao exportar CSV: {exc}", "danger")
+
+    def _save_control_view():
+        try:
+            _persist_ui_state({
+                "control_view": {
+                    "filters": dict(_filter_state.get("controle") or {}),
+                    "as_text": True,
+                }
+            })
+            _announce_feedback("Visão da aba CONTROLE salva", "success")
+        except Exception as exc:
+            _announce_feedback(f"Falha ao salvar visão: {exc}", "danger")
+
+    btn_top_export.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_export_csv", details={"source": "controle"}), _export_control_csv()))
+    btn_top_save_view.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_save_view", details={"source": "controle"}), _save_control_view()))
+    btn_top_reload.configure(command=lambda: forcar_recarregar(monitor_widgets, info_label))
+    btn_top_clear.configure(command=lambda: limpar_dados(monitor_widgets, info_label, btn_top_clear))
+    btn_top_toggle_filters.configure(command=lambda: _toggle_filters("global"))
+    attach_tooltip(btn_top_reload, "Recarrega todos os dados do monitor")
+    attach_tooltip(btn_top_clear, "Cria backup e limpa os registros exibidos")
+
+    try:
+        root_win.bind("<Alt-e>", lambda _e: (btn_top_export.invoke(), "break")[1], add="+")
+        root_win.bind("<Alt-v>", lambda _e: (btn_top_save_view.invoke(), "break")[1], add="+")
+    except Exception:
+        pass
+
+    for frame, arquivo, formatter, filter_key in tab_configs:
+        records_host = frame
+        details_host = None
+        if filter_key == "controle":
+            paned_kwargs = {
+                "orient": tk.VERTICAL,
+                "sashrelief": "flat",
+                "sashwidth": 2,
+                "bg": UI_THEME.get("surface", "#151A22"),
+                "bd": 0,
+                "relief": "flat",
+                "sashpad": 0,
+            }
+            control_split = _create_safe_panedwindow(frame, **paned_kwargs)
+            control_split.pack(fill=tk.BOTH, expand=True, padx=0, pady=(0, theme_space("space_2", 8)))
+            records_host = tk.Frame(control_split, bg=UI_THEME["surface"])
+            details_host = tk.Frame(control_split, bg=UI_THEME["bg"])
+            control_split.add(records_host, minsize=320, stretch="always")
+            control_split.add(details_host, minsize=64, stretch="never")
+
+            def _prioritize_details(splitter=control_split):
+                try:
+                    total_h = max(splitter.winfo_height(), 1)
+                    target_details_h = max(64, min(84, int(total_h * 0.10)))
+                    splitter.sash_place(0, 0, max(1, total_h - target_details_h))
+                except Exception:
+                    pass
+
+            try:
+                frame.after_idle(_prioritize_details)
+                frame.after(120, _prioritize_details)
+                frame.after(320, _prioritize_details)
+            except Exception:
+                pass
+
+        sticky_var = tk.StringVar(value="Sem registros visíveis")
+        sticky_label = build_label(
+            records_host,
+            "",
+            muted=False,
+            bg=UI_THEME["surface"],
+            font=theme_font("font_lg", "bold")
+        )
+        sticky_label.configure(textvariable=sticky_var, anchor="w", justify="left", padx=0)
+        sticky_label.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), theme_space("space_1", 4)))
+
+        records_top_line = tk.Frame(records_host, bg="#000000", height=2)
+        records_top_line.pack(fill=tk.X, padx=0, pady=(0, 0))
+
+        text_area_wrap = tk.Frame(
+            records_host,
+            bg=UI_THEME["surface"],
+            highlightthickness=1,
+            highlightbackground=UI_THEME.get("border", "#2B3442"),
+            bd=0,
+        )
+        text_widget = tk.Text(
+            text_area_wrap,
+            wrap="word",
+            bg=UI_THEME["surface"],
+            fg=UI_THEME.get("on_surface", UI_THEME["text"]),
+            insertbackground=UI_THEME.get("on_surface", UI_THEME["text"]),
+            relief="flat",
+            bd=0,
+            highlightthickness=0,
+            undo=True,
+            autoseparators=True,
+            maxundo=-1,
+            selectbackground=UI_THEME.get("selection_bg", UI_THEME.get("focus_bg", "#1F6FEB")),
+            selectforeground=UI_THEME.get("selection_fg", UI_THEME.get("focus_text", "#FFFFFF")),
+        )
+        text_scroll = _ChatGPTLikeScrollbar(
+            text_area_wrap,
+            width=10,
+            command=lambda *args, tw=text_widget: _scroll_text_widget(tw, *args),
+            track_bg=UI_THEME.get("surface", "#151A22"),
+            thumb_bg=UI_THEME.get("text", "#E6EDF3"),
+            thumb_hover_bg=UI_THEME.get("focus_text", "#FFFFFF"),
+        )
+        text_widget.configure(yscrollcommand=text_scroll.set)
+        _bind_scrollbar_drag_behavior(text_scroll, text_widget)
+        filter_bar = _build_filter_bar(frame, filter_key, info_label, target_widget=text_widget)
+        filter_bar._filter_target_widget = text_widget
+        _filter_bars[str(filter_key)] = filter_bar
+        _apply_filter_visibility(str(filter_key))
+        if formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry, format_aviso_entry):
+            text_widget.tag_configure("status_avisado", foreground=UI_THEME["status_avisado_text"])
+            text_widget.tag_configure("status_sem_contato", foreground=UI_THEME["status_sem_contato_text"])
+        if formatter == format_encomenda_entry:
+            text_widget.tag_configure("encomenda_selected", background=UI_THEME.get("selection_bg", UI_THEME["focus_bg"]), foreground=UI_THEME.get("selection_fg", UI_THEME["focus_text"]))
+        if filter_key == "controle":
+            text_widget.tag_configure("controle_selected", background=UI_THEME.get("selection_bg", UI_THEME["focus_bg"]), foreground=UI_THEME.get("selection_fg", UI_THEME["focus_text"]))
+        text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(theme_space("space_2", 8), 0), pady=theme_space("space_2", 8))
+        text_scroll.pack(side=tk.RIGHT, fill=tk.Y, padx=(theme_space("space_1", 4), theme_space("space_2", 8)), pady=theme_space("space_2", 8))
+        text_area_wrap.pack(fill=tk.BOTH, expand=True)
+        text_widget.config(state="disabled")
+        _sticky_header_state[text_widget] = {"var": sticky_var, "formatter": formatter, "scroll_setter": text_scroll.set}
+        _bind_sticky_header_updates(text_widget)
+        _bind_hover_highlight(text_widget)
+        if formatter in (format_creative_entry, format_encomenda_entry, format_orientacao_entry, format_observacao_entry, format_aviso_entry):
+            _build_text_actions(frame, text_widget, info_label, arquivo)
+        if filter_key == "controle":
+            details_panel = tk.Frame(details_host, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
+            details_panel.pack(fill=tk.BOTH, expand=True)
+            details_text = tk.Text(
+                details_panel,
+                wrap="word",
+                bg=UI_THEME["bg"],
+                fg=UI_THEME.get("on_surface", UI_THEME["text"]),
+                relief="flat",
+                bd=0,
+                highlightthickness=0,
+                tabs=(theme_space("space_9", 360),),
+                padx=theme_space("space_3", 10),
+                pady=theme_space("space_1", 4),
+                font=theme_font("font_md"),
+                height=3,
+            )
+            details_text.pack(side=tk.LEFT, fill=tk.X, expand=False)
+            details_text.insert("1.0", "Selecione um registro para ver detalhes.")
+            details_text.config(state="disabled")
+            _control_details_var[text_widget] = details_text
+        monitor_widgets.append(text_widget)
+        _monitor_sources[text_widget] = {"path": arquivo, "formatter": formatter, "filter_key": filter_key, "widget": text_widget, "info_label": info_label}
+
+    if not prefs.get("onboarding_seen"):
+        _announce_feedback("Use Ctrl+F para busca e Alt+1..5 para trocar abas", "info")
+
+    _apply_density()
+    if op_mode_var.get():
+        _toggle_operation_mode()
+    try:
+        for target in monitor_widgets:
+            _populate_text(target, info_label)
+    except Exception:
+        pass
+    try:
+        container.after(3000, _play_metric_cards_intro_animation)
+    except Exception:
+        pass
+    _update_status_cards()
+    return monitor_widgets, info_label
+
+# ---------- embutir como Toplevel ----------
+def create_monitor_toplevel(master):
+    global _monitor_toplevel
+    if _monitor_toplevel:
+        try:
+            _monitor_toplevel.lift()
+            _monitor_toplevel.focus_force()
+        except Exception:
+            pass
+        return _monitor_toplevel
+
+    top = tk.Toplevel(master)
+    top.title("Monitor de Acessos (embutido)")
+    _monitor_toplevel = top
+
+    _set_fullscreen(top)
+    text_widgets, info_label = _build_monitor_ui(top)
+
+    _schedule_update(text_widgets, info_label)
+
+    def on_close():
+        _cancel_scheduled(text_widgets)
+        try:
+            top.destroy()
+        except Exception:
+            pass
+        global _monitor_toplevel
+        _monitor_toplevel = None
+
+    top.protocol("WM_DELETE_WINDOW", on_close)
+    return top
+
+# ---------- standalone (modo original) ----------
+def iniciar_monitor_standalone():
+    try:
+        with open(LOCK_FILE, "w", encoding="utf-8") as f:
+            f.write(str(os.getpid()))
+    except Exception:
+        pass
+
+    root = tk.Tk()
+    root.title("Monitor de Acessos (standalone)")
+
+    text_widgets, info_label = _build_monitor_ui(root)
+
+    _schedule_update(text_widgets, info_label)
+
+    def on_close_standalone():
+        _cancel_scheduled(text_widgets)
+        try:
+            if os.path.exists(LOCK_FILE):
+                os.remove(LOCK_FILE)
+        except Exception:
+            pass
+        try:
+            root.destroy()
+        except Exception:
+            pass
+
+    root.protocol("WM_DELETE_WINDOW", on_close_standalone)
+    try:
+        root.mainloop()
+    finally:
+        try:
+            if os.path.exists(LOCK_FILE):
+                os.remove(LOCK_FILE)
+        except Exception:
+            pass
+
+# ---------- entrypoint ----------
+if __name__ == "__main__":
+    iniciar_monitor_standalone()

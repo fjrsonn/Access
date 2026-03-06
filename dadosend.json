@@ -10894,21 +10894,6 @@
             "ID": 780
         },
         {
-            "NOME": "VICTOR",
-            "SOBRENOME": "OLIVEIRA",
-            "BLOCO": "13",
-            "APARTAMENTO": "217",
-            "PLACA": "NCP6308",
-            "MODELO": "JETTA",
-            "COR": "AZUL",
-            "STATUS": "SEM CONTATO",
-            "DATA_HORA": "27/01/2026 21:33:30",
-            "_entrada_id": 781,
-            "MORADOR SEM TAG": "SIM",
-            "ID": 781,
-            "texto": "●   2  [ID 781] Em 27/01/2026 às 21:33:30, Victor Oliveira, sem contato, chegou ao Bloco 13, Apartamento 217, em um Jetta azul, placa NCP1308."
-        },
-        {
             "NOME": "KAREN",
             "SOBRENOME": "PEREIRA",
             "BLOCO": "5",

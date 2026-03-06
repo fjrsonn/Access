@@ -1,22 +1,22 @@
 {
-  "timestamp": "2026-03-04 03:20:47",
+  "timestamp": "2026-03-06 01:16:36",
   "action": "ux_metrics",
   "status": "OK",
   "stage": "interaction_perf",
   "details": {
     "hover_handler_ms": {
-      "count": 10,
-      "p50": 0.277,
-      "p95": 15.933,
-      "p99": 15.933
+      "count": 0,
+      "p50": 0.0,
+      "p95": 0.0,
+      "p99": 0.0
     },
     "refresh_apply_ms": {
-      "count": 4,
-      "p50": 60.775,
-      "p95": 62.994,
-      "p99": 62.994
+      "count": 5,
+      "p50": 42.585,
+      "p95": 63.288,
+      "p99": 63.288
     },
-    "records_rendered": 1696,
-    "frame_drop_rate": 0.8
+    "records_rendered": 2336,
+    "frame_drop_rate": 240.0
   }
 }
