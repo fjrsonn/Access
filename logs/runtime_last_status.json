@@ -1,22 +1,17 @@
 {
-  "timestamp": "2026-03-06 01:16:36",
+  "timestamp": "2026-03-06 03:15:21",
   "action": "ux_metrics",
   "status": "OK",
-  "stage": "interaction_perf",
+  "stage": "theme_contrast_check",
   "details": {
-    "hover_handler_ms": {
-      "count": 0,
-      "p50": 0.0,
-      "p95": 0.0,
-      "p99": 0.0
+    "ratios": {
+      "text_on_surface": 14.78,
+      "text_on_primary": 5.06,
+      "text_on_surface_alt": 13.25,
+      "text_on_warning": 7.03,
+      "text_on_danger": 4.61,
+      "text_on_success": 5.93
     },
-    "refresh_apply_ms": {
-      "count": 5,
-      "p50": 42.585,
-      "p95": 63.288,
-      "p99": 63.288
-    },
-    "records_rendered": 2336,
-    "frame_drop_rate": 240.0
+    "warnings": {}
   }
 }

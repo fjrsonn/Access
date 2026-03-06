@@ -10146,20 +10146,6 @@
             "STATUS_ENCOMENDA": "AVISADO"
         },
         {
-            "NOME": "ANA",
-            "SOBRENOME": "LIMA",
-            "BLOCO": "9",
-            "APARTAMENTO": "178",
-            "TIPO": "ENVELOPE",
-            "LOJA": "AMAZON",
-            "IDENTIFICACAO": "PKG00781",
-            "_entrada_id": 781,
-            "DATA_HORA": "27/01/2026 23:36:29",
-            "ID": 781,
-            "STATUS_ENCOMENDA": "AVISADO",
-            "STATUS_DATA_HORA": "03/03/2026 07:48:31"
-        },
-        {
             "NOME": "THIAGO",
             "SOBRENOME": "RIBEIRO",
             "BLOCO": "14",
@@ -10327,20 +10313,6 @@
             "DATA_HORA": "27/01/2026 08:55:25",
             "ID": 794,
             "STATUS_ENCOMENDA": "RETIRADO"
-        },
-        {
-            "NOME": "GABRIELA",
-            "SOBRENOME": "SILVA",
-            "BLOCO": "10",
-            "APARTAMENTO": "94",
-            "TIPO": "CAIXA",
-            "LOJA": "RIACHUELO",
-            "IDENTIFICACAO": "PKG00795",
-            "_entrada_id": 795,
-            "DATA_HORA": "27/01/2026 22:55:32",
-            "ID": 795,
-            "STATUS_ENCOMENDA": "SEM CONTATO",
-            "STATUS_DATA_HORA": "27/02/2026 15:11:32"
         },
         {
             "NOME": "ZOE",

@@ -11782,30 +11782,6 @@
       ]
     },
     {
-      "identidade": "ENCOMENDA|10|94|SEM_CONTATO",
-      "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
-      "origem_status": "SEM_CONTATO",
-      "bloco": "10",
-      "apartamento": "94",
-      "quantidade": 1,
-      "registros": [
-        {
-          "NOME": "GABRIELA",
-          "SOBRENOME": "SILVA",
-          "BLOCO": "10",
-          "APARTAMENTO": "94",
-          "TIPO": "CAIXA",
-          "LOJA": "RIACHUELO",
-          "IDENTIFICACAO": "PKG00795",
-          "_entrada_id": 795,
-          "DATA_HORA": "27/01/2026 22:55:32",
-          "ID": 795,
-          "STATUS_ENCOMENDA": "SEM CONTATO",
-          "STATUS_DATA_HORA": "27/02/2026 15:11:32"
-        }
-      ]
-    },
-    {
       "identidade": "ENCOMENDA|3|4|SEM_STATUS",
       "tipo_analise": "ENCOMENDAS_MULTIPLAS_BLOCO_APARTAMENTO",
       "origem_status": "SEM_STATUS",
