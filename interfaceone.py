@@ -109,7 +109,7 @@ except Exception:
         "border": "#D1D5DB",
         "text": "#111827",
         "muted_text": "#6B7280",
-        "surface": "#FFFFFF",
+        "surface": "#1E1E1E",
     }
     def bind_focus_ring(*args, **kwargs):
         return None
@@ -2547,14 +2547,15 @@ class AvisoBar(tk.Frame):
         try:
             self.lbl.config(bg=bg, fg=fg)
             self.lbl_counter.config(bg=bg, fg=UI_THEME.get("muted_text", "#6B7280"))
-            self.btn_close.config(bg=bg, fg=fg, activebackground=UI_THEME.get("surface", "#FFFFFF"), activeforeground=fg, highlightthickness=0, bd=0)
+            self.btn_detail.config(bg=bg, fg=fg, activebackground=UI_THEME.get("surface", "#1E1E1E"), activeforeground=fg, highlightthickness=0, bd=0)
+            self.btn_close.config(bg=bg, fg=fg, activebackground=UI_THEME.get("surface", "#1E1E1E"), activeforeground=fg, highlightthickness=0, bd=0)
         except Exception:
             pass
 
     @staticmethod
     def _blend_with_white(hex_color: str, alpha: float = 0.7) -> str:
         try:
-            if not hex_color or not hex_color.startswith("#"): return "#FFFFFF"
+            if not hex_color or not hex_color.startswith("#"): return "#1E1E1E"
             h = hex_color.lstrip("#")
             if len(h) == 3: h = "".join([c*2 for c in h])
             r = int(h[0:2], 16); g = int(h[2:4], 16); b = int(h[4:6], 16)
@@ -2564,7 +2565,7 @@ class AvisoBar(tk.Frame):
             bb = int((a * b) + ((1 - a) * 255))
             return f"#{rr:02X}{gg:02X}{bb:02X}"
         except Exception:
-            return hex_color or "#FFFFFF"
+            return hex_color or "#1E1E1E"
 
     def _load_avisos_active(self):
         # Recarrega sempre para garantir que qualquer alteração recém-gravada
@@ -2737,7 +2738,7 @@ class AvisoBar(tk.Frame):
                 justify="left",
                 anchor="nw",
                 width=42,
-                bg=UI_THEME.get("surface", "#FFFFFF"),
+                bg=UI_THEME.get("surface", "#1E1E1E"),
                 fg=UI_THEME.get("text", "#111827"),
                 padx=10,
                 pady=8,
