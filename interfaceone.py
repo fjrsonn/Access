@@ -3032,11 +3032,6 @@ def start_ui():
     s.set_submit_callback(lambda: save_text(entry_widget=s.entry))
     s.pack(fill=tk.X)
 
-    theme_frame = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); theme_frame.pack(padx=theme_space("space_4", 14), pady=(0, theme_space("space_2", 8)), fill=tk.X)
-    theme_label = tk.Label(theme_frame, text="Tema:", bg=UI_THEME.get("light_bg", "#F5F7FA"), fg=UI_THEME.get("text", "#111827")); theme_label.pack(side=tk.LEFT)
-    theme_var = tk.StringVar(value=get_active_theme_name())
-    theme_combo = ttk.Combobox(theme_frame, textvariable=theme_var, values=available_theme_names(), state="readonly")
-    theme_combo.pack(side=tk.LEFT, padx=(6, 0))
     def open_monitor_embedded():
         _open_monitor_window(root)
 
@@ -3045,11 +3040,6 @@ def start_ui():
         refresh_theme(root, context="interfaceone")
         root.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
         container.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
-        theme_frame.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
-        try:
-            theme_label.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"), fg=UI_THEME.get("text", "#111827"))
-        except Exception:
-            pass
         try:
             s.refresh_theme()
         except Exception:
@@ -3062,12 +3052,6 @@ def start_ui():
             _warning_bar.refresh_theme()
         except Exception:
             pass
-
-    def _on_theme_change(_event=None):
-        apply_theme(theme_var.get())
-        _refresh_theme()
-
-    theme_combo.bind("<<ComboboxSelected>>", _on_theme_change, add="+")
 
     def ctrl_enter(ev):
         if s.list_visible:
