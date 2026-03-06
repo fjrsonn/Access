@@ -1402,6 +1402,7 @@ def post_validate_and_clean_record(rec: dict, modelos_hint: Iterable[str]=None, 
 # ---------- UI: Suggest list compat (Listbox no lugar de Treeview) ----------
 class _SuggestListboxCompat:
     def __init__(self, parent, font):
+        list_bg = UI_THEME.get("surface", "#1E1E1E")
         self.widget = tk.Listbox(
             parent,
             activestyle="none",
@@ -1409,10 +1410,12 @@ class _SuggestListboxCompat:
             relief="flat",
             bd=0,
             highlightthickness=0,
+            highlightbackground=list_bg,
+            highlightcolor=list_bg,
             font=font,
-            bg="#1E1E1E",
+            bg=list_bg,
             fg=UI_THEME.get("text", "#D4D4D4"),
-            selectbackground="#252526",
+            selectbackground=UI_THEME.get("surface_alt", "#252526"),
             selectforeground=UI_THEME.get("text", "#D4D4D4"),
             exportselection=False,
         )
@@ -1542,16 +1545,29 @@ class SuggestEntry(tk.Frame):
         # overlay (completar token)
         self.overlay = tk.Label(self, text="", anchor="w", font=self.entry["font"], fg=UI_THEME.get("overlay_text", "gray65"), bg=self._orig_entry_bg, bd=0); self.overlay_visible=False
         # suggestion list
-        self.frame = tk.Frame(self, bg="#1E1E1E", highlightbackground="#1E1E1E", highlightthickness=0, bd=0); self.sbar = tk.Scrollbar(self.frame, orient=tk.VERTICAL)
+        list_bg = UI_THEME.get("surface", "#1E1E1E")
+        self.frame = tk.Frame(self, bg=list_bg, highlightbackground=list_bg, highlightthickness=0, bd=0)
+        self.sbar = ttk.Scrollbar(self.frame, orient=tk.VERTICAL, style="Vertical.TScrollbar")
         self.tree = _SuggestListboxCompat(self.frame, theme_font("font_md"))
 
         def _on_suggest_resize(event=None):
             return None
 
         self.frame.bind("<Configure>", lambda _e: _on_suggest_resize(), add="+")
-        self.tree.configure(yscrollcommand=self.sbar.set); self.sbar.config(command=self.tree.yview, bg="#1E1E1E", troughcolor="#1E1E1E", activebackground="#252526", highlightthickness=0, bd=0); self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,0), pady=6); self.sbar.pack(side=tk.RIGHT, fill=tk.Y, pady=6, padx=(0,6))
+        self.tree.configure(yscrollcommand=self.sbar.set)
+        self.sbar.config(command=self.tree.yview)
+        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,0), pady=6)
+        self.sbar.pack(side=tk.RIGHT, fill=tk.Y, pady=6, padx=(0,6))
         try:
-            self.tree.configure(background="#1E1E1E", fieldbackground="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0)
+            list_bg = UI_THEME.get("surface", "#1E1E1E")
+            self.tree.configure(
+                background=list_bg,
+                fieldbackground=list_bg,
+                foreground=UI_THEME.get("text", "#D4D4D4"),
+                borderwidth=0,
+                highlightbackground=list_bg,
+                highlightcolor=list_bg,
+            )
         except Exception:
             pass
         try:
@@ -1610,8 +1626,9 @@ class SuggestEntry(tk.Frame):
             shell_border = palette["shell_border"]
             shell_fg = palette["shell_fg"]
             self.input_shell.configure(bg=shell_bg, highlightbackground=shell_border, highlightcolor=UI_THEME.get("primary", "#1F6FEB"))
-            self.frame.configure(bg="#1E1E1E", highlightbackground="#1E1E1E", highlightthickness=0, bd=0)
-            self.shortcuts_hint.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg="#1E1E1E")
+            list_bg = UI_THEME.get("surface", "#1E1E1E")
+            self.frame.configure(bg=list_bg, highlightbackground=list_bg, highlightthickness=0, bd=0)
+            self.shortcuts_hint.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg=list_bg)
             self.entry.configure(
                 highlightbackground=UI_THEME.get("border", "#2B3442"),
                 highlightcolor=UI_THEME.get("border", "#2B3442"),
@@ -1630,7 +1647,14 @@ class SuggestEntry(tk.Frame):
                     bd=0,
                 )
             self.overlay.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg=self.entry.cget("bg"))
-            self.tree.configure(background="#1E1E1E", fieldbackground="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0)
+            self.tree.configure(
+                background=list_bg,
+                fieldbackground=list_bg,
+                foreground=UI_THEME.get("text", "#D4D4D4"),
+                borderwidth=0,
+                highlightbackground=list_bg,
+                highlightcolor=list_bg,
+            )
         except Exception:
             pass
 
