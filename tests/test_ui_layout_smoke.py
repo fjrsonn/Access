@@ -24,6 +24,15 @@ class UILayoutSmokeTests(unittest.TestCase):
         self.assertIn('container_bg = UI_THEME.get("bg"', src)
         self.assertIn('container_bg = UI_THEME.get("light_bg"', src)
 
+
+    def test_interfaceone_composer_matches_chatgpt_style_guidelines(self):
+        src = pathlib.Path("interfaceone.py").read_text(encoding="utf-8")
+        self.assertIn('self.btn_send = tk.Canvas', src)
+        self.assertIn('self._btn_send_bg = self.btn_send.create_oval', src)
+        self.assertIn('highlightthickness=0', src)
+        self.assertIn('centered.bind("<Configure>", _constrain_width', src)
+        self.assertIn('min(max(centered.winfo_width(), 320), 800)', src)
+
     def test_monitor_has_presets_and_status_cards(self):
         src = pathlib.Path("interfacetwo.py").read_text(encoding="utf-8")
         self.assertIn("Salvar preset", src)
