@@ -99,17 +99,17 @@ try:
     )
 except Exception:
     UI_THEME = {
-        "light_bg": "#F5F7FA",
-        "light_border": "#D1D5DB",
-        "focus_bg": "#DBEAFE",
+        "light_bg": "#1E1E1E",
+        "light_border": "#3C3C3C",
+        "focus_bg": "#252526",
         "focus_text": "#111827",
         "primary": "#1F6FEB",
         "primary_active": "#215DB0",
-        "surface_alt": "#E5E7EB",
-        "border": "#D1D5DB",
-        "text": "#111827",
-        "muted_text": "#6B7280",
-        "surface": "#FFFFFF",
+        "surface_alt": "#2D2D2D",
+        "border": "#3C3C3C",
+        "text": "#D4D4D4",
+        "muted_text": "#A6A6A6",
+        "surface": "#1E1E1E",
     }
     def bind_focus_ring(*args, **kwargs):
         return None
@@ -1399,13 +1399,125 @@ def post_validate_and_clean_record(rec: dict, modelos_hint: Iterable[str]=None, 
 
     return rec
 
+# ---------- UI: Suggest list compat (Listbox no lugar de Treeview) ----------
+class _SuggestListboxCompat:
+    def __init__(self, parent, font):
+        self.widget = tk.Listbox(
+            parent,
+            activestyle="none",
+            selectmode=tk.SINGLE,
+            relief="flat",
+            bd=0,
+            highlightthickness=0,
+            font=font,
+            bg="#1E1E1E",
+            fg=UI_THEME.get("text", "#D4D4D4"),
+            selectbackground="#252526",
+            selectforeground=UI_THEME.get("text", "#D4D4D4"),
+            exportselection=False,
+        )
+        self._items = []
+
+    def pack(self, *a, **k):
+        return self.widget.pack(*a, **k)
+
+    def bind(self, *a, **k):
+        return self.widget.bind(*a, **k)
+
+    def yview(self, *a):
+        return self.widget.yview(*a)
+
+    def see(self, i):
+        try:
+            self.widget.see(int(i))
+        except Exception:
+            pass
+
+    def focus(self, i=None):
+        return None
+
+    def heading(self, *a, **k):
+        return None
+
+    def column(self, *a, **k):
+        return None
+
+    def identify_row(self, y):
+        try:
+            idx = int(self.widget.nearest(y))
+        except Exception:
+            return ""
+        return str(idx) if 0 <= idx < len(self._items) else ""
+
+    def insert(self, _parent, _where, iid, values=()):
+        try:
+            idx = int(iid)
+        except Exception:
+            idx = len(self._items)
+        nome = str(values[0]) if values else ""
+        det = str(values[1]) if len(values) > 1 else ""
+        text = f"{nome}   |   {det}" if det else nome
+        if idx >= len(self._items):
+            self._items.append(text)
+            self.widget.insert(tk.END, text)
+        else:
+            self._items.insert(idx, text)
+            self.widget.insert(idx, text)
+
+    def get_children(self):
+        return tuple(str(i) for i in range(len(self._items)-1, -1, -1))
+
+    def delete(self, iid):
+        try:
+            i = int(iid)
+        except Exception:
+            return
+        if 0 <= i < len(self._items):
+            del self._items[i]
+            self.widget.delete(i)
+
+    def selection(self):
+        try:
+            sel = self.widget.curselection()
+            return tuple(str(i) for i in sel)
+        except Exception:
+            return tuple()
+
+    def selection_set(self, iid):
+        try:
+            i = int(iid)
+            self.widget.selection_clear(0, tk.END)
+            self.widget.selection_set(i)
+            self.widget.activate(i)
+        except Exception:
+            pass
+
+    def selection_remove(self, iid):
+        try:
+            i = int(iid)
+            self.widget.selection_clear(i)
+        except Exception:
+            pass
+
+    def configure(self, **kwargs):
+        # Compat para chamadas herdadas de Treeview
+        kwargs = dict(kwargs or {})
+        kwargs.pop("style", None)
+        field_bg = kwargs.pop("fieldbackground", None)
+        if field_bg is not None:
+            kwargs.setdefault("bg", field_bg)
+        if "background" in kwargs and "bg" not in kwargs:
+            kwargs["bg"] = kwargs.pop("background")
+        if "foreground" in kwargs and "fg" not in kwargs:
+            kwargs["fg"] = kwargs.pop("foreground")
+        return self.widget.configure(**kwargs)
+
 # ---------- UI: SuggestEntry (completo) ----------
 class SuggestEntry(tk.Frame):
     MAX_VISIBLE = 8
     def __init__(self, master):
         super().__init__(master)
         self.submit_callback = None
-        self._composer_menu = None
         self.entry_var = tk.StringVar()
         self.input_shell = tk.Frame(self, bd=0, highlightthickness=1)
         self.input_shell.pack(side=tk.TOP, fill=tk.X, pady=(0, theme_space("space_2", 8)))
@@ -1420,8 +1532,6 @@ class SuggestEntry(tk.Frame):
         self.btn_dictate.pack(side=tk.RIGHT, padx=(4, 10), pady=8)
         self.btn_voice = tk.Button(self.input_shell, text="🔊", width=2, relief="flat", command=self._on_voice_click, cursor="hand2", font=theme_font("font_lg"))
         self.btn_voice.pack(side=tk.RIGHT, padx=(4, 2), pady=8)
-        self.btn_send = tk.Button(self.input_shell, text="⬆", width=2, relief="flat", command=self._on_submit_click, cursor="hand2", font=theme_font("font_lg", "bold"))
-        self.btn_send.pack(side=tk.RIGHT, padx=(4, 2), pady=8)
         self.entry.focus_set()
         self.font = tkfont.Font(font=self.entry["font"]); self._orig_entry_bg = self.entry.cget("bg")
         try: self._orig_entry_fg = self.entry.cget("fg")
@@ -1432,35 +1542,24 @@ class SuggestEntry(tk.Frame):
         # overlay (completar token)
         self.overlay = tk.Label(self, text="", anchor="w", font=self.entry["font"], fg=UI_THEME.get("overlay_text", "gray65"), bg=self._orig_entry_bg, bd=0); self.overlay_visible=False
         # suggestion list
-        self.frame = tk.Frame(self, bg=UI_THEME.get("light_bg", "#F5F7FA"), highlightbackground=UI_THEME.get("light_border", "#D1D5DB"), highlightthickness=1, bd=0); self.sbar = tk.Scrollbar(self.frame, orient=tk.VERTICAL)
-        self.tree = ttk.Treeview(self.frame, columns=("nome","detalhes"), show="headings", height=8); self.tree.heading("nome", text="Nome"); self.tree.heading("detalhes", text="Detalhes")
-        self.tree.column("nome", width=220, anchor="w"); self.tree.column("detalhes", width=620, anchor="w")
+        self.frame = tk.Frame(self, bg="#1E1E1E", highlightbackground="#1E1E1E", highlightthickness=0, bd=0); self.sbar = tk.Scrollbar(self.frame, orient=tk.VERTICAL)
+        self.tree = _SuggestListboxCompat(self.frame, theme_font("font_md"))
 
         def _on_suggest_resize(event=None):
-            try:
-                total = max(int(self.frame.winfo_width()) - 24, 300)
-                self.tree.column("nome", width=max(120, int(total * 0.30)), minwidth=100)
-                self.tree.column("detalhes", width=max(180, int(total * 0.70)), minwidth=140)
-            except Exception:
-                pass
+            return None
 
         self.frame.bind("<Configure>", lambda _e: _on_suggest_resize(), add="+")
-        self.tree.configure(yscrollcommand=self.sbar.set); self.sbar.config(command=self.tree.yview); self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,0), pady=6); self.sbar.pack(side=tk.RIGHT, fill=tk.Y, pady=6, padx=(0,6))
+        self.tree.configure(yscrollcommand=self.sbar.set); self.sbar.config(command=self.tree.yview, bg="#1E1E1E", troughcolor="#1E1E1E", activebackground="#252526", highlightthickness=0, bd=0); self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,0), pady=6); self.sbar.pack(side=tk.RIGHT, fill=tk.Y, pady=6, padx=(0,6))
         try:
-            style = ttk.Style(self)
-            style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background=UI_THEME.get("surface", "#FFFFFF"), fieldbackground=UI_THEME.get("surface", "#FFFFFF"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
-            style.configure("Suggest.Treeview.Heading", font=theme_font("font_md", "bold"))
-            style.map("Suggest.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME.get("focus_bg", "#DBEAFE")))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("focus_text", "#111827")))])
-            self.tree.configure(style="Suggest.Treeview")
+            self.tree.configure(background="#1E1E1E", fieldbackground="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0)
         except Exception:
             pass
         try:
-            self.entry.configure(highlightthickness=1, highlightbackground=UI_THEME.get("light_border", "#D1D5DB"), highlightcolor=UI_THEME.get("primary", "#1F6FEB"))
-            bind_focus_ring(self.entry)
+            self.entry.configure(highlightthickness=0, highlightbackground=UI_THEME.get("border", "#2B3442"), highlightcolor=UI_THEME.get("border", "#2B3442"))
             bind_focus_ring(self.tree)
         except Exception:
             pass
-        self.shortcuts_hint = tk.Label(self, text="Atalhos: ↑/↓ navegar • Enter salvar • Tab completar", anchor="w", fg=UI_THEME.get("muted_text", "#6B7280"), bg=UI_THEME.get("light_bg", "#F5F7FA"), font=theme_font("font_sm"))
+        self.shortcuts_hint = tk.Label(self, text="Atalhos: ↑/↓ navegar • Enter salvar • Tab completar", anchor="w", fg=UI_THEME.get("text", "#D4D4D4"), bg="#1E1E1E", font=theme_font("font_sm"))
 
         self.ia_mode=False; self.ia_waiting_for_query=False; self.list_visible=False; self.suggestions=[]; self.correction=""; self.curr=None
         self.steps=[]; self.step_idx=0; self._has_user_navigated=False; self._just_accepted=False
@@ -1486,22 +1585,22 @@ class SuggestEntry(tk.Frame):
             attach_tooltip(self.btn_plus, "Mais")
             attach_tooltip(self.btn_dictate, "Ditar")
             attach_tooltip(self.btn_voice, "Usar voz")
-            attach_tooltip(self.btn_send, "Enviar")
         except Exception:
             pass
         self.refresh_theme()
 
     def _composer_palette(self):
         # Tokens visuais aproximados ao composer do ChatGPT, respeitando o tema ativo.
+        text_color = UI_THEME.get("text", "#D4D4D4")
         return {
-            "shell_bg": UI_THEME.get("surface", "#2F2F2F"),
-            "shell_border": UI_THEME.get("border", "#4B4B4B"),
-            "shell_fg": UI_THEME.get("on_surface", UI_THEME.get("text", "#ECECF1")),
-            "muted": UI_THEME.get("muted_text", "#A1A1AA"),
-            "soft_hover": UI_THEME.get("surface_alt", "#3A3A3A"),
-            "send_bg": UI_THEME.get("primary", "#10A37F"),
-            "send_bg_active": UI_THEME.get("primary_active", "#0E8E6D"),
-            "send_fg": UI_THEME.get("on_primary", "#FFFFFF"),
+            "shell_bg": "#252526",
+            "shell_border": "#3C3C3C",
+            "shell_fg": text_color,
+            "muted": text_color,
+            "soft_hover": "#252526",
+            "send_bg": "#252526",
+            "send_bg_active": "#252526",
+            "send_fg": text_color,
         }
 
     def refresh_theme(self):
@@ -1511,12 +1610,13 @@ class SuggestEntry(tk.Frame):
             shell_border = palette["shell_border"]
             shell_fg = palette["shell_fg"]
             self.input_shell.configure(bg=shell_bg, highlightbackground=shell_border, highlightcolor=UI_THEME.get("primary", "#1F6FEB"))
-            self.frame.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"), highlightbackground=UI_THEME.get("light_border", "#D1D5DB"))
-            self.shortcuts_hint.configure(fg=UI_THEME.get("muted_text", "#6B7280"), bg=UI_THEME.get("light_bg", "#F5F7FA"))
+            self.frame.configure(bg="#1E1E1E", highlightbackground="#1E1E1E", highlightthickness=0, bd=0)
+            self.shortcuts_hint.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg="#1E1E1E")
             self.entry.configure(
-                highlightbackground=UI_THEME.get("light_border", "#D1D5DB"),
-                highlightcolor=UI_THEME.get("primary", "#1F6FEB"),
-                bg=shell_bg,
+                highlightbackground=UI_THEME.get("border", "#2B3442"),
+                highlightcolor=UI_THEME.get("border", "#2B3442"),
+                highlightthickness=0,
+                bg="#252526",
                 fg=shell_fg,
                 insertbackground=shell_fg,
             )
@@ -1529,40 +1629,19 @@ class SuggestEntry(tk.Frame):
                     highlightthickness=0,
                     bd=0,
                 )
-            self.btn_send.configure(
-                bg=palette["send_bg"],
-                fg=palette["send_fg"],
-                activebackground=palette["send_bg_active"],
-                activeforeground=palette["send_fg"],
-                highlightthickness=0,
-                bd=0,
-            )
-            self.overlay.configure(fg=UI_THEME.get("overlay_text", "gray65"), bg=self.entry.cget("bg"))
-            style = ttk.Style(self)
-            style.configure("Suggest.Treeview", rowheight=28, font=theme_font("font_md"), background=UI_THEME.get("surface", "#FFFFFF"), fieldbackground=UI_THEME.get("surface", "#FFFFFF"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
-            style.configure("Suggest.Treeview.Heading", font=theme_font("font_md", "bold"), background=UI_THEME.get("surface_alt", "#E5E7EB"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")))
-            style.map("Suggest.Treeview", background=[("selected", UI_THEME.get("selection_bg", UI_THEME.get("focus_bg", "#DBEAFE")))], foreground=[("selected", UI_THEME.get("selection_fg", UI_THEME.get("focus_text", "#111827")))])
+            self.overlay.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg=self.entry.cget("bg"))
+            self.tree.configure(background="#1E1E1E", fieldbackground="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0)
         except Exception:
             pass
 
     def set_submit_callback(self, callback):
         self.submit_callback = callback
 
-    def _on_plus_click(self):
+    def _on_plus_click(self, _event=None):
         try:
-            if self._composer_menu is None:
-                self._composer_menu = tk.Menu(self, tearoff=0)
-            self._composer_menu.delete(0, "end")
-            self._composer_menu.add_command(label="Abrir sugestões", command=self.show_db)
-            self._composer_menu.add_command(label="Limpar campo", command=lambda: self.entry_var.set(""))
-            self._composer_menu.add_separator()
-            self._composer_menu.add_command(label="Modo IA", command=lambda: self.entry_var.set("IA "))
-            x = self.btn_plus.winfo_rootx()
-            y = self.btn_plus.winfo_rooty() + self.btn_plus.winfo_height() + 2
-            self._composer_menu.tk_popup(x, y)
-            self._composer_menu.grab_release()
+            _open_monitor_window(self.winfo_toplevel())
         except Exception:
-            pass
+            open_monitor_fallback_subprocess()
 
     def _on_dictate_click(self):
         try:
@@ -2148,11 +2227,6 @@ class SuggestEntry(tk.Frame):
         for i,(nome,det,rec) in enumerate(rows):
             self.tree.insert("", "end", str(i), values=(nome, det))
 
-        try:
-            self.tree.column("nome", width=col_nome_w, minwidth=40)
-            self.tree.column("detalhes", width=col_det_w, minwidth=60)
-        except Exception:
-            pass
 
         visible = min(len(rows), self.MAX_VISIBLE) if rows else 0
         if visible <= 0: self.hide_list(); return
@@ -2482,6 +2556,22 @@ def save_text(entry_widget=None, btn=None):
             _log_ui("ERROR", "fallback_db_append_exception", "Erro ao parsear / anexar ao DB (fallback)", error=str(e))
 
 # ---------- open monitor fallback (mantido) ----------
+def _open_monitor_window(parent=None):
+    try:
+        import interfacetwo
+        if getattr(interfacetwo, "_monitor_toplevel", None):
+            try:
+                interfacetwo._monitor_toplevel.lift()
+                interfacetwo._monitor_toplevel.focus_force()
+            except Exception:
+                pass
+            return
+        interfacetwo.create_monitor_toplevel(parent)
+    except Exception as e:
+        print("Falha ao abrir monitor (abrindo fallback):", e)
+        open_monitor_fallback_subprocess()
+
+
 def open_monitor_fallback_subprocess():
     try:
         target = os.path.join(os.path.dirname(__file__), "interfacetwo.py")
@@ -2515,7 +2605,7 @@ class AvisoBar(tk.Frame):
             self.font = tkfont.Font(font=self.entry_widget["font"])
         except Exception:
             self.font = tkfont.Font(family="Segoe UI", size=11)
-        self.config(bg=UI_THEME.get("surface_alt", "#E5E7EB"), bd=1, relief="flat", highlightthickness=1, highlightbackground=UI_THEME.get("border", "#D1D5DB"))
+        self.config(bg=UI_THEME.get("surface_alt", "#2D2D2D"), bd=1, relief="flat", highlightthickness=1, highlightbackground=UI_THEME.get("border", "#3C3C3C"))
         self.msg_var = tk.StringVar()
         self.lbl = tk.Label(self, textvariable=self.msg_var, anchor="w", font=self.font, bd=0)
         self.lbl.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=(2,2))
@@ -2548,21 +2638,21 @@ class AvisoBar(tk.Frame):
         self._apply_component_theme()
 
     def _apply_component_theme(self):
-        bg = UI_THEME.get("surface_alt", "#E5E7EB")
-        fg = UI_THEME.get("on_surface", UI_THEME.get("text", "#111827"))
-        self.config(bg=bg, highlightbackground=UI_THEME.get("border", "#D1D5DB"), highlightcolor=UI_THEME.get("primary", "#1F6FEB"))
+        bg = UI_THEME.get("surface_alt", "#2D2D2D")
+        fg = UI_THEME.get("on_surface", UI_THEME.get("text", "#D4D4D4"))
+        self.config(bg=bg, highlightbackground=UI_THEME.get("border", "#3C3C3C"), highlightcolor=UI_THEME.get("primary", "#1F6FEB"))
         try:
             self.lbl.config(bg=bg, fg=fg)
-            self.lbl_counter.config(bg=bg, fg=UI_THEME.get("muted_text", "#6B7280"))
-            self.btn_detail.config(bg=bg, fg=fg, activebackground=UI_THEME.get("surface", "#FFFFFF"), activeforeground=fg, highlightthickness=0, bd=0)
-            self.btn_close.config(bg=bg, fg=fg, activebackground=UI_THEME.get("surface", "#FFFFFF"), activeforeground=fg, highlightthickness=0, bd=0)
+            self.lbl_counter.config(bg=bg, fg=UI_THEME.get("muted_text", "#A6A6A6"))
+            self.btn_detail.config(bg=bg, fg=fg, activebackground=UI_THEME.get("surface", "#1E1E1E"), activeforeground=fg, highlightthickness=0, bd=0)
+            self.btn_close.config(bg=bg, fg=fg, activebackground=UI_THEME.get("surface", "#1E1E1E"), activeforeground=fg, highlightthickness=0, bd=0)
         except Exception:
             pass
 
     @staticmethod
     def _blend_with_white(hex_color: str, alpha: float = 0.7) -> str:
         try:
-            if not hex_color or not hex_color.startswith("#"): return "#FFFFFF"
+            if not hex_color or not hex_color.startswith("#"): return "#1E1E1E"
             h = hex_color.lstrip("#")
             if len(h) == 3: h = "".join([c*2 for c in h])
             r = int(h[0:2], 16); g = int(h[2:4], 16); b = int(h[4:6], 16)
@@ -2572,7 +2662,7 @@ class AvisoBar(tk.Frame):
             bb = int((a * b) + ((1 - a) * 255))
             return f"#{rr:02X}{gg:02X}{bb:02X}"
         except Exception:
-            return hex_color or "#FFFFFF"
+            return hex_color or "#1E1E1E"
 
     def _load_avisos_active(self):
         # Recarrega sempre para garantir que qualquer alteração recém-gravada
@@ -2637,13 +2727,12 @@ class AvisoBar(tk.Frame):
         aviso = self._active_avisos[self._idx % len(self._active_avisos)]
         ui = aviso.get("ui", {}) or {}
         bg = ui.get("background_color") or "#FFFF00"
-        blended = self._blend_with_white(bg, alpha=0.7)
         try:
-            self.config(bg=blended)
-            self.lbl.config(bg=blended, fg=ui.get("text_color", "#111111"))
-            self.lbl_counter.config(bg=blended, fg="#333333")
-            self.btn_detail.config(bg=blended, fg="#111111", activebackground=blended)
-            self.btn_close.config(bg=blended, fg="#111111", activebackground=blended)
+            self.config(bg=bg)
+            self.lbl.config(bg=bg, fg="#000000")
+            self.lbl_counter.config(bg=bg, fg="#000000")
+            self.btn_detail.config(bg=bg, fg="#000000", activebackground=bg, activeforeground="#000000")
+            self.btn_close.config(bg=bg, fg="#000000", activebackground=bg, activeforeground="#000000")
         except:
             pass
         disp = self._format_display_text(aviso)
@@ -2711,16 +2800,16 @@ class AvisoBar(tk.Frame):
             top = tk.Toplevel(self)
             top.title("Central de Alertas")
             top.geometry("980x520")
-            top.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
+            top.configure(bg=UI_THEME.get("bg", "#1E1E1E"))
 
             search_var = tk.StringVar()
-            header = tk.Frame(top, bg=UI_THEME.get("light_bg", "#F5F7FA"))
+            header = tk.Frame(top, bg=UI_THEME.get("bg", "#1E1E1E"))
             header.pack(fill=tk.X, padx=10, pady=10)
-            tk.Label(header, text="Buscar:", bg=UI_THEME.get("light_bg", "#F5F7FA"), fg=UI_THEME.get("text", "#111827")).pack(side=tk.LEFT)
+            tk.Label(header, text="Buscar:", bg=UI_THEME.get("bg", "#1E1E1E"), fg=UI_THEME.get("text", "#D4D4D4")).pack(side=tk.LEFT)
             ent = tk.Entry(header, textvariable=search_var, width=36)
             ent.pack(side=tk.LEFT, padx=(6, 10))
 
-            body = tk.Frame(top, bg=UI_THEME.get("light_bg", "#F5F7FA"))
+            body = tk.Frame(top, bg=UI_THEME.get("bg", "#1E1E1E"))
             body.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
             breakpoints = set()
@@ -2746,14 +2835,14 @@ class AvisoBar(tk.Frame):
                 justify="left",
                 anchor="nw",
                 width=42,
-                bg=UI_THEME.get("surface", "#FFFFFF"),
-                fg=UI_THEME.get("text", "#111827"),
+                bg=UI_THEME.get("surface", "#1E1E1E"),
+                fg=UI_THEME.get("text", "#D4D4D4"),
                 padx=10,
                 pady=8,
             )
             side.pack(side=tk.RIGHT, fill=tk.Y, padx=(10, 0))
 
-            actions = tk.Frame(top, bg=UI_THEME.get("light_bg", "#F5F7FA"))
+            actions = tk.Frame(top, bg=UI_THEME.get("bg", "#1E1E1E"))
             actions.pack(fill=tk.X, padx=10, pady=(0, 10))
 
             def _load_all():
@@ -3032,46 +3121,23 @@ def start_ui():
     report_status("ux_metrics", "OK", stage="theme_contrast_check", details=validate_theme_contrast())
     root = tk.Tk(); root.title("Controle de Acesso")
     apply_ttk_theme_styles(root)
-    root.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
-    container = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); container.pack(padx=theme_space("space_4", 14), pady=theme_space("space_4", 14), fill=tk.X)
+    root.configure(bg="#1E1E1E")
+    container = tk.Frame(root, bg="#1E1E1E"); container.pack(padx=theme_space("space_4", 14), pady=theme_space("space_4", 14), fill=tk.X)
 
     s = SuggestEntry(container)
     aviso_bar = AvisoBar(container, s.entry)
     _warning_bar = WarningBar(container, s.entry, aviso_bar=aviso_bar)
-    s.set_submit_callback(lambda: save_text(entry_widget=s.entry, btn=btn_save))
+    s.set_submit_callback(lambda: save_text(entry_widget=s.entry))
     s.pack(fill=tk.X)
 
-    btn_frame = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); btn_frame.pack(padx=theme_space("space_4", 14), pady=(theme_space("space_3", 12),theme_space("space_3", 12)))
-    theme_frame = tk.Frame(root, bg=UI_THEME.get("light_bg", "#F5F7FA")); theme_frame.pack(padx=theme_space("space_4", 14), pady=(0, theme_space("space_2", 8)), fill=tk.X)
-    theme_label = tk.Label(theme_frame, text="Tema:", bg=UI_THEME.get("light_bg", "#F5F7FA"), fg=UI_THEME.get("text", "#111827")); theme_label.pack(side=tk.LEFT)
-    theme_var = tk.StringVar(value=get_active_theme_name())
-    theme_combo = ttk.Combobox(theme_frame, textvariable=theme_var, values=available_theme_names(), state="readonly")
-    theme_combo.pack(side=tk.LEFT, padx=(6, 0))
-    btn_save = build_primary_button(btn_frame, "Salvar", lambda: save_text(entry_widget=s.entry, btn=btn_save), padx=18)
-    btn_save.pack(side=tk.LEFT, padx=(0,10))
     def open_monitor_embedded():
-        try:
-            import interfacetwo
-            if getattr(interfacetwo, "_monitor_toplevel", None):
-                try: interfacetwo._monitor_toplevel.lift(); interfacetwo._monitor_toplevel.focus_force()
-                except Exception:
-                    pass
-                return
-            interfacetwo.create_monitor_toplevel(root)
-        except Exception as e:
-            print("Falha ao embutir monitor (abrindo fallback):", e); open_monitor_fallback_subprocess()
+        _open_monitor_window(root)
 
     def _refresh_theme():
         apply_ttk_theme_styles(root)
         refresh_theme(root, context="interfaceone")
-        root.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
-        container.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
-        btn_frame.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
-        theme_frame.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"))
-        try:
-            theme_label.configure(bg=UI_THEME.get("light_bg", "#F5F7FA"), fg=UI_THEME.get("text", "#111827"))
-        except Exception:
-            pass
+        root.configure(bg="#1E1E1E")
+        container.configure(bg="#1E1E1E")
         try:
             s.refresh_theme()
         except Exception:
@@ -3084,40 +3150,7 @@ def start_ui():
             _warning_bar.refresh_theme()
         except Exception:
             pass
-        try:
-            btn_save.configure(
-                bg=UI_THEME.get("primary", "#1F6FEB"),
-                fg=UI_THEME.get("on_primary", UI_THEME.get("text", "#E6EDF3")),
-                activebackground=UI_THEME.get("primary_active", "#215DB0"),
-                activeforeground=UI_THEME.get("on_primary", UI_THEME.get("text", "#E6EDF3")),
-                highlightbackground=UI_THEME.get("border", "#D1D5DB"),
-                highlightcolor=UI_THEME.get("primary", "#1F6FEB"),
-            )
-        except Exception:
-            pass
-        try:
-            btn_dados.configure(
-                bg=UI_THEME.get("surface_alt", "#E5E7EB"),
-                fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")),
-                activebackground=UI_THEME.get("border", "#D1D5DB"),
-                activeforeground=UI_THEME.get("on_surface", UI_THEME.get("text", "#111827")),
-                highlightbackground=UI_THEME.get("border", "#D1D5DB"),
-                highlightcolor=UI_THEME.get("primary", "#1F6FEB"),
-            )
-        except Exception:
-            pass
 
-    def _on_theme_change(_event=None):
-        apply_theme(theme_var.get())
-        _refresh_theme()
-
-    theme_combo.bind("<<ComboboxSelected>>", _on_theme_change, add="+")
-
-    btn_dados = build_secondary_button(btn_frame, "Monitor de Dados", open_monitor_embedded, padx=18)
-    bind_button_states(btn_save, UI_THEME.get("primary", "#1F6FEB"), UI_THEME.get("primary_active", "#215DB0"))
-    bind_button_states(btn_dados, UI_THEME.get("surface_alt", "#E5E7EB"), UI_THEME.get("light_border", "#D1D5DB"))
-    btn_dados.pack(side=tk.LEFT)
-    attach_tooltip(btn_dados, "Abre o monitor de dados em janela separada")
     def ctrl_enter(ev):
         if s.list_visible:
             sel = s.tree.selection()
@@ -3126,8 +3159,8 @@ def start_ui():
                 except: idx = 0
                 s._accept_into_entry(idx, hide=True, append_all=True); s._just_accepted=True; return "break"
             else:
-                save_text(entry_widget=s.entry, btn=btn_save); return "break"
-        save_text(entry_widget=s.entry, btn=btn_save); return "break"
+                save_text(entry_widget=s.entry); return "break"
+        save_text(entry_widget=s.entry); return "break"
     root.bind("<Control-Return>", ctrl_enter)
     root.bind("<Control-m>", lambda _e: (open_monitor_embedded(), "break"), add="+")
     root.bind("<Control-l>", lambda _e: (aviso_bar._open_alert_center(), "break"), add="+")
