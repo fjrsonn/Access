@@ -5354,7 +5354,12 @@ def _build_monitor_ui(container):
     btn_top_export.configure(command=lambda: (report_status("ux_metrics", "OK", stage="toolbar_export_csv", details={"source": "controle", "scope": "today"}), _export_control_csv()))
     btn_top_reload.configure(command=lambda: forcar_recarregar(monitor_widgets, info_label))
     btn_top_clear.configure(command=lambda: _open_clear_databases_dialog(theme_bar.winfo_toplevel(), monitor_widgets, info_label))
-    btn_top_toggle_filters.configure(command=lambda: _toggle_filters("global"))
+    btn_top_toggle_filters.configure(command=lambda: _with_warning(
+        theme_bar.winfo_toplevel(),
+        "Filtros",
+        "Mostrar ou ocultar os filtros da aba ativa?",
+        lambda: _toggle_filters("global"),
+    ))
     attach_tooltip(btn_top_details, "Mostra ou oculta painel de detalhes")
     attach_tooltip(btn_top_export, "Exporta CSV somente com registros do dia atual")
     attach_tooltip(btn_top_reload, "Reinicia a atualização do monitor e recarrega todos os bancos")
