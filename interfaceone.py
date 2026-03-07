@@ -103,8 +103,8 @@ except Exception:
         "light_border": "#3C3C3C",
         "focus_bg": "#252526",
         "focus_text": "#111827",
-        "primary": "#1F6FEB",
-        "primary_active": "#215DB0",
+        "primary": "#252526",
+        "primary_active": "#2D2D2D",
         "surface_alt": "#2D2D2D",
         "border": "#3C3C3C",
         "text": "#D4D4D4",
@@ -2915,7 +2915,7 @@ class AvisoBar(tk.Frame):
     def _apply_component_theme(self):
         bg = UI_THEME.get("surface_alt", "#2D2D2D")
         fg = UI_THEME.get("on_surface", UI_THEME.get("text", "#D4D4D4"))
-        self.config(bg=bg, highlightbackground=UI_THEME.get("border", "#3C3C3C"), highlightcolor=UI_THEME.get("primary", "#1F6FEB"))
+        self.config(bg=bg, highlightbackground=UI_THEME.get("border", "#3C3C3C"), highlightcolor=UI_THEME.get("primary", "#252526"))
         try:
             self.lbl.config(bg=bg, fg=fg)
             self.lbl_counter.config(bg=bg, fg=UI_THEME.get("muted_text", "#A6A6A6"))

@@ -13,9 +13,9 @@ UI_THEME = {
     "border": "#2B3442",
     "text": "#E6EDF3",
     "muted_text": "#9AA4B2",
-    "primary": "#2F81F7",
-    "primary_active": "#1F6FEB",
-    "on_primary": "#0B1117",
+    "primary": "#252526",
+    "primary_active": "#2D2D2D",
+    "on_primary": "#D4D4D4",
     "on_surface": "#E6EDF3",
     "success": "#2DA44E",
     "on_success": "#08120C",
@@ -23,7 +23,7 @@ UI_THEME = {
     "on_danger": "#FFFFFF",
     "warning": "#D29922",
     "on_warning": "#111827",
-    "focus_bg": "#F0F6FC",
+    "focus_bg": "#252526",
     "focus_text": "#111827",
     "edit_badge_bg": "#F8E3A3",
     "edit_badge_text": "#111111",
@@ -54,9 +54,9 @@ UI_THEME = {
     "space_6": 24,
     "disabled_bg": "#2B3442",
     "disabled_fg": "#9AA4B2",
-    "info": "#2563EB",
-    "on_info": "#FFFFFF",
-    "selection_bg": "#1F6FEB",
+    "info": "#252526",
+    "on_info": "#D4D4D4",
+    "selection_bg": "#252526",
     "selection_fg": "#E6EDF3",
 }
 
@@ -68,8 +68,8 @@ THEME_PRESETS = {
         "border": "#3C3C3C",
         "text": "#D4D4D4",
         "muted_text": "#A6A6A6",
-        "primary": "#0E639C",
-        "primary_active": "#1177BB",
+        "primary": "#252526",
+        "primary_active": "#2D2D2D",
         "on_primary": "#FFFFFF",
         "on_surface": "#D4D4D4",
         "success": "#16825D",
@@ -78,7 +78,7 @@ THEME_PRESETS = {
         "on_danger": "#000000",
         "warning": "#CCA700",
         "on_warning": "#000000",
-        "focus_bg": "#094771",
+        "focus_bg": "#252526",
         "focus_text": "#FFFFFF",
         "edit_badge_bg": "#CCA700",
         "edit_badge_text": "#000000",
@@ -109,9 +109,9 @@ THEME_PRESETS = {
         "space_6": 24,
         "disabled_bg": "#3C3C3C",
         "disabled_fg": "#A6A6A6",
-        "info": "#3794FF",
+        "info": "#252526",
         "on_info": "#000000",
-        "selection_bg": "#094771",
+        "selection_bg": "#252526",
         "selection_fg": "#FFFFFF",
     },
     # Alias de compatibilidade para ambientes ainda com testes legados.
@@ -122,8 +122,8 @@ THEME_PRESETS = {
         "border": "#3C3C3C",
         "text": "#D4D4D4",
         "muted_text": "#A6A6A6",
-        "primary": "#0E639C",
-        "primary_active": "#1177BB",
+        "primary": "#252526",
+        "primary_active": "#2D2D2D",
         "on_primary": "#FFFFFF",
         "on_surface": "#D4D4D4",
         "success": "#16825D",
@@ -132,7 +132,7 @@ THEME_PRESETS = {
         "on_danger": "#000000",
         "warning": "#CCA700",
         "on_warning": "#000000",
-        "focus_bg": "#094771",
+        "focus_bg": "#252526",
         "focus_text": "#FFFFFF",
         "edit_badge_bg": "#CCA700",
         "edit_badge_text": "#000000",
@@ -163,9 +163,9 @@ THEME_PRESETS = {
         "space_6": 24,
         "disabled_bg": "#3C3C3C",
         "disabled_fg": "#A6A6A6",
-        "info": "#3794FF",
+        "info": "#252526",
         "on_info": "#000000",
-        "selection_bg": "#094771",
+        "selection_bg": "#252526",
         "selection_fg": "#FFFFFF",
     },
 }
@@ -258,7 +258,7 @@ def normalize_tone(tone: str) -> str:
 
 def state_colors(tone: str) -> tuple[str, str]:
     t = normalize_tone(tone)
-    bg = UI_THEME.get(t, UI_THEME.get("info", "#2563EB"))
+    bg = UI_THEME.get(t, UI_THEME.get("info", "#252526"))
     fg = UI_THEME.get(f"on_{t}", UI_THEME.get("on_info", UI_THEME.get("text", "#E6EDF3")))
     return bg, fg
 
@@ -381,7 +381,7 @@ def _build_semantic_secondary_button(parent, text, command, tone="warning", padx
         padx=padx,
         highlightthickness=1,
         highlightbackground=UI_THEME.get("border", "#2B3442"),
-        highlightcolor=UI_THEME.get("primary", "#2F81F7"),
+        highlightcolor=UI_THEME.get("primary", "#252526"),
     )
     bind_focus_ring(btn, focus_thickness=2, blur_thickness=1)
     bind_button_states(btn, base_bg, hover_bg)
@@ -459,11 +459,11 @@ def apply_ttk_theme_styles(root=None):
         style = ttk.Style(root)
     try:
         style.configure("TCombobox", fieldbackground=UI_THEME.get("surface_alt", "#1B2430"), background=UI_THEME.get("surface_alt", "#1B2430"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), bordercolor=UI_THEME.get("border", "#2B3442"), lightcolor=UI_THEME.get("border", "#2B3442"), darkcolor=UI_THEME.get("border", "#2B3442"))
-        style.map("TCombobox", fieldbackground=[("readonly", UI_THEME.get("surface_alt", "#1B2430")), ("focus", UI_THEME.get("surface_alt", "#1B2430"))], foreground=[("readonly", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))), ("focus", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))], bordercolor=[("focus", UI_THEME.get("primary", "#2F81F7"))], lightcolor=[("focus", UI_THEME.get("primary", "#2F81F7"))], darkcolor=[("focus", UI_THEME.get("primary", "#2F81F7"))])
+        style.map("TCombobox", fieldbackground=[("readonly", UI_THEME.get("surface_alt", "#1B2430")), ("focus", UI_THEME.get("surface_alt", "#1B2430"))], foreground=[("readonly", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))), ("focus", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))], bordercolor=[("focus", UI_THEME.get("primary", "#252526"))], lightcolor=[("focus", UI_THEME.get("primary", "#252526"))], darkcolor=[("focus", UI_THEME.get("primary", "#252526"))])
         tree_bg = UI_THEME.get("surface", "#151A22")
         tree_header_bg = UI_THEME.get("surface_alt", "#1B2430")
         tree_fg = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
-        tree_selection_bg = UI_THEME.get("selection_bg", UI_THEME.get("primary", "#2F81F7"))
+        tree_selection_bg = UI_THEME.get("selection_bg", UI_THEME.get("primary", "#252526"))
         tree_selection_fg = UI_THEME.get("selection_fg", UI_THEME.get("on_primary", "#FFFFFF"))
         for tree_style in ("Treeview", "Control.Treeview"):
             style.configure(
