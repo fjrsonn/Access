@@ -3518,7 +3518,7 @@ def start_ui():
     _keep_window_always_on_top(root)
     apply_ttk_theme_styles(root)
     root.configure(bg="#1E1E1E")
-    container = tk.Frame(root, bg="#1E1E1E"); container.pack(padx=theme_space("space_4", 14), pady=theme_space("space_4", 14), fill=tk.X)
+    container = tk.Frame(root, bg="#1E1E1E"); container.pack(padx=theme_space("space_4", 14), pady=theme_space("space_4", 14), fill=tk.BOTH, expand=True)
 
     s = SuggestEntry(container)
     aviso_bar = AvisoBar(container, s.entry)
