@@ -2962,8 +2962,8 @@ class AvisoBar(tk.Frame):
         self.msg_var = tk.StringVar()
         self.lbl = tk.Label(self, textvariable=self.msg_var, anchor="w", font=self.font, bd=0)
         self.lbl.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=(2,2))
-        self.btn_close = tk.Label(self, text="✕", width=2, cursor="hand2", font=theme_font("font_lg", "bold"), bd=0, highlightthickness=0)
-        self.btn_close.pack(side=tk.RIGHT, padx=(0,6), pady=(2,2))
+        self.btn_close = tk.Label(self, text="✕", cursor="hand2", font=theme_font("font_lg", "bold"), bd=0, highlightthickness=0, relief="flat", padx=0, pady=0, bg=self.cget("bg"), fg="#000000")
+        self.btn_close.pack(side=tk.RIGHT, padx=(0,6), pady=(0,0))
         self.btn_close.bind("<Button-1>", lambda _e: self._on_close_click(), add="+")
         self._current_bar_bg = UI_THEME.get("surface_alt", "#2D2D2D")
         try:
