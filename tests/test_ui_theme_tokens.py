@@ -29,8 +29,8 @@ class UIThemeTokensTests(unittest.TestCase):
         self.assertEqual(preset.get("bg"), "#1E1E1E")
         self.assertEqual(preset.get("surface"), "#252526")
         self.assertEqual(preset.get("text"), "#D4D4D4")
-        self.assertEqual(preset.get("primary"), "#0E639C")
-        self.assertEqual(preset.get("selection_bg"), "#094771")
+        self.assertEqual(preset.get("primary"), "#1177BB")
+        self.assertEqual(preset.get("selection_bg"), "#0E639C")
 
     def test_typography_presets_exist(self):
         self.assertIn("compacto", ui_theme.TYPOGRAPHY_PRESETS)
