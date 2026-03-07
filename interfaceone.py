@@ -3431,17 +3431,17 @@ def _configure_adaptive_main_window(window):
 
         # horizontal maior + altura menor
         width = max(1280, min(int(screen_w * 0.99), 1980))
-        height = max(140, min(int(screen_h * 0.18), 210))
+        height = max(120, min(int(screen_h * 0.15), 180))
 
         pos_x = max(0, int((screen_w - width) / 2))
         pos_y = max(0, int((screen_h - height) / 2))
         window.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
-        window.minsize(1180, 140)
+        window.minsize(1180, 120)
     except Exception:
         pass
 
 
-def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: int = 1200):
+def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: int = 1200, startup_delay_ms: int = 6000):
     """Mantém a janela horizontal: largura alta e altura controlada."""
     state = {"ticks": 0}
 
@@ -3459,7 +3459,7 @@ def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: in
             requested_h = int(target.winfo_reqheight() + 12)
 
             width = min(max(1180, requested_w), max(1180, int(screen_w * 0.995)))
-            height = min(max(140, requested_h), max(140, int(screen_h * 0.22)))
+            height = min(max(120, requested_h), max(120, int(screen_h * 0.20)))
 
             x = max(0, int((screen_w - width) / 2))
             y = max(0, int((screen_h - height) / 2))
@@ -3471,7 +3471,7 @@ def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: in
             return
 
     try:
-        window.after(max(180, interval_ms // 2), _fit_once)
+        window.after(max(startup_delay_ms, interval_ms), _fit_once)
     except Exception:
         pass
 
@@ -3525,7 +3525,7 @@ def start_ui():
     _warning_bar = WarningBar(container, s.entry, aviso_bar=aviso_bar)
     s.set_submit_callback(lambda: save_text(entry_widget=s.entry))
     s.pack(fill=tk.X)
-    _schedule_progressive_window_fit(root, anchor_widget=container)
+    _schedule_progressive_window_fit(root, anchor_widget=container, startup_delay_ms=6000)
 
     def open_monitor_embedded():
         _open_monitor_window(root)
