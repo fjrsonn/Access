@@ -1775,6 +1775,7 @@ class SuggestEntry(tk.Frame):
     MAX_VISIBLE = 8
     def __init__(self, master):
         super().__init__(master)
+        self.configure(bg=UI_THEME.get("bg", "#1E1E1E"), highlightthickness=0, bd=0)
         self.submit_callback = None
         self.entry_var = tk.StringVar()
         self.input_shell = tk.Frame(self, bd=0, highlightthickness=0)
@@ -1876,6 +1877,7 @@ class SuggestEntry(tk.Frame):
             shell_bg = palette["shell_bg"]
             shell_border = palette["shell_border"]
             shell_fg = palette["shell_fg"]
+            self.configure(bg=UI_THEME.get("bg", "#1E1E1E"), highlightthickness=0, bd=0)
             self.input_shell.configure(bg=shell_bg, highlightbackground=shell_bg, highlightcolor=shell_bg, highlightthickness=0)
             list_bg = UI_THEME.get("surface", "#1E1E1E")
             self.frame.configure(bg=list_bg, highlightbackground=list_bg, highlightthickness=0, bd=0)
@@ -1897,7 +1899,7 @@ class SuggestEntry(tk.Frame):
                     highlightthickness=0,
                     bd=0,
                 )
-            self.overlay.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg=self.entry.cget("bg"))
+            self.overlay.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg=shell_bg)
             self.tree.configure(
                 background=list_bg,
                 fieldbackground=list_bg,
