@@ -1788,7 +1788,7 @@ class SuggestEntry(tk.Frame):
         self.entry = _CanvasEntryComposer(self.input_shell, textvariable=self.entry_var, font=theme_font("font_lg"), relief="flat", bd=0)
         self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(4, 4), pady=0)
 
-        self.btn_dictate = tk.Button(self.input_shell, text="◎", width=2, relief="flat", command=self._on_dictate_click, cursor="hand2", font=theme_font("font_lg"))
+        self.btn_dictate = tk.Button(self.input_shell, text="◎", width=2, relief="flat", command=self._on_dictate_click, cursor="hand2", font=theme_font("font_lg", "bold"))
         self.btn_dictate.pack(side=tk.RIGHT, padx=(4, 10), pady=0)
         self.btn_voice = tk.Button(self.input_shell, text="↑", width=2, relief="flat", command=self._on_submit_click, cursor="hand2", font=theme_font("font_lg", "bold"))
         self.btn_voice.pack(side=tk.RIGHT, padx=(4, 2), pady=0)
@@ -2962,12 +2962,13 @@ class AvisoBar(tk.Frame):
         self.msg_var = tk.StringVar()
         self.lbl = tk.Label(self, textvariable=self.msg_var, anchor="w", font=self.font, bd=0)
         self.lbl.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=(2,2))
-        self.btn_close = tk.Button(self, text="Fechar", width=8, command=self._on_close_click, relief="flat", cursor="hand2")
+        self.btn_close = tk.Button(self, text="✕", width=2, command=self._on_close_click, relief="flat", cursor="hand2", font=theme_font("font_lg", "bold"))
         self.btn_close.pack(side=tk.RIGHT, padx=(0,6), pady=(2,2))
         self._current_bar_bg = UI_THEME.get("surface_alt", "#2D2D2D")
         try:
             self.btn_close.bind("<Enter>", self._on_close_hover_enter, add="+")
             self.btn_close.bind("<Leave>", self._on_close_hover_leave, add="+")
+            attach_tooltip(self.btn_close, "Fechar aviso")
         except Exception:
             pass
         self._active_avisos = []
