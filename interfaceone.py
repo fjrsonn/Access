@@ -2995,24 +2995,9 @@ class AvisoBar(tk.Frame):
         try:
             self.lbl.config(bg=bg, fg=fg)
             self.lbl_counter.config(bg=bg, fg=UI_THEME.get("muted_text", "#A6A6A6"))
-            self.btn_detail.config(bg=bg, fg=fg, activebackground=UI_THEME.get("surface", "#1E1E1E"), activeforeground=fg, highlightthickness=0, bd=0)
         except Exception:
             pass
 
-    @staticmethod
-    def _blend_with_white(hex_color: str, alpha: float = 0.7) -> str:
-        try:
-            if not hex_color or not hex_color.startswith("#"): return "#1E1E1E"
-            h = hex_color.lstrip("#")
-            if len(h) == 3: h = "".join([c*2 for c in h])
-            r = int(h[0:2], 16); g = int(h[2:4], 16); b = int(h[4:6], 16)
-            a = alpha
-            rr = int((a * r) + ((1 - a) * 255))
-            gg = int((a * g) + ((1 - a) * 255))
-            bb = int((a * b) + ((1 - a) * 255))
-            return f"#{rr:02X}{gg:02X}{bb:02X}"
-        except Exception:
-            return hex_color or "#1E1E1E"
 
     def _on_close_hover_enter(self, _event=None):
         try:
@@ -3093,7 +3078,6 @@ class AvisoBar(tk.Frame):
             self.config(bg=bg)
             self.lbl.config(bg=bg, fg="#000000")
             self.lbl_counter.config(bg=bg, fg="#000000")
-            self.btn_detail.config(bg=bg, fg="#000000", activebackground=bg, activeforeground="#000000")
             self._current_bar_bg = bg
         except:
             pass
