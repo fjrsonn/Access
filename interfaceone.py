@@ -102,7 +102,7 @@ except Exception:
         "light_bg": "#1E1E1E",
         "light_border": "#3C3C3C",
         "focus_bg": "#252526",
-        "focus_text": "#111827",
+        "focus_text": "#D4D4D4",
         "primary": "#252526",
         "primary_active": "#2D2D2D",
         "surface_alt": "#2D2D2D",
@@ -1823,7 +1823,7 @@ class SuggestEntry(tk.Frame):
         except Exception:
             pass
         try:
-            self.entry.configure(highlightthickness=0, highlightbackground=UI_THEME.get("border", "#2B3442"), highlightcolor=UI_THEME.get("border", "#2B3442"))
+            self.entry.configure(highlightthickness=0, highlightbackground=UI_THEME.get("border", "#3C3C3C"), highlightcolor=UI_THEME.get("border", "#3C3C3C"))
             bind_focus_ring(self.tree)
         except Exception:
             pass
@@ -1883,8 +1883,8 @@ class SuggestEntry(tk.Frame):
             self.frame.configure(bg=list_bg, highlightbackground=list_bg, highlightthickness=0, bd=0)
             self.shortcuts_hint.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg=list_bg)
             self.entry.configure(
-                highlightbackground=UI_THEME.get("border", "#2B3442"),
-                highlightcolor=UI_THEME.get("border", "#2B3442"),
+                highlightbackground=UI_THEME.get("border", "#3C3C3C"),
+                highlightcolor=UI_THEME.get("border", "#3C3C3C"),
                 highlightthickness=0,
                 bg="#252526",
                 fg=shell_fg,
@@ -2268,7 +2268,7 @@ class SuggestEntry(tk.Frame):
         text_area = scrolledtext.ScrolledText(
             top,
             wrap=tk.WORD,
-            bg=UI_THEME.get("editor_bg", UI_THEME.get("surface", "#151A22")),
+            bg=UI_THEME.get("editor_bg", UI_THEME.get("surface", "#252526")),
             fg=UI_THEME.get("editor_text", UI_THEME.get("text", "#E6EDF3")),
             insertbackground=UI_THEME.get("editor_insert", UI_THEME.get("text", "#E6EDF3")),
         )
@@ -3306,7 +3306,7 @@ class WarningBar(tk.Frame):
         except Exception:
             self.font = tkfont.Font(family="Segoe UI", size=11)
         self._styles = {
-            "info": {"bg": UI_THEME.get("focus_bg", "#DCEBFF"), "fg": UI_THEME.get("focus_text", "#102A43")},
+            "info": {"bg": UI_THEME.get("focus_bg", "#252526"), "fg": UI_THEME.get("focus_text", "#D4D4D4")},
             "warn": {"bg": UI_THEME.get("warning", "#FFE69C"), "fg": UI_THEME.get("on_warning", "#3D2B00")},
             "error": {"bg": UI_THEME.get("danger", "#F8B4B4"), "fg": UI_THEME.get("on_danger", "#4A0F0F")},
         }
@@ -3324,7 +3324,7 @@ class WarningBar(tk.Frame):
 
     def refresh_theme(self):
         self._styles = {
-            "info": {"bg": UI_THEME.get("focus_bg", "#DCEBFF"), "fg": UI_THEME.get("focus_text", "#102A43")},
+            "info": {"bg": UI_THEME.get("focus_bg", "#252526"), "fg": UI_THEME.get("focus_text", "#D4D4D4")},
             "warn": {"bg": UI_THEME.get("warning", "#FFE69C"), "fg": UI_THEME.get("on_warning", "#3D2B00")},
             "error": {"bg": UI_THEME.get("danger", "#F8B4B4"), "fg": UI_THEME.get("on_danger", "#4A0F0F")},
         }
