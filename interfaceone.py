@@ -3423,23 +3423,23 @@ class WarningBar(tk.Frame):
 # ---------------- UI bootstrap ----------------
 
 def _configure_adaptive_main_window(window):
-    """Inicializa a janela em formato comprido/fino (larga e baixa)."""
+    """Inicializa a janela em formato fino/comprido (estreita e alta)."""
     try:
         window.update_idletasks()
         screen_w = max(1, int(window.winfo_screenwidth()))
         screen_h = max(1, int(window.winfo_screenheight()))
-        width = max(760, min(int(screen_w * 0.9), 1400))
-        height = max(220, min(int(screen_h * 0.34), 360))
+        width = max(520, min(int(screen_w * 0.42), 760))
+        height = max(360, min(int(screen_h * 0.54), 620))
         pos_x = max(0, int((screen_w - width) / 2))
         pos_y = max(0, int((screen_h - height) / 2))
         window.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
-        window.minsize(760, 220)
+        window.minsize(500, 320)
     except Exception:
         pass
 
 
 def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: int = 1200):
-    """Ajusta a janela progressivamente após novos conteúdos mantendo visual comprido/fino."""
+    """Ajusta a janela progressivamente após novos conteúdos mantendo visual fino/comprido."""
     state = {"ticks": 0}
 
     def _fit_once():
@@ -3451,10 +3451,10 @@ def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: in
             screen_w = max(1, int(window.winfo_screenwidth()))
             screen_h = max(1, int(window.winfo_screenheight()))
             target = anchor_widget if anchor_widget is not None and anchor_widget.winfo_exists() else window
-            requested_w = max(760, int(target.winfo_reqwidth() + 72))
-            requested_h = max(220, int(target.winfo_reqheight() + 40))
-            width = min(max(760, requested_w), max(760, int(screen_w * 0.94)))
-            height = min(max(220, requested_h), max(220, int(screen_h * 0.5)))
+            requested_w = max(500, int(target.winfo_reqwidth() + 56))
+            requested_h = max(320, int(target.winfo_reqheight() + 70))
+            width = min(max(500, requested_w), max(500, int(screen_w * 0.5)))
+            height = min(max(320, requested_h), max(320, int(screen_h * 0.84)))
             x = max(0, int((screen_w - width) / 2))
             y = max(0, int((screen_h - height) / 2))
             window.geometry(f"{width}x{height}+{x}+{y}")
@@ -3519,7 +3519,7 @@ def start_ui():
     _warning_bar = WarningBar(container, s.entry, aviso_bar=aviso_bar)
     s.set_submit_callback(lambda: save_text(entry_widget=s.entry))
     s.pack(fill=tk.X)
-    _schedule_progressive_window_fit(root, anchor_widget=container)
+    _schedule_progressive_window_fit(root, anchor_widget=s.entry)
 
     def open_monitor_embedded():
         _open_monitor_window(root)
