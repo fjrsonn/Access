@@ -1866,7 +1866,7 @@ class SuggestEntry(tk.Frame):
             "shell_border": "#3C3C3C",
             "shell_fg": text_color,
             "muted": text_color,
-            "soft_hover": "#252526",
+            "soft_hover": "#303034",
             "send_bg": "#FFFFFF",
             "send_bg_active": "#E9EEF5",
             "send_fg": "#0F172A",
@@ -1906,6 +1906,20 @@ class SuggestEntry(tk.Frame):
     def _on_send_hover_leave(self, _event=None):
         self._sync_send_button_visual(hover=False)
 
+    def _on_shell_button_hover_enter(self, button):
+        try:
+            palette = self._composer_palette()
+            button.configure(bg=palette["soft_hover"])
+        except Exception:
+            pass
+
+    def _on_shell_button_hover_leave(self, button):
+        try:
+            palette = self._composer_palette()
+            button.configure(bg=palette["shell_bg"])
+        except Exception:
+            pass
+
     def _on_entry_var_changed(self, *_):
         self._sync_send_button_visual(hover=False)
 
@@ -1937,6 +1951,13 @@ class SuggestEntry(tk.Frame):
                     highlightthickness=0,
                     bd=0,
                 )
+                try:
+                    btn.unbind("<Enter>")
+                    btn.unbind("<Leave>")
+                    btn.bind("<Enter>", lambda _e, _b=btn: self._on_shell_button_hover_enter(_b), add="+")
+                    btn.bind("<Leave>", lambda _e, _b=btn: self._on_shell_button_hover_leave(_b), add="+")
+                except Exception:
+                    pass
             self.btn_voice.configure(
                 highlightthickness=0,
                 bd=0,
@@ -2943,6 +2964,12 @@ class AvisoBar(tk.Frame):
         self.lbl.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=(2,2))
         self.btn_close = tk.Button(self, text="Fechar", width=8, command=self._on_close_click, relief="flat", cursor="hand2")
         self.btn_close.pack(side=tk.RIGHT, padx=(0,6), pady=(2,2))
+        self._current_bar_bg = UI_THEME.get("surface_alt", "#2D2D2D")
+        try:
+            self.btn_close.bind("<Enter>", self._on_close_hover_enter, add="+")
+            self.btn_close.bind("<Leave>", self._on_close_hover_leave, add="+")
+        except Exception:
+            pass
         self._active_avisos = []
         self._idx = 0
         self._after_id = None
@@ -2970,12 +2997,13 @@ class AvisoBar(tk.Frame):
     def _apply_component_theme(self):
         bg = UI_THEME.get("surface_alt", "#2D2D2D")
         fg = UI_THEME.get("on_surface", UI_THEME.get("text", "#D4D4D4"))
+        self._current_bar_bg = bg
         self.config(bg=bg, highlightbackground=UI_THEME.get("border", "#3C3C3C"), highlightcolor=UI_THEME.get("primary", "#252526"))
         try:
             self.lbl.config(bg=bg, fg=fg)
             self.lbl_counter.config(bg=bg, fg=UI_THEME.get("muted_text", "#A6A6A6"))
             self.btn_detail.config(bg=bg, fg=fg, activebackground=UI_THEME.get("surface", "#1E1E1E"), activeforeground=fg, highlightthickness=0, bd=0)
-            self.btn_close.config(bg=bg, fg=fg, activebackground=UI_THEME.get("surface", "#1E1E1E"), activeforeground=fg, highlightthickness=0, bd=0)
+            self.btn_close.config(bg=bg, fg=fg, activebackground=self._blend_with_white(bg, 0.82), activeforeground=fg, highlightthickness=0, bd=0)
         except Exception:
             pass
 
@@ -2993,6 +3021,18 @@ class AvisoBar(tk.Frame):
             return f"#{rr:02X}{gg:02X}{bb:02X}"
         except Exception:
             return hex_color or "#1E1E1E"
+
+    def _on_close_hover_enter(self, _event=None):
+        try:
+            self.btn_close.config(bg=self._blend_with_white(self._current_bar_bg, 0.82))
+        except Exception:
+            pass
+
+    def _on_close_hover_leave(self, _event=None):
+        try:
+            self.btn_close.config(bg=self._current_bar_bg)
+        except Exception:
+            pass
 
     def _load_avisos_active(self):
         # Recarrega sempre para garantir que qualquer alteração recém-gravada
@@ -3062,7 +3102,8 @@ class AvisoBar(tk.Frame):
             self.lbl.config(bg=bg, fg="#000000")
             self.lbl_counter.config(bg=bg, fg="#000000")
             self.btn_detail.config(bg=bg, fg="#000000", activebackground=bg, activeforeground="#000000")
-            self.btn_close.config(bg=bg, fg="#000000", activebackground=bg, activeforeground="#000000")
+            self._current_bar_bg = bg
+            self.btn_close.config(bg=bg, fg="#000000", activebackground=self._blend_with_white(bg, 0.82), activeforeground="#000000")
         except:
             pass
         disp = self._format_display_text(aviso)
