@@ -1778,6 +1778,7 @@ class SuggestEntry(tk.Frame):
         self.configure(bg=UI_THEME.get("bg", "#1E1E1E"), highlightthickness=0, bd=0)
         self.submit_callback = None
         self.entry_var = tk.StringVar()
+        self._entry_var_trace = self.entry_var.trace_add("write", self._on_entry_var_changed)
         self.input_shell = tk.Frame(self, bd=0, highlightthickness=0)
         self.input_shell.pack(side=tk.TOP, fill=tk.X, pady=0)
 
@@ -1787,9 +1788,9 @@ class SuggestEntry(tk.Frame):
         self.entry = _CanvasEntryComposer(self.input_shell, textvariable=self.entry_var, font=theme_font("font_lg"), relief="flat", bd=0)
         self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(4, 4), pady=0)
 
-        self.btn_dictate = tk.Button(self.input_shell, text="🎙", width=2, relief="flat", command=self._on_dictate_click, cursor="hand2", font=theme_font("font_lg"))
+        self.btn_dictate = tk.Button(self.input_shell, text="◎", width=2, relief="flat", command=self._on_dictate_click, cursor="hand2", font=theme_font("font_lg"))
         self.btn_dictate.pack(side=tk.RIGHT, padx=(4, 10), pady=0)
-        self.btn_voice = tk.Button(self.input_shell, text="🔊", width=2, relief="flat", command=self._on_voice_click, cursor="hand2", font=theme_font("font_lg"))
+        self.btn_voice = tk.Button(self.input_shell, text="↑", width=2, relief="flat", command=self._on_submit_click, cursor="hand2", font=theme_font("font_lg", "bold"))
         self.btn_voice.pack(side=tk.RIGHT, padx=(4, 2), pady=0)
         self.entry.focus_set()
         self.font = tkfont.Font(font=self.entry.cget("font")); self._orig_entry_bg = self.entry.cget("bg")
@@ -1852,7 +1853,7 @@ class SuggestEntry(tk.Frame):
         try:
             attach_tooltip(self.btn_plus, "Mais")
             attach_tooltip(self.btn_dictate, "Ditar")
-            attach_tooltip(self.btn_voice, "Usar voz")
+            attach_tooltip(self.btn_voice, "Enviar")
         except Exception:
             pass
         self.refresh_theme()
@@ -1866,10 +1867,47 @@ class SuggestEntry(tk.Frame):
             "shell_fg": text_color,
             "muted": text_color,
             "soft_hover": "#252526",
-            "send_bg": "#252526",
-            "send_bg_active": "#252526",
-            "send_fg": text_color,
+            "send_bg": "#FFFFFF",
+            "send_bg_active": "#E9EEF5",
+            "send_fg": "#0F172A",
+            "send_idle_bg": "#2D2D2D",
+            "send_idle_bg_active": "#353535",
+            "send_idle_fg": UI_THEME.get("muted_text", "#A6A6A6"),
         }
+
+    def _has_typed_text(self) -> bool:
+        return bool((self.entry_var.get() or "").strip())
+
+    def _sync_send_button_visual(self, hover: bool = False):
+        try:
+            palette = self._composer_palette()
+            has_text = self._has_typed_text()
+            if has_text:
+                bg = palette["send_bg_active"] if hover else palette["send_bg"]
+                fg = palette["send_fg"]
+                cursor = "hand2"
+            else:
+                bg = palette["send_idle_bg_active"] if hover else palette["send_idle_bg"]
+                fg = palette["send_idle_fg"]
+                cursor = "arrow"
+            self.btn_voice.configure(
+                bg=bg,
+                fg=fg,
+                activebackground=(palette["send_bg_active"] if has_text else palette["send_idle_bg_active"]),
+                activeforeground=fg,
+                cursor=cursor,
+            )
+        except Exception:
+            pass
+
+    def _on_send_hover_enter(self, _event=None):
+        self._sync_send_button_visual(hover=True)
+
+    def _on_send_hover_leave(self, _event=None):
+        self._sync_send_button_visual(hover=False)
+
+    def _on_entry_var_changed(self, *_):
+        self._sync_send_button_visual(hover=False)
 
     def refresh_theme(self):
         try:
@@ -1890,7 +1928,7 @@ class SuggestEntry(tk.Frame):
                 fg=shell_fg,
                 insertbackground=shell_fg,
             )
-            for btn in (self.btn_plus, self.btn_dictate, self.btn_voice):
+            for btn in (self.btn_plus, self.btn_dictate):
                 btn.configure(
                     bg=shell_bg,
                     fg=palette["muted"],
@@ -1899,6 +1937,21 @@ class SuggestEntry(tk.Frame):
                     highlightthickness=0,
                     bd=0,
                 )
+            self.btn_voice.configure(
+                highlightthickness=0,
+                bd=0,
+                width=2,
+                padx=6,
+                pady=2,
+            )
+            try:
+                self.btn_voice.unbind("<Enter>")
+                self.btn_voice.unbind("<Leave>")
+                self.btn_voice.bind("<Enter>", self._on_send_hover_enter, add="+")
+                self.btn_voice.bind("<Leave>", self._on_send_hover_leave, add="+")
+            except Exception:
+                pass
+            self._sync_send_button_visual(hover=False)
             self.overlay.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg=shell_bg)
             self.tree.configure(
                 background=list_bg,
@@ -1939,6 +1992,8 @@ class SuggestEntry(tk.Frame):
             pass
 
     def _on_submit_click(self):
+        if not self._has_typed_text():
+            return
         if callable(self.submit_callback):
             try:
                 self.submit_callback()
