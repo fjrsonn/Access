@@ -1412,12 +1412,13 @@ class _CanvasEntryComposer(tk.Canvas):
         self._highlight_bg = kwargs.pop("highlightbackground", self._bg)
         self._highlight_color = kwargs.pop("highlightcolor", self._bg)
         self._highlight_thickness = int(kwargs.pop("highlightthickness", 0) or 0)
+        self._radius = int(kwargs.pop("radius", 10) or 10)
         canvas_bd = kwargs.pop("bd", 0)
         canvas_relief = kwargs.pop("relief", "flat")
         canvas_takefocus = kwargs.pop("takefocus", 1)
         super().__init__(
             parent,
-            height=max(28, self._font.metrics("linespace") + 10),
+            height=max(36, self._font.metrics("linespace") + 16),
             bd=canvas_bd,
             relief=canvas_relief,
             bg=self._bg,
@@ -1455,17 +1456,29 @@ class _CanvasEntryComposer(tk.Canvas):
         self._cursor = min(self._cursor, len(self._text))
         self._draw()
 
+    def _draw_rounded_rect(self, x1, y1, x2, y2, radius, fill):
+        r = max(0, min(radius, int((x2 - x1) / 2), int((y2 - y1) / 2)))
+        if r <= 0:
+            self.create_rectangle(x1, y1, x2, y2, fill=fill, outline=fill)
+            return
+        self.create_rectangle(x1 + r, y1, x2 - r, y2, fill=fill, outline=fill)
+        self.create_rectangle(x1, y1 + r, x2, y2 - r, fill=fill, outline=fill)
+        self.create_arc(x1, y1, x1 + 2*r, y1 + 2*r, start=90, extent=90, fill=fill, outline=fill)
+        self.create_arc(x2 - 2*r, y1, x2, y1 + 2*r, start=0, extent=90, fill=fill, outline=fill)
+        self.create_arc(x1, y2 - 2*r, x1 + 2*r, y2, start=180, extent=90, fill=fill, outline=fill)
+        self.create_arc(x2 - 2*r, y2 - 2*r, x2, y2, start=270, extent=90, fill=fill, outline=fill)
+
     def _draw(self):
         tk.Canvas.delete(self, "all")
         w = max(40, self.winfo_width())
         h = max(26, self.winfo_height())
-        self.create_rectangle(0, 0, w, h, fill=self._bg, outline=self._bg)
+        self._draw_rounded_rect(0, 0, w, h, self._radius, self._bg)
         x_pad = 8
         y = h // 2
         self.create_text(x_pad, y, anchor="w", text=self._text, font=self._font, fill=self._fg)
         if self.focus_get() == self and self._blink_visible:
             caret_x = x_pad + self._font.measure(self._text[: self._cursor])
-            self.create_line(caret_x, 5, caret_x, h - 5, fill=self._insert_bg, width=1)
+            self.create_line(caret_x, 8, caret_x, h - 8, fill=self._insert_bg, width=1)
 
     def _blink(self):
         self._blink_visible = not self._blink_visible
@@ -1784,7 +1797,7 @@ class SuggestEntry(tk.Frame):
         self.btn_plus = tk.Button(self.input_shell, text="＋", width=2, relief="flat", command=self._on_plus_click, cursor="hand2", font=theme_font("font_lg", "bold"))
         self.btn_plus.pack(side=tk.LEFT, padx=(10, 6), pady=0)
 
-        self.entry = _CanvasEntryComposer(self.input_shell, textvariable=self.entry_var, font=theme_font("font_lg"), relief="flat", bd=0)
+        self.entry = _CanvasEntryComposer(self.input_shell, textvariable=self.entry_var, font=theme_font("font_lg"), relief="flat", bd=0, radius=12)
         self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(4, 4), pady=0)
 
         self.btn_dictate = tk.Button(self.input_shell, text="🎙", width=2, relief="flat", command=self._on_dictate_click, cursor="hand2", font=theme_font("font_lg"))
