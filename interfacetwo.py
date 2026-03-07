@@ -3503,6 +3503,18 @@ def _build_encomenda_actions(frame, text_widget, info_label):
 def _set_fullscreen(window):
     try:
         window.state("zoomed")
+        return
+    except Exception:
+        pass
+    try:
+        screen_w = max(1, int(window.winfo_screenwidth()))
+        screen_h = max(1, int(window.winfo_screenheight()))
+        width = max(980, int(screen_w * 0.92))
+        height = max(580, int(screen_h * 0.9))
+        pos_x = max(0, int((screen_w - width) / 2))
+        pos_y = max(0, int((screen_h - height) / 2))
+        window.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
+        window.minsize(980, 580)
     except Exception:
         pass
 
