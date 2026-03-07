@@ -3425,9 +3425,11 @@ class WarningBar(tk.Frame):
 def _configure_adaptive_main_window(window):
     """Configura janela principal para se adaptar a diferentes resoluções."""
     try:
+        window.update_idletasks()
         screen_w = max(1, int(window.winfo_screenwidth()))
         screen_h = max(1, int(window.winfo_screenheight()))
-        width = max(640, int(screen_w * 0.9))
+        requested_width = max(640, int(window.winfo_reqwidth() or 640))
+        width = min(requested_width, int(screen_w * 0.9))
         height = max(420, int(screen_h * 0.85))
         pos_x = max(0, int((screen_w - width) / 2))
         pos_y = max(0, int((screen_h - height) / 2))
