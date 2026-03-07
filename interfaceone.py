@@ -102,9 +102,9 @@ except Exception:
         "light_bg": "#1E1E1E",
         "light_border": "#3C3C3C",
         "focus_bg": "#252526",
-        "focus_text": "#111827",
-        "primary": "#1F6FEB",
-        "primary_active": "#215DB0",
+        "focus_text": "#D4D4D4",
+        "primary": "#252526",
+        "primary_active": "#2D2D2D",
         "surface_alt": "#2D2D2D",
         "border": "#3C3C3C",
         "text": "#D4D4D4",
@@ -1399,39 +1399,294 @@ def post_validate_and_clean_record(rec: dict, modelos_hint: Iterable[str]=None, 
 
     return rec
 
-# ---------- UI: Suggest list compat (Listbox no lugar de Treeview) ----------
-class _SuggestListboxCompat:
-    def __init__(self, parent, font):
-        self.widget = tk.Listbox(
+# ---------- UI: componentes custom (sem widgets nativos de texto/lista) ----------
+class _CanvasEntryComposer(tk.Canvas):
+    def __init__(self, parent, textvariable, font, **kwargs):
+        self._font = tkfont.Font(font=font)
+        self._text_var = textvariable
+        self._text = str(textvariable.get() or "")
+        self._cursor = len(self._text)
+        self._bg = kwargs.pop("bg", UI_THEME.get("surface_alt", "#252526"))
+        self._fg = kwargs.pop("fg", UI_THEME.get("text", "#D4D4D4"))
+        self._insert_bg = kwargs.pop("insertbackground", self._fg)
+        self._highlight_bg = kwargs.pop("highlightbackground", self._bg)
+        self._highlight_color = kwargs.pop("highlightcolor", self._bg)
+        self._highlight_thickness = int(kwargs.pop("highlightthickness", 0) or 0)
+        self._radius = int(kwargs.pop("radius", 10) or 10)
+        canvas_bd = kwargs.pop("bd", 0)
+        canvas_relief = kwargs.pop("relief", "flat")
+        canvas_takefocus = kwargs.pop("takefocus", 1)
+        super().__init__(
             parent,
-            activestyle="none",
-            selectmode=tk.SINGLE,
-            relief="flat",
+            height=max(36, self._font.metrics("linespace") + 16),
+            bd=canvas_bd,
+            relief=canvas_relief,
+            bg=self._bg,
+            highlightthickness=self._highlight_thickness,
+            highlightbackground=self._highlight_bg,
+            highlightcolor=self._highlight_color,
+            takefocus=canvas_takefocus,
+            **kwargs,
+        )
+        self._blink_visible = True
+        self._internal_var_update = False
+        self.bind("<KeyPress>", self._on_key_press, add="+")
+        self.bind("<Button-1>", self._on_click, add="+")
+        self.bind("<FocusIn>", self._on_focus_change, add="+")
+        self.bind("<FocusOut>", self._on_focus_change, add="+")
+        self._text_var_trace = self._text_var.trace_add("write", self._on_external_var_change)
+        self.after(450, self._blink)
+        self._draw()
+
+    def _set_text(self, txt):
+        self._text = str(txt or "")
+        if self._cursor > len(self._text):
+            self._cursor = len(self._text)
+        self._internal_var_update = True
+        try:
+            self._text_var.set(self._text)
+        finally:
+            self._internal_var_update = False
+        self._draw()
+
+    def _on_external_var_change(self, *_):
+        if self._internal_var_update:
+            return
+        self._text = str(self._text_var.get() or "")
+        self._cursor = min(self._cursor, len(self._text))
+        self._draw()
+
+    def _draw_rounded_rect(self, x1, y1, x2, y2, radius, fill):
+        r = max(0, min(radius, int((x2 - x1) / 2), int((y2 - y1) / 2)))
+        if r <= 0:
+            self.create_rectangle(x1, y1, x2, y2, fill=fill, outline=fill)
+            return
+        self.create_rectangle(x1 + r, y1, x2 - r, y2, fill=fill, outline=fill)
+        self.create_rectangle(x1, y1 + r, x2, y2 - r, fill=fill, outline=fill)
+        self.create_arc(x1, y1, x1 + 2*r, y1 + 2*r, start=90, extent=90, fill=fill, outline=fill)
+        self.create_arc(x2 - 2*r, y1, x2, y1 + 2*r, start=0, extent=90, fill=fill, outline=fill)
+        self.create_arc(x1, y2 - 2*r, x1 + 2*r, y2, start=180, extent=90, fill=fill, outline=fill)
+        self.create_arc(x2 - 2*r, y2 - 2*r, x2, y2, start=270, extent=90, fill=fill, outline=fill)
+
+    def _draw(self):
+        tk.Canvas.delete(self, "all")
+        w = max(40, self.winfo_width())
+        h = max(26, self.winfo_height())
+        self._draw_rounded_rect(0, 0, w, h, self._radius, self._bg)
+        x_pad = 8
+        y = h // 2
+        self.create_text(x_pad, y, anchor="w", text=self._text, font=self._font, fill=self._fg)
+        if self.focus_get() == self and self._blink_visible:
+            caret_x = x_pad + self._font.measure(self._text[: self._cursor])
+            self.create_line(caret_x, 8, caret_x, h - 8, fill=self._insert_bg, width=1)
+
+    def _blink(self):
+        self._blink_visible = not self._blink_visible
+        self._draw()
+        self.after(450, self._blink)
+
+    def _on_focus_change(self, _ev=None):
+        self._blink_visible = True
+        self._draw()
+
+    def _on_click(self, ev):
+        self.focus_set()
+        x = max(0, int(ev.x) - 8)
+        idx = 0
+        for i in range(len(self._text) + 1):
+            if self._font.measure(self._text[:i]) >= x:
+                idx = i
+                break
+            idx = i
+        self._cursor = idx
+        self._draw()
+
+    def _on_key_press(self, ev):
+        k = ev.keysym
+        if k == "BackSpace":
+            if self._cursor > 0:
+                self._set_text(self._text[: self._cursor - 1] + self._text[self._cursor :])
+                self._cursor -= 1
+                self._draw()
+            return "break"
+        if k == "Delete":
+            if self._cursor < len(self._text):
+                self._set_text(self._text[: self._cursor] + self._text[self._cursor + 1 :])
+                self._draw()
+            return "break"
+        if k == "Left":
+            self._cursor = max(0, self._cursor - 1)
+            self._draw()
+            return "break"
+        if k == "Right":
+            self._cursor = min(len(self._text), self._cursor + 1)
+            self._draw()
+            return "break"
+        if k == "Home":
+            self._cursor = 0
+            self._draw()
+            return "break"
+        if k == "End":
+            self._cursor = len(self._text)
+            self._draw()
+            return "break"
+        if ev.char and ev.char >= " ":
+            self._set_text(self._text[: self._cursor] + ev.char + self._text[self._cursor :])
+            self._cursor += 1
+            self._draw()
+            return "break"
+        return None
+
+    def get(self):
+        return self._text
+
+    def delete(self, start, end=None):
+        s = 0 if str(start) in {"0", "start"} else int(start)
+        e = len(self._text) if end in (None, tk.END, "end") else int(end)
+        s = max(0, min(s, len(self._text)))
+        e = max(s, min(e, len(self._text)))
+        self._set_text(self._text[:s] + self._text[e:])
+        self._cursor = min(self._cursor, len(self._text))
+        self._draw()
+
+    def insert(self, index, text):
+        i = len(self._text) if index in (tk.END, "end") else int(index)
+        i = max(0, min(i, len(self._text)))
+        self._set_text(self._text[:i] + str(text) + self._text[i:])
+        self._cursor = i + len(str(text))
+        self._draw()
+
+    def icursor(self, index):
+        i = len(self._text) if index in (tk.END, "end") else int(index)
+        self._cursor = max(0, min(i, len(self._text)))
+        self._draw()
+
+    def index(self, what):
+        return self._cursor if str(what) == "insert" else int(what)
+
+    def selection_clear(self, *_a, **_k):
+        return None
+
+    def select_clear(self):
+        return None
+
+    def xview_moveto(self, *_a, **_k):
+        return None
+
+    def cget(self, key):
+        if key == "font":
+            return self._font
+        if key == "bg":
+            return self._bg
+        if key == "fg":
+            return self._fg
+        if key == "insertbackground":
+            return self._insert_bg
+        return super().cget(key)
+
+    def __getitem__(self, key):
+        if key in {"font", "bg", "fg", "insertbackground"}:
+            return self.cget(key)
+        return super().__getitem__(key)
+
+    def configure(self, cnf=None, **kwargs):
+        kw = dict(cnf or {})
+        kw.update(kwargs)
+        if "bg" in kw:
+            self._bg = kw.pop("bg")
+        if "foreground" in kw and "fg" not in kw:
+            kw["fg"] = kw.pop("foreground")
+        if "fg" in kw:
+            self._fg = kw.pop("fg")
+        if "insertbackground" in kw:
+            self._insert_bg = kw.pop("insertbackground")
+        if "highlightbackground" in kw:
+            self._highlight_bg = kw["highlightbackground"]
+        if "highlightcolor" in kw:
+            self._highlight_color = kw["highlightcolor"]
+        if "highlightthickness" in kw:
+            self._highlight_thickness = int(kw["highlightthickness"] or 0)
+        out = super().configure(**kw)
+        self._draw()
+        return out
+
+
+class _SuggestListboxCompat(tk.Canvas):
+    def __init__(self, parent, font):
+        self._font = tkfont.Font(font=font)
+        self._row_h = max(24, self._font.metrics("linespace") + 10)
+        self._bg = UI_THEME.get("surface", "#1E1E1E")
+        self._fg = UI_THEME.get("text", "#D4D4D4")
+        self._sel_bg = UI_THEME.get("surface_alt", "#252526")
+        super().__init__(
+            parent,
+            height=self._row_h * 4,
             bd=0,
+            relief="flat",
             highlightthickness=0,
-            font=font,
-            bg="#1E1E1E",
-            fg=UI_THEME.get("text", "#D4D4D4"),
-            selectbackground="#252526",
-            selectforeground=UI_THEME.get("text", "#D4D4D4"),
-            exportselection=False,
+            bg=self._bg,
         )
         self._items = []
+        self._selected = None
+        self._offset = 0
+        self._height_rows = 4
+        self._yscroll_cmd = None
+        self.bind("<MouseWheel>", self._on_mousewheel, add="+")
+
+    def _on_mousewheel(self, ev):
+        delta = -1 if int(ev.delta) > 0 else 1
+        self._offset = max(0, min(self._offset + delta, max(0, len(self._items) - self._height_rows)))
+        self._draw()
+
+    def _draw(self):
+        tk.Canvas.delete(self, "all")
+        w = max(80, self.winfo_width())
+        h = max(self._row_h, self.winfo_height())
+        self.create_rectangle(0, 0, w, h, fill=self._bg, outline=self._bg)
+        for row in range(self._height_rows):
+            i = self._offset + row
+            if i >= len(self._items):
+                break
+            y0 = row * self._row_h
+            y1 = y0 + self._row_h
+            if self._selected == i:
+                self.create_rectangle(0, y0, w, y1, fill=self._sel_bg, outline=self._sel_bg)
+            self.create_text(8, y0 + self._row_h // 2, anchor="w", text=self._items[i], font=self._font, fill=self._fg)
+        if callable(self._yscroll_cmd):
+            total = max(1, len(self._items))
+            first = min(1.0, self._offset / total)
+            last = min(1.0, (self._offset + self._height_rows) / total)
+            self._yscroll_cmd(first, last)
 
     def pack(self, *a, **k):
-        return self.widget.pack(*a, **k)
-
-    def bind(self, *a, **k):
-        return self.widget.bind(*a, **k)
+        out = super().pack(*a, **k)
+        self._draw()
+        return out
 
     def yview(self, *a):
-        return self.widget.yview(*a)
+        if not a:
+            total = max(1, len(self._items))
+            return (self._offset / total, (self._offset + self._height_rows) / total)
+        cmd = str(a[0]).lower()
+        if cmd == "moveto" and len(a) > 1:
+            frac = float(a[1])
+            self._offset = int(max(0, frac) * max(0, len(self._items) - self._height_rows))
+        elif cmd == "scroll" and len(a) > 2:
+            self._offset += int(a[1])
+        self._offset = max(0, min(self._offset, max(0, len(self._items) - self._height_rows)))
+        self._draw()
 
     def see(self, i):
         try:
-            self.widget.see(int(i))
+            idx = int(i)
         except Exception:
-            pass
+            return
+        if idx < self._offset:
+            self._offset = idx
+        elif idx >= self._offset + self._height_rows:
+            self._offset = idx - self._height_rows + 1
+        self._offset = max(0, min(self._offset, max(0, len(self._items) - self._height_rows)))
+        self._draw()
 
     def focus(self, i=None):
         return None
@@ -1444,7 +1699,7 @@ class _SuggestListboxCompat:
 
     def identify_row(self, y):
         try:
-            idx = int(self.widget.nearest(y))
+            idx = self._offset + max(0, int(y) // self._row_h)
         except Exception:
             return ""
         return str(idx) if 0 <= idx < len(self._items) else ""
@@ -1459,10 +1714,9 @@ class _SuggestListboxCompat:
         text = f"{nome}   |   {det}" if det else nome
         if idx >= len(self._items):
             self._items.append(text)
-            self.widget.insert(tk.END, text)
         else:
             self._items.insert(idx, text)
-            self.widget.insert(idx, text)
+        self._draw()
 
     def get_children(self):
         return tuple(str(i) for i in range(len(self._items)-1, -1, -1))
@@ -1474,33 +1728,35 @@ class _SuggestListboxCompat:
             return
         if 0 <= i < len(self._items):
             del self._items[i]
-            self.widget.delete(i)
+            if self._selected is not None and self._selected >= len(self._items):
+                self._selected = len(self._items) - 1 if self._items else None
+            self._draw()
 
     def selection(self):
-        try:
-            sel = self.widget.curselection()
-            return tuple(str(i) for i in sel)
-        except Exception:
+        if self._selected is None:
             return tuple()
+        return (str(self._selected),)
 
     def selection_set(self, iid):
         try:
             i = int(iid)
-            self.widget.selection_clear(0, tk.END)
-            self.widget.selection_set(i)
-            self.widget.activate(i)
         except Exception:
-            pass
+            return
+        if 0 <= i < len(self._items):
+            self._selected = i
+            self.see(i)
+            self._draw()
 
     def selection_remove(self, iid):
         try:
             i = int(iid)
-            self.widget.selection_clear(i)
         except Exception:
-            pass
+            return
+        if self._selected == i:
+            self._selected = None
+            self._draw()
 
     def configure(self, **kwargs):
-        # Compat para chamadas herdadas de Treeview
         kwargs = dict(kwargs or {})
         kwargs.pop("style", None)
         field_bg = kwargs.pop("fieldbackground", None)
@@ -1510,52 +1766,88 @@ class _SuggestListboxCompat:
             kwargs["bg"] = kwargs.pop("background")
         if "foreground" in kwargs and "fg" not in kwargs:
             kwargs["fg"] = kwargs.pop("foreground")
-        return self.widget.configure(**kwargs)
+        ycmd = kwargs.pop("yscrollcommand", None)
+        height = kwargs.pop("height", None)
+        if height is not None:
+            self._height_rows = max(1, int(height))
+            kwargs.setdefault("height", self._height_rows * self._row_h)
+        if "bg" in kwargs:
+            self._bg = kwargs["bg"]
+            self._sel_bg = UI_THEME.get("surface_alt", "#252526")
+        if "fg" in kwargs:
+            self._fg = kwargs["fg"]
+        if ycmd is not None:
+            self._yscroll_cmd = ycmd
+        out = super().configure(**kwargs)
+        self._draw()
+        return out
+
 
 # ---------- UI: SuggestEntry (completo) ----------
 class SuggestEntry(tk.Frame):
     MAX_VISIBLE = 8
     def __init__(self, master):
         super().__init__(master)
+        self.configure(bg=UI_THEME.get("bg", "#1E1E1E"), highlightthickness=0, bd=0)
         self.submit_callback = None
         self.entry_var = tk.StringVar()
-        self.input_shell = tk.Frame(self, bd=0, highlightthickness=1)
-        self.input_shell.pack(side=tk.TOP, fill=tk.X, pady=(0, theme_space("space_2", 8)))
+        self.input_shell = tk.Frame(self, bd=0, highlightthickness=0, bg=UI_THEME.get("bg", "#1E1E1E"))
+        self.input_shell.pack(side=tk.TOP, fill=tk.X, pady=0)
+        self.shell_canvas = tk.Canvas(self.input_shell, height=64, bd=0, highlightthickness=0, bg=UI_THEME.get("bg", "#1E1E1E"))
+        self.shell_canvas.pack(side=tk.TOP, fill=tk.X)
+        self.shell_content = tk.Frame(self.shell_canvas, bd=0, highlightthickness=0, bg=UI_THEME.get("surface", "#252526"))
+        self._shell_window = self.shell_canvas.create_window(4, 4, anchor="nw", window=self.shell_content)
+        self.shell_canvas.bind("<Configure>", lambda e: self._refresh_shell_shape(), add="+")
 
-        self.btn_plus = tk.Button(self.input_shell, text="＋", width=2, relief="flat", command=self._on_plus_click, cursor="hand2", font=theme_font("font_lg", "bold"))
-        self.btn_plus.pack(side=tk.LEFT, padx=(10, 6), pady=8)
+        self.btn_plus = tk.Button(self.shell_content, text="＋", width=2, relief="flat", command=self._on_plus_click, cursor="hand2", font=theme_font("font_lg", "bold"))
+        self.btn_plus.pack(side=tk.LEFT, padx=(10, 6), pady=6)
 
-        self.entry = tk.Entry(self.input_shell, textvariable=self.entry_var, font=theme_font("font_lg"), relief="flat", bd=0)
-        self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(4, 4), pady=8)
+        self.entry = _CanvasEntryComposer(self.shell_content, textvariable=self.entry_var, font=theme_font("font_lg"), relief="flat", bd=0, radius=0)
+        self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(4, 4), pady=6)
 
-        self.btn_dictate = tk.Button(self.input_shell, text="🎙", width=2, relief="flat", command=self._on_dictate_click, cursor="hand2", font=theme_font("font_lg"))
-        self.btn_dictate.pack(side=tk.RIGHT, padx=(4, 10), pady=8)
-        self.btn_voice = tk.Button(self.input_shell, text="🔊", width=2, relief="flat", command=self._on_voice_click, cursor="hand2", font=theme_font("font_lg"))
-        self.btn_voice.pack(side=tk.RIGHT, padx=(4, 2), pady=8)
+        self.btn_dictate = tk.Button(self.shell_content, text="◉", width=2, relief="flat", command=self._on_dictate_click, cursor="hand2", font=theme_font("font_lg"))
+        self.btn_dictate.pack(side=tk.RIGHT, padx=(4, 10), pady=6)
+        self.btn_voice = tk.Canvas(self.shell_content, width=28, height=28, bd=0, highlightthickness=0, cursor="hand2", bg=UI_THEME.get("surface", "#252526"))
+        self._btn_voice_oval = self.btn_voice.create_oval(2, 2, 26, 26, fill="#FFFFFF", outline="#FFFFFF")
+        self._btn_voice_icon = self.btn_voice.create_text(14, 14, text="↑", fill="#1E1E1E", font=theme_font("font_md", "bold"))
+        self.btn_voice.bind("<Button-1>", lambda _e: self._on_voice_click(), add="+")
+        self.btn_voice.bind("<Enter>", lambda _e: self.btn_voice.itemconfigure(self._btn_voice_oval, fill="#EDEDED", outline="#EDEDED"), add="+")
+        self.btn_voice.bind("<Leave>", lambda _e: self.btn_voice.itemconfigure(self._btn_voice_oval, fill="#FFFFFF", outline="#FFFFFF"), add="+")
+        self.btn_voice.pack(side=tk.RIGHT, padx=(4, 2), pady=6)
+        self.entry._suggest_owner = self
         self.entry.focus_set()
-        self.font = tkfont.Font(font=self.entry["font"]); self._orig_entry_bg = self.entry.cget("bg")
+        self.font = tkfont.Font(font=self.entry.cget("font")); self._orig_entry_bg = self.entry.cget("bg")
         try: self._orig_entry_fg = self.entry.cget("fg")
         except: self._orig_entry_fg = "black"
         try: self._orig_insert_bg = self.entry.cget("insertbackground")
         except: self._orig_insert_bg = self._orig_entry_fg
 
         # overlay (completar token)
-        self.overlay = tk.Label(self, text="", anchor="w", font=self.entry["font"], fg=UI_THEME.get("overlay_text", "gray65"), bg=self._orig_entry_bg, bd=0); self.overlay_visible=False
+        self.overlay = tk.Label(self, text="", anchor="w", font=self.entry.cget("font"), fg=UI_THEME.get("overlay_text", "gray65"), bg=self._orig_entry_bg, bd=0); self.overlay_visible=False
         # suggestion list
-        self.frame = tk.Frame(self, bg="#1E1E1E", highlightbackground="#1E1E1E", highlightthickness=0, bd=0); self.sbar = tk.Scrollbar(self.frame, orient=tk.VERTICAL)
+        list_bg = UI_THEME.get("surface", "#1E1E1E")
+        self.frame = tk.Frame(self, bg=list_bg, highlightbackground=list_bg, highlightthickness=0, bd=0)
         self.tree = _SuggestListboxCompat(self.frame, theme_font("font_md"))
 
         def _on_suggest_resize(event=None):
             return None
 
         self.frame.bind("<Configure>", lambda _e: _on_suggest_resize(), add="+")
-        self.tree.configure(yscrollcommand=self.sbar.set); self.sbar.config(command=self.tree.yview, bg="#1E1E1E", troughcolor="#1E1E1E", activebackground="#252526", highlightthickness=0, bd=0); self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,0), pady=6); self.sbar.pack(side=tk.RIGHT, fill=tk.Y, pady=6, padx=(0,6))
+        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=6)
         try:
-            self.tree.configure(background="#1E1E1E", fieldbackground="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0)
+            list_bg = UI_THEME.get("surface", "#1E1E1E")
+            self.tree.configure(
+                background=list_bg,
+                fieldbackground=list_bg,
+                foreground=UI_THEME.get("text", "#D4D4D4"),
+                borderwidth=0,
+                highlightbackground=list_bg,
+                highlightcolor=list_bg,
+            )
         except Exception:
             pass
         try:
-            self.entry.configure(highlightthickness=0, highlightbackground=UI_THEME.get("border", "#2B3442"), highlightcolor=UI_THEME.get("border", "#2B3442"))
+            self.entry.configure(highlightthickness=0, highlightbackground=UI_THEME.get("border", "#3C3C3C"), highlightcolor=UI_THEME.get("border", "#3C3C3C"))
             bind_focus_ring(self.tree)
         except Exception:
             pass
@@ -1603,24 +1895,50 @@ class SuggestEntry(tk.Frame):
             "send_fg": text_color,
         }
 
+    def _refresh_shell_shape(self, shell_bg=None, border_color=None):
+        try:
+            bg = shell_bg or UI_THEME.get("surface", "#252526")
+            bd = border_color or UI_THEME.get("border", "#3C3C3C")
+            w = max(60, self.shell_canvas.winfo_width())
+            h = max(56, self.shell_canvas.winfo_height())
+            inset = 2
+            r = min(16, (h - inset * 2) // 2)
+            x1, y1, x2, y2 = inset, inset, w - inset, h - inset
+            self.shell_canvas.delete("shell")
+            self.shell_canvas.create_rectangle(x1 + r, y1, x2 - r, y2, fill=bg, outline=bd, tags="shell")
+            self.shell_canvas.create_rectangle(x1, y1 + r, x2, y2 - r, fill=bg, outline=bd, tags="shell")
+            self.shell_canvas.create_arc(x1, y1, x1 + 2*r, y1 + 2*r, start=90, extent=90, fill=bg, outline=bd, tags="shell")
+            self.shell_canvas.create_arc(x2 - 2*r, y1, x2, y1 + 2*r, start=0, extent=90, fill=bg, outline=bd, tags="shell")
+            self.shell_canvas.create_arc(x1, y2 - 2*r, x1 + 2*r, y2, start=180, extent=90, fill=bg, outline=bd, tags="shell")
+            self.shell_canvas.create_arc(x2 - 2*r, y2 - 2*r, x2, y2, start=270, extent=90, fill=bg, outline=bd, tags="shell")
+            self.shell_canvas.tag_lower("shell")
+            self.shell_canvas.itemconfigure(self._shell_window, width=max(10, w - 8))
+            self.shell_canvas.coords(self._shell_window, 4, 4)
+        except Exception:
+            pass
+
     def refresh_theme(self):
         try:
             palette = self._composer_palette()
             shell_bg = palette["shell_bg"]
             shell_border = palette["shell_border"]
             shell_fg = palette["shell_fg"]
-            self.input_shell.configure(bg=shell_bg, highlightbackground=shell_border, highlightcolor=UI_THEME.get("primary", "#1F6FEB"))
-            self.frame.configure(bg="#1E1E1E", highlightbackground="#1E1E1E", highlightthickness=0, bd=0)
-            self.shortcuts_hint.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg="#1E1E1E")
+            self.configure(bg=UI_THEME.get("bg", "#1E1E1E"), highlightthickness=0, bd=0)
+            self.input_shell.configure(bg=UI_THEME.get("bg", "#1E1E1E"), highlightbackground=UI_THEME.get("bg", "#1E1E1E"), highlightcolor=UI_THEME.get("bg", "#1E1E1E"), highlightthickness=0)
+            self.shell_content.configure(bg=shell_bg)
+            self._refresh_shell_shape(shell_bg=shell_bg, border_color=shell_border)
+            list_bg = UI_THEME.get("surface", "#1E1E1E")
+            self.frame.configure(bg=list_bg, highlightbackground=list_bg, highlightthickness=0, bd=0)
+            self.shortcuts_hint.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg=list_bg)
             self.entry.configure(
-                highlightbackground=UI_THEME.get("border", "#2B3442"),
-                highlightcolor=UI_THEME.get("border", "#2B3442"),
+                highlightbackground=UI_THEME.get("border", "#3C3C3C"),
+                highlightcolor=UI_THEME.get("border", "#3C3C3C"),
                 highlightthickness=0,
-                bg="#252526",
+                bg=shell_bg,
                 fg=shell_fg,
                 insertbackground=shell_fg,
             )
-            for btn in (self.btn_plus, self.btn_dictate, self.btn_voice):
+            for btn in (self.btn_plus, self.btn_dictate):
                 btn.configure(
                     bg=shell_bg,
                     fg=palette["muted"],
@@ -1629,8 +1947,18 @@ class SuggestEntry(tk.Frame):
                     highlightthickness=0,
                     bd=0,
                 )
-            self.overlay.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg=self.entry.cget("bg"))
-            self.tree.configure(background="#1E1E1E", fieldbackground="#1E1E1E", foreground=UI_THEME.get("text", "#D4D4D4"), borderwidth=0)
+            self.btn_voice.configure(bg=shell_bg, highlightthickness=0, bd=0)
+            self.btn_voice.itemconfigure(self._btn_voice_oval, fill="#FFFFFF", outline="#FFFFFF")
+            self.btn_voice.itemconfigure(self._btn_voice_icon, fill="#1E1E1E")
+            self.overlay.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg=shell_bg)
+            self.tree.configure(
+                background=list_bg,
+                fieldbackground=list_bg,
+                foreground=UI_THEME.get("text", "#D4D4D4"),
+                borderwidth=0,
+                highlightbackground=list_bg,
+                highlightcolor=list_bg,
+            )
         except Exception:
             pass
 
@@ -1991,7 +2319,7 @@ class SuggestEntry(tk.Frame):
         text_area = scrolledtext.ScrolledText(
             top,
             wrap=tk.WORD,
-            bg=UI_THEME.get("editor_bg", UI_THEME.get("surface", "#151A22")),
+            bg=UI_THEME.get("editor_bg", UI_THEME.get("surface", "#252526")),
             fg=UI_THEME.get("editor_text", UI_THEME.get("text", "#E6EDF3")),
             insertbackground=UI_THEME.get("editor_insert", UI_THEME.get("text", "#E6EDF3")),
         )
@@ -2602,7 +2930,7 @@ class AvisoBar(tk.Frame):
         super().__init__(master)
         self.entry_widget = entry_widget
         try:
-            self.font = tkfont.Font(font=self.entry_widget["font"])
+            self.font = tkfont.Font(font=self.entry_widget.cget("font"))
         except Exception:
             self.font = tkfont.Font(family="Segoe UI", size=11)
         self.config(bg=UI_THEME.get("surface_alt", "#2D2D2D"), bd=1, relief="flat", highlightthickness=1, highlightbackground=UI_THEME.get("border", "#3C3C3C"))
@@ -2638,7 +2966,7 @@ class AvisoBar(tk.Frame):
     def _apply_component_theme(self):
         bg = UI_THEME.get("surface_alt", "#2D2D2D")
         fg = UI_THEME.get("on_surface", UI_THEME.get("text", "#D4D4D4"))
-        self.config(bg=bg, highlightbackground=UI_THEME.get("border", "#3C3C3C"), highlightcolor=UI_THEME.get("primary", "#1F6FEB"))
+        self.config(bg=bg, highlightbackground=UI_THEME.get("border", "#3C3C3C"), highlightcolor=UI_THEME.get("primary", "#252526"))
         try:
             self.lbl.config(bg=bg, fg=fg)
             self.lbl_counter.config(bg=bg, fg=UI_THEME.get("muted_text", "#A6A6A6"))
@@ -2738,7 +3066,16 @@ class AvisoBar(tk.Frame):
         self._counter_var.set(f"{(self._idx % total) + 1}/{total}")
         self.msg_var.set(disp)
         try:
-            parent_frame = getattr(self.entry_widget, "master", None)
+            parent_frame = getattr(self.entry_widget, "_suggest_owner", None)
+            if parent_frame is None:
+                probe = getattr(self.entry_widget, "master", None)
+                while probe is not None:
+                    if probe.__class__.__name__ == "SuggestEntry":
+                        parent_frame = probe
+                        break
+                    probe = getattr(probe, "master", None)
+            if parent_frame is None:
+                parent_frame = getattr(self.entry_widget, "master", None)
             container = getattr(parent_frame, "master", None) or parent_frame
             if container and parent_frame:
                 try:
@@ -3025,11 +3362,11 @@ class WarningBar(tk.Frame):
         self.entry_widget = entry_widget
         self.aviso_bar = aviso_bar
         try:
-            self.font = tkfont.Font(font=self.entry_widget["font"])
+            self.font = tkfont.Font(font=self.entry_widget.cget("font"))
         except Exception:
             self.font = tkfont.Font(family="Segoe UI", size=11)
         self._styles = {
-            "info": {"bg": UI_THEME.get("focus_bg", "#DCEBFF"), "fg": UI_THEME.get("focus_text", "#102A43")},
+            "info": {"bg": UI_THEME.get("focus_bg", "#252526"), "fg": UI_THEME.get("focus_text", "#D4D4D4")},
             "warn": {"bg": UI_THEME.get("warning", "#FFE69C"), "fg": UI_THEME.get("on_warning", "#3D2B00")},
             "error": {"bg": UI_THEME.get("danger", "#F8B4B4"), "fg": UI_THEME.get("on_danger", "#4A0F0F")},
         }
@@ -3047,7 +3384,7 @@ class WarningBar(tk.Frame):
 
     def refresh_theme(self):
         self._styles = {
-            "info": {"bg": UI_THEME.get("focus_bg", "#DCEBFF"), "fg": UI_THEME.get("focus_text", "#102A43")},
+            "info": {"bg": UI_THEME.get("focus_bg", "#252526"), "fg": UI_THEME.get("focus_text", "#D4D4D4")},
             "warn": {"bg": UI_THEME.get("warning", "#FFE69C"), "fg": UI_THEME.get("on_warning", "#3D2B00")},
             "error": {"bg": UI_THEME.get("danger", "#F8B4B4"), "fg": UI_THEME.get("on_danger", "#4A0F0F")},
         }
@@ -3072,7 +3409,16 @@ class WarningBar(tk.Frame):
         self.lbl.config(bg=style["bg"], fg=style["fg"])
         self.msg_var.set(msg)
         try:
-            parent_frame = getattr(self.entry_widget, "master", None)
+            parent_frame = getattr(self.entry_widget, "_suggest_owner", None)
+            if parent_frame is None:
+                probe = getattr(self.entry_widget, "master", None)
+                while probe is not None:
+                    if probe.__class__.__name__ == "SuggestEntry":
+                        parent_frame = probe
+                        break
+                    probe = getattr(probe, "master", None)
+            if parent_frame is None:
+                parent_frame = getattr(self.entry_widget, "master", None)
             container = getattr(parent_frame, "master", None) or parent_frame
             if self.aviso_bar and getattr(self.aviso_bar, "_visible", False):
                 try:
