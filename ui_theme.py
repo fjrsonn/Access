@@ -472,6 +472,10 @@ def apply_ttk_theme_styles(root=None):
                 fieldbackground=tree_bg,
                 foreground=tree_fg,
                 bordercolor=UI_THEME.get("border", "#2B3442"),
+                lightcolor=tree_bg,
+                darkcolor=tree_bg,
+                relief="flat",
+                borderwidth=0,
                 rowheight=28,
             )
             style.map(
@@ -486,6 +490,9 @@ def apply_ttk_theme_styles(root=None):
                 foreground=tree_fg,
                 relief="flat",
                 bordercolor=UI_THEME.get("border", "#2B3442"),
+                lightcolor=tree_header_bg,
+                darkcolor=tree_header_bg,
+                borderwidth=0,
             )
             style.map(
                 heading_style,
