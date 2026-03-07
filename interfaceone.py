@@ -1778,6 +1778,7 @@ class SuggestEntry(tk.Frame):
         self.configure(bg=UI_THEME.get("bg", "#1E1E1E"), highlightthickness=0, bd=0)
         self.submit_callback = None
         self.entry_var = tk.StringVar()
+        self._entry_var_trace = self.entry_var.trace_add("write", self._on_entry_var_changed)
         self.input_shell = tk.Frame(self, bd=0, highlightthickness=0)
         self.input_shell.pack(side=tk.TOP, fill=tk.X, pady=0)
 
@@ -1787,9 +1788,9 @@ class SuggestEntry(tk.Frame):
         self.entry = _CanvasEntryComposer(self.input_shell, textvariable=self.entry_var, font=theme_font("font_lg"), relief="flat", bd=0)
         self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(4, 4), pady=0)
 
-        self.btn_dictate = tk.Button(self.input_shell, text="🎙", width=2, relief="flat", command=self._on_dictate_click, cursor="hand2", font=theme_font("font_lg"))
+        self.btn_dictate = tk.Button(self.input_shell, text="◎", width=2, relief="flat", command=self._on_dictate_click, cursor="hand2", font=theme_font("font_lg", "bold"))
         self.btn_dictate.pack(side=tk.RIGHT, padx=(4, 10), pady=0)
-        self.btn_voice = tk.Button(self.input_shell, text="🔊", width=2, relief="flat", command=self._on_voice_click, cursor="hand2", font=theme_font("font_lg"))
+        self.btn_voice = tk.Button(self.input_shell, text="↑", width=2, relief="flat", command=self._on_submit_click, cursor="hand2", font=theme_font("font_lg", "bold"))
         self.btn_voice.pack(side=tk.RIGHT, padx=(4, 2), pady=0)
         self.entry.focus_set()
         self.font = tkfont.Font(font=self.entry.cget("font")); self._orig_entry_bg = self.entry.cget("bg")
@@ -1852,7 +1853,7 @@ class SuggestEntry(tk.Frame):
         try:
             attach_tooltip(self.btn_plus, "Mais")
             attach_tooltip(self.btn_dictate, "Ditar")
-            attach_tooltip(self.btn_voice, "Usar voz")
+            attach_tooltip(self.btn_voice, "Enviar")
         except Exception:
             pass
         self.refresh_theme()
@@ -1865,11 +1866,62 @@ class SuggestEntry(tk.Frame):
             "shell_border": "#3C3C3C",
             "shell_fg": text_color,
             "muted": text_color,
-            "soft_hover": "#252526",
-            "send_bg": "#252526",
-            "send_bg_active": "#252526",
-            "send_fg": text_color,
+            "soft_hover": "#303034",
+            "send_bg": "#FFFFFF",
+            "send_bg_active": "#E9EEF5",
+            "send_fg": "#0F172A",
+            "send_idle_bg": "#2D2D2D",
+            "send_idle_bg_active": "#353535",
+            "send_idle_fg": UI_THEME.get("muted_text", "#A6A6A6"),
         }
+
+    def _has_typed_text(self) -> bool:
+        return bool((self.entry_var.get() or "").strip())
+
+    def _sync_send_button_visual(self, hover: bool = False):
+        try:
+            palette = self._composer_palette()
+            has_text = self._has_typed_text()
+            if has_text:
+                bg = palette["send_bg_active"] if hover else palette["send_bg"]
+                fg = palette["send_fg"]
+                cursor = "hand2"
+            else:
+                bg = palette["send_idle_bg_active"] if hover else palette["send_idle_bg"]
+                fg = palette["send_idle_fg"]
+                cursor = "arrow"
+            self.btn_voice.configure(
+                bg=bg,
+                fg=fg,
+                activebackground=(palette["send_bg_active"] if has_text else palette["send_idle_bg_active"]),
+                activeforeground=fg,
+                cursor=cursor,
+            )
+        except Exception:
+            pass
+
+    def _on_send_hover_enter(self, _event=None):
+        self._sync_send_button_visual(hover=True)
+
+    def _on_send_hover_leave(self, _event=None):
+        self._sync_send_button_visual(hover=False)
+
+    def _on_shell_button_hover_enter(self, button):
+        try:
+            palette = self._composer_palette()
+            button.configure(bg=palette["soft_hover"])
+        except Exception:
+            pass
+
+    def _on_shell_button_hover_leave(self, button):
+        try:
+            palette = self._composer_palette()
+            button.configure(bg=palette["shell_bg"])
+        except Exception:
+            pass
+
+    def _on_entry_var_changed(self, *_):
+        self._sync_send_button_visual(hover=False)
 
     def refresh_theme(self):
         try:
@@ -1890,7 +1942,7 @@ class SuggestEntry(tk.Frame):
                 fg=shell_fg,
                 insertbackground=shell_fg,
             )
-            for btn in (self.btn_plus, self.btn_dictate, self.btn_voice):
+            for btn in (self.btn_plus, self.btn_dictate):
                 btn.configure(
                     bg=shell_bg,
                     fg=palette["muted"],
@@ -1899,6 +1951,28 @@ class SuggestEntry(tk.Frame):
                     highlightthickness=0,
                     bd=0,
                 )
+                try:
+                    btn.unbind("<Enter>")
+                    btn.unbind("<Leave>")
+                    btn.bind("<Enter>", lambda _e, _b=btn: self._on_shell_button_hover_enter(_b), add="+")
+                    btn.bind("<Leave>", lambda _e, _b=btn: self._on_shell_button_hover_leave(_b), add="+")
+                except Exception:
+                    pass
+            self.btn_voice.configure(
+                highlightthickness=0,
+                bd=0,
+                width=2,
+                padx=6,
+                pady=2,
+            )
+            try:
+                self.btn_voice.unbind("<Enter>")
+                self.btn_voice.unbind("<Leave>")
+                self.btn_voice.bind("<Enter>", self._on_send_hover_enter, add="+")
+                self.btn_voice.bind("<Leave>", self._on_send_hover_leave, add="+")
+            except Exception:
+                pass
+            self._sync_send_button_visual(hover=False)
             self.overlay.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg=shell_bg)
             self.tree.configure(
                 background=list_bg,
@@ -1939,6 +2013,8 @@ class SuggestEntry(tk.Frame):
             pass
 
     def _on_submit_click(self):
+        if not self._has_typed_text():
+            return
         if callable(self.submit_callback):
             try:
                 self.submit_callback()
@@ -2886,8 +2962,16 @@ class AvisoBar(tk.Frame):
         self.msg_var = tk.StringVar()
         self.lbl = tk.Label(self, textvariable=self.msg_var, anchor="w", font=self.font, bd=0)
         self.lbl.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=(2,2))
-        self.btn_close = tk.Button(self, text="Fechar", width=8, command=self._on_close_click, relief="flat", cursor="hand2")
-        self.btn_close.pack(side=tk.RIGHT, padx=(0,6), pady=(2,2))
+        self.btn_close = tk.Label(self, text="✕", cursor="hand2", font=theme_font("font_lg", "bold"), bd=0, highlightthickness=0, relief="flat", padx=0, pady=0, bg=self.cget("bg"), fg="#000000")
+        self.btn_close.pack(side=tk.RIGHT, padx=(0,6), pady=(0,0))
+        self.btn_close.bind("<Button-1>", lambda _e: self._on_close_click(), add="+")
+        self._current_bar_bg = UI_THEME.get("surface_alt", "#2D2D2D")
+        try:
+            self.btn_close.bind("<Enter>", self._on_close_hover_enter, add="+")
+            self.btn_close.bind("<Leave>", self._on_close_hover_leave, add="+")
+            attach_tooltip(self.btn_close, "Fechar aviso")
+        except Exception:
+            pass
         self._active_avisos = []
         self._idx = 0
         self._after_id = None
@@ -2915,12 +2999,13 @@ class AvisoBar(tk.Frame):
     def _apply_component_theme(self):
         bg = UI_THEME.get("surface_alt", "#2D2D2D")
         fg = UI_THEME.get("on_surface", UI_THEME.get("text", "#D4D4D4"))
+        self._current_bar_bg = bg
         self.config(bg=bg, highlightbackground=UI_THEME.get("border", "#3C3C3C"), highlightcolor=UI_THEME.get("primary", "#252526"))
         try:
             self.lbl.config(bg=bg, fg=fg)
             self.lbl_counter.config(bg=bg, fg=UI_THEME.get("muted_text", "#A6A6A6"))
             self.btn_detail.config(bg=bg, fg=fg, activebackground=UI_THEME.get("surface", "#1E1E1E"), activeforeground=fg, highlightthickness=0, bd=0)
-            self.btn_close.config(bg=bg, fg=fg, activebackground=UI_THEME.get("surface", "#1E1E1E"), activeforeground=fg, highlightthickness=0, bd=0)
+            self.btn_close.config(bg=bg, fg="#000000")
         except Exception:
             pass
 
@@ -2938,6 +3023,18 @@ class AvisoBar(tk.Frame):
             return f"#{rr:02X}{gg:02X}{bb:02X}"
         except Exception:
             return hex_color or "#1E1E1E"
+
+    def _on_close_hover_enter(self, _event=None):
+        try:
+            self.btn_close.config(bg=self._current_bar_bg, fg="#000000")
+        except Exception:
+            pass
+
+    def _on_close_hover_leave(self, _event=None):
+        try:
+            self.btn_close.config(bg=self._current_bar_bg, fg="#000000")
+        except Exception:
+            pass
 
     def _load_avisos_active(self):
         # Recarrega sempre para garantir que qualquer alteração recém-gravada
@@ -3007,7 +3104,8 @@ class AvisoBar(tk.Frame):
             self.lbl.config(bg=bg, fg="#000000")
             self.lbl_counter.config(bg=bg, fg="#000000")
             self.btn_detail.config(bg=bg, fg="#000000", activebackground=bg, activeforeground="#000000")
-            self.btn_close.config(bg=bg, fg="#000000", activebackground=bg, activeforeground="#000000")
+            self._current_bar_bg = bg
+            self.btn_close.config(bg=bg, fg="#000000")
         except:
             pass
         disp = self._format_display_text(aviso)

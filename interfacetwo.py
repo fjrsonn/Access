@@ -4590,7 +4590,7 @@ def _build_monitor_ui(container):
     cards_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), 0))
     global _ux_cards, _status_bar
     _ux_cards = {
-        "ativos": AppMetricCard(cards_row, "Ativos", tone="info", icon="📦"),
+        "ativos": AppMetricCard(cards_row, "Ativos", tone="info", icon="◉"),
         "pendentes": AppMetricCard(cards_row, "Pendentes", tone="warning", icon="⏳"),
         "sem_contato": AppMetricCard(cards_row, "Sem contato", tone="danger", icon="☎"),
         "avisado": AppMetricCard(cards_row, "Avisado", tone="success", icon="✅"),
