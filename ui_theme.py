@@ -7,32 +7,32 @@ except Exception:  # pragma: no cover - GUI optional
     tk = None
 
 UI_THEME = {
-    "bg": "#0F1115",
-    "surface": "#151A22",
-    "surface_alt": "#1B2430",
-    "border": "#2B3442",
+    "bg": "#1E1E1E",
+    "surface": "#252526",
+    "surface_alt": "#2D2D2D",
+    "border": "#3C3C3C",
     "text": "#E6EDF3",
-    "muted_text": "#9AA4B2",
-    "primary": "#2F81F7",
-    "primary_active": "#1F6FEB",
-    "on_primary": "#0B1117",
-    "on_surface": "#E6EDF3",
+    "muted_text": "#A6A6A6",
+    "primary": "#252526",
+    "primary_active": "#2D2D2D",
+    "on_primary": "#D4D4D4",
+    "on_surface": "#D4D4D4",
     "success": "#2DA44E",
     "on_success": "#08120C",
     "danger": "#DA3633",
     "on_danger": "#FFFFFF",
     "warning": "#D29922",
-    "on_warning": "#111827",
-    "focus_bg": "#F0F6FC",
-    "focus_text": "#111827",
+    "on_warning": "#111111",
+    "focus_bg": "#252526",
+    "focus_text": "#D4D4D4",
     "edit_badge_bg": "#F8E3A3",
     "edit_badge_text": "#111111",
     "status_avisado_text": "#6EE7B7",
     "status_sem_contato_text": "#FCA5A5",
-    "editor_bg": "#0B0F14",
+    "editor_bg": "#1E1E1E",
     "editor_text": "#E6EDF3",
     "editor_insert": "#E6EDF3",
-    "overlay_text": "#6B7280",
+    "overlay_text": "#8C8C8C",
     "banner_success_bg": "#2DA44E",
     "banner_success_text": "#08120C",
     "banner_error_bg": "#DA3633",
@@ -52,11 +52,11 @@ UI_THEME = {
     "space_4": 16,
     "space_5": 20,
     "space_6": 24,
-    "disabled_bg": "#2B3442",
-    "disabled_fg": "#9AA4B2",
-    "info": "#2563EB",
-    "on_info": "#FFFFFF",
-    "selection_bg": "#1F6FEB",
+    "disabled_bg": "#3C3C3C",
+    "disabled_fg": "#A6A6A6",
+    "info": "#252526",
+    "on_info": "#D4D4D4",
+    "selection_bg": "#252526",
     "selection_fg": "#E6EDF3",
 }
 
@@ -68,8 +68,8 @@ THEME_PRESETS = {
         "border": "#3C3C3C",
         "text": "#D4D4D4",
         "muted_text": "#A6A6A6",
-        "primary": "#0E639C",
-        "primary_active": "#1177BB",
+        "primary": "#252526",
+        "primary_active": "#2D2D2D",
         "on_primary": "#FFFFFF",
         "on_surface": "#D4D4D4",
         "success": "#16825D",
@@ -78,7 +78,7 @@ THEME_PRESETS = {
         "on_danger": "#000000",
         "warning": "#CCA700",
         "on_warning": "#000000",
-        "focus_bg": "#094771",
+        "focus_bg": "#252526",
         "focus_text": "#FFFFFF",
         "edit_badge_bg": "#CCA700",
         "edit_badge_text": "#000000",
@@ -109,9 +109,9 @@ THEME_PRESETS = {
         "space_6": 24,
         "disabled_bg": "#3C3C3C",
         "disabled_fg": "#A6A6A6",
-        "info": "#3794FF",
+        "info": "#252526",
         "on_info": "#000000",
-        "selection_bg": "#094771",
+        "selection_bg": "#252526",
         "selection_fg": "#FFFFFF",
     },
     # Alias de compatibilidade para ambientes ainda com testes legados.
@@ -122,8 +122,8 @@ THEME_PRESETS = {
         "border": "#3C3C3C",
         "text": "#D4D4D4",
         "muted_text": "#A6A6A6",
-        "primary": "#0E639C",
-        "primary_active": "#1177BB",
+        "primary": "#252526",
+        "primary_active": "#2D2D2D",
         "on_primary": "#FFFFFF",
         "on_surface": "#D4D4D4",
         "success": "#16825D",
@@ -132,7 +132,7 @@ THEME_PRESETS = {
         "on_danger": "#000000",
         "warning": "#CCA700",
         "on_warning": "#000000",
-        "focus_bg": "#094771",
+        "focus_bg": "#252526",
         "focus_text": "#FFFFFF",
         "edit_badge_bg": "#CCA700",
         "edit_badge_text": "#000000",
@@ -163,9 +163,9 @@ THEME_PRESETS = {
         "space_6": 24,
         "disabled_bg": "#3C3C3C",
         "disabled_fg": "#A6A6A6",
-        "info": "#3794FF",
+        "info": "#252526",
         "on_info": "#000000",
-        "selection_bg": "#094771",
+        "selection_bg": "#252526",
         "selection_fg": "#FFFFFF",
     },
 }
@@ -258,7 +258,7 @@ def normalize_tone(tone: str) -> str:
 
 def state_colors(tone: str) -> tuple[str, str]:
     t = normalize_tone(tone)
-    bg = UI_THEME.get(t, UI_THEME.get("info", "#2563EB"))
+    bg = UI_THEME.get(t, UI_THEME.get("info", "#252526"))
     fg = UI_THEME.get(f"on_{t}", UI_THEME.get("on_info", UI_THEME.get("text", "#E6EDF3")))
     return bg, fg
 
@@ -366,8 +366,8 @@ def build_secondary_button(parent, text, command, padx=12):
 
 
 def _build_semantic_secondary_button(parent, text, command, tone="warning", padx=12):
-    base_bg = UI_THEME.get("surface_alt", "#1B2430")
-    hover_bg = UI_THEME.get(tone, UI_THEME.get("border", "#2B3442"))
+    base_bg = UI_THEME.get("surface_alt", "#2D2D2D")
+    hover_bg = UI_THEME.get(tone, UI_THEME.get("border", "#3C3C3C"))
     btn = tk.Button(
         parent,
         text=text,
@@ -376,12 +376,12 @@ def _build_semantic_secondary_button(parent, text, command, tone="warning", padx
         fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")),
         activebackground=hover_bg,
         activeforeground=UI_THEME.get(f"on_{tone}", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))),
-        disabledforeground=UI_THEME.get("muted_text", "#9AA4B2"),
+        disabledforeground=UI_THEME.get("muted_text", "#A6A6A6"),
         relief="flat",
         padx=padx,
         highlightthickness=1,
-        highlightbackground=UI_THEME.get("border", "#2B3442"),
-        highlightcolor=UI_THEME.get("primary", "#2F81F7"),
+        highlightbackground=UI_THEME.get("border", "#3C3C3C"),
+        highlightcolor=UI_THEME.get("primary", "#252526"),
     )
     bind_focus_ring(btn, focus_thickness=2, blur_thickness=1)
     bind_button_states(btn, base_bg, hover_bg)
@@ -458,12 +458,12 @@ def apply_ttk_theme_styles(root=None):
     except Exception:
         style = ttk.Style(root)
     try:
-        style.configure("TCombobox", fieldbackground=UI_THEME.get("surface_alt", "#1B2430"), background=UI_THEME.get("surface_alt", "#1B2430"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), bordercolor=UI_THEME.get("border", "#2B3442"), lightcolor=UI_THEME.get("border", "#2B3442"), darkcolor=UI_THEME.get("border", "#2B3442"))
-        style.map("TCombobox", fieldbackground=[("readonly", UI_THEME.get("surface_alt", "#1B2430")), ("focus", UI_THEME.get("surface_alt", "#1B2430"))], foreground=[("readonly", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))), ("focus", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))], bordercolor=[("focus", UI_THEME.get("primary", "#2F81F7"))], lightcolor=[("focus", UI_THEME.get("primary", "#2F81F7"))], darkcolor=[("focus", UI_THEME.get("primary", "#2F81F7"))])
-        tree_bg = UI_THEME.get("surface", "#151A22")
-        tree_header_bg = UI_THEME.get("surface_alt", "#1B2430")
+        style.configure("TCombobox", fieldbackground=UI_THEME.get("surface_alt", "#2D2D2D"), background=UI_THEME.get("surface_alt", "#2D2D2D"), foreground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), bordercolor=UI_THEME.get("border", "#3C3C3C"), lightcolor=UI_THEME.get("border", "#3C3C3C"), darkcolor=UI_THEME.get("border", "#3C3C3C"))
+        style.map("TCombobox", fieldbackground=[("readonly", UI_THEME.get("surface_alt", "#2D2D2D")), ("focus", UI_THEME.get("surface_alt", "#2D2D2D"))], foreground=[("readonly", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))), ("focus", UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))], bordercolor=[("focus", UI_THEME.get("primary", "#252526"))], lightcolor=[("focus", UI_THEME.get("primary", "#252526"))], darkcolor=[("focus", UI_THEME.get("primary", "#252526"))])
+        tree_bg = UI_THEME.get("surface", "#252526")
+        tree_header_bg = UI_THEME.get("surface_alt", "#2D2D2D")
         tree_fg = UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3"))
-        tree_selection_bg = UI_THEME.get("selection_bg", UI_THEME.get("primary", "#2F81F7"))
+        tree_selection_bg = UI_THEME.get("selection_bg", UI_THEME.get("primary", "#252526"))
         tree_selection_fg = UI_THEME.get("selection_fg", UI_THEME.get("on_primary", "#FFFFFF"))
         for tree_style in ("Treeview", "Control.Treeview"):
             style.configure(
@@ -471,7 +471,11 @@ def apply_ttk_theme_styles(root=None):
                 background=tree_bg,
                 fieldbackground=tree_bg,
                 foreground=tree_fg,
-                bordercolor=UI_THEME.get("border", "#2B3442"),
+                bordercolor=UI_THEME.get("border", "#3C3C3C"),
+                lightcolor=tree_bg,
+                darkcolor=tree_bg,
+                relief="flat",
+                borderwidth=0,
                 rowheight=28,
             )
             style.map(
@@ -485,17 +489,20 @@ def apply_ttk_theme_styles(root=None):
                 background=tree_header_bg,
                 foreground=tree_fg,
                 relief="flat",
-                bordercolor=UI_THEME.get("border", "#2B3442"),
+                bordercolor=UI_THEME.get("border", "#3C3C3C"),
+                lightcolor=tree_header_bg,
+                darkcolor=tree_header_bg,
+                borderwidth=0,
             )
             style.map(
                 heading_style,
                 background=[("active", UI_THEME.get("soft_hover", tree_header_bg))],
                 foreground=[("active", tree_fg)],
             )
-        style.configure("Vertical.TScrollbar", troughcolor=UI_THEME.get("surface", "#151A22"), background=UI_THEME.get("surface_alt", "#1B2430"), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
-        style.configure("Horizontal.TScrollbar", troughcolor=UI_THEME.get("surface", "#151A22"), background=UI_THEME.get("surface_alt", "#1B2430"), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
-        style.map("Vertical.TScrollbar", background=[("active", UI_THEME.get("soft_hover", UI_THEME.get("surface_alt", "#1B2430")))])
-        style.map("Horizontal.TScrollbar", background=[("active", UI_THEME.get("soft_hover", UI_THEME.get("surface_alt", "#1B2430")))])
+        style.configure("Vertical.TScrollbar", troughcolor=UI_THEME.get("surface", "#252526"), background=UI_THEME.get("surface_alt", "#2D2D2D"), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+        style.configure("Horizontal.TScrollbar", troughcolor=UI_THEME.get("surface", "#252526"), background=UI_THEME.get("surface_alt", "#2D2D2D"), arrowcolor=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+        style.map("Vertical.TScrollbar", background=[("active", UI_THEME.get("soft_hover", UI_THEME.get("surface_alt", "#2D2D2D")))])
+        style.map("Horizontal.TScrollbar", background=[("active", UI_THEME.get("soft_hover", UI_THEME.get("surface_alt", "#2D2D2D")))])
     except Exception:
         pass
 
@@ -507,9 +514,9 @@ def refresh_theme(widget_tree, context="default"):
 
     ctx = str(context or "default").lower()
     if ctx in {"interfacetwo", "monitor"}:
-        container_bg = UI_THEME.get("bg", "#0F1115")
+        container_bg = UI_THEME.get("bg", "#1E1E1E")
     else:
-        container_bg = UI_THEME.get("light_bg", UI_THEME.get("bg", "#0F1115"))
+        container_bg = UI_THEME.get("light_bg", UI_THEME.get("bg", "#1E1E1E"))
 
     def _walk(w):
         yield w
@@ -533,7 +540,7 @@ def refresh_theme(widget_tree, context="default"):
                 base_bg = cur_bg if cur_bg in {UI_THEME.get("surface"), UI_THEME.get("surface_alt"), UI_THEME.get("primary")} else container_bg
                 w.configure(bg=base_bg, fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
             elif klass == "Text":
-                w.configure(bg=UI_THEME.get("surface", "#151A22"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), insertbackground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+                w.configure(bg=UI_THEME.get("surface", "#252526"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), insertbackground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
             elif klass == "Entry":
                 st = None
                 try:
@@ -541,9 +548,9 @@ def refresh_theme(widget_tree, context="default"):
                 except Exception:
                     st = None
                 if st == "disabled":
-                    w.configure(disabledbackground=UI_THEME.get("disabled_bg", UI_THEME.get("surface", "#151A22")), disabledforeground=UI_THEME.get("disabled_fg", UI_THEME.get("muted_text", "#9AA4B2")))
+                    w.configure(disabledbackground=UI_THEME.get("disabled_bg", UI_THEME.get("surface", "#252526")), disabledforeground=UI_THEME.get("disabled_fg", UI_THEME.get("muted_text", "#A6A6A6")))
                 else:
-                    w.configure(bg=UI_THEME.get("surface_alt", "#1B2430"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), insertbackground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
+                    w.configure(bg=UI_THEME.get("surface_alt", "#2D2D2D"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), insertbackground=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")))
         except Exception:
             pass
 
@@ -560,7 +567,7 @@ def attach_tooltip(widget, text):
             x = widget.winfo_rootx() + 10
             y = widget.winfo_rooty() + widget.winfo_height() + 8
             tw.wm_geometry(f"+{x}+{y}")
-            lbl = tk.Label(tw, text=text, bg=UI_THEME.get("surface_alt", "#1B2430"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), relief="solid", bd=1, padx=6, pady=4, font=theme_font("font_sm"))
+            lbl = tk.Label(tw, text=text, bg=UI_THEME.get("surface_alt", "#2D2D2D"), fg=UI_THEME.get("on_surface", UI_THEME.get("text", "#E6EDF3")), relief="solid", bd=1, padx=6, pady=4, font=theme_font("font_sm"))
             lbl.pack()
             tip["win"] = tw
         except Exception:
