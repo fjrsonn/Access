@@ -3422,6 +3422,84 @@ class WarningBar(tk.Frame):
 
 # ---------------- UI bootstrap ----------------
 
+def _configure_adaptive_main_window(window):
+    """Inicializa a janela em formato fino/comprido e com limites de adaptação."""
+    try:
+        window.update_idletasks()
+        screen_w = max(1, int(window.winfo_screenwidth()))
+        screen_h = max(1, int(window.winfo_screenheight()))
+        width = max(420, min(int(screen_w * 0.42), 620))
+        height = max(420, int(screen_h * 0.85))
+        pos_x = max(0, int((screen_w - width) / 2))
+        pos_y = max(0, int((screen_h - height) / 2))
+        window.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
+        window.minsize(420, 420)
+    except Exception:
+        pass
+
+
+def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: int = 1200):
+    """Ajusta a janela progressivamente após novos conteúdos (registros/avisos)."""
+    state = {"ticks": 0}
+
+    def _fit_once():
+        try:
+            if not window.winfo_exists():
+                return
+            state["ticks"] += 1
+            window.update_idletasks()
+            screen_w = max(1, int(window.winfo_screenwidth()))
+            screen_h = max(1, int(window.winfo_screenheight()))
+            target = anchor_widget if anchor_widget is not None and anchor_widget.winfo_exists() else window
+            requested_w = max(420, int(target.winfo_reqwidth() + 44))
+            requested_h = max(420, int(target.winfo_reqheight() + 44))
+            width = min(max(420, requested_w), max(420, int(screen_w * 0.58)))
+            height = min(max(420, requested_h), max(420, int(screen_h * 0.9)))
+            x = max(0, int((screen_w - width) / 2))
+            y = max(0, int((screen_h - height) / 2))
+            window.geometry(f"{width}x{height}+{x}+{y}")
+            if state["ticks"] < 120:
+                window.after(interval_ms, _fit_once)
+        except Exception:
+            return
+
+    try:
+        window.after(max(180, interval_ms // 2), _fit_once)
+    except Exception:
+        pass
+
+
+def _keep_window_always_on_top(window, interval_ms: int = 1200):
+    """Reforça o estado always-on-top para evitar que a janela suma atrás de outros apps."""
+    def _bring_to_front(_event=None):
+        try:
+            if not window.winfo_exists():
+                return
+            window.attributes("-topmost", True)
+            window.lift()
+        except Exception:
+            return
+
+    def _tick():
+        try:
+            if not window.winfo_exists():
+                return
+            _bring_to_front()
+            window.after(interval_ms, _tick)
+        except Exception:
+            return
+
+    _bring_to_front()
+    try:
+        window.bind("<FocusOut>", _bring_to_front, add="+")
+        window.bind("<Unmap>", _bring_to_front, add="+")
+    except Exception:
+        pass
+    try:
+        window.after(interval_ms, _tick)
+    except Exception:
+        pass
+
 def start_ui():
     if tk is None:
         print("Tkinter não disponível. Não é possível iniciar interface gráfica.")
@@ -3430,6 +3508,8 @@ def start_ui():
     _start_analises_watcher()
     report_status("ux_metrics", "OK", stage="theme_contrast_check", details=validate_theme_contrast())
     root = tk.Tk(); root.title("Controle de Acesso")
+    _configure_adaptive_main_window(root)
+    _keep_window_always_on_top(root)
     apply_ttk_theme_styles(root)
     root.configure(bg="#1E1E1E")
     container = tk.Frame(root, bg="#1E1E1E"); container.pack(padx=theme_space("space_4", 14), pady=theme_space("space_4", 14), fill=tk.X)
@@ -3439,6 +3519,7 @@ def start_ui():
     _warning_bar = WarningBar(container, s.entry, aviso_bar=aviso_bar)
     s.set_submit_callback(lambda: save_text(entry_widget=s.entry))
     s.pack(fill=tk.X)
+    _schedule_progressive_window_fit(root, anchor_widget=container)
 
     def open_monitor_embedded():
         _open_monitor_window(root)
