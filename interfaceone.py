@@ -2962,16 +2962,7 @@ class AvisoBar(tk.Frame):
         self.msg_var = tk.StringVar()
         self.lbl = tk.Label(self, textvariable=self.msg_var, anchor="w", font=self.font, bd=0)
         self.lbl.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=(2,2))
-        self.btn_close = tk.Label(self, text="✕", cursor="hand2", font=theme_font("font_lg", "bold"), bd=0, highlightthickness=0, relief="flat", padx=0, pady=0, borderwidth=0, bg=self.cget("bg"), fg="#000000")
-        self.btn_close.pack(side=tk.RIGHT, padx=(0,0), pady=(0,0))
-        self.btn_close.bind("<Button-1>", lambda _e: self._on_close_click(), add="+")
         self._current_bar_bg = UI_THEME.get("surface_alt", "#2D2D2D")
-        try:
-            self.btn_close.bind("<Enter>", self._on_close_hover_enter, add="+")
-            self.btn_close.bind("<Leave>", self._on_close_hover_leave, add="+")
-            attach_tooltip(self.btn_close, "Fechar aviso")
-        except Exception:
-            pass
         self._active_avisos = []
         self._idx = 0
         self._after_id = None
@@ -3005,7 +2996,6 @@ class AvisoBar(tk.Frame):
             self.lbl.config(bg=bg, fg=fg)
             self.lbl_counter.config(bg=bg, fg=UI_THEME.get("muted_text", "#A6A6A6"))
             self.btn_detail.config(bg=bg, fg=fg, activebackground=UI_THEME.get("surface", "#1E1E1E"), activeforeground=fg, highlightthickness=0, bd=0)
-            self.btn_close.config(bg=bg, fg="#000000")
         except Exception:
             pass
 
@@ -3105,7 +3095,6 @@ class AvisoBar(tk.Frame):
             self.lbl_counter.config(bg=bg, fg="#000000")
             self.btn_detail.config(bg=bg, fg="#000000", activebackground=bg, activeforeground="#000000")
             self._current_bar_bg = bg
-            self.btn_close.config(bg=bg, fg="#000000")
         except:
             pass
         disp = self._format_display_text(aviso)
@@ -3356,42 +3345,6 @@ class AvisoBar(tk.Frame):
         except Exception as e:
             _log_ui("ERROR", "alert_center_open_failed", "Falha ao abrir central de alertas", error=str(e))
 
-    def _on_close_click(self):
-        if not self._active_avisos:
-            return
-        aviso = self._active_avisos[self._idx % len(self._active_avisos)]
-        aid = aviso.get("id_aviso")
-        try:
-            data = _read_json(AVISOS_FILE) or {"registros": [], "ultimo_aviso_ativo": None}
-            changed = False
-            for a in data.get("registros", []):
-                if (a.get("id_aviso") or "") == (aid or ""):
-                    st = a.get("status") or {}
-                    st["ativo"] = False
-                    st["fechado_pelo_usuario"] = True
-                    a["status"] = st
-                    ts = a.get("timestamps") or {}
-                    ts["fechado_em"] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-                    a["timestamps"] = ts
-                    changed = True
-                    break
-            if changed:
-                try:
-                    atomic_save(AVISOS_FILE, data)
-                except Exception:
-                    try:
-                        with open(AVISOS_FILE, "w", encoding="utf-8") as f:
-                            json.dump(data, f, ensure_ascii=False, indent=2)
-                    except:
-                        pass
-            self._load_avisos_active()
-            if self._active_avisos:
-                self._idx = self._idx % max(1, len(self._active_avisos))
-                self._show_current()
-            else:
-                self._hide()
-        except Exception as e:
-            print("Erro ao fechar aviso:", e)
 
 class WarningBar(tk.Frame):
     DISPLAY_MS = 3000
