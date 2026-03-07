@@ -2999,6 +2999,18 @@ class AvisoBar(tk.Frame):
             pass
 
 
+    def _on_close_hover_enter(self, _event=None):
+        try:
+            self.btn_close.config(bg=self._current_bar_bg, fg="#000000")
+        except Exception:
+            pass
+
+    def _on_close_hover_leave(self, _event=None):
+        try:
+            self.btn_close.config(bg=self._current_bar_bg, fg="#000000")
+        except Exception:
+            pass
+
     def _load_avisos_active(self):
         # Recarrega sempre para garantir que qualquer alteração recém-gravada
         # em avisos.json apareça sem depender de resolução de timestamp do FS.
