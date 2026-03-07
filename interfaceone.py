@@ -3423,23 +3423,26 @@ class WarningBar(tk.Frame):
 # ---------------- UI bootstrap ----------------
 
 def _configure_adaptive_main_window(window):
-    """Inicializa a janela em formato fino/comprido (estreita e alta)."""
+    """Inicializa a janela mais horizontal e com baixa altura."""
     try:
         window.update_idletasks()
         screen_w = max(1, int(window.winfo_screenwidth()))
         screen_h = max(1, int(window.winfo_screenheight()))
-        width = max(520, min(int(screen_w * 0.42), 760))
-        height = max(360, min(int(screen_h * 0.54), 620))
+
+        # horizontal maior + altura menor
+        width = max(980, min(int(screen_w * 0.92), 1680))
+        height = max(200, min(int(screen_h * 0.26), 300))
+
         pos_x = max(0, int((screen_w - width) / 2))
         pos_y = max(0, int((screen_h - height) / 2))
         window.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
-        window.minsize(500, 320)
+        window.minsize(920, 190)
     except Exception:
         pass
 
 
 def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: int = 1200):
-    """Ajusta a janela progressivamente após novos conteúdos mantendo visual fino/comprido."""
+    """Mantém a janela horizontal: largura alta e altura controlada."""
     state = {"ticks": 0}
 
     def _fit_once():
@@ -3450,14 +3453,18 @@ def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: in
             window.update_idletasks()
             screen_w = max(1, int(window.winfo_screenwidth()))
             screen_h = max(1, int(window.winfo_screenheight()))
+
             target = anchor_widget if anchor_widget is not None and anchor_widget.winfo_exists() else window
-            requested_w = max(500, int(target.winfo_reqwidth() + 56))
-            requested_h = max(320, int(target.winfo_reqheight() + 70))
-            width = min(max(500, requested_w), max(500, int(screen_w * 0.5)))
-            height = min(max(320, requested_h), max(320, int(screen_h * 0.84)))
+            requested_w = int(target.winfo_reqwidth() + 180)
+            requested_h = int(target.winfo_reqheight() + 34)
+
+            width = min(max(920, requested_w), max(920, int(screen_w * 0.96)))
+            height = min(max(190, requested_h), max(190, int(screen_h * 0.34)))
+
             x = max(0, int((screen_w - width) / 2))
             y = max(0, int((screen_h - height) / 2))
             window.geometry(f"{width}x{height}+{x}+{y}")
+
             if state["ticks"] < 120:
                 window.after(interval_ms, _fit_once)
         except Exception:
@@ -3467,7 +3474,6 @@ def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: in
         window.after(max(180, interval_ms // 2), _fit_once)
     except Exception:
         pass
-
 
 def _keep_window_always_on_top(window, interval_ms: int = 1200):
     """Reforça o estado always-on-top para evitar que a janela suma atrás de outros apps."""
@@ -3519,7 +3525,7 @@ def start_ui():
     _warning_bar = WarningBar(container, s.entry, aviso_bar=aviso_bar)
     s.set_submit_callback(lambda: save_text(entry_widget=s.entry))
     s.pack(fill=tk.X)
-    _schedule_progressive_window_fit(root, anchor_widget=s.entry)
+    _schedule_progressive_window_fit(root, anchor_widget=container)
 
     def open_monitor_embedded():
         _open_monitor_window(root)
