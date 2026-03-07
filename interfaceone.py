@@ -3430,13 +3430,13 @@ def _configure_adaptive_main_window(window):
         screen_h = max(1, int(window.winfo_screenheight()))
 
         # horizontal maior + altura menor
-        width = max(1120, min(int(screen_w * 0.97), 1860))
-        height = max(170, min(int(screen_h * 0.22), 250))
+        width = max(1280, min(int(screen_w * 0.99), 1980))
+        height = max(140, min(int(screen_h * 0.18), 210))
 
         pos_x = max(0, int((screen_w - width) / 2))
         pos_y = max(0, int((screen_h - height) / 2))
         window.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
-        window.minsize(1040, 170)
+        window.minsize(1180, 140)
     except Exception:
         pass
 
@@ -3455,11 +3455,11 @@ def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: in
             screen_h = max(1, int(window.winfo_screenheight()))
 
             target = anchor_widget if anchor_widget is not None and anchor_widget.winfo_exists() else window
-            requested_w = int(target.winfo_reqwidth() + 260)
-            requested_h = int(target.winfo_reqheight() + 20)
+            requested_w = int(target.winfo_reqwidth() + 340)
+            requested_h = int(target.winfo_reqheight() + 12)
 
-            width = min(max(1040, requested_w), max(1040, int(screen_w * 0.98)))
-            height = min(max(170, requested_h), max(170, int(screen_h * 0.28)))
+            width = min(max(1180, requested_w), max(1180, int(screen_w * 0.995)))
+            height = min(max(140, requested_h), max(140, int(screen_h * 0.22)))
 
             x = max(0, int((screen_w - width) / 2))
             y = max(0, int((screen_h - height) / 2))
