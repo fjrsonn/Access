@@ -3441,14 +3441,43 @@ def _configure_adaptive_main_window(window):
         pass
 
 
-def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: int = 1200, startup_delay_ms: int = 6000):
-    """Mantém a janela horizontal: largura alta e altura controlada."""
-    state = {"ticks": 0}
+def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: int = 1200):
+    """Só adapta após primeiro registro e sem recentralizar a janela automaticamente."""
+    state = {"ticks": 0, "armed": False, "baseline_total": 0}
+
+    def _safe_count_records(path):
+        payload = _read_json(path)
+        if isinstance(payload, dict):
+            regs = payload.get("registros")
+            if isinstance(regs, list):
+                return len(regs)
+        if isinstance(payload, list):
+            return len(payload)
+        return 0
+
+    def _total_records():
+        return (
+            _safe_count_records(DB_FILE)
+            + _safe_count_records(ENCOMENDAS_DB_FILE)
+            + _safe_count_records(AVISOS_FILE)
+        )
 
     def _fit_once():
         try:
             if not window.winfo_exists():
                 return
+
+            if not state["armed"]:
+                state["baseline_total"] = _total_records()
+                state["armed"] = True
+                window.after(interval_ms, _fit_once)
+                return
+
+            total_now = _total_records()
+            if total_now <= state["baseline_total"] or total_now <= 0:
+                window.after(interval_ms, _fit_once)
+                return
+
             state["ticks"] += 1
             window.update_idletasks()
             screen_w = max(1, int(window.winfo_screenwidth()))
@@ -3461,8 +3490,13 @@ def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: in
             width = min(max(1180, requested_w), max(1180, int(screen_w * 0.995)))
             height = min(max(120, requested_h), max(120, int(screen_h * 0.20)))
 
-            x = max(0, int((screen_w - width) / 2))
-            y = max(0, int((screen_h - height) / 2))
+            try:
+                x = max(0, int(window.winfo_x()))
+                y = max(0, int(window.winfo_y()))
+            except Exception:
+                x = max(0, int((screen_w - width) / 2))
+                y = max(0, int((screen_h - height) / 2))
+
             window.geometry(f"{width}x{height}+{x}+{y}")
 
             if state["ticks"] < 120:
@@ -3471,7 +3505,7 @@ def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: in
             return
 
     try:
-        window.after(max(startup_delay_ms, interval_ms), _fit_once)
+        window.after(interval_ms, _fit_once)
     except Exception:
         pass
 
@@ -3525,7 +3559,7 @@ def start_ui():
     _warning_bar = WarningBar(container, s.entry, aviso_bar=aviso_bar)
     s.set_submit_callback(lambda: save_text(entry_widget=s.entry))
     s.pack(fill=tk.X)
-    _schedule_progressive_window_fit(root, anchor_widget=container, startup_delay_ms=6000)
+    _schedule_progressive_window_fit(root, anchor_widget=container)
 
     def open_monitor_embedded():
         _open_monitor_window(root)
