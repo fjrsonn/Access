@@ -3004,7 +3004,7 @@ class AvisoBar(tk.Frame):
             self.lbl.config(bg=bg, fg=fg)
             self.lbl_counter.config(bg=bg, fg=UI_THEME.get("muted_text", "#A6A6A6"))
             self.btn_detail.config(bg=bg, fg=fg, activebackground=UI_THEME.get("surface", "#1E1E1E"), activeforeground=fg, highlightthickness=0, bd=0)
-            self.btn_close.config(bg=bg, fg=fg, activebackground=self._blend_with_white(bg, 0.82), activeforeground=fg, highlightthickness=0, bd=0)
+            self.btn_close.config(bg=bg, fg="#000000", activebackground=bg, activeforeground="#000000", highlightthickness=0, bd=0)
         except Exception:
             pass
 
@@ -3025,13 +3025,13 @@ class AvisoBar(tk.Frame):
 
     def _on_close_hover_enter(self, _event=None):
         try:
-            self.btn_close.config(bg=self._blend_with_white(self._current_bar_bg, 0.82))
+            self.btn_close.config(bg=self._current_bar_bg, fg="#000000")
         except Exception:
             pass
 
     def _on_close_hover_leave(self, _event=None):
         try:
-            self.btn_close.config(bg=self._current_bar_bg)
+            self.btn_close.config(bg=self._current_bar_bg, fg="#000000")
         except Exception:
             pass
 
@@ -3104,7 +3104,7 @@ class AvisoBar(tk.Frame):
             self.lbl_counter.config(bg=bg, fg="#000000")
             self.btn_detail.config(bg=bg, fg="#000000", activebackground=bg, activeforeground="#000000")
             self._current_bar_bg = bg
-            self.btn_close.config(bg=bg, fg="#000000", activebackground=self._blend_with_white(bg, 0.82), activeforeground="#000000")
+            self.btn_close.config(bg=bg, fg="#000000", activebackground=bg, activeforeground="#000000")
         except:
             pass
         disp = self._format_display_text(aviso)
