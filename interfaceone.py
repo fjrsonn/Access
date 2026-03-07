@@ -1571,6 +1571,11 @@ class _CanvasEntryComposer(tk.Canvas):
             return self._insert_bg
         return super().cget(key)
 
+    def __getitem__(self, key):
+        if key in {"font", "bg", "fg", "insertbackground"}:
+            return self.cget(key)
+        return super().__getitem__(key)
+
     def configure(self, cnf=None, **kwargs):
         kw = dict(cnf or {})
         kw.update(kwargs)
@@ -1786,14 +1791,14 @@ class SuggestEntry(tk.Frame):
         self.btn_voice = tk.Button(self.input_shell, text="🔊", width=2, relief="flat", command=self._on_voice_click, cursor="hand2", font=theme_font("font_lg"))
         self.btn_voice.pack(side=tk.RIGHT, padx=(4, 2), pady=8)
         self.entry.focus_set()
-        self.font = tkfont.Font(font=self.entry["font"]); self._orig_entry_bg = self.entry.cget("bg")
+        self.font = tkfont.Font(font=self.entry.cget("font")); self._orig_entry_bg = self.entry.cget("bg")
         try: self._orig_entry_fg = self.entry.cget("fg")
         except: self._orig_entry_fg = "black"
         try: self._orig_insert_bg = self.entry.cget("insertbackground")
         except: self._orig_insert_bg = self._orig_entry_fg
 
         # overlay (completar token)
-        self.overlay = tk.Label(self, text="", anchor="w", font=self.entry["font"], fg=UI_THEME.get("overlay_text", "gray65"), bg=self._orig_entry_bg, bd=0); self.overlay_visible=False
+        self.overlay = tk.Label(self, text="", anchor="w", font=self.entry.cget("font"), fg=UI_THEME.get("overlay_text", "gray65"), bg=self._orig_entry_bg, bd=0); self.overlay_visible=False
         # suggestion list
         list_bg = UI_THEME.get("surface", "#1E1E1E")
         self.frame = tk.Frame(self, bg=list_bg, highlightbackground=list_bg, highlightthickness=0, bd=0)
@@ -2872,7 +2877,7 @@ class AvisoBar(tk.Frame):
         super().__init__(master)
         self.entry_widget = entry_widget
         try:
-            self.font = tkfont.Font(font=self.entry_widget["font"])
+            self.font = tkfont.Font(font=self.entry_widget.cget("font"))
         except Exception:
             self.font = tkfont.Font(family="Segoe UI", size=11)
         self.config(bg=UI_THEME.get("surface_alt", "#2D2D2D"), bd=1, relief="flat", highlightthickness=1, highlightbackground=UI_THEME.get("border", "#3C3C3C"))
@@ -3295,7 +3300,7 @@ class WarningBar(tk.Frame):
         self.entry_widget = entry_widget
         self.aviso_bar = aviso_bar
         try:
-            self.font = tkfont.Font(font=self.entry_widget["font"])
+            self.font = tkfont.Font(font=self.entry_widget.cget("font"))
         except Exception:
             self.font = tkfont.Font(family="Segoe UI", size=11)
         self._styles = {
