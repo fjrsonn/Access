@@ -1777,7 +1777,7 @@ class SuggestEntry(tk.Frame):
         super().__init__(master)
         self.submit_callback = None
         self.entry_var = tk.StringVar()
-        self.input_shell = tk.Frame(self, bd=0, highlightthickness=1)
+        self.input_shell = tk.Frame(self, bd=0, highlightthickness=0)
         self.input_shell.pack(side=tk.TOP, fill=tk.X, pady=(0, theme_space("space_2", 8)))
 
         self.btn_plus = tk.Button(self.input_shell, text="＋", width=2, relief="flat", command=self._on_plus_click, cursor="hand2", font=theme_font("font_lg", "bold"))
@@ -1876,7 +1876,7 @@ class SuggestEntry(tk.Frame):
             shell_bg = palette["shell_bg"]
             shell_border = palette["shell_border"]
             shell_fg = palette["shell_fg"]
-            self.input_shell.configure(bg=shell_bg, highlightbackground=shell_border, highlightcolor=UI_THEME.get("primary", "#1F6FEB"))
+            self.input_shell.configure(bg=shell_bg, highlightbackground=shell_bg, highlightcolor=shell_bg, highlightthickness=0)
             list_bg = UI_THEME.get("surface", "#1E1E1E")
             self.frame.configure(bg=list_bg, highlightbackground=list_bg, highlightthickness=0, bd=0)
             self.shortcuts_hint.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg=list_bg)
