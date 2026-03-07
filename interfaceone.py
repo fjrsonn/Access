@@ -1791,19 +1791,24 @@ class SuggestEntry(tk.Frame):
         self.configure(bg=UI_THEME.get("bg", "#1E1E1E"), highlightthickness=0, bd=0)
         self.submit_callback = None
         self.entry_var = tk.StringVar()
-        self.input_shell = tk.Frame(self, bd=0, highlightthickness=0)
+        self.input_shell = tk.Frame(self, bd=0, highlightthickness=0, bg=UI_THEME.get("bg", "#1E1E1E"))
         self.input_shell.pack(side=tk.TOP, fill=tk.X, pady=0)
+        self.shell_canvas = tk.Canvas(self.input_shell, height=52, bd=0, highlightthickness=0, bg=UI_THEME.get("bg", "#1E1E1E"))
+        self.shell_canvas.pack(side=tk.TOP, fill=tk.X)
+        self.shell_content = tk.Frame(self.shell_canvas, bd=0, highlightthickness=0, bg=UI_THEME.get("surface", "#252526"))
+        self._shell_window = self.shell_canvas.create_window(0, 0, anchor="nw", window=self.shell_content)
+        self.shell_canvas.bind("<Configure>", lambda e: self._refresh_shell_shape(), add="+")
 
-        self.btn_plus = tk.Button(self.input_shell, text="＋", width=2, relief="flat", command=self._on_plus_click, cursor="hand2", font=theme_font("font_lg", "bold"))
-        self.btn_plus.pack(side=tk.LEFT, padx=(10, 6), pady=0)
+        self.btn_plus = tk.Button(self.shell_content, text="＋", width=2, relief="flat", command=self._on_plus_click, cursor="hand2", font=theme_font("font_lg", "bold"))
+        self.btn_plus.pack(side=tk.LEFT, padx=(10, 6), pady=8)
 
-        self.entry = _CanvasEntryComposer(self.input_shell, textvariable=self.entry_var, font=theme_font("font_lg"), relief="flat", bd=0, radius=12)
-        self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(4, 4), pady=0)
+        self.entry = _CanvasEntryComposer(self.shell_content, textvariable=self.entry_var, font=theme_font("font_lg"), relief="flat", bd=0, radius=0)
+        self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(4, 4), pady=8)
 
-        self.btn_dictate = tk.Button(self.input_shell, text="🎙", width=2, relief="flat", command=self._on_dictate_click, cursor="hand2", font=theme_font("font_lg"))
-        self.btn_dictate.pack(side=tk.RIGHT, padx=(4, 10), pady=0)
-        self.btn_voice = tk.Button(self.input_shell, text="🔊", width=2, relief="flat", command=self._on_voice_click, cursor="hand2", font=theme_font("font_lg"))
-        self.btn_voice.pack(side=tk.RIGHT, padx=(4, 2), pady=0)
+        self.btn_dictate = tk.Button(self.shell_content, text="🎤", width=2, relief="flat", command=self._on_dictate_click, cursor="hand2", font=theme_font("font_lg"))
+        self.btn_dictate.pack(side=tk.RIGHT, padx=(4, 10), pady=8)
+        self.btn_voice = tk.Button(self.shell_content, text="➤", width=2, relief="flat", command=self._on_voice_click, cursor="hand2", font=theme_font("font_lg"))
+        self.btn_voice.pack(side=tk.RIGHT, padx=(4, 2), pady=8)
         self.entry.focus_set()
         self.font = tkfont.Font(font=self.entry.cget("font")); self._orig_entry_bg = self.entry.cget("bg")
         try: self._orig_entry_fg = self.entry.cget("fg")
@@ -1884,6 +1889,26 @@ class SuggestEntry(tk.Frame):
             "send_fg": text_color,
         }
 
+    def _refresh_shell_shape(self, shell_bg=None, border_color=None):
+        try:
+            bg = shell_bg or UI_THEME.get("surface", "#252526")
+            bd = border_color or UI_THEME.get("border", "#3C3C3C")
+            w = max(40, self.shell_canvas.winfo_width())
+            h = max(44, self.shell_canvas.winfo_height())
+            r = min(16, h // 2)
+            self.shell_canvas.delete("shell")
+            self.shell_canvas.create_rectangle(r, 1, w - r, h - 1, fill=bg, outline=bd, tags="shell")
+            self.shell_canvas.create_rectangle(1, r, w - 1, h - r, fill=bg, outline=bd, tags="shell")
+            self.shell_canvas.create_arc(1, 1, 1 + 2*r, 1 + 2*r, start=90, extent=90, fill=bg, outline=bd, tags="shell")
+            self.shell_canvas.create_arc(w - 1 - 2*r, 1, w - 1, 1 + 2*r, start=0, extent=90, fill=bg, outline=bd, tags="shell")
+            self.shell_canvas.create_arc(1, h - 1 - 2*r, 1 + 2*r, h - 1, start=180, extent=90, fill=bg, outline=bd, tags="shell")
+            self.shell_canvas.create_arc(w - 1 - 2*r, h - 1 - 2*r, w - 1, h - 1, start=270, extent=90, fill=bg, outline=bd, tags="shell")
+            self.shell_canvas.tag_lower("shell")
+            self.shell_canvas.itemconfigure(self._shell_window, width=max(10, w - 2), height=max(10, h - 2))
+            self.shell_canvas.coords(self._shell_window, 1, 1)
+        except Exception:
+            pass
+
     def refresh_theme(self):
         try:
             palette = self._composer_palette()
@@ -1891,7 +1916,9 @@ class SuggestEntry(tk.Frame):
             shell_border = palette["shell_border"]
             shell_fg = palette["shell_fg"]
             self.configure(bg=UI_THEME.get("bg", "#1E1E1E"), highlightthickness=0, bd=0)
-            self.input_shell.configure(bg=shell_bg, highlightbackground=shell_bg, highlightcolor=shell_bg, highlightthickness=0)
+            self.input_shell.configure(bg=UI_THEME.get("bg", "#1E1E1E"), highlightbackground=UI_THEME.get("bg", "#1E1E1E"), highlightcolor=UI_THEME.get("bg", "#1E1E1E"), highlightthickness=0)
+            self.shell_content.configure(bg=shell_bg)
+            self._refresh_shell_shape(shell_bg=shell_bg, border_color=shell_border)
             list_bg = UI_THEME.get("surface", "#1E1E1E")
             self.frame.configure(bg=list_bg, highlightbackground=list_bg, highlightthickness=0, bd=0)
             self.shortcuts_hint.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg=list_bg)
@@ -1899,7 +1926,7 @@ class SuggestEntry(tk.Frame):
                 highlightbackground=UI_THEME.get("border", "#3C3C3C"),
                 highlightcolor=UI_THEME.get("border", "#3C3C3C"),
                 highlightthickness=0,
-                bg="#252526",
+                bg=shell_bg,
                 fg=shell_fg,
                 insertbackground=shell_fg,
             )
