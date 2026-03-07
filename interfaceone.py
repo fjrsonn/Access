@@ -1417,7 +1417,7 @@ class _CanvasEntryComposer(tk.Canvas):
         canvas_takefocus = kwargs.pop("takefocus", 1)
         super().__init__(
             parent,
-            height=max(34, self._font.metrics("linespace") + 16),
+            height=max(28, self._font.metrics("linespace") + 10),
             bd=canvas_bd,
             relief=canvas_relief,
             bg=self._bg,
@@ -1465,7 +1465,7 @@ class _CanvasEntryComposer(tk.Canvas):
         self.create_text(x_pad, y, anchor="w", text=self._text, font=self._font, fill=self._fg)
         if self.focus_get() == self and self._blink_visible:
             caret_x = x_pad + self._font.measure(self._text[: self._cursor])
-            self.create_line(caret_x, 7, caret_x, h - 7, fill=self._insert_bg, width=1)
+            self.create_line(caret_x, 5, caret_x, h - 5, fill=self._insert_bg, width=1)
 
     def _blink(self):
         self._blink_visible = not self._blink_visible
@@ -1779,18 +1779,18 @@ class SuggestEntry(tk.Frame):
         self.submit_callback = None
         self.entry_var = tk.StringVar()
         self.input_shell = tk.Frame(self, bd=0, highlightthickness=0)
-        self.input_shell.pack(side=tk.TOP, fill=tk.X, pady=(0, theme_space("space_2", 8)))
+        self.input_shell.pack(side=tk.TOP, fill=tk.X, pady=0)
 
         self.btn_plus = tk.Button(self.input_shell, text="＋", width=2, relief="flat", command=self._on_plus_click, cursor="hand2", font=theme_font("font_lg", "bold"))
-        self.btn_plus.pack(side=tk.LEFT, padx=(10, 6), pady=8)
+        self.btn_plus.pack(side=tk.LEFT, padx=(10, 6), pady=0)
 
         self.entry = _CanvasEntryComposer(self.input_shell, textvariable=self.entry_var, font=theme_font("font_lg"), relief="flat", bd=0)
-        self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(4, 4), pady=8)
+        self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(4, 4), pady=0)
 
         self.btn_dictate = tk.Button(self.input_shell, text="🎙", width=2, relief="flat", command=self._on_dictate_click, cursor="hand2", font=theme_font("font_lg"))
-        self.btn_dictate.pack(side=tk.RIGHT, padx=(4, 10), pady=8)
+        self.btn_dictate.pack(side=tk.RIGHT, padx=(4, 10), pady=0)
         self.btn_voice = tk.Button(self.input_shell, text="🔊", width=2, relief="flat", command=self._on_voice_click, cursor="hand2", font=theme_font("font_lg"))
-        self.btn_voice.pack(side=tk.RIGHT, padx=(4, 2), pady=8)
+        self.btn_voice.pack(side=tk.RIGHT, padx=(4, 2), pady=0)
         self.entry.focus_set()
         self.font = tkfont.Font(font=self.entry.cget("font")); self._orig_entry_bg = self.entry.cget("bg")
         try: self._orig_entry_fg = self.entry.cget("fg")
