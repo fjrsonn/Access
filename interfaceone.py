@@ -1778,6 +1778,7 @@ class SuggestEntry(tk.Frame):
         self.configure(bg=UI_THEME.get("bg", "#1E1E1E"), highlightthickness=0, bd=0)
         self.submit_callback = None
         self.entry_var = tk.StringVar()
+        self._entry_var_trace = self.entry_var.trace_add("write", self._on_entry_var_changed)
         self.input_shell = tk.Frame(self, bd=0, highlightthickness=0)
         self.input_shell.pack(side=tk.TOP, fill=tk.X, pady=0)
 
@@ -1869,7 +1870,44 @@ class SuggestEntry(tk.Frame):
             "send_bg": "#FFFFFF",
             "send_bg_active": "#E9EEF5",
             "send_fg": "#0F172A",
+            "send_idle_bg": "#2D2D2D",
+            "send_idle_bg_active": "#353535",
+            "send_idle_fg": UI_THEME.get("muted_text", "#A6A6A6"),
         }
+
+    def _has_typed_text(self) -> bool:
+        return bool((self.entry_var.get() or "").strip())
+
+    def _sync_send_button_visual(self, hover: bool = False):
+        try:
+            palette = self._composer_palette()
+            has_text = self._has_typed_text()
+            if has_text:
+                bg = palette["send_bg_active"] if hover else palette["send_bg"]
+                fg = palette["send_fg"]
+                cursor = "hand2"
+            else:
+                bg = palette["send_idle_bg_active"] if hover else palette["send_idle_bg"]
+                fg = palette["send_idle_fg"]
+                cursor = "arrow"
+            self.btn_voice.configure(
+                bg=bg,
+                fg=fg,
+                activebackground=(palette["send_bg_active"] if has_text else palette["send_idle_bg_active"]),
+                activeforeground=fg,
+                cursor=cursor,
+            )
+        except Exception:
+            pass
+
+    def _on_send_hover_enter(self, _event=None):
+        self._sync_send_button_visual(hover=True)
+
+    def _on_send_hover_leave(self, _event=None):
+        self._sync_send_button_visual(hover=False)
+
+    def _on_entry_var_changed(self, *_):
+        self._sync_send_button_visual(hover=False)
 
     def refresh_theme(self):
         try:
@@ -1900,10 +1938,6 @@ class SuggestEntry(tk.Frame):
                     bd=0,
                 )
             self.btn_voice.configure(
-                bg=palette["send_bg"],
-                fg=palette["send_fg"],
-                activebackground=palette["send_bg_active"],
-                activeforeground=palette["send_fg"],
                 highlightthickness=0,
                 bd=0,
                 width=2,
@@ -1913,10 +1947,11 @@ class SuggestEntry(tk.Frame):
             try:
                 self.btn_voice.unbind("<Enter>")
                 self.btn_voice.unbind("<Leave>")
-                self.btn_voice.bind("<Enter>", lambda _e: self.btn_voice.configure(bg=palette["send_bg_active"]), add="+")
-                self.btn_voice.bind("<Leave>", lambda _e: self.btn_voice.configure(bg=palette["send_bg"]), add="+")
+                self.btn_voice.bind("<Enter>", self._on_send_hover_enter, add="+")
+                self.btn_voice.bind("<Leave>", self._on_send_hover_leave, add="+")
             except Exception:
                 pass
+            self._sync_send_button_visual(hover=False)
             self.overlay.configure(fg=UI_THEME.get("text", "#D4D4D4"), bg=shell_bg)
             self.tree.configure(
                 background=list_bg,
@@ -1957,6 +1992,8 @@ class SuggestEntry(tk.Frame):
             pass
 
     def _on_submit_click(self):
+        if not self._has_typed_text():
+            return
         if callable(self.submit_callback):
             try:
                 self.submit_callback()
