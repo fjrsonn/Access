@@ -146,7 +146,8 @@ class AppMetricCard(tk.Frame):
         self.top_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
         self.text_column = tk.Frame(self.top_row, bg=UI_THEME.get("surface", "#151A22"))
         self.text_column.pack(fill=tk.BOTH, expand=True)
-        self.donut_wrap = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"), height=170)
+        self._donut_wrap_visible_height = max(96, theme_space("space_10", 144))
+        self.donut_wrap = tk.Frame(self.body, bg=UI_THEME.get("surface", "#151A22"), height=self._donut_wrap_visible_height)
         self.donut_wrap.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
         self.donut_wrap.pack_propagate(False)
         self.donut_canvas = tk.Canvas(
@@ -221,9 +222,12 @@ class AppMetricCard(tk.Frame):
         self.title_lbl.pack(in_=self.text_column, fill=tk.X, anchor="w", padx=(0, 0), pady=(py_top, 0))
         self.value_lbl.pack(in_=self.text_column, fill=tk.X, anchor="w", padx=(0, 0), pady=(0, 0))
         if self._donut_visible:
+            self.donut_wrap.configure(height=self._donut_wrap_visible_height)
+            self.donut_wrap.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
             self.donut_canvas.pack(fill=tk.BOTH, expand=True)
         else:
             self.donut_canvas.pack_forget()
+            self.donut_wrap.pack_forget()
         self.trend_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, 0))
         self.capacity_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, 0))
         self.meta_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, py_bottom))
@@ -391,9 +395,12 @@ class AppMetricCard(tk.Frame):
             self._donut_hover_segment = None
         try:
             if self._donut_visible:
+                self.donut_wrap.configure(height=self._donut_wrap_visible_height)
+                self.donut_wrap.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
                 self.donut_canvas.pack(fill=tk.BOTH, expand=True)
             else:
                 self.donut_canvas.pack_forget()
+                self.donut_wrap.pack_forget()
         except Exception:
             pass
         self._draw_donut()
