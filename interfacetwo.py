@@ -4549,12 +4549,22 @@ def _build_monitor_ui(container):
 
     table_trees = []
     cards_widgets = []
+    layout_is_1366 = False
+    try:
+        screen_w = int(container.winfo_screenwidth() or 0)
+        screen_h = int(container.winfo_screenheight() or 0)
+        layout_is_1366 = screen_w <= 1366 or screen_h <= 768
+    except Exception:
+        layout_is_1366 = False
+
+    if layout_is_1366:
+        _log_event("layout_profile", "compact_1366x768_detected", screen_w=screen_w, screen_h=screen_h)
 
     def _apply_density(_mode_label=None):
         global _layout_density_mode
-        _layout_density_mode = "confortavel"
-        rowheight = 30
-        gap = theme_space("space_2", 8)
+        _layout_density_mode = "compacto" if layout_is_1366 else "confortavel"
+        rowheight = 26 if layout_is_1366 else 30
+        gap = theme_space("space_1", 4) if layout_is_1366 else theme_space("space_2", 8)
         try:
             ttk.Style(container).configure("Control.Treeview", rowheight=rowheight)
         except Exception:
@@ -4575,12 +4585,12 @@ def _build_monitor_ui(container):
                 pass
         for tree in table_trees:
             try:
-                tree.configure(height=14)
+                tree.configure(height=12 if layout_is_1366 else 14)
             except Exception:
                 pass
         for w in (btn_top_details, btn_top_export, btn_top_reload, btn_top_clear, btn_top_toggle_filters):
             try:
-                w.configure(padx=12, pady=4)
+                w.configure(padx=(8 if layout_is_1366 else 12), pady=(2 if layout_is_1366 else 4))
             except Exception:
                 pass
         _persist_ui_state({"layout_density": _layout_density_mode})
@@ -4588,7 +4598,7 @@ def _build_monitor_ui(container):
     _runtime_refresh_ms = REFRESH_MS
 
     title_row = tk.Frame(container, bg=UI_THEME["bg"])
-    title_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), 0))
+    title_row.pack(fill=tk.X, padx=(8 if layout_is_1366 else theme_space("space_3", 10)), pady=((2 if layout_is_1366 else theme_space("space_1", 4)), 0))
     title = build_section_title(title_row, "Painel Operacional")
     title.configure(font=theme_font("font_xl", "bold"))
     title.pack(side=tk.LEFT, fill=tk.X, expand=True)
@@ -4599,7 +4609,7 @@ def _build_monitor_ui(container):
     filtered_label.pack(side=tk.RIGHT)
 
     cards_row = tk.Frame(container, bg=UI_THEME["bg"])
-    cards_row.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), 0))
+    cards_row.pack(fill=tk.X, padx=(8 if layout_is_1366 else theme_space("space_3", 10)), pady=((4 if layout_is_1366 else theme_space("space_2", 8)), 0))
     global _ux_cards, _status_bar
     _ux_cards = {
         "ativos": AppMetricCard(cards_row, "Ativos", tone="info", icon="◉"),
@@ -4617,7 +4627,7 @@ def _build_monitor_ui(container):
     for idx, key in enumerate(["ativos", "pendentes", "sem_contato", "avisado"]):
         card = _ux_cards[key]
         right_gap = card_gap if idx < 3 else 0
-        card.grid(row=0, column=idx, padx=(0, right_gap), pady=(0, 0), ipady=11, sticky="nsew")
+        card.grid(row=0, column=idx, padx=(0, right_gap), pady=(0, 0), ipady=(6 if layout_is_1366 else 11), sticky="nsew")
         cards_row.grid_columnconfigure(idx, weight=1, uniform="metric_cards")
         cards_widgets.append(card)
         attach_tooltip(card, cards_tooltips.get(key, ""))
@@ -4662,17 +4672,17 @@ def _build_monitor_ui(container):
         _play_next(0)
 
     consumo_header = tk.Frame(container, bg=UI_THEME["bg"])
-    consumo_header.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(theme_space("space_2", 8), theme_space("space_1", 4)))
+    consumo_header.pack(fill=tk.X, padx=(8 if layout_is_1366 else theme_space("space_3", 10)), pady=((4 if layout_is_1366 else theme_space("space_2", 8)), (2 if layout_is_1366 else theme_space("space_1", 4))))
     consumo_title = build_label(consumo_header, "Consumo por dia", bg=UI_THEME["bg"], font=theme_font("font_lg", "bold"))
     consumo_title.pack(side=tk.LEFT)
 
     consumo_day_var = tk.StringVar(value="")
 
     consumo_graph_frame = tk.Frame(container, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
-    consumo_graph_frame.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, theme_space("space_1", 4)))
+    consumo_graph_frame.pack(fill=tk.X, padx=(8 if layout_is_1366 else theme_space("space_3", 10)), pady=(0, (2 if layout_is_1366 else theme_space("space_1", 4))))
     consumo_breakdown_canvas = None
 
-    consumo_days_canvas = tk.Canvas(consumo_graph_frame, bg=UI_THEME["bg"], height=44, highlightthickness=0, bd=0)
+    consumo_days_canvas = tk.Canvas(consumo_graph_frame, bg=UI_THEME["bg"], height=(34 if layout_is_1366 else 44), highlightthickness=0, bd=0)
     consumo_days_canvas.pack(fill=tk.X, padx=0, pady=(0, theme_space("space_1", 4)))
 
     consumo_breakdown_canvas = None
@@ -5137,7 +5147,7 @@ def _build_monitor_ui(container):
     _feedback_banner = AppFeedbackBanner(container, text="")
 
     records_panel = tk.Frame(container, bg=UI_THEME["surface"])
-    records_panel.pack(fill=tk.BOTH, expand=True, padx=theme_space("space_3", 10), pady=(theme_space("space_1", 4), theme_space("space_1", 4)))
+    records_panel.pack(fill=tk.BOTH, expand=True, padx=(8 if layout_is_1366 else theme_space("space_3", 10)), pady=((2 if layout_is_1366 else theme_space("space_1", 4)), (2 if layout_is_1366 else theme_space("space_1", 4))))
 
     tab_button_bar = tk.Frame(records_panel, bg=UI_THEME["surface"])
     tab_button_bar.pack(fill=tk.X, padx=0, pady=(0, 0))
@@ -5176,8 +5186,8 @@ def _build_monitor_ui(container):
         btn_tab = build_secondary_button(btn_frame, label, lambda i=idx: _select_tab(i), padx=12)
         try:
             btn_tab.configure(
-                font=theme_font("font_md"),
-                pady=theme_space("space_1", 4),
+                font=theme_font("font_sm" if layout_is_1366 else "font_md"),
+                pady=(2 if layout_is_1366 else theme_space("space_1", 4)),
                 bg=tab_button_normal_bg,
                 activebackground=tab_button_normal_bg,
                 highlightbackground=tab_border_color,
