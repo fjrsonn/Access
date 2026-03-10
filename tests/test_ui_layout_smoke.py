@@ -24,6 +24,12 @@ class UILayoutSmokeTests(unittest.TestCase):
         self.assertIn('container_bg = UI_THEME.get("bg"', src)
         self.assertIn('container_bg = UI_THEME.get("light_bg"', src)
 
+
+    def test_main_window_uses_responsive_height_constraints(self):
+        src = pathlib.Path("interfaceone.py").read_text(encoding="utf-8")
+        self.assertIn('window.minsize(900, min(320, max(220, int(screen_h * 0.24))))', src)
+        self.assertIn('height = min(max(220, requested_h), max(220, int(screen_h * 0.46)))', src)
+
     def test_monitor_has_presets_and_status_cards(self):
         src = pathlib.Path("interfacetwo.py").read_text(encoding="utf-8")
         self.assertIn("Salvar preset", src)
