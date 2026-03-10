@@ -24,6 +24,24 @@ class UILayoutSmokeTests(unittest.TestCase):
         self.assertIn('container_bg = UI_THEME.get("bg"', src)
         self.assertIn('container_bg = UI_THEME.get("light_bg"', src)
 
+
+    def test_main_window_uses_responsive_height_constraints(self):
+        src = pathlib.Path("interfaceone.py").read_text(encoding="utf-8")
+        self.assertIn('window.minsize(900, min(320, max(220, int(screen_h * 0.24))))', src)
+        self.assertIn('height = min(max(220, requested_h), max(220, int(screen_h * 0.46)))', src)
+
+
+    def test_monitor_details_panel_is_allocated_and_scrollable(self):
+        src = pathlib.Path("interfacetwo.py").read_text(encoding="utf-8")
+        self.assertIn('control_split.add(details_host, minsize=160, stretch="always")', src)
+        self.assertIn('details_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)', src)
+        self.assertIn('details_scroll.pack(side=tk.RIGHT, fill=tk.Y', src)
+
+    def test_aviso_bar_keeps_compact_height_without_overlap_padding(self):
+        src = pathlib.Path("interfaceone.py").read_text(encoding="utf-8")
+        self.assertIn('self._bar_height = max(26, self.font.metrics("linespace") + 8)', src)
+        self.assertIn('self.pack(in_=container, before=parent_frame, fill=tk.X, pady=(0,2))', src)
+
     def test_monitor_has_presets_and_status_cards(self):
         src = pathlib.Path("interfacetwo.py").read_text(encoding="utf-8")
         self.assertIn("Salvar preset", src)
