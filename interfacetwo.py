@@ -4561,7 +4561,19 @@ def _build_monitor_ui(container):
         layout_is_1366 = False
 
     if layout_is_1366:
-        _log_event("layout_profile", "compact_1366x768_detected", screen_w=screen_w, screen_h=screen_h)
+        report_status("ux_metrics", "OK", stage="compact_1366x768_detected", details={"screen_w": screen_w, "screen_h": screen_h})
+
+    def _should_use_compact_layout() -> bool:
+        try:
+            current_w = int(container.winfo_width() or 0)
+            current_h = int(container.winfo_height() or 0)
+            if current_w > 1 and current_h > 1:
+                return current_w <= 1366 or current_h <= 768
+        except Exception:
+            pass
+        return layout_is_1366
+
+    _layout_state = {"compact": layout_is_1366}
 
     def _should_use_compact_layout() -> bool:
         try:
