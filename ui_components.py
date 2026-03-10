@@ -217,16 +217,37 @@ class AppMetricCard(tk.Frame):
         compact = str(mode).lower().startswith("compact")
         px = theme_space("space_1", 4) if compact else theme_space("space_3", 10)
         py_top = theme_space("space_1", 4)
-        py_bottom = theme_space("space_1", 4) if compact else theme_space("space_1", 4)
+        py_bottom = theme_space("space_1", 4)
+
+        # evita acúmulo de packs em mudanças de densidade
+        for lbl in (self.title_lbl, self.value_lbl, self.trend_lbl, self.capacity_lbl, self.meta_lbl):
+            try:
+                lbl.pack_forget()
+            except Exception:
+                pass
+
+        self.title_lbl.configure(font=theme_font("font_sm", "normal"))
+        self.value_lbl.configure(font=theme_font("font_lg" if compact else "font_xl", "bold"))
+        self.trend_lbl.configure(font=theme_font("font_sm", "normal"))
+        self.capacity_lbl.configure(font=theme_font("font_sm", "normal"))
+        self.meta_lbl.configure(font=theme_font("font_sm", "normal"))
+
         self.title_lbl.pack(in_=self.text_column, fill=tk.X, anchor="w", padx=(0, 0), pady=(py_top, 0))
         self.value_lbl.pack(in_=self.text_column, fill=tk.X, anchor="w", padx=(0, 0), pady=(0, 0))
-        if self._donut_visible:
+
+        if self._donut_visible and not compact:
             self.donut_canvas.pack(fill=tk.BOTH, expand=True)
         else:
             self.donut_canvas.pack_forget()
+
         self.trend_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, 0))
         self.capacity_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, 0))
-        self.meta_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, py_bottom))
+        if compact:
+            # em telas menores remove metadado longo para não cortar card
+            self.meta_lbl.pack_forget()
+        else:
+            self.meta_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, py_bottom))
+
         self._apply_text_wrap()
         self.after_idle(self._draw_card_shadow)
 
