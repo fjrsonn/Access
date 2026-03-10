@@ -1,0 +1,2 @@
+{"timestamp": "2026-03-10 01:07:00", "event": "texto_recebido", "destino": "entrada", "texto_hash": "7e4187e6bdcd", "versao_regras": "v2.0"}
+{"timestamp": "2026-03-10 01:07:00", "event": "texto_classificado", "destino": "dados", "texto_hash": "7e4187e6bdcd", "versao_regras": "v2.0", "motivo": "scores={'orientacoes': 0.0, 'observacoes': 0.7, 'encomendas': 0.0}; escolhido=dados", "score": 0.7, "confianca": 0.889, "ambiguo": true}

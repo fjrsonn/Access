@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-03-10 02:08:43",
+  "action": "ux_metrics",
+  "status": "OK",
+  "stage": "interaction_perf",
+  "details": {
+    "hover_handler_ms": {
+      "count": 74,
+      "p50": 0.499,
+      "p95": 10.343,
+      "p99": 12.731
+    },
+    "refresh_apply_ms": {
+      "count": 5,
+      "p50": 43.392,
+      "p95": 320.59,
+      "p99": 320.59
+    },
+    "records_rendered": 2,
+    "frame_drop_rate": 0.9459
+  }
+}
