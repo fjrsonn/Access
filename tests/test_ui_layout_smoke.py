@@ -43,6 +43,12 @@ class UILayoutSmokeTests(unittest.TestCase):
         self.assertIn("_apply_payload(_filter_state.get(filter_key)", src)
         self.assertIn("filters_auto_reset", src)
 
+    def test_monitor_has_compact_profile_for_1366(self):
+        src = pathlib.Path("interfacetwo.py").read_text(encoding="utf-8")
+        self.assertIn("compact_1366x768_detected", src)
+        self.assertIn('_layout_density_mode = "compacto" if layout_is_1366 else "confortavel"', src)
+        self.assertIn('height=(34 if layout_is_1366 else 44)', src)
+
 
 if __name__ == "__main__":
     unittest.main()
