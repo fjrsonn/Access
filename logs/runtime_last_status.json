@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-03-10 03:29:07",
+  "timestamp": "2026-03-10 03:33:37",
   "action": "ux_metrics",
   "status": "OK",
   "stage": "interaction_perf",
@@ -17,6 +17,6 @@
       "p99": 9.537
     },
     "records_rendered": 2,
-    "frame_drop_rate": 7.8571
+    "frame_drop_rate": 21.2245
   }
 }
