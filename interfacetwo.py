@@ -171,6 +171,10 @@ _metrics_previous_cards = {}
 _last_filter_snapshot = {}
 _filter_auto_apply_after = {}
 _layout_density_mode = "confortavel"
+
+def _is_compact_density() -> bool:
+    return str(_layout_density_mode).lower().startswith("compact")
+
 _operation_mode_enabled = False
 _runtime_refresh_ms = REFRESH_MS
 _cards_last_update_at = None
@@ -1178,7 +1182,10 @@ def _update_status_cards():
                 card.set_value(str(current))
                 card.set_trend(current - previous)
                 card.set_capacity(current, CARD_CAPACITY_LIMITS.get(k, 1000))
-                card.set_meta(f"Atualizado às {now_label} • há 0s")
+                if _is_compact_density():
+                    card.set_meta(f"Atualizado {now_label}")
+                else:
+                    card.set_meta(f"Atualizado às {now_label} • há 0s")
                 card.flash(260)
             except Exception:
                 pass
@@ -1214,7 +1221,10 @@ def _refresh_cards_relative_meta():
             base = str(card.meta_var.get() or "")
             if "• há" in base:
                 base = base.split("• há", 1)[0].strip()
-            card.set_meta(f"{base} • há {elapsed}s")
+            if _is_compact_density():
+                card.set_meta(base)
+            else:
+                card.set_meta(f"{base} • há {elapsed}s")
         except Exception:
             pass
 
@@ -3509,8 +3519,11 @@ def _set_fullscreen(window):
     try:
         screen_w = max(1, int(window.winfo_screenwidth()))
         screen_h = max(1, int(window.winfo_screenheight()))
-        width = max(980, int(screen_w * 0.92))
-        height = max(580, int(screen_h * 0.9))
+        use_compact_geometry = screen_w <= 1366 or screen_h <= 768
+        width_ratio = 0.98 if use_compact_geometry else 0.92
+        height_ratio = 0.96 if use_compact_geometry else 0.9
+        width = max(980, int(screen_w * width_ratio))
+        height = max(580, int(screen_h * height_ratio))
         pos_x = max(0, int((screen_w - width) / 2))
         pos_y = max(0, int((screen_h - height) / 2))
         window.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
@@ -4558,13 +4571,27 @@ def _build_monitor_ui(container):
         layout_is_1366 = False
 
     if layout_is_1366:
-        _log_event("layout_profile", "compact_1366x768_detected", screen_w=screen_w, screen_h=screen_h)
+        report_status("ux_metrics", "OK", stage="compact_1366x768_detected", details={"screen_w": screen_w, "screen_h": screen_h})
+
+    def _should_use_compact_layout() -> bool:
+        try:
+            current_w = int(container.winfo_width() or 0)
+            current_h = int(container.winfo_height() or 0)
+            if current_w > 1 and current_h > 1:
+                return current_w <= 1366 or current_h <= 768
+        except Exception:
+            pass
+        return layout_is_1366
+
+    _layout_state = {"compact": layout_is_1366}
 
     def _apply_density(_mode_label=None):
         global _layout_density_mode
-        _layout_density_mode = "compacto" if layout_is_1366 else "confortavel"
-        rowheight = 26 if layout_is_1366 else 30
-        gap = theme_space("space_1", 4) if layout_is_1366 else theme_space("space_2", 8)
+        compact_mode = _should_use_compact_layout()
+        _layout_state["compact"] = compact_mode
+        _layout_density_mode = "compacto" if compact_mode else "confortavel"
+        rowheight = 24 if compact_mode else 30
+        gap = theme_space("space_1", 3) if compact_mode else theme_space("space_2", 8)
         try:
             ttk.Style(container).configure("Control.Treeview", rowheight=rowheight)
         except Exception:
@@ -4581,19 +4608,47 @@ def _build_monitor_ui(container):
         for card in cards_widgets:
             try:
                 card.set_density(_layout_density_mode)
+                card.grid_configure(ipady=(2 if compact_mode else 11))
+                card.set_donut_visibility(not compact_mode)
             except Exception:
                 pass
         for tree in table_trees:
             try:
-                tree.configure(height=12 if layout_is_1366 else 14)
+                tree.configure(height=10 if compact_mode else 14)
             except Exception:
                 pass
         for w in (btn_top_details, btn_top_export, btn_top_reload, btn_top_clear, btn_top_toggle_filters):
             try:
-                w.configure(padx=(8 if layout_is_1366 else 12), pady=(2 if layout_is_1366 else 4))
+                w.configure(padx=(7 if compact_mode else 12), pady=(1 if compact_mode else 4))
             except Exception:
                 pass
         _persist_ui_state({"layout_density": _layout_density_mode})
+
+    def _bind_responsive_density():
+        resize_after = {"id": None}
+
+        def _on_resize(_event=None):
+            try:
+                if resize_after["id"] is not None:
+                    container.after_cancel(resize_after["id"])
+            except Exception:
+                pass
+
+            def _do_apply():
+                resize_after["id"] = None
+                compact_now = _should_use_compact_layout()
+                if compact_now != _layout_state.get("compact"):
+                    _apply_density()
+
+            try:
+                resize_after["id"] = container.after(120, _do_apply)
+            except Exception:
+                _do_apply()
+
+        try:
+            container.bind("<Configure>", _on_resize, add="+")
+        except Exception:
+            pass
 
     _runtime_refresh_ms = REFRESH_MS
 
@@ -4627,7 +4682,7 @@ def _build_monitor_ui(container):
     for idx, key in enumerate(["ativos", "pendentes", "sem_contato", "avisado"]):
         card = _ux_cards[key]
         right_gap = card_gap if idx < 3 else 0
-        card.grid(row=0, column=idx, padx=(0, right_gap), pady=(0, 0), ipady=(6 if layout_is_1366 else 11), sticky="nsew")
+        card.grid(row=0, column=idx, padx=(0, right_gap), pady=(0, 0), ipady=(2 if layout_is_1366 else 11), sticky="nsew")
         cards_row.grid_columnconfigure(idx, weight=1, uniform="metric_cards")
         cards_widgets.append(card)
         attach_tooltip(card, cards_tooltips.get(key, ""))
@@ -4643,6 +4698,16 @@ def _build_monitor_ui(container):
         _start_days_line_intro(duration_ms=duration_ms * len(order), steps=steps * len(order))
 
         def _animate_donuts_sync():
+            if _is_compact_density():
+                for key in order:
+                    card = _ux_cards.get(key)
+                    if card is None:
+                        continue
+                    try:
+                        card.set_donut_visibility(False)
+                    except Exception:
+                        continue
+                return
             for key in order:
                 card = _ux_cards.get(key)
                 if card is None:
@@ -4843,9 +4908,13 @@ def _build_monitor_ui(container):
                 card.set_value(str(used))
                 card.set_trend(0)
                 card.set_capacity(used, limit)
-                card.set_meta(f"{header_prefix} {day_key} • Usados: {used} • Restantes: {remaining}")
+                if _is_compact_density():
+                    card.set_meta(f"{header_prefix} {day_key} • U:{used} R:{remaining}")
+                    card.set_donut_visibility(False)
+                else:
+                    card.set_meta(f"{header_prefix} {day_key} • Usados: {used} • Restantes: {remaining}")
+                    card.animate_capacity_fill()
                 card.flash(220)
-                card.animate_capacity_fill()
             except Exception:
                 continue
 
@@ -5477,6 +5546,7 @@ def _build_monitor_ui(container):
         _announce_feedback("Use Ctrl+F para busca e Alt+1..5 para trocar abas", "info")
 
     _apply_density()
+    _bind_responsive_density()
     try:
         for target in monitor_widgets:
             _populate_text(target, info_label)
