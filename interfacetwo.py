@@ -3509,8 +3509,11 @@ def _set_fullscreen(window):
     try:
         screen_w = max(1, int(window.winfo_screenwidth()))
         screen_h = max(1, int(window.winfo_screenheight()))
-        width = max(980, int(screen_w * 0.92))
-        height = max(580, int(screen_h * 0.9))
+        use_compact_geometry = screen_w <= 1366 or screen_h <= 768
+        width_ratio = 0.98 if use_compact_geometry else 0.92
+        height_ratio = 0.96 if use_compact_geometry else 0.9
+        width = max(980, int(screen_w * width_ratio))
+        height = max(580, int(screen_h * height_ratio))
         pos_x = max(0, int((screen_w - width) / 2))
         pos_y = max(0, int((screen_h - height) / 2))
         window.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
@@ -4560,11 +4563,25 @@ def _build_monitor_ui(container):
     if layout_is_1366:
         _log_event("layout_profile", "compact_1366x768_detected", screen_w=screen_w, screen_h=screen_h)
 
+    def _should_use_compact_layout() -> bool:
+        try:
+            current_w = int(container.winfo_width() or 0)
+            current_h = int(container.winfo_height() or 0)
+            if current_w > 1 and current_h > 1:
+                return current_w <= 1366 or current_h <= 768
+        except Exception:
+            pass
+        return layout_is_1366
+
+    _layout_state = {"compact": layout_is_1366}
+
     def _apply_density(_mode_label=None):
         global _layout_density_mode
-        _layout_density_mode = "compacto" if layout_is_1366 else "confortavel"
-        rowheight = 26 if layout_is_1366 else 30
-        gap = theme_space("space_1", 4) if layout_is_1366 else theme_space("space_2", 8)
+        compact_mode = _should_use_compact_layout()
+        _layout_state["compact"] = compact_mode
+        _layout_density_mode = "compacto" if compact_mode else "confortavel"
+        rowheight = 24 if compact_mode else 30
+        gap = theme_space("space_1", 3) if compact_mode else theme_space("space_2", 8)
         try:
             ttk.Style(container).configure("Control.Treeview", rowheight=rowheight)
         except Exception:
@@ -4585,15 +4602,41 @@ def _build_monitor_ui(container):
                 pass
         for tree in table_trees:
             try:
-                tree.configure(height=12 if layout_is_1366 else 14)
+                tree.configure(height=10 if compact_mode else 14)
             except Exception:
                 pass
         for w in (btn_top_details, btn_top_export, btn_top_reload, btn_top_clear, btn_top_toggle_filters):
             try:
-                w.configure(padx=(8 if layout_is_1366 else 12), pady=(2 if layout_is_1366 else 4))
+                w.configure(padx=(7 if compact_mode else 12), pady=(1 if compact_mode else 4))
             except Exception:
                 pass
         _persist_ui_state({"layout_density": _layout_density_mode})
+
+    def _bind_responsive_density():
+        resize_after = {"id": None}
+
+        def _on_resize(_event=None):
+            try:
+                if resize_after["id"] is not None:
+                    container.after_cancel(resize_after["id"])
+            except Exception:
+                pass
+
+            def _do_apply():
+                resize_after["id"] = None
+                compact_now = _should_use_compact_layout()
+                if compact_now != _layout_state.get("compact"):
+                    _apply_density()
+
+            try:
+                resize_after["id"] = container.after(120, _do_apply)
+            except Exception:
+                _do_apply()
+
+        try:
+            container.bind("<Configure>", _on_resize, add="+")
+        except Exception:
+            pass
 
     _runtime_refresh_ms = REFRESH_MS
 
@@ -5477,6 +5520,7 @@ def _build_monitor_ui(container):
         _announce_feedback("Use Ctrl+F para busca e Alt+1..5 para trocar abas", "info")
 
     _apply_density()
+    _bind_responsive_density()
     try:
         for target in monitor_widgets:
             _populate_text(target, info_label)
