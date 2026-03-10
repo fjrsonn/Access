@@ -3509,12 +3509,12 @@ def _set_fullscreen(window):
     try:
         screen_w = max(1, int(window.winfo_screenwidth()))
         screen_h = max(1, int(window.winfo_screenheight()))
-        width = max(980, int(screen_w * 0.92))
-        height = max(580, int(screen_h * 0.9))
+        width = max(1100, int(screen_w * 0.98))
+        height = max(700, int(screen_h * 0.98))
         pos_x = max(0, int((screen_w - width) / 2))
         pos_y = max(0, int((screen_h - height) / 2))
         window.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
-        window.minsize(980, 580)
+        window.minsize(1100, 700)
     except Exception:
         pass
 
@@ -4552,9 +4552,14 @@ def _build_monitor_ui(container):
 
     def _apply_density(_mode_label=None):
         global _layout_density_mode
-        _layout_density_mode = "confortavel"
-        rowheight = 30
-        gap = theme_space("space_2", 8)
+        try:
+            container_h = int(container.winfo_height())
+        except Exception:
+            container_h = 0
+        compact_mode = container_h > 0 and container_h < 860
+        _layout_density_mode = "compacto" if compact_mode else "confortavel"
+        rowheight = 26 if compact_mode else 30
+        gap = theme_space("space_1", 4) if compact_mode else theme_space("space_2", 8)
         try:
             ttk.Style(container).configure("Control.Treeview", rowheight=rowheight)
         except Exception:
@@ -4575,12 +4580,12 @@ def _build_monitor_ui(container):
                 pass
         for tree in table_trees:
             try:
-                tree.configure(height=14)
+                tree.configure(height=11 if compact_mode else 14)
             except Exception:
                 pass
         for w in (btn_top_details, btn_top_export, btn_top_reload, btn_top_clear, btn_top_toggle_filters):
             try:
-                w.configure(padx=12, pady=4)
+                w.configure(padx=10 if compact_mode else 12, pady=3 if compact_mode else 4)
             except Exception:
                 pass
         _persist_ui_state({"layout_density": _layout_density_mode})
@@ -5465,6 +5470,25 @@ def _build_monitor_ui(container):
 
     if not prefs.get("onboarding_seen"):
         _announce_feedback("Use Ctrl+F para busca e Alt+1..5 para trocar abas", "info")
+
+    _density_resize_after = {"id": None}
+
+    def _schedule_density_refresh(_event=None):
+        try:
+            pending = _density_resize_after.get("id")
+            if pending:
+                container.after_cancel(pending)
+        except Exception:
+            pass
+        try:
+            _density_resize_after["id"] = container.after(120, _apply_density)
+        except Exception:
+            pass
+
+    try:
+        container.bind("<Configure>", _schedule_density_refresh, add="+")
+    except Exception:
+        pass
 
     _apply_density()
     try:
