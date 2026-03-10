@@ -171,6 +171,10 @@ _metrics_previous_cards = {}
 _last_filter_snapshot = {}
 _filter_auto_apply_after = {}
 _layout_density_mode = "confortavel"
+
+def _is_compact_density() -> bool:
+    return str(_layout_density_mode).lower().startswith("compact")
+
 _operation_mode_enabled = False
 _runtime_refresh_ms = REFRESH_MS
 _cards_last_update_at = None
@@ -1178,7 +1182,10 @@ def _update_status_cards():
                 card.set_value(str(current))
                 card.set_trend(current - previous)
                 card.set_capacity(current, CARD_CAPACITY_LIMITS.get(k, 1000))
-                card.set_meta(f"Atualizado às {now_label} • há 0s")
+                if _is_compact_density():
+                    card.set_meta(f"Atualizado {now_label}")
+                else:
+                    card.set_meta(f"Atualizado às {now_label} • há 0s")
                 card.flash(260)
             except Exception:
                 pass
@@ -1214,7 +1221,10 @@ def _refresh_cards_relative_meta():
             base = str(card.meta_var.get() or "")
             if "• há" in base:
                 base = base.split("• há", 1)[0].strip()
-            card.set_meta(f"{base} • há {elapsed}s")
+            if _is_compact_density():
+                card.set_meta(base)
+            else:
+                card.set_meta(f"{base} • há {elapsed}s")
         except Exception:
             pass
 
@@ -4575,18 +4585,6 @@ def _build_monitor_ui(container):
 
     _layout_state = {"compact": layout_is_1366}
 
-    def _should_use_compact_layout() -> bool:
-        try:
-            current_w = int(container.winfo_width() or 0)
-            current_h = int(container.winfo_height() or 0)
-            if current_w > 1 and current_h > 1:
-                return current_w <= 1366 or current_h <= 768
-        except Exception:
-            pass
-        return layout_is_1366
-
-    _layout_state = {"compact": layout_is_1366}
-
     def _apply_density(_mode_label=None):
         global _layout_density_mode
         compact_mode = _should_use_compact_layout()
@@ -4610,6 +4608,8 @@ def _build_monitor_ui(container):
         for card in cards_widgets:
             try:
                 card.set_density(_layout_density_mode)
+                card.grid_configure(ipady=(2 if compact_mode else 11))
+                card.set_donut_visibility(not compact_mode)
             except Exception:
                 pass
         for tree in table_trees:
@@ -4682,7 +4682,7 @@ def _build_monitor_ui(container):
     for idx, key in enumerate(["ativos", "pendentes", "sem_contato", "avisado"]):
         card = _ux_cards[key]
         right_gap = card_gap if idx < 3 else 0
-        card.grid(row=0, column=idx, padx=(0, right_gap), pady=(0, 0), ipady=(6 if layout_is_1366 else 11), sticky="nsew")
+        card.grid(row=0, column=idx, padx=(0, right_gap), pady=(0, 0), ipady=(2 if layout_is_1366 else 11), sticky="nsew")
         cards_row.grid_columnconfigure(idx, weight=1, uniform="metric_cards")
         cards_widgets.append(card)
         attach_tooltip(card, cards_tooltips.get(key, ""))
@@ -4698,6 +4698,16 @@ def _build_monitor_ui(container):
         _start_days_line_intro(duration_ms=duration_ms * len(order), steps=steps * len(order))
 
         def _animate_donuts_sync():
+            if _is_compact_density():
+                for key in order:
+                    card = _ux_cards.get(key)
+                    if card is None:
+                        continue
+                    try:
+                        card.set_donut_visibility(False)
+                    except Exception:
+                        continue
+                return
             for key in order:
                 card = _ux_cards.get(key)
                 if card is None:
@@ -4898,9 +4908,13 @@ def _build_monitor_ui(container):
                 card.set_value(str(used))
                 card.set_trend(0)
                 card.set_capacity(used, limit)
-                card.set_meta(f"{header_prefix} {day_key} • Usados: {used} • Restantes: {remaining}")
+                if _is_compact_density():
+                    card.set_meta(f"{header_prefix} {day_key} • U:{used} R:{remaining}")
+                    card.set_donut_visibility(False)
+                else:
+                    card.set_meta(f"{header_prefix} {day_key} • Usados: {used} • Restantes: {remaining}")
+                    card.animate_capacity_fill()
                 card.flash(220)
-                card.animate_capacity_fill()
             except Exception:
                 continue
 
