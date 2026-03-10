@@ -2958,10 +2958,12 @@ class AvisoBar(tk.Frame):
             self.font = tkfont.Font(font=self.entry_widget.cget("font"))
         except Exception:
             self.font = tkfont.Font(family="Segoe UI", size=11)
-        self.config(bg=UI_THEME.get("surface_alt", "#2D2D2D"), bd=1, relief="flat", highlightthickness=1, highlightbackground=UI_THEME.get("border", "#3C3C3C"))
+        self._bar_height = max(26, self.font.metrics("linespace") + 8)
+        self.config(bg=UI_THEME.get("surface_alt", "#2D2D2D"), bd=1, relief="flat", highlightthickness=1, highlightbackground=UI_THEME.get("border", "#3C3C3C"), height=self._bar_height)
+        self.pack_propagate(False)
         self.msg_var = tk.StringVar()
         self.lbl = tk.Label(self, textvariable=self.msg_var, anchor="w", font=self.font, bd=0)
-        self.lbl.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=(2,2))
+        self.lbl.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=(1,1))
         self._current_bar_bg = UI_THEME.get("surface_alt", "#2D2D2D")
         self._active_avisos = []
         self._idx = 0
@@ -2970,7 +2972,7 @@ class AvisoBar(tk.Frame):
         self._paused = False
         self._counter_var = tk.StringVar(value="")
         self.lbl_counter = tk.Label(self, textvariable=self._counter_var, anchor="e", font=theme_font("font_sm"), bd=0)
-        self.lbl_counter.pack(side=tk.RIGHT, padx=(0, 4))
+        self.lbl_counter.pack(side=tk.RIGHT, padx=(0, 4), pady=(1,1))
         for w in (self, self.lbl, self.lbl_counter):
             try:
                 w.bind("<Enter>", lambda _e: self._set_paused(True), add="+")
@@ -3090,15 +3092,15 @@ class AvisoBar(tk.Frame):
             container = getattr(parent_frame, "master", None) or parent_frame
             if container and parent_frame:
                 try:
-                    self.pack(in_=container, before=parent_frame, fill=tk.X, pady=(0,4))
+                    self.pack(in_=container, before=parent_frame, fill=tk.X, pady=(0,2))
                 except Exception:
-                    try: self.pack(in_=container, fill=tk.X, pady=(0,4))
-                    except: self.pack(fill=tk.X, pady=(0,4))
+                    try: self.pack(in_=container, fill=tk.X, pady=(0,2))
+                    except: self.pack(fill=tk.X, pady=(0,2))
             else:
-                self.pack(fill=tk.X, pady=(0,4))
+                self.pack(fill=tk.X, pady=(0,2))
         except Exception:
             try:
-                self.pack(fill=tk.X, pady=(0,4))
+                self.pack(fill=tk.X, pady=(0,2))
             except:
                 pass
         self._visible = True
@@ -3388,14 +3390,14 @@ class WarningBar(tk.Frame):
             container = getattr(parent_frame, "master", None) or parent_frame
             if self.aviso_bar and getattr(self.aviso_bar, "_visible", False):
                 try:
-                    self.pack(in_=container, after=self.aviso_bar, fill=tk.X, pady=(0,4))
+                    self.pack(in_=container, after=self.aviso_bar, fill=tk.X, pady=(0,2))
                 except Exception:
-                    self.pack(in_=container, before=parent_frame, fill=tk.X, pady=(0,4))
+                    self.pack(in_=container, before=parent_frame, fill=tk.X, pady=(0,2))
             else:
-                self.pack(in_=container, before=parent_frame, fill=tk.X, pady=(0,4))
+                self.pack(in_=container, before=parent_frame, fill=tk.X, pady=(0,2))
         except Exception:
             try:
-                self.pack(fill=tk.X, pady=(0,4))
+                self.pack(fill=tk.X, pady=(0,2))
             except Exception:
                 pass
         self._visible = True
@@ -3423,26 +3425,28 @@ class WarningBar(tk.Frame):
 # ---------------- UI bootstrap ----------------
 
 def _configure_adaptive_main_window(window):
-    """Inicializa a janela mais horizontal e com baixa altura."""
+    """Inicializa a janela responsiva sem cortar os controles em telas menores."""
     try:
         window.update_idletasks()
         screen_w = max(1, int(window.winfo_screenwidth()))
         screen_h = max(1, int(window.winfo_screenheight()))
 
-        # horizontal maior + altura menor
-        width = max(980, min(int(screen_w * 0.77), 1490))
-        height = max(50, min(int(screen_h * 0.06), 75))
+        requested_w = max(900, int(window.winfo_reqwidth() + 120))
+        requested_h = max(180, int(window.winfo_reqheight() + 56))
+
+        width = min(max(requested_w, int(screen_w * 0.62)), max(900, int(screen_w * 0.95)))
+        height = min(max(requested_h, int(screen_h * 0.20)), max(220, int(screen_h * 0.46)))
 
         pos_x = max(0, int((screen_w - width) / 2))
         pos_y = max(0, int((screen_h - height) / 2))
         window.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
-        window.minsize(900, 50)
+        window.minsize(900, min(320, max(220, int(screen_h * 0.24))))
     except Exception:
         pass
 
 
 def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: int = 1200):
-    """Só adapta após primeiro registro e sem recentralizar a janela automaticamente."""
+    """Refina tamanho da janela após novos registros sem reduzir demais a área útil."""
     state = {"ticks": 0, "armed": False, "baseline_total": 0}
 
     def _safe_count_records(path):
@@ -3485,10 +3489,10 @@ def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: in
 
             target = anchor_widget if anchor_widget is not None and anchor_widget.winfo_exists() else window
             requested_w = int(target.winfo_reqwidth() + 240)
-            requested_h = int(target.winfo_reqheight() + 4)
+            requested_h = int(target.winfo_reqheight() + 64)
 
             width = min(max(900, requested_w), max(900, int(screen_w * 0.78)))
-            height = min(max(50, requested_h), max(50, int(screen_h * 0.08)))
+            height = min(max(220, requested_h), max(220, int(screen_h * 0.46)))
 
             try:
                 x = max(0, int(window.winfo_x()))
