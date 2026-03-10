@@ -4549,10 +4549,12 @@ def _build_monitor_ui(container):
 
     table_trees = []
     cards_widgets = []
+    control_splitters = []
 
     def _apply_density(_mode_label=None):
         global _layout_density_mode
-        _layout_density_mode = "confortavel"
+        current_h = max(1, int(container.winfo_height()))
+        _layout_density_mode = "compacto" if current_h < 760 else "confortavel"
         rowheight = 30
         gap = theme_space("space_2", 8)
         try:
@@ -4571,6 +4573,7 @@ def _build_monitor_ui(container):
         for card in cards_widgets:
             try:
                 card.set_density(_layout_density_mode)
+                card.set_donut_visibility(_layout_density_mode != "compacto")
             except Exception:
                 pass
         for tree in table_trees:
@@ -4617,7 +4620,7 @@ def _build_monitor_ui(container):
     for idx, key in enumerate(["ativos", "pendentes", "sem_contato", "avisado"]):
         card = _ux_cards[key]
         right_gap = card_gap if idx < 3 else 0
-        card.grid(row=0, column=idx, padx=(0, right_gap), pady=(0, 0), ipady=11, sticky="nsew")
+        card.grid(row=0, column=idx, padx=(0, right_gap), pady=(0, 0), ipady=4, sticky="nsew")
         cards_row.grid_columnconfigure(idx, weight=1, uniform="metric_cards")
         cards_widgets.append(card)
         attach_tooltip(card, cards_tooltips.get(key, ""))
@@ -5355,13 +5358,14 @@ def _build_monitor_ui(container):
             control_split.pack(fill=tk.BOTH, expand=True, padx=0, pady=(0, theme_space("space_2", 8)))
             records_host = tk.Frame(control_split, bg=UI_THEME["surface"])
             details_host = tk.Frame(control_split, bg=UI_THEME["bg"])
-            control_split.add(records_host, minsize=320, stretch="always")
-            control_split.add(details_host, minsize=64, stretch="never")
+            control_split.add(records_host, minsize=300, stretch="always")
+            control_split.add(details_host, minsize=160, stretch="always")
+            control_splitters.append(control_split)
 
             def _prioritize_details(splitter=control_split):
                 try:
                     total_h = max(splitter.winfo_height(), 1)
-                    target_details_h = max(64, min(84, int(total_h * 0.10)))
+                    target_details_h = max(160, min(260, int(total_h * 0.28)))
                     splitter.sash_place(0, 0, max(1, total_h - target_details_h))
                 except Exception:
                     pass
@@ -5456,7 +5460,18 @@ def _build_monitor_ui(container):
                 font=theme_font("font_md"),
                 height=3,
             )
-            details_text.pack(side=tk.LEFT, fill=tk.X, expand=False)
+            details_scroll = _ChatGPTLikeScrollbar(
+                details_panel,
+                width=10,
+                command=details_text.yview,
+                track_bg=UI_THEME.get("bg", "#0F1115"),
+                thumb_bg=UI_THEME.get("text", "#E6EDF3"),
+                thumb_hover_bg=UI_THEME.get("focus_text", "#FFFFFF"),
+            )
+            details_text.configure(yscrollcommand=details_scroll.set)
+            _bind_scrollbar_drag_behavior(details_scroll, details_text)
+            details_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            details_scroll.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, theme_space("space_2", 8)), pady=theme_space("space_2", 8))
             details_text.insert("1.0", "Selecione um registro para ver detalhes.")
             details_text.config(state="disabled")
             _control_details_var[text_widget] = details_text
@@ -5476,6 +5491,29 @@ def _build_monitor_ui(container):
         container.after(3000, _play_metric_cards_intro_animation)
     except Exception:
         pass
+    def _adapt_monitor_layout(_event=None):
+        try:
+            _apply_density()
+            for splitter in control_splitters:
+                try:
+                    total_h = max(splitter.winfo_height(), 1)
+                    target_details_h = max(160, min(260, int(total_h * 0.28)))
+                    splitter.sash_place(0, 0, max(1, total_h - target_details_h))
+                except Exception:
+                    continue
+        except Exception:
+            return
+
+    try:
+        container.bind("<Configure>", _adapt_monitor_layout, add="+")
+    except Exception:
+        pass
+
+    try:
+        container.after(120, _adapt_monitor_layout)
+    except Exception:
+        pass
+
     _update_status_cards()
     return monitor_widgets, info_label
 

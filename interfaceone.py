@@ -2958,10 +2958,12 @@ class AvisoBar(tk.Frame):
             self.font = tkfont.Font(font=self.entry_widget.cget("font"))
         except Exception:
             self.font = tkfont.Font(family="Segoe UI", size=11)
-        self.config(bg=UI_THEME.get("surface_alt", "#2D2D2D"), bd=1, relief="flat", highlightthickness=1, highlightbackground=UI_THEME.get("border", "#3C3C3C"))
+        self._bar_height = max(26, self.font.metrics("linespace") + 8)
+        self.config(bg=UI_THEME.get("surface_alt", "#2D2D2D"), bd=1, relief="flat", highlightthickness=1, highlightbackground=UI_THEME.get("border", "#3C3C3C"), height=self._bar_height)
+        self.pack_propagate(False)
         self.msg_var = tk.StringVar()
         self.lbl = tk.Label(self, textvariable=self.msg_var, anchor="w", font=self.font, bd=0)
-        self.lbl.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=(2,2))
+        self.lbl.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(6,6), pady=(1,1))
         self._current_bar_bg = UI_THEME.get("surface_alt", "#2D2D2D")
         self._active_avisos = []
         self._idx = 0
@@ -2970,7 +2972,7 @@ class AvisoBar(tk.Frame):
         self._paused = False
         self._counter_var = tk.StringVar(value="")
         self.lbl_counter = tk.Label(self, textvariable=self._counter_var, anchor="e", font=theme_font("font_sm"), bd=0)
-        self.lbl_counter.pack(side=tk.RIGHT, padx=(0, 4))
+        self.lbl_counter.pack(side=tk.RIGHT, padx=(0, 4), pady=(1,1))
         for w in (self, self.lbl, self.lbl_counter):
             try:
                 w.bind("<Enter>", lambda _e: self._set_paused(True), add="+")
@@ -3090,15 +3092,15 @@ class AvisoBar(tk.Frame):
             container = getattr(parent_frame, "master", None) or parent_frame
             if container and parent_frame:
                 try:
-                    self.pack(in_=container, before=parent_frame, fill=tk.X, pady=(0,4))
+                    self.pack(in_=container, before=parent_frame, fill=tk.X, pady=(0,2))
                 except Exception:
-                    try: self.pack(in_=container, fill=tk.X, pady=(0,4))
-                    except: self.pack(fill=tk.X, pady=(0,4))
+                    try: self.pack(in_=container, fill=tk.X, pady=(0,2))
+                    except: self.pack(fill=tk.X, pady=(0,2))
             else:
-                self.pack(fill=tk.X, pady=(0,4))
+                self.pack(fill=tk.X, pady=(0,2))
         except Exception:
             try:
-                self.pack(fill=tk.X, pady=(0,4))
+                self.pack(fill=tk.X, pady=(0,2))
             except:
                 pass
         self._visible = True
@@ -3388,14 +3390,14 @@ class WarningBar(tk.Frame):
             container = getattr(parent_frame, "master", None) or parent_frame
             if self.aviso_bar and getattr(self.aviso_bar, "_visible", False):
                 try:
-                    self.pack(in_=container, after=self.aviso_bar, fill=tk.X, pady=(0,4))
+                    self.pack(in_=container, after=self.aviso_bar, fill=tk.X, pady=(0,2))
                 except Exception:
-                    self.pack(in_=container, before=parent_frame, fill=tk.X, pady=(0,4))
+                    self.pack(in_=container, before=parent_frame, fill=tk.X, pady=(0,2))
             else:
-                self.pack(in_=container, before=parent_frame, fill=tk.X, pady=(0,4))
+                self.pack(in_=container, before=parent_frame, fill=tk.X, pady=(0,2))
         except Exception:
             try:
-                self.pack(fill=tk.X, pady=(0,4))
+                self.pack(fill=tk.X, pady=(0,2))
             except Exception:
                 pass
         self._visible = True
