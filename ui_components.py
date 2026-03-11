@@ -103,6 +103,7 @@ class AppMetricCard(tk.Frame):
         self.trend_var = tk.StringVar(value="→ estável")
         self.capacity_var = tk.StringVar(value="Consumido 0% • 0 usados • 0 restantes")
         self._capacity_percent = 0.0
+        self._capacity_suffix = ""
         self._card_shadow_shift_x = 1.8
         self._card_shadow_shift_y = 2.4
         self._card_shadow_steps = 7
@@ -229,7 +230,10 @@ class AppMetricCard(tk.Frame):
             self.donut_wrap.pack_forget()
         self.trend_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, 0))
         self.capacity_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, 0))
-        self.meta_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, py_bottom))
+        if compact:
+            self.meta_lbl.pack_forget()
+        else:
+            self.meta_lbl.pack(fill=tk.X, anchor="w", padx=px, pady=(0, py_bottom))
         self._apply_text_wrap()
         self.after_idle(self._draw_card_shadow)
 
@@ -538,13 +542,16 @@ class AppMetricCard(tk.Frame):
         if self._value_revealed:
             self.value_var.set(self._target_value_text)
 
-    def set_trend(self, delta: int):
+    def set_trend(self, delta: int, detail: str | None = None):
         if delta > 0:
-            self.trend_var.set(f"↑ +{delta} vs último ciclo")
+            base = f"↑ +{delta} vs último ciclo"
         elif delta < 0:
-            self.trend_var.set(f"↓ {delta} vs último ciclo")
+            base = f"↓ {delta} vs último ciclo"
         else:
-            self.trend_var.set("→ estável")
+            base = "→ estável"
+        if detail:
+            base = f"{base} • {detail}"
+        self.trend_var.set(base)
 
     def set_meta(self, text: str):
         self.meta_var.set(str(text))
@@ -562,10 +569,14 @@ class AppMetricCard(tk.Frame):
         self._capacity_consumed_n = consumed_n
         self._capacity_limit_n = limit_n
         self._capacity_percent = max(0.0, min(1.0, consumed_n / float(limit_n)))
-        self.capacity_var.set(
-            f"Consumido {int(round(self._capacity_percent * 100))}% • {consumed_n} usados • {remaining} restantes"
-        )
+        base_text = f"Consumido {int(round(self._capacity_percent * 100))}% • {consumed_n} usados • {remaining} restantes"
+        suffix = str(self._capacity_suffix or "").strip()
+        self.capacity_var.set(f"{base_text} • {suffix}" if suffix else base_text)
         self._draw_donut()
+
+    def set_capacity_suffix(self, suffix: str | None = None):
+        self._capacity_suffix = str(suffix or "").strip()
+        self.set_capacity(self._capacity_consumed_n, self._capacity_limit_n)
 
 
 
