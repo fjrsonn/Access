@@ -5537,7 +5537,7 @@ def _build_monitor_ui(container):
                 padx=theme_space("space_3", 10),
                 pady=theme_space("space_1", 4),
                 font=theme_font("font_md"),
-                height=3,
+                height=(4 if layout_is_1366 else 3),
             )
             details_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
             details_text.insert("1.0", "Selecione um registro para ver detalhes.")
