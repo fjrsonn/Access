@@ -4615,7 +4615,7 @@ def _build_monitor_ui(container):
             try:
                 card.set_density(_layout_density_mode)
                 card.grid_configure(ipady=(2 if compact_mode else 11))
-                card.set_donut_visibility(not compact_mode)
+                card.set_donut_visibility(True)
             except Exception:
                 pass
         for tree in table_trees:
@@ -4693,7 +4693,7 @@ def _build_monitor_ui(container):
         cards_widgets.append(card)
         attach_tooltip(card, cards_tooltips.get(key, ""))
         try:
-            card.set_donut_visibility(False)
+            card.set_donut_visibility(True)
         except Exception:
             pass
 
@@ -4704,16 +4704,6 @@ def _build_monitor_ui(container):
         _start_days_line_intro(duration_ms=duration_ms * len(order), steps=steps * len(order))
 
         def _animate_donuts_sync():
-            if _is_compact_density():
-                for key in order:
-                    card = _ux_cards.get(key)
-                    if card is None:
-                        continue
-                    try:
-                        card.set_donut_visibility(False)
-                    except Exception:
-                        continue
-                return
             for key in order:
                 card = _ux_cards.get(key)
                 if card is None:
@@ -4919,7 +4909,7 @@ def _build_monitor_ui(container):
                 card.set_capacity(used, limit)
                 if _is_compact_density():
                     card.set_meta("")
-                    card.set_donut_visibility(False)
+                    card.set_donut_visibility(True)
                 else:
                     card.set_meta(f"{header_prefix} {day_key} • Usados: {used} • Restantes: {remaining}")
                     card.animate_capacity_fill()
@@ -5443,17 +5433,17 @@ def _build_monitor_ui(container):
             control_split.pack(fill=tk.BOTH, expand=True, padx=0, pady=(0, theme_space("space_2", 8)))
             records_host = tk.Frame(control_split, bg=UI_THEME["surface"])
             details_host = tk.Frame(control_split, bg=UI_THEME["bg"])
-            records_min_h = 220 if layout_is_1366 else 320
-            details_min_h = 110 if layout_is_1366 else 64
+            records_min_h = 260 if layout_is_1366 else 320
+            details_min_h = 72 if layout_is_1366 else 64
             control_split.add(records_host, minsize=records_min_h, stretch="always")
             control_split.add(details_host, minsize=details_min_h, stretch="always")
 
             def _prioritize_details(splitter=control_split):
                 try:
                     total_h = max(splitter.winfo_height(), 1)
-                    target_min = 110 if layout_is_1366 else 64
-                    target_max = 140 if layout_is_1366 else 84
-                    target_ratio = 0.18 if layout_is_1366 else 0.10
+                    target_min = 72 if layout_is_1366 else 64
+                    target_max = 94 if layout_is_1366 else 84
+                    target_ratio = 0.12 if layout_is_1366 else 0.10
                     target_details_h = max(target_min, min(target_max, int(total_h * target_ratio)))
                     splitter.sash_place(0, 0, max(1, total_h - target_details_h))
                 except Exception:
