@@ -1181,6 +1181,8 @@ def _update_status_cards():
                 previous = int(_metrics_previous_cards.get(k, current))
                 card.set_value(str(current))
                 card.set_trend(current - previous)
+                if hasattr(card, "set_capacity_suffix"):
+                    card.set_capacity_suffix("" if _is_compact_density() else "há 0s")
                 card.set_capacity(current, CARD_CAPACITY_LIMITS.get(k, 1000))
                 if _is_compact_density():
                     card.set_meta(f"Atualizado {now_label}")
@@ -1223,8 +1225,12 @@ def _refresh_cards_relative_meta():
                 base = base.split("• há", 1)[0].strip()
             if _is_compact_density():
                 card.set_meta(base)
+                if hasattr(card, "set_capacity_suffix"):
+                    card.set_capacity_suffix(f"há {elapsed}s")
             else:
                 card.set_meta(f"{base} • há {elapsed}s")
+                if hasattr(card, "set_capacity_suffix"):
+                    card.set_capacity_suffix("")
         except Exception:
             pass
 
@@ -4906,10 +4912,13 @@ def _build_monitor_ui(container):
             limit = int(item.get("limit", 1) or 1)
             try:
                 card.set_value(str(used))
-                card.set_trend(0)
+                trend_detail = day_key if _is_compact_density() and not show_total else None
+                card.set_trend(0, detail=trend_detail)
+                if hasattr(card, "set_capacity_suffix"):
+                    card.set_capacity_suffix("há 0s" if _is_compact_density() else "")
                 card.set_capacity(used, limit)
                 if _is_compact_density():
-                    card.set_meta(f"{header_prefix} {day_key} • U:{used} R:{remaining}")
+                    card.set_meta("")
                     card.set_donut_visibility(False)
                 else:
                     card.set_meta(f"{header_prefix} {day_key} • Usados: {used} • Restantes: {remaining}")
@@ -5434,13 +5443,18 @@ def _build_monitor_ui(container):
             control_split.pack(fill=tk.BOTH, expand=True, padx=0, pady=(0, theme_space("space_2", 8)))
             records_host = tk.Frame(control_split, bg=UI_THEME["surface"])
             details_host = tk.Frame(control_split, bg=UI_THEME["bg"])
-            control_split.add(records_host, minsize=320, stretch="always")
-            control_split.add(details_host, minsize=64, stretch="never")
+            records_min_h = 190 if layout_is_1366 else 320
+            details_min_h = 130 if layout_is_1366 else 64
+            control_split.add(records_host, minsize=records_min_h, stretch="always")
+            control_split.add(details_host, minsize=details_min_h, stretch="always")
 
             def _prioritize_details(splitter=control_split):
                 try:
                     total_h = max(splitter.winfo_height(), 1)
-                    target_details_h = max(64, min(84, int(total_h * 0.10)))
+                    target_min = 130 if layout_is_1366 else 64
+                    target_max = 200 if layout_is_1366 else 84
+                    target_ratio = 0.27 if layout_is_1366 else 0.10
+                    target_details_h = max(target_min, min(target_max, int(total_h * target_ratio)))
                     splitter.sash_place(0, 0, max(1, total_h - target_details_h))
                 except Exception:
                     pass
@@ -5533,9 +5547,9 @@ def _build_monitor_ui(container):
                 padx=theme_space("space_3", 10),
                 pady=theme_space("space_1", 4),
                 font=theme_font("font_md"),
-                height=3,
+                height=(5 if layout_is_1366 else 3),
             )
-            details_text.pack(side=tk.LEFT, fill=tk.X, expand=False)
+            details_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
             details_text.insert("1.0", "Selecione um registro para ver detalhes.")
             details_text.config(state="disabled")
             _control_details_var[text_widget] = details_text
