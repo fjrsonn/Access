@@ -4572,7 +4572,7 @@ def _build_monitor_ui(container):
     try:
         screen_w = int(container.winfo_screenwidth() or 0)
         screen_h = int(container.winfo_screenheight() or 0)
-        layout_is_1366 = screen_w <= 1366 or screen_h <= 768
+        layout_is_1366 = screen_w <= 1366 and screen_h <= 768
     except Exception:
         layout_is_1366 = False
 
@@ -4584,7 +4584,7 @@ def _build_monitor_ui(container):
             current_w = int(container.winfo_width() or 0)
             current_h = int(container.winfo_height() or 0)
             if current_w > 1 and current_h > 1:
-                return current_w <= 1366 or current_h <= 768
+                return current_w <= 1366 and current_h <= 768
         except Exception:
             pass
         return layout_is_1366
@@ -5443,17 +5443,17 @@ def _build_monitor_ui(container):
             control_split.pack(fill=tk.BOTH, expand=True, padx=0, pady=(0, theme_space("space_2", 8)))
             records_host = tk.Frame(control_split, bg=UI_THEME["surface"])
             details_host = tk.Frame(control_split, bg=UI_THEME["bg"])
-            records_min_h = 190 if layout_is_1366 else 320
-            details_min_h = 130 if layout_is_1366 else 64
+            records_min_h = 230 if layout_is_1366 else 320
+            details_min_h = 100 if layout_is_1366 else 64
             control_split.add(records_host, minsize=records_min_h, stretch="always")
             control_split.add(details_host, minsize=details_min_h, stretch="always")
 
             def _prioritize_details(splitter=control_split):
                 try:
                     total_h = max(splitter.winfo_height(), 1)
-                    target_min = 130 if layout_is_1366 else 64
-                    target_max = 200 if layout_is_1366 else 84
-                    target_ratio = 0.27 if layout_is_1366 else 0.10
+                    target_min = 100 if layout_is_1366 else 64
+                    target_max = 130 if layout_is_1366 else 84
+                    target_ratio = 0.16 if layout_is_1366 else 0.10
                     target_details_h = max(target_min, min(target_max, int(total_h * target_ratio)))
                     splitter.sash_place(0, 0, max(1, total_h - target_details_h))
                 except Exception:

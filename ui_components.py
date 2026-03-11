@@ -104,6 +104,7 @@ class AppMetricCard(tk.Frame):
         self.capacity_var = tk.StringVar(value="Consumido 0% • 0 usados • 0 restantes")
         self._capacity_percent = 0.0
         self._capacity_suffix = ""
+        self._density_mode = "confortavel"
         self._card_shadow_shift_x = 1.8
         self._card_shadow_shift_y = 2.4
         self._card_shadow_steps = 7
@@ -215,10 +216,16 @@ class AppMetricCard(tk.Frame):
             pass
 
     def _apply_density(self, mode: str = "confortavel"):
+        self._density_mode = str(mode or "confortavel")
         compact = str(mode).lower().startswith("compact")
         px = theme_space("space_1", 4) if compact else theme_space("space_3", 10)
         py_top = theme_space("space_1", 4)
         py_bottom = theme_space("space_1", 4) if compact else theme_space("space_1", 4)
+        for widget in (self.title_lbl, self.value_lbl, self.trend_lbl, self.capacity_lbl, self.meta_lbl, self.donut_canvas, self.donut_wrap):
+            try:
+                widget.pack_forget()
+            except Exception:
+                pass
         self.title_lbl.pack(in_=self.text_column, fill=tk.X, anchor="w", padx=(0, 0), pady=(py_top, 0))
         self.value_lbl.pack(in_=self.text_column, fill=tk.X, anchor="w", padx=(0, 0), pady=(0, 0))
         if self._donut_visible:
@@ -396,15 +403,7 @@ class AppMetricCard(tk.Frame):
         self._donut_visible = bool(visible)
         if not self._donut_visible:
             self._donut_hover_segment = None
-        try:
-            if self._donut_visible:
-                self.donut_wrap.pack(fill=tk.X, padx=theme_space("space_3", 10), pady=(0, 0))
-                self.donut_canvas.pack(fill=tk.BOTH, expand=True)
-            else:
-                self.donut_canvas.pack_forget()
-                self.donut_wrap.pack_forget()
-        except Exception:
-            pass
+        self._apply_density(self._density_mode)
         self._draw_donut()
         self.after_idle(self._draw_card_shadow)
 
