@@ -116,6 +116,7 @@ class AppMetricCard(tk.Frame):
         self._card_shadow_canvas = tk.Canvas(
             self,
             bg=container_bg,
+            height=1,
             highlightthickness=0,
             bd=0,
         )
@@ -190,6 +191,7 @@ class AppMetricCard(tk.Frame):
 
             canvas.coords(self._card_shell_window, 0, 0)
             canvas.itemconfigure(self._card_shell_window, width=available_w, height=content_h)
+            canvas.configure(height=content_h)
             canvas.configure(scrollregion=(0, 0, available_w, available_h))
         except Exception:
             pass
