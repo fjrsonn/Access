@@ -5434,13 +5434,18 @@ def _build_monitor_ui(container):
             control_split.pack(fill=tk.BOTH, expand=True, padx=0, pady=(0, theme_space("space_2", 8)))
             records_host = tk.Frame(control_split, bg=UI_THEME["surface"])
             details_host = tk.Frame(control_split, bg=UI_THEME["bg"])
-            control_split.add(records_host, minsize=320, stretch="always")
-            control_split.add(details_host, minsize=64, stretch="never")
+            records_min_h = 220 if layout_is_1366 else 320
+            details_min_h = 96 if layout_is_1366 else 64
+            control_split.add(records_host, minsize=records_min_h, stretch="always")
+            control_split.add(details_host, minsize=details_min_h, stretch="always")
 
             def _prioritize_details(splitter=control_split):
                 try:
                     total_h = max(splitter.winfo_height(), 1)
-                    target_details_h = max(64, min(84, int(total_h * 0.10)))
+                    target_min = 96 if layout_is_1366 else 64
+                    target_max = 140 if layout_is_1366 else 84
+                    target_ratio = 0.20 if layout_is_1366 else 0.10
+                    target_details_h = max(target_min, min(target_max, int(total_h * target_ratio)))
                     splitter.sash_place(0, 0, max(1, total_h - target_details_h))
                 except Exception:
                     pass
@@ -5533,9 +5538,9 @@ def _build_monitor_ui(container):
                 padx=theme_space("space_3", 10),
                 pady=theme_space("space_1", 4),
                 font=theme_font("font_md"),
-                height=3,
+                height=(4 if layout_is_1366 else 3),
             )
-            details_text.pack(side=tk.LEFT, fill=tk.X, expand=False)
+            details_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
             details_text.insert("1.0", "Selecione um registro para ver detalhes.")
             details_text.config(state="disabled")
             _control_details_var[text_widget] = details_text
