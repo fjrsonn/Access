@@ -2515,6 +2515,27 @@ class SuggestEntry(tk.Frame):
         except Exception:
             pass
 
+    def _auto_resize_host_window(self, expand: bool):
+        try:
+            top = self.winfo_toplevel()
+            if top is None or not top.winfo_exists():
+                return
+            top.update_idletasks()
+            screen_h = max(1, int(top.winfo_screenheight()))
+            width = max(1100, int(top.winfo_width() or 1100))
+            x = max(0, int(top.winfo_x()))
+            y = max(0, int(top.winfo_y()))
+            base_h = 90
+            if expand:
+                desired_h = max(base_h, int(self.master.winfo_reqheight() + 28))
+                target_h = min(desired_h, max(base_h, int(screen_h * 0.90)))
+            else:
+                target_h = base_h
+            top.geometry(f"{width}x{target_h}+{x}+{y}")
+        except Exception:
+            pass
+
+
     def show_list(self, matches):
         if not self.entry_var.get().strip(): self.hide_list(); self._hide_overlay(); return
 
@@ -2595,6 +2616,7 @@ class SuggestEntry(tk.Frame):
             self.shortcuts_hint.pack(side=tk.TOP, fill=tk.X, pady=(2,0));
             self.list_visible=True
         self._has_user_navigated=False; self._just_accepted=False
+        self.after_idle(lambda: self._auto_resize_host_window(expand=True))
 
     def hide_list(self):
         if self.list_visible:
@@ -2604,6 +2626,7 @@ class SuggestEntry(tk.Frame):
             self.list_visible=False
         for it in self.tree.get_children(): self.tree.delete(it)
         self._has_user_navigated=False; self._just_accepted=False
+        self.after_idle(lambda: self._auto_resize_host_window(expand=False))
 
     def show_db(self):
         if self.ia_mode: self.hide_list(); self._hide_overlay(); return
@@ -3430,12 +3453,12 @@ def _configure_adaptive_main_window(window):
         screen_h = max(1, int(window.winfo_screenheight()))
 
         width = min(1100, max(1, int(screen_w * 0.95)))
-        height = min(80, max(1, int(screen_h * 0.95)))
+        height = min(90, max(1, int(screen_h * 0.95)))
 
         pos_x = max(0, int((screen_w - width) / 2))
         pos_y = max(0, int((screen_h - height) / 2))
         window.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
-        window.minsize(1100, 80)
+        window.minsize(1100, 90)
     except Exception:
         pass
 
@@ -3487,7 +3510,7 @@ def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: in
             requested_h = int(target.winfo_reqheight() + 64)
 
             width = min(max(1100, requested_w), max(1100, int(screen_w * 0.78)))
-            height = min(max(80, requested_h), max(80, int(screen_h * 0.46)))
+            height = min(max(90, requested_h), max(90, int(screen_h * 0.46)))
 
             try:
                 x = max(0, int(window.winfo_x()))
