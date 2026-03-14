@@ -5439,10 +5439,10 @@ def _build_monitor_ui(container):
         records_host = frame
         details_host = None
         if filter_key == "controle":
-            records_host = tk.Frame(frame, bg=UI_THEME["surface"])
-            records_host.pack(fill=tk.BOTH, expand=True, padx=0, pady=(0, 0))
             details_host = tk.Frame(frame, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
-            details_host.pack(fill=tk.X, padx=0, pady=(0, theme_space("space_2", 8)))
+            details_host.pack(side=tk.BOTTOM, fill=tk.X, padx=0, pady=(0, theme_space("space_2", 8)))
+            records_host = tk.Frame(frame, bg=UI_THEME["surface"])
+            records_host.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=0, pady=(0, 0))
 
         sticky_var = tk.StringVar(value="Sem registros visíveis")
         sticky_label = build_label(
