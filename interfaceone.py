@@ -3433,12 +3433,12 @@ def _configure_adaptive_main_window(window):
         requested_h = max(180, int(window.winfo_reqheight() + 56))
 
         width = min(max(requested_w, int(screen_w * 0.62)), max(900, int(screen_w * 0.95)))
-        height = min(max(requested_h, int(screen_h * 0.20)), max(220, int(screen_h * 0.46)))
+        height = min(max(requested_h, int(screen_h * 0.20)), max(120, int(screen_h * 0.46)))
 
         pos_x = max(0, int((screen_w - width) / 2))
         pos_y = max(0, int((screen_h - height) / 2))
         window.geometry(f"{width}x{height}+{pos_x}+{pos_y}")
-        window.minsize(900, min(320, max(220, int(screen_h * 0.24))))
+        window.minsize(900, min(320, max(120, int(screen_h * 0.24))))
     except Exception:
         pass
 
@@ -3490,7 +3490,7 @@ def _schedule_progressive_window_fit(window, anchor_widget=None, interval_ms: in
             requested_h = int(target.winfo_reqheight() + 64)
 
             width = min(max(900, requested_w), max(900, int(screen_w * 0.78)))
-            height = min(max(220, requested_h), max(220, int(screen_h * 0.46)))
+            height = min(max(120, requested_h), max(120, int(screen_h * 0.46)))
 
             try:
                 x = max(0, int(window.winfo_x()))
