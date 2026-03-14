@@ -3550,7 +3550,13 @@ def _apply_light_theme(widget):
         pass
 
 def _build_text_actions(frame, text_widget, info_label, path):
-    current = {"record": None, "rec_tag": None, "pinned": False}
+    current = {
+        "record": None,
+        "rec_tag": None,
+        "pinned": False,
+        "pinned_record": None,
+        "pinned_tag": None,
+    }
     edit_state = {"active": False, "tag": None, "dirty": False, "range": None, "max_index": None}
 
     is_orient_obs = os.path.basename(path) in ("orientacoes.json", "observacoes.json")
@@ -3662,6 +3668,8 @@ def _build_text_actions(frame, text_widget, info_label, path):
             current["pinned"] = False
             current["record"] = None
             current["rec_tag"] = None
+            current["pinned_record"] = None
+            current["pinned_tag"] = None
     def _place_for_tag(rec_tag, anchor_idx=None):
         try:
             ranges = text_widget.tag_ranges(rec_tag)
@@ -3754,6 +3762,8 @@ def _build_text_actions(frame, text_widget, info_label, path):
         current["rec_tag"] = tag
         if pin:
             current["pinned"] = True
+            current["pinned_record"] = rec
+            current["pinned_tag"] = tag
         _place_for_tag(tag)
 
     def delete_record():
@@ -4156,10 +4166,19 @@ def _build_text_actions(frame, text_widget, info_label, path):
         if _is_hover_suppressed(text_widget):
             _hide_inline(unpin=False)
             return
+        pinned_tag = current.get("pinned_tag")
         if rec_tag:
+            if current.get("pinned") and pinned_tag and rec_tag == pinned_tag:
+                if current.get("rec_tag") != pinned_tag or not inline_wrap.winfo_ismapped():
+                    _show_for(pinned_tag, pin=False)
+                return
             if current.get("rec_tag") != rec_tag or not inline_wrap.winfo_ismapped():
                 _show_for(rec_tag, pin=False)
         else:
+            if current.get("pinned") and pinned_tag:
+                if current.get("rec_tag") != pinned_tag or not inline_wrap.winfo_ismapped():
+                    _show_for(pinned_tag, pin=False)
+                return
             _hide_inline(unpin=False)
 
     _register_hover_motion_callback(text_widget, _on_hover_pipeline)
