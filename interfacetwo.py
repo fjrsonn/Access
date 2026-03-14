@@ -3616,6 +3616,20 @@ def _build_text_actions(frame, text_widget, info_label, path):
             return False
         return False
 
+    def _is_pointer_near_inline(margin: int = 10) -> bool:
+        try:
+            if not inline_wrap.winfo_ismapped():
+                return False
+            px = text_widget.winfo_pointerx()
+            py = text_widget.winfo_pointery()
+            rx = inline_wrap.winfo_rootx()
+            ry = inline_wrap.winfo_rooty()
+            rw = max(1, inline_wrap.winfo_width())
+            rh = max(1, inline_wrap.winfo_height())
+            return (rx - margin) <= px <= (rx + rw + margin) and (ry - margin) <= py <= (ry + rh + margin)
+        except Exception:
+            return False
+
     def _set_inline_interaction(active: bool):
         _inline_interaction["active"] = bool(active)
         if _inline_interaction["active"]:
@@ -3632,7 +3646,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
             if not current.get("pinned") and not edit_state.get("active"):
                 _hide_inline(unpin=False)
         try:
-            text_widget.after(40, _check)
+            text_widget.after(110, _check)
         except Exception:
             pass
 
@@ -4215,6 +4229,11 @@ def _build_text_actions(frame, text_widget, info_label, path):
                 if current.get("rec_tag") != pinned_tag or not inline_wrap.winfo_ismapped():
                     _show_for(pinned_tag, pin=False)
                 return
+            if _inline_state.get("visible") and not current.get("pinned"):
+                current_tag = current.get("rec_tag") or _inline_state.get("tag")
+                if current_tag and rec_tag != current_tag and (_inline_interaction.get("active") or _is_pointer_near_inline()):
+                    _show_for(current_tag, pin=False)
+                    return
             if current.get("rec_tag") != rec_tag or not inline_wrap.winfo_ismapped():
                 _show_for(rec_tag, pin=False)
         else:
@@ -4222,7 +4241,7 @@ def _build_text_actions(frame, text_widget, info_label, path):
                 if current.get("rec_tag") != pinned_tag or not inline_wrap.winfo_ismapped():
                     _show_for(pinned_tag, pin=False)
                 return
-            if _inline_interaction.get("active") and (current.get("rec_tag") or _inline_state.get("tag")):
+            if (_inline_interaction.get("active") or _is_pointer_near_inline()) and (current.get("rec_tag") or _inline_state.get("tag")):
                 _show_for(current.get("rec_tag") or _inline_state.get("tag"), pin=False)
                 return
             _hide_inline(unpin=False)
