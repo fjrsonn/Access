@@ -5439,44 +5439,10 @@ def _build_monitor_ui(container):
         records_host = frame
         details_host = None
         if filter_key == "controle":
-            paned_kwargs = {
-                "orient": tk.VERTICAL,
-                "sashrelief": "flat",
-                "sashwidth": 10,
-                "showhandle": True,
-                "handlesize": 10,
-                "handlepad": 2,
-                "bg": UI_THEME.get("surface", "#151A22"),
-                "bd": 0,
-                "relief": "flat",
-                "sashpad": 0,
-            }
-            control_split = _create_safe_panedwindow(frame, **paned_kwargs)
-            control_split.pack(fill=tk.BOTH, expand=True, padx=0, pady=(0, theme_space("space_2", 8)))
-            records_host = tk.Frame(control_split, bg=UI_THEME["surface"])
-            details_host = tk.Frame(control_split, bg=UI_THEME["bg"])
-            records_min_h = 220 if layout_is_1366 else 260
-            details_min_h = 118 if layout_is_1366 else 108
-            control_split.add(records_host, minsize=records_min_h, stretch="always")
-            control_split.add(details_host, minsize=details_min_h, stretch="always")
-
-            def _prioritize_details(splitter=control_split):
-                try:
-                    total_h = max(splitter.winfo_height(), 1)
-                    target_min = 118 if layout_is_1366 else 108
-                    target_max = 220 if layout_is_1366 else 200
-                    target_ratio = 0.32 if layout_is_1366 else 0.28
-                    target_details_h = max(target_min, min(target_max, int(total_h * target_ratio)))
-                    splitter.sash_place(0, 0, max(1, total_h - target_details_h))
-                except Exception:
-                    pass
-
-            try:
-                frame.after_idle(_prioritize_details)
-                frame.after(120, _prioritize_details)
-                frame.after(320, _prioritize_details)
-            except Exception:
-                pass
+            records_host = tk.Frame(frame, bg=UI_THEME["surface"])
+            records_host.pack(fill=tk.BOTH, expand=True, padx=0, pady=(0, 0))
+            details_host = tk.Frame(frame, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
+            details_host.pack(fill=tk.X, padx=0, pady=(0, theme_space("space_2", 8)))
 
         sticky_var = tk.StringVar(value="Sem registros visíveis")
         sticky_label = build_label(
@@ -5546,7 +5512,7 @@ def _build_monitor_ui(container):
             _build_text_actions(frame, text_widget, info_label, arquivo)
         if filter_key == "controle":
             details_panel = tk.Frame(details_host, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
-            details_panel.pack(fill=tk.BOTH, expand=True)
+            details_panel.pack(fill=tk.X, expand=False)
             details_text = tk.Text(
                 details_panel,
                 wrap="word",
@@ -5557,14 +5523,14 @@ def _build_monitor_ui(container):
                 highlightthickness=0,
                 tabs=(theme_space("space_9", 360),),
                 padx=theme_space("space_3", 10),
-                pady=(1 if layout_is_1366 else theme_space("space_1", 4)),
+                pady=0,
                 font=theme_font("font_md"),
                 height=3,
                 spacing1=0,
                 spacing2=0,
                 spacing3=0,
             )
-            details_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            details_text.pack(side=tk.LEFT, fill=tk.X, expand=False)
             details_text.insert("1.0", "Selecione um registro para ver detalhes.")
             details_text.config(state="disabled")
             _control_details_var[text_widget] = details_text
