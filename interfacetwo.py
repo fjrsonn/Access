@@ -3550,7 +3550,13 @@ def _apply_light_theme(widget):
         pass
 
 def _build_text_actions(frame, text_widget, info_label, path):
-    current = {"record": None, "rec_tag": None, "pinned": False}
+    current = {
+        "record": None,
+        "rec_tag": None,
+        "pinned": False,
+        "pinned_record": None,
+        "pinned_tag": None,
+    }
     edit_state = {"active": False, "tag": None, "dirty": False, "range": None, "max_index": None}
 
     is_orient_obs = os.path.basename(path) in ("orientacoes.json", "observacoes.json")
@@ -3662,6 +3668,8 @@ def _build_text_actions(frame, text_widget, info_label, path):
             current["pinned"] = False
             current["record"] = None
             current["rec_tag"] = None
+            current["pinned_record"] = None
+            current["pinned_tag"] = None
     def _place_for_tag(rec_tag, anchor_idx=None):
         try:
             ranges = text_widget.tag_ranges(rec_tag)
@@ -3754,6 +3762,8 @@ def _build_text_actions(frame, text_widget, info_label, path):
         current["rec_tag"] = tag
         if pin:
             current["pinned"] = True
+            current["pinned_record"] = rec
+            current["pinned_tag"] = tag
         _place_for_tag(tag)
 
     def delete_record():
@@ -4156,10 +4166,19 @@ def _build_text_actions(frame, text_widget, info_label, path):
         if _is_hover_suppressed(text_widget):
             _hide_inline(unpin=False)
             return
+        pinned_tag = current.get("pinned_tag")
         if rec_tag:
+            if current.get("pinned") and pinned_tag and rec_tag == pinned_tag:
+                if current.get("rec_tag") != pinned_tag or not inline_wrap.winfo_ismapped():
+                    _show_for(pinned_tag, pin=False)
+                return
             if current.get("rec_tag") != rec_tag or not inline_wrap.winfo_ismapped():
                 _show_for(rec_tag, pin=False)
         else:
+            if current.get("pinned") and pinned_tag:
+                if current.get("rec_tag") != pinned_tag or not inline_wrap.winfo_ismapped():
+                    _show_for(pinned_tag, pin=False)
+                return
             _hide_inline(unpin=False)
 
     _register_hover_motion_callback(text_widget, _on_hover_pipeline)
@@ -5420,41 +5439,10 @@ def _build_monitor_ui(container):
         records_host = frame
         details_host = None
         if filter_key == "controle":
-            paned_kwargs = {
-                "orient": tk.VERTICAL,
-                "sashrelief": "flat",
-                "sashwidth": 2,
-                "bg": UI_THEME.get("surface", "#151A22"),
-                "bd": 0,
-                "relief": "flat",
-                "sashpad": 0,
-            }
-            control_split = _create_safe_panedwindow(frame, **paned_kwargs)
-            control_split.pack(fill=tk.BOTH, expand=True, padx=0, pady=(0, theme_space("space_2", 8)))
-            records_host = tk.Frame(control_split, bg=UI_THEME["surface"])
-            details_host = tk.Frame(control_split, bg=UI_THEME["bg"])
-            records_min_h = 260 if layout_is_1366 else 320
-            details_min_h = 72 if layout_is_1366 else 64
-            control_split.add(records_host, minsize=records_min_h, stretch="always")
-            control_split.add(details_host, minsize=details_min_h, stretch="always")
-
-            def _prioritize_details(splitter=control_split):
-                try:
-                    total_h = max(splitter.winfo_height(), 1)
-                    target_min = 72 if layout_is_1366 else 64
-                    target_max = 94 if layout_is_1366 else 84
-                    target_ratio = 0.12 if layout_is_1366 else 0.10
-                    target_details_h = max(target_min, min(target_max, int(total_h * target_ratio)))
-                    splitter.sash_place(0, 0, max(1, total_h - target_details_h))
-                except Exception:
-                    pass
-
-            try:
-                frame.after_idle(_prioritize_details)
-                frame.after(120, _prioritize_details)
-                frame.after(320, _prioritize_details)
-            except Exception:
-                pass
+            details_host = tk.Frame(frame, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
+            details_host.pack(side=tk.BOTTOM, fill=tk.X, padx=0, pady=(0, theme_space("space_2", 8)))
+            records_host = tk.Frame(frame, bg=UI_THEME["surface"])
+            records_host.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=0, pady=(0, 0))
 
         sticky_var = tk.StringVar(value="Sem registros visíveis")
         sticky_label = build_label(
@@ -5524,7 +5512,7 @@ def _build_monitor_ui(container):
             _build_text_actions(frame, text_widget, info_label, arquivo)
         if filter_key == "controle":
             details_panel = tk.Frame(details_host, bg=UI_THEME["bg"], highlightthickness=0, bd=0)
-            details_panel.pack(fill=tk.BOTH, expand=True)
+            details_panel.pack(fill=tk.X, expand=False)
             details_text = tk.Text(
                 details_panel,
                 wrap="word",
@@ -5535,14 +5523,14 @@ def _build_monitor_ui(container):
                 highlightthickness=0,
                 tabs=(theme_space("space_9", 360),),
                 padx=theme_space("space_3", 10),
-                pady=(1 if layout_is_1366 else theme_space("space_1", 4)),
+                pady=0,
                 font=theme_font("font_md"),
                 height=3,
                 spacing1=0,
                 spacing2=0,
                 spacing3=0,
             )
-            details_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            details_text.pack(side=tk.LEFT, fill=tk.X, expand=False)
             details_text.insert("1.0", "Selecione um registro para ver detalhes.")
             details_text.config(state="disabled")
             _control_details_var[text_widget] = details_text
